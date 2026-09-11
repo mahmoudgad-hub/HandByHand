@@ -52,3 +52,7 @@ Desktop.ini
 /whatsapp/
 /Image/
 /hbh-inbox/
+
+# ---- CI ----
+# Default is ~/hbh-ci-logs, outside the tree; this catches an override.
+.ci-logs/
