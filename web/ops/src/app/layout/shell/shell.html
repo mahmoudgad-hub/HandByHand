@@ -1,0 +1,57 @@
+<div class="hbh-shell">
+
+  <a class="hbh-skip" href="#opsMain">{{ 'a11y.skipToContent' | t }}</a>
+
+  <!-- The sidebar. Its entries are whatever the server said this account may
+       reach; an account with two permissions sees two entries. -->
+  <aside class="hbh-side">
+    <a class="hbh-side__brand" routerLink="/dashboard">
+      <img class="hbh-logo hbh-side__full-logo" src="assets/brand/staff-logo-white.png" width="2172" height="724" [attr.alt]="'app.name' | t">
+    </a>
+
+    <nav class="hbh-nav" [attr.aria-label]="'nav.primary' | t">
+      @for (entry of nav(); track entry.key) {
+        <!-- title, because below 900px the CSS hides the <span> and leaves
+             eighteen icons in a scrolling strip. The text stays in the DOM so
+             a screen reader still reads it, but a person using a mouse had
+             nothing at all - no tooltip, no label, eighteen shapes to guess
+             between. The same string the icon replaces. -->
+        <a class="hbh-nav__item" [class.is-active]="active() === entry.key"
+           [routerLink]="entry.path"
+           [attr.title]="entry.labelKey | t"
+           [attr.aria-current]="active() === entry.key ? 'page' : null">
+          <hbh-icon [name]="entry.icon" />
+          <span>{{ entry.labelKey | t }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="hbh-side__user">
+      <span class="hbh-avatar hbh-side__ph"><hbh-icon name="ic-user" /></span>
+      <div>
+        <b>{{ auth.me()?.fullName }}</b>
+        <small>{{ auth.me()?.centerName }}</small>
+        <span class="hbh-side__status"><i></i> {{ 'status.online' | t }}</span>
+      </div>
+      <!-- Icon only, and only on the narrow strip where the labelled row
+           below has no room. Never the sole way out on a desktop: a bare
+           padlock in a corner is not something anyone finds. -->
+      <button class="hbh-side__out" type="button"
+              [attr.aria-label]="'action.signOut' | t" (click)="signOut()">
+        <hbh-icon name="ic-door" />
+      </button>
+    </div>
+
+    <!-- Signing out is written, not implied. On a shared reception desk it is
+         the last thing done on every shift, so it says what it is. -->
+    <button class="hbh-side__signout" type="button" (click)="signOut()">
+      <hbh-icon name="ic-door" />
+      <span>{{ 'action.signOut' | t }}</span>
+    </button>
+  </aside>
+
+  <main class="hbh-main" id="opsMain" tabindex="-1">
+    <router-outlet />
+  </main>
+
+</div>

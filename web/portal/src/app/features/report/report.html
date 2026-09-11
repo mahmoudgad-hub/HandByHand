@@ -1,0 +1,93 @@
+<section class="scr">
+
+  @if (loading()) {
+    <hbh-skeleton [count]="1" shape="card" />
+    <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()"
+                    [retryLabel]="'action.retry' | t" (retry)="load()" />
+  } @else if (data(); as report) {
+
+    <article class="rep">
+      <h1 class="rep__t">{{ report.title }}</h1>
+
+      <p class="rep__meta">
+        <!-- The reference is an identifier: Latin digits, left to right, the
+             way it is printed on anything the centre hands over. -->
+        <span dir="ltr">{{ report.number }}</span>
+        @if (report.periodStart && report.periodEnd) {
+          <s>&middot;</s>
+          {{ 'report.period' | t: {
+               from: format.dayMonthYear(report.periodStart),
+               to: format.dayMonthYear(report.periodEnd) } }}
+        }
+        @if (report.publishedAt; as published) {
+          <s>&middot;</s>
+          {{ 'report.published' | t: { date: format.dayMonthYear(published) } }}
+        }
+      </p>
+
+      @if (report.summary) {
+        <p class="rep__body">{{ report.summary }}</p>
+      }
+
+      @if (report.goals.length) {
+        <div class="sec">
+          <div class="sec__head">
+            <h2 class="sec__t">{{ 'report.goalsAtTheTime' | t }}</h2>
+          </div>
+          <div class="stack">
+            @for (goal of report.goals; track goal.title) {
+              <div class="goal">
+                <div class="goal__h">
+                  <span class="goal__t">{{ goal.title }}</span>
+                  @if (measured(goal)) {
+                    <span class="goal__pct" dir="ltr">{{ goal.latestPercent | hbhNum }}%</span>
+                  } @else {
+                    <span class="goal__pct goal__pct--none">
+                      {{ 'progress.notMeasured' | t }}
+                    </span>
+                  }
+                </div>
+
+                @if (measured(goal) && goal.targetPercent) {
+                  <div class="goal__bar" role="progressbar"
+                       [attr.aria-valuenow]="goal.latestPercent"
+                       [attr.aria-valuemin]="0" [attr.aria-valuemax]="goal.targetPercent"
+                       [attr.aria-label]="goal.title">
+                    <span class="goal__fill" [style.width.%]="barWidth(goal)"></span>
+                  </div>
+                }
+
+                <!-- hbhCount, not hbhNum. These numbers sit INSIDE Arabic
+                     prose, where the project's rule is Arabic-Indic digits;
+                     hbhNum is Latin and belongs to the standalone figure
+                     above, which is set LTR in its own box. Mixing them put
+                     "البداية 20٪" here beside "البداية ٢٠٪" on the progress
+                     screen - the same sentence, two alphabets. -->
+                <div class="goal__m">
+                  @if (measured(goal) && goal.targetPercent) {
+                    {{ 'progress.ofTarget' | t: {
+                         current: (goal.latestPercent | hbhCount),
+                         target: (goal.targetPercent | hbhCount) } }}
+                  } @else if (goal.baselinePercent !== null && goal.targetPercent) {
+                    {{ 'progress.fromBaseline' | t: {
+                         baseline: (goal.baselinePercent | hbhCount),
+                         target: (goal.targetPercent | hbhCount) } }}
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Said once, at the foot: a report a parent can read is one the
+           therapist chose to publish. Nothing internal reaches this screen. -->
+      <p class="priv">
+        <hbh-icon name="ic-shield" />
+        <span>{{ 'reports.publishedOnly' | t }}</span>
+      </p>
+    </article>
+  }
+</section>

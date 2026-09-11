@@ -1,0 +1,106 @@
+/* Shared staff console treatment, matching the approved visual reference. */
+.hbh-shell{--hbh-teal-600:#008b9b;--hbh-teal-700:#007786;--hbh-ink:#073f58;--hbh-ink-2:#24566f;--hbh-muted:#6e8899;--hbh-line:#e9edf0;--hbh-radius:18px;--hbh-shadow:0 6px 24px #234c5c08;background:radial-gradient(ellipse at 0 0,#ffefe8 0,transparent 32%),#fcf9f4;color:var(--hbh-ink)}
+.hbh-shell .hbh-side{background:linear-gradient(165deg,#006672,#005564);padding:16px 16px 18px;gap:0;box-shadow:-6px 0 25px #12465308}
+.hbh-shell .hbh-side__brand{background:#fff;border:1px solid #d4eeed;border-radius:18px;min-height:80px;margin-bottom:18px;padding:12px 8px;box-shadow:0 6px 16px #003d4614}
+.hbh-shell .hbh-nav{gap:5px;scrollbar-width:thin;scrollbar-color:#30c2cc #ffffff18;padding-inline-end:4px}
+.hbh-shell .hbh-nav__item{min-height:44px;border-radius:11px;padding:10px 12px;color:#e0f6f7;font-size:14px;line-height:1.6;gap:12px}
+.hbh-shell .hbh-nav__item .hbh-i{width:20px;height:20px;flex-shrink:0}
+.hbh-shell .hbh-nav__item.is-active{background:#ffffff18;box-shadow:inset -3px 0 #35d0d6;color:#fff}
+.hbh-shell .hbh-side__user,.hbh-shell .hbh-side__signout{background:#ffffff12;border:1px solid #ffffff08;border-radius:15px;padding:12px;color:#e8fbfc}
+.hbh-shell .hbh-side__user{margin-top:14px}.hbh-shell .hbh-side__user small{color:#b4d8dc}
+.hbh-shell .hbh-main{padding:30px 32px 42px}
+.hbh-shell .hbh-top{padding:16px 2px 22px;margin-bottom:18px;align-items:center;gap:18px}
+.hbh-shell .hbh-top__title{font-size:26px;line-height:1.5;letter-spacing:-.02em}
+.hbh-shell .hbh-top__sub{font-size:13px;line-height:1.8;margin-top:7px}
+.hbh-shell .hbh-top__tools{flex-wrap:wrap}
+.hbh-shell .hbh-btn{min-height:44px;padding:10px 18px;border-radius:13px;gap:9px;font-size:13px;line-height:1.5}
+.hbh-shell .hbh-btn--primary{background:linear-gradient(125deg,#0098a9,#007e90);box-shadow:0 4px 12px #008b9b12;color:#fff}
+.hbh-shell .hbh-btn--ghost{background:#fff;border-color:#e0e7eb;box-shadow:0 2px 5px #27485904}
+.hbh-shell .hbh-tabbar{background:#fff;border:1px solid #f0f1f2;box-shadow:0 5px 20px #284b5906;border-radius:17px;padding:7px;gap:5px;margin-bottom:24px;overflow-x:auto;flex-wrap:nowrap}
+.hbh-shell .hbh-tabbar__item{min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:13px;padding:11px 16px;white-space:nowrap;font-weight:600;flex-shrink:0}
+.hbh-shell .hbh-tabbar__item.is-active{background:linear-gradient(125deg,#0098a9,#007e90);color:#fff;box-shadow:0 4px 10px #008b9b16}
+.hbh-shell .hbh-tabbar__item .hbh-i{width:19px;height:19px}
+.hbh-shell .hbh-card,.hbh-shell .hbh-panel,.hbh-shell .hbh-kpi{border-color:#edf0f1;border-radius:18px;box-shadow:0 7px 24px #29465207;background:#fff}
+.hbh-shell .hbh-tablewrap{border-radius:15px;background:#fff;padding:10px 12px}
+.hbh-shell .hbh-table{font-size:13px}
+.hbh-shell .hbh-table th{background:#f9fbfc;color:#164c65;border-bottom:1px solid #e7edf1;padding:16px 14px;font-weight:700}
+.hbh-shell .hbh-table td{padding:16px 14px;border-bottom:1px solid #edf1f3;line-height:1.7}
+.hbh-shell .hbh-table tbody tr:hover td{background:#f7fcfc}
+.hbh-shell .hbh-table__actions{gap:10px}
+.hbh-shell .hbh-rowbtn,.hbh-shell .hbh-iconbtn{width:42px;height:42px;border:1px solid #e4eaee;border-radius:13px;background:#fff;box-shadow:0 3px 9px #193f4f07;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.hbh-shell .hbh-rowbtn .hbh-i{width:20px;height:20px}
+.hbh-shell .hbh-badge{border-radius:30px;padding:5px 14px;font-size:11px;line-height:1.5}
+.hbh-shell .hbh-pager{padding:8px 14px 14px;margin-top:12px}.hbh-shell .hbh-pager__page{min-width:38px;min-height:38px;display:grid;place-items:center;background:#dcf4f6;color:#007b90;border-radius:11px}
+.hbh-shell .hbh-field{border-color:#dfe8ec;border-radius:12px;background:#fff;min-height:42px}
+.hbh-shell :is(button,a,input,select,textarea):focus-visible{outline:3px solid #39b8c4;outline-offset:3px}
+@media(min-width:1300px){.hbh-shell{grid-template-columns:270px minmax(0,1fr)}}
+@media(max-width:900px){.hbh-shell .hbh-side{padding:10px;gap:10px}.hbh-shell .hbh-side__brand{min-height:60px;margin:0;padding:8px;flex-shrink:0}.hbh-shell .hbh-nav{gap:4px}.hbh-shell .hbh-nav__item{padding:10px;min-height:40px;flex-shrink:0}.hbh-shell .hbh-main{padding:18px}.hbh-shell .hbh-side__user{margin:0;padding:8px}.hbh-shell .hbh-top{padding:8px 0 14px}.hbh-shell .hbh-top__title{font-size:23px}}
+@media(max-width:600px){.hbh-shell .hbh-main{padding:14px 10px 26px}.hbh-shell .hbh-top{gap:12px}.hbh-shell .hbh-top__tools{width:100%;gap:8px}.hbh-shell .hbh-tabbar__item{padding:10px 13px}.hbh-shell .hbh-tablewrap{padding:5px}.hbh-shell .hbh-table td,.hbh-shell .hbh-table th{padding:12px}.hbh-shell .hbh-side__brand{min-width:160px}.hbh-shell .hbh-side__wm{width:100px}.hbh-shell .hbh-side__logo{width:34px}}
+@media(prefers-reduced-motion:reduce){.hbh-shell *{scroll-behavior:auto}}
+/* White logo supplied for the staff sidebar. */
+.hbh-shell .hbh-side__brand{background:transparent;border-color:transparent;box-shadow:none;padding:8px 0}
+.hbh-side__full-logo{display:block;width:100%;max-width:250px;height:auto;object-fit:contain;mix-blend-mode:screen}
+@media(max-width:900px){.hbh-shell .hbh-side__brand{width:190px;min-width:190px}.hbh-side__full-logo{max-width:190px}}
+/* Responsive dialog widths, with only the content region scrolling. */
+.hbh-sheet{box-sizing:border-box;padding:clamp(12px,3vw,32px);height:100dvh;overflow:hidden}
+.hbh-sheet__box{box-sizing:border-box;width:min(680px,100%);max-width:680px;max-height:calc(100dvh - 48px);min-width:0;margin:0;border-radius:22px}
+.hbh-sheet__box--editor{width:min(860px,100%);max-width:860px}
+.hbh-sheet__head,.hbh-sheet__foot{flex-shrink:0;padding:18px 22px;gap:12px}
+.hbh-sheet__head .hbh-card-title{min-width:0;overflow-wrap:anywhere;font-size:20px;line-height:1.6}
+.hbh-sheet__head .hbh-iconbtn{flex-shrink:0}
+.hbh-sheet__body{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:22px;scrollbar-width:thin;scrollbar-color:var(--hbh-teal-300) transparent}
+.hbh-sheet__body .hbh-fld{min-width:0;margin:0}.hbh-sheet__body :is(input,select,textarea){box-sizing:border-box;max-width:100%;min-width:0}.hbh-sheet__body .hbh-fld__box{min-width:0}.hbh-sheet__foot .hbh-btn{min-height:44px;white-space:normal}.hbh-sheet__body> .hbh-fld + .hbh-fld{margin-top:16px}
+@media(min-width:720px){.hbh-sheet__box--editor .hbh-sheet__body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-content:start}.hbh-sheet__box--editor .hbh-sheet__body>.hbh-fld{margin:0}.hbh-sheet__box--editor .hbh-sheet__body>:not(.hbh-fld){grid-column:1 / -1}}
+@media(max-width:600px){.hbh-sheet{padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom));align-items:center}.hbh-sheet__box,.hbh-sheet__box--editor{width:100%;max-width:100%;max-height:calc(100dvh - 24px);border-radius:18px}.hbh-sheet__head,.hbh-sheet__foot{padding:14px;gap:10px}.hbh-sheet__head .hbh-card-title{font-size:17px}.hbh-sheet__body{padding:16px 14px}.hbh-sheet__body :is(input,select,textarea){font-size:16px}.hbh-sheet__foot .hbh-btn{padding-inline:10px}}
+@media(max-height:500px){.hbh-sheet{padding:8px}.hbh-sheet__box{max-height:calc(100dvh - 16px)}.hbh-sheet__head,.hbh-sheet__foot{padding:10px 14px}}
+
+/* On a phone the 190px wordmark left the menu strip 52px wide - one icon
+   out of eighteen, in a scroller nothing suggests is scrollable. The
+   wordmark keeps its proportions at 120px and the strip gets room for
+   three, which is the difference between a menu and a decoration. */
+@media(max-width:640px){
+  .hbh-shell .hbh-side__brand{width:120px;min-width:120px}
+  .hbh-side__full-logo{max-width:120px}
+}
+/* Mobile review: give the navigation its own labelled scroll row. */
+@media(max-width:640px){
+.hbh-shell .hbh-side{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;height:auto}
+.hbh-shell .hbh-side__brand{min-height:42px;width:145px;min-width:145px}
+.hbh-shell .hbh-side__user{margin-inline-start:auto}
+.hbh-shell .hbh-nav{order:3;flex:0 0 100%;width:100%;min-width:0;display:flex;overflow-x:auto;gap:6px;padding-bottom:6px}
+.hbh-shell .hbh-nav__item{flex:0 0 auto;display:flex;gap:6px;padding:9px 12px;min-height:44px}
+.hbh-shell .hbh-nav__item span{display:inline;font-size:12px;white-space:nowrap}
+.hbh-shell .hbh-nav__item .hbh-i{width:20px;height:20px}
+}
+
+/* A row of day checkboxes in the settings editor. Wrapping, so seven of them
+   fit a phone without a horizontal scrollbar. */
+.hbh-check{display:inline-flex;align-items:center;gap:7px;margin:0 0 8px;padding:7px 11px;border:1px solid var(--hbh-line);border-radius:11px;font-size:13px;cursor:pointer}
+.hbh-check + .hbh-check{margin-inline-start:8px}
+.hbh-check input{margin:0}
+/* Team workspace: compact profile editor with a clear member selector. */
+hbh-team-screen{display:block;max-width:1440px;margin-inline:auto}
+hbh-team-screen .hbh-pagehead{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:24px}
+hbh-team-screen .hbh-pagehead__title{font-size:25px;font-weight:800}
+hbh-team-screen .hbh-pagehead__sub{font-size:14px;line-height:1.8;margin-top:6px;color:#526d7a}
+hbh-team-screen .hbh-md{display:grid;grid-template-columns:285px minmax(0,1fr);gap:24px;align-items:start}
+hbh-team-screen .hbh-md__list{padding:12px;border:1px solid #e1edef;border-radius:20px;background:#fff;display:grid;gap:10px}
+hbh-team-screen .hbh-md__item{padding:13px;min-height:84px;border-radius:14px;gap:10px;text-align:start}
+hbh-team-screen .hbh-md__name{font-size:15px;font-weight:700}
+hbh-team-screen .hbh-md__role{font-size:12px;line-height:1.7}
+hbh-team-screen .hbh-md__head{padding:18px 20px;background:#edf7f6;border-radius:17px;margin-bottom:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+hbh-team-screen .hbh-md__detail{min-width:0}
+hbh-team-screen .hbh-md__head .hbh-card-title{font-size:20px}
+hbh-team-screen .hbh-tabbar{margin:0 0 18px!important;gap:6px;overflow-x:auto;flex-wrap:nowrap}
+hbh-team-screen .team-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;padding:24px}
+hbh-team-screen .team-photo-panel{grid-column:1/-1;background:#f5faf9;border:1px dashed #bcdadb;border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap}
+hbh-team-screen .hbh-md__portrait{margin:0}
+hbh-team-screen .hbh-md__avatar{width:96px;height:96px}
+hbh-team-screen .team-photo-panel p{margin:0;max-width:300px;font-size:13px;line-height:1.8}
+hbh-team-screen .team-profile-grid>.hbh-fld{margin:0;min-width:0}
+hbh-team-screen .team-profile-grid>.hbh-fld:has(textarea),hbh-team-screen .team-profile-grid>.hbh-fld:has(.hbh-md__chips){grid-column:1/-1}
+hbh-team-screen .hbh-fld__l{font-size:14px;margin-bottom:8px}
+hbh-team-screen input:not([dir=ltr]),hbh-team-screen textarea{direction:inherit;text-align:start;font-size:16px}
+hbh-team-screen .hbh-fld__box{min-height:48px}
+@media(max-width:1000px){hbh-team-screen .hbh-md{grid-template-columns:minmax(0,1fr)}hbh-team-screen .hbh-md__list{display:flex;overflow-x:auto}hbh-team-screen .hbh-md__item{flex:0 0 260px}}
+@media(max-width:600px){hbh-team-screen .hbh-pagehead{align-items:stretch;flex-direction:column;gap:12px}hbh-team-screen .hbh-pagehead__actions{display:flex;flex-wrap:wrap;gap:8px}hbh-team-screen .team-profile-grid{grid-template-columns:minmax(0,1fr);padding:16px;gap:16px}hbh-team-screen .team-photo-panel{gap:12px;padding:16px;text-align:center}hbh-team-screen .hbh-md__head{padding:16px}hbh-team-screen .hbh-md__item{flex-basis:245px}}

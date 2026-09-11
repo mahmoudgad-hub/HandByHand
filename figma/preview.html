@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hand By Hand — فلو المشروع · تجهيز Figma</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal-900:#1E5D64; --teal-600:#2A7680; --teal-500:#338A93; --teal-100:#DEEEF0;
+    --coral-500:#EB7866; --coral-600:#C4543F; --green-500:#7E9C60;
+    --bg:#FAF6EE; --surface:#FFFFFF; --surface-2:#FBF7F0;
+    --ink:#22333A; --muted:#4C6069; --line:#E8E1D4;
+    --font:'IBM Plex Sans Arabic','Segoe UI',system-ui,sans-serif;
+    --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.9}
+  header{padding:40px 32px 24px;max-width:1200px;margin:0 auto}
+  h1{font-family:var(--display);font-size:26px;margin:0 0 8px}
+  header p{margin:0;color:var(--muted);font-size:14px;max-width:70ch}
+  main{max-width:1200px;margin:0 auto;padding:0 32px 80px}
+  section{background:var(--surface);border:1px solid var(--line);border-radius:20px;
+          padding:24px;margin:24px 0;box-shadow:0 1px 2px rgba(19,78,92,.05),0 6px 18px rgba(19,78,92,.07)}
+  h2{font-family:var(--display);font-size:18px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+  button{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+         background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+         border-radius:10px;padding:7px 14px;transition:.15s}
+  button:hover{border-color:var(--teal-500);color:var(--teal-600)}
+  button.ok{background:var(--teal-600);border-color:var(--teal-600);color:#fff}
+  .canvas{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+          padding:20px;overflow:auto;max-height:82vh}
+  /* لا تصغير قسريّ. `max-width:100%` كان يضغط مخطّط تطبيق المركز — عرضه الطبيعي
+     ١٤٠٠px — إلى عرض العمود، فيصير ارتفاعه ١٣٤px ونصّه ٦px ولا يُقرأ.
+     المخطّط العريض يُمرَّر أفقيًّا بحجمه الطبيعي. */
+  .canvas svg{max-width:none;display:block;margin:0 auto}
+  .canvas img{display:block;margin:0 auto;max-width:100%}
+  .hint{font-size:11.5px;color:var(--muted);margin:10px 0 0}
+  details{margin-top:14px}
+  summary{cursor:pointer;font-size:12.5px;color:var(--muted);font-weight:600}
+  pre{background:#0E2F37;color:#C3DDE3;padding:16px;border-radius:12px;overflow-x:auto;
+      font-size:11.5px;line-height:1.7;direction:ltr;text-align:left}
+  .note{background:var(--teal-100);border:1px solid #C6E0E7;border-radius:14px;
+        padding:14px 18px;font-size:13px;color:#276C75;margin:20px 0}
+  .err{background:#FAE7E4;border:1px solid #F2CFC9;color:#A8352B;border-radius:12px;padding:14px;font-size:13px}
+  ol{padding-inline-start:22px}
+  ol li{margin:6px 0;font-size:13.5px}
+  code{font-family:ui-monospace,'Cascadia Mono',monospace;font-size:.9em;
+       background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hand By Hand — فلو المشروع</h1>
+  <p>
+    أربعة مخطّطات مستخرَجة من الكود لا من الذاكرة. الأوّل مرسوم يدويًّا بألوان الهوية
+    وملفُّه على القرص — اسحبه وأفلته على كانفاس Figma؛ والثلاثة الباقية تُرسم هنا
+    بـ Mermaid ومعها زرّ ينسخ الـ SVG إلى الحافظة، الصقه في Figma مباشرة (Ctrl + V).
+  </p>
+</header>
+
+<main>
+
+  <div class="note">
+    <strong>كيف يصل هذا إلى Figma:</strong>
+    أيّ SVG تنسخه من هنا يصير في Figma إطارًا فيه أشكال ونصوص حقيقية — لا صورة.
+    اضبط اتجاه النص RTL على الطبقات العربية بعد اللصق، فـ Figma لا يستنتجه من المحتوى.
+    وحمّل التوكنز من <code>design-tokens.json</code> عبر إضافة Tokens Studio ليصير كل لون متغيّرًا.
+  </div>
+
+  <section>
+    <h2>١ — رحلة الطفل</h2>
+    <p class="sub">
+      من طلب الالتحاق إلى التقرير والفاتورة. النسخة المرسومة يدويًّا بألوان الهوية —
+      <code>flow/01-child-journey.svg</code>
+    </p>
+    <div class="bar">
+      <button onclick="window.open('flow/01-child-journey.svg')">فتح الملفّ في تبويب</button>
+    </div>
+    <div class="canvas"><img src="flow/01-child-journey.svg" alt="رحلة الطفل"></div>
+    <p class="hint">
+      هذا المخطّط ملفّ على القرص لا نصّ داخل الصفحة، فلا زرّ نسخ له: صفحة تُفتح بـ
+      <code>file://</code> لا يُسمح لها بقراءة ملفّ بجوارها. وأسهل من النسخ أصلًا:
+      <strong>اسحب <code>flow/01-child-journey.svg</code> من مستكشف الملفّات وأفلته على كانفاس Figma</strong> —
+      يستورده طبقات قابلة للتحرير. أو افتحه في تبويب، <code>Ctrl+U</code>، ثم انسخ النصّ.
+    </p>
+    <p class="sub" style="margin:14px 0 0">
+      الصناديق الكوراليّة الثلاثة حلقات مقطوعة فعلًا: القاعدة مبنيّة ومختبَرة،
+      والمسار الذي يصلها بالشاشة غير موجود. التفصيل في
+      <code>docs/architect/02-new-child-flow.md</code>.
+    </p>
+  </section>
+
+  <section id="s2"></section>
+  <section id="s3"></section>
+  <section id="s4"></section>
+
+  <section>
+    <h2>ترتيب البناء في Figma</h2>
+    <p class="sub">إن كنت ستبني ملفّ التصميم من الصفر، هذا هو الترتيب الذي لا يجبرك على إعادة العمل</p>
+    <ol>
+      <li><strong>المتغيّرات أوّلًا</strong> — استورد <code>design-tokens.json</code>. لا تلوّن شكلًا واحدًا بلون ثابت قبل ذلك.</li>
+      <li><strong>الخطّان</strong> — IBM Plex Sans Arabic للنصّ، Noto Kufi Arabic للعناوين. كلاهما في Figma بنفس الاسم.</li>
+      <li><strong>أنماط النصّ</strong> — من <code>web/*/src/styles/</code>: العنوان ١٥٫٥px/٧٠٠، النصّ ١٣px، الميتا ١١px.</li>
+      <li><strong>المكوّنات</strong> — البطاقة، الشريحة (chip)، شارة الحالة، الزرّ، الحقل، الرأس، شريط التبويبات.</li>
+      <li><strong>صفحة الفلو</strong> — الصق مخطّطات هذه الصفحة في صفحة مستقلّة اسمها <em>Flow</em>.</li>
+      <li><strong>الشاشات أخيرًا</strong> — واحدة لكل سطر في <code>screens.md</code>، والاسم هو المسار نفسه.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+/* نسخ من figma/flow/src/*.mmd — الملفّات هناك هي المصدر.
+   لا يمكن لصفحة تُفتح بـ file:// أن تقرأها بـ fetch، فبقيت نسخة هنا.
+
+   لا تعدّل هذه النسخ بيدك. كان مكتوبًا هنا «إن عدّلت مخطّطًا، عدّل الاثنين»،
+   وهكذا تقادمت: بقي مخطّط المركز يقول أربعة عشر موردًا بعد أن صاروا ثمانية
+   وعشرين، ولم يُرَ الفرق لأن النصفين يبدوان تامّين. عدّل الـ.mmd ثم:
+
+       bash scripts/sync-figma-preview.sh
+
+   السكربت يقرأ `file:` من كل كتلة أدناه ويحقن ملفّها — فمكان إضافة مخطّط
+   جديد واحد لا اثنان. */
+const DIAGRAMS = [
+  {
+    el: 's2', title: '٢ — بوّابة وليّ الأمر', file: 'flow/src/02-parent-portal.mmd',
+    sub: 'خريطة الملاحة كما هي في <code>web/portal/src/app/app.routes.ts</code> — ولا مسار فيها يحمل معرّف طفل',
+    src: String.raw`%% بوّابة وليّ الأمر — خريطة الملاحة
+%% المصدر: web/portal/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% لا مسار في هذا التطبيق يحمل معرّف طفل: الطفل المختار يعيش في ChildContextService،
+%% لأنّ تعديل شريط العنوان لا يجوز أن يوحي بأنّه يغيّر ما يُرى — الخادم هو من يقرّر.
+flowchart TB
+  classDef public fill:#EDF1E5,stroke:#ADC793,color:#22333A
+  classDef auth   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
+  classDef tab    fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
+  classDef guard  fill:#FBF0DA,stroke:#F0DCB4,color:#8A5A0E
+
+  SITE["الموقع التعريفي العام<br/>site/ — بلا مصادقة ولا API"]:::public
+  APPLY["/apply<br/>الطريق الوحيد بلا حارس<br/>الكتابة الوحيدة بلا مصادقة في الخدمة"]:::public
+
+  LOGIN["/login<br/>guestOnlyGuard"]:::auth
+  OTP["/login/otp<br/>رمز لمرّة واحدة"]:::auth
+  G1{{"authGuard"}}:::guard
+  WELCOME["/welcome<br/>اختيار الطفل"]:::auth
+  G2{{"childSelectedGuard"}}:::guard
+
+  SHELL["الهيكل — الرأس وشريط التبويبات"]:::auth
+
+  HOME["/home<br/>تبويب"]:::tab
+  SCHED["/schedule<br/>تبويب"]:::tab
+  PROG["/progress<br/>تبويب"]:::tab
+  ACT["/activities<br/>تبويب — البرنامج المنزلي"]:::tab
+  LIVE["/live<br/>بثّ الجلسة — عودة إلى /home"]:::auth
+  REPS["/reports<br/>تبويب"]:::tab
+  REP["/reports/:reportId<br/>عودة إلى /reports لا إلى /home"]:::auth
+  BILL["/billing<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
+  REQ["/requests<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
+  THER["/therapists/:therapistId<br/>المعرّف في المسار — عضو طاقم لا بيانات طفل"]:::auth
+  PROF["/profile<br/>تبويب"]:::tab
+  COMM["/communications<br/>تبويب — محادثة الأسرة والمركز<br/>لا يحتاج طفلًا مختارًا"]:::tab
+
+  SITE -->|"portalBaseUrl في site/config.js"| APPLY
+  APPLY -->|"بعد القبول والتحويل"| LOGIN
+  LOGIN --> OTP --> G1 --> WELCOME
+  WELCOME -->|"اختيار طفل"| G2
+  G2 --> SHELL
+  SHELL --> HOME & SCHED & PROG & ACT & BILL & REQ & COMM & PROF
+  HOME --> LIVE
+  HOME --> REPS --> REP
+  SCHED -->|"نقر اسم الأخصائي"| THER`
+  },
+  {
+    el: 's3', title: '٣ — تطبيق المركز', file: 'flow/src/03-ops-console.mmd',
+    sub: 'كل شاشة تعلن صلاحيتها — <code>web/ops/src/app/app.routes.ts</code>. والحارس يمنع الرسم، والرفض نفسه في سياسة RLS تحت الاستعلام',
+    src: String.raw`%% تطبيق المركز (ops) — خريطة الملاحة والصلاحيات
+%% المصدر: web/ops/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% كل شاشة تعلن الصلاحية التي تحتاجها. الحارس يمنع رسم شاشة سيرفضها الخادم —
+%% وليس هو الرفض نفسه، فالرفض في سياسة RLS تحت الاستعلام.
+%% الشاشات تنقسم إلى نوعين مدفوعين بوصفين: ResourceScreen للموارد التي تُنشأ وتُعدَّل،
+%% وDayScreen للقراءات المفهرسة بالمركز — صفوف تتحرّك عبر آلات الحالة لا بتعديل عمود.
+%% LR لا TB: بـTB يتفرّع الهيكل إلى اثنتي عشرة شاشة جنبًا إلى جنب،
+%% فيصير المخطّط ٣٧٩٥px عرضًا و٦٢٠px ارتفاعًا — لا يُقرأ على أي شاشة.
+flowchart LR
+  classDef res  fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
+  classDef day  fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
+  classDef one  fill:#EDF1E5,stroke:#ADC793,color:#22333A
+  classDef sys  fill:#F1ECE1,stroke:#E3DCCD,color:#4A5F68
+
+  LOGIN["/login<br/>opsGuestGuard"]:::one
+  SHELL["الهيكل — القائمة الجانبية<br/>opsAuthGuard"]:::one
+  DASH["/dashboard<br/>PORTAL.VIEW"]:::one
+
+  LOGIN --> SHELL --> DASH
+
+  subgraph R["ResourceScreen — ثمانية وعشرون موردًا CRUD في ست شاشات"]
+    direction TB
+    CH["/children<br/>CHILD.VIEW_ALL<br/>أولياء الأمور + الأطفال"]:::res
+    TH["/therapists<br/>STAFF.MANAGE<br/>الأخصائيون + ساعات العمل + caseload"]:::res
+    RM["/rooms<br/>CATALOG.MANAGE<br/>الغرف + الكاميرات"]:::res
+    PL["/plans<br/>PLAN.MANAGE<br/>خطط + أهداف + قياسات + أنشطة الطفل"]:::res
+    CT["/catalog<br/>CATALOG.MANAGE<br/>خدمات + باقات + مكتبة أنشطة + استبيانات"]:::res
+    ST["/site<br/>SITE.EDIT<br/>كلمات الموقع — خمسة تبويبات"]:::res
+  end
+
+  subgraph D["DayScreen — القراءات المفهرسة بالمركز"]
+    direction TB
+    AP["/appointments<br/>APPOINTMENT.BOOK"]:::day
+    SE["/sessions<br/>SESSION.START"]:::day
+    RP["/reports<br/>REPORT.VIEW"]:::day
+    BL["/billing<br/>BILLING.VIEW"]:::day
+    RQ["/requests<br/>REQUEST.MANAGE"]:::day
+    EN["/enrolments<br/>ENROLMENT.MANAGE<br/>ما كانت تسمّيه التصاميم leads"]:::day
+  end
+
+  SHELL --> CH & TH & RM & PL & CT & ST
+  SHELL --> AP & SE & RP & BL & RQ & EN
+
+  CHILD["/children/:childId<br/>ملفّ الطفل — المعرّف في المسار"]:::one
+  CARD["/children/:childId/card<br/>بطاقة تُطبع — بلا رقم قومي ولا عنوان"]:::one
+  TPROF["/therapists/:therapistId/profile<br/>بلا حارس صلاحية عمدًا:<br/>السؤال عن الصفّ لا عن الشخص"]:::one
+  TSVC["/therapist-services<br/>STAFF.MANAGE<br/>بدونها لا يُحجز موعد — THERAPIST_SERVICE_MISMATCH"]:::one
+  TEAM["/site/team<br/>SITE.EDIT — رئيس وتفصيل"]:::one
+  LIVEV["/sessions/:sessionId/live<br/>LIVE.VIEW — بثّ فقط، لا تسجيل"]:::one
+
+  CH --> CHILD --> CARD
+  TH --> TPROF
+  TH --> TSVC
+  ST --> TEAM
+  SE --> LIVEV
+
+  ACC["/access<br/>PORTAL.VIEW<br/>أي شاشة تحتاج أي صلاحية — ليست إدارة مستخدمين"]:::sys
+  NPS["/satisfaction<br/>CATALOG.MANAGE"]:::sys
+  LOG["/ops-log<br/>OPS.VIEW"]:::sys
+  SET["/settings<br/>CATALOG.MANAGE<br/>قابلة للتحرير — guard_center_settings"]:::sys
+  COMM["/communications<br/>محادثة الأسرة — نفس مكوّن البوّابة"]:::sys
+  DEN["/denied"]:::sys
+
+  SHELL --> ACC & NPS & LOG & SET & COMM
+  SHELL -.->|"الحارس يرفض"| DEN`
+  },
+  {
+    el: 's4', title: '٤ — آلات الحالة', file: 'flow/src/04-state-machines.mmd',
+    sub: 'ثماني آلات محروسة بدوال <code>legal_*_transition</code> — أيّ انتقال غير مرسوم فيها ترفضه القاعدة بالكود المذكور. ويليها ثمانية أعمدة حالة <strong>بلا دالة انتقال</strong>، يحرسها <code>CHECK</code> وحده: تقبل أيّ قيمة من قائمتها، فلا تصمّم عليها قاعدةً لا يفرضها أحد',
+    src: String.raw`%% آلات الحالة الثماني المحروسة — مستخرَجة حرفيًا من دوال legal_*_transition في db/migrations/
+%% القاعدة ٥: الحالات آلات حالة. لا تحديث حرّ لعمود حالة، ولا من مدير المركز.
+%% أي انتقال غير مذكور هنا يرفضه المشغّل في القاعدة بالكود المذكور على كل صندوق.
+%% ---
+%% تنبيه لمن يعدّل هذا الملفّ: لا تترك سطر تعليق فارغًا (%% وحده على السطر).
+%% مُحلّل Mermaid 11 يقرؤه كبداية موجّه (directive) فيفشل المخطّط كلّه بـ
+%% "Expecting 'NEWLINE','SPACE','GRAPH', got 'NODE_STRING'" — والصفحة تعرض
+%% الثلاثة الباقية سليمة، فيبدو الخطأ في المخطّط لا في سطر التعليق.
+%% ---
+%% مراجعة 2026-09-10: «الثماني» صحيحة — وهي كل ما له دالة legal_*_transition.
+%% لكنّ في السكيما ثماني أعمدة حالة أخرى محكومة بـCHECK وحده بلا دالة انتقال،
+%% وكانت غائبة عن هذا المخطّط تمامًا. أُضيفت في المجموعة الأخيرة بلون مختلف:
+%% الفرق ليس شكليًّا — المحروسة ترفض الانتقال غير الشرعي، وغير المحروسة تقبل أي
+%% قيمة من قائمتها. مَن يصمّم شاشة على الثانية يصمّم على قاعدة لا يفرضها أحد.
+flowchart LR
+  classDef start fill:#EDF1E5,stroke:#ADC793,color:#22333A
+  classDef mid   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
+  classDef good  fill:#E4F4EE,stroke:#BEE4D6,color:#1E7259
+  classDef bad   fill:#FAE7E4,stroke:#F2CFC9,color:#A8352B
+  classDef free  fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
+
+  subgraph EN["طلب الالتحاق — 0018 · الرفض HB090"]
+    direction LR
+    e1["NEW"]:::start
+    e2["CONTACTED"]:::mid
+    e3["ASSESSMENT_BOOKED"]:::mid
+    e4["ENROLLED"]:::good
+    e5["REJECTED"]:::bad
+    e6["DUPLICATE"]:::bad
+    e1 --> e2 & e5 & e6
+    e2 --> e3 & e4 & e5 & e6
+    e3 --> e4 & e5
+  end
+
+  subgraph AP["الموعد — 0005 · الرفض HB020"]
+    direction LR
+    a1["BOOKED"]:::start
+    a2["CONFIRMED"]:::mid
+    a3["CHECKED_IN"]:::mid
+    a4["COMPLETED"]:::good
+    a5["CANCELLED"]:::bad
+    a6["NO_SHOW"]:::bad
+    a1 --> a2 & a5 & a6
+    a2 --> a3 & a5 & a6
+    a3 --> a4 & a5
+  end
+
+  subgraph SE["الجلسة — 0005"]
+    direction LR
+    s1["IN_PROGRESS"]:::start
+    s2["COMPLETED"]:::good
+    s3["ABORTED"]:::bad
+    s1 --> s2 & s3
+  end
+
+  subgraph PL["الخطة العلاجية — 0006"]
+    direction LR
+    p1["DRAFT"]:::start
+    p2["ACTIVE"]:::mid
+    p3["COMPLETED"]:::good
+    p4["CANCELLED"]:::bad
+    p1 --> p2 & p4
+    p2 --> p3 & p4
+  end
+
+  subgraph AS["التقييم — 0023"]
+    direction LR
+    t1["DRAFT"]:::start
+    t2["COMPLETED"]:::mid
+    t3["PUBLISHED"]:::good
+    t1 --> t2 --> t3
+    t3 -->|"سحب — يأخذ التوقيع معه"| t2
+    t2 --> t1
+  end
+
+  subgraph IN["الفاتورة — 0008 · الرفض HB050"]
+    direction LR
+    i1["DRAFT"]:::start
+    i2["ISSUED"]:::mid
+    i3["PARTIALLY_PAID"]:::mid
+    i4["PAID"]:::good
+    i5["CANCELLED"]:::bad
+    i1 --> i2 & i5
+    i2 --> i3 & i4 & i5
+    i3 --> i4 & i5
+  end
+
+  subgraph WL["قائمة الانتظار — 0022"]
+    direction LR
+    w1["WAITING"]:::start
+    w2["OFFERED"]:::mid
+    w3["BOOKED"]:::good
+    w4["CANCELLED"]:::bad
+    w5["EXPIRED"]:::bad
+    w1 --> w2 & w4 & w5
+    w2 --> w3 & w4 & w5
+    w2 -->|"عرض لاغٍ — يحتفظ بدوره"| w1
+  end
+
+  subgraph RQ["طلب وليّ الأمر — 0007"]
+    direction LR
+    r1["NEW"]:::start
+    r2["ACCEPTED"]:::good
+    r3["REJECTED"]:::bad
+    r1 --> r2 & r3
+  end
+
+  subgraph FREE["أعمدة حالة بلا دالة انتقال — CHECK وحده يحرسها"]
+    direction LR
+    f1["children<br/>ACTIVE · INACTIVE<br/>GRADUATED · WITHDRAWN"]:::free
+    f2["child_packages<br/>ACTIVE · EXHAUSTED<br/>EXPIRED · CANCELLED<br/>expire_packages تعلّم"]:::free
+    f3["plan_goals<br/>OPEN · MET · DROPPED"]:::free
+    f4["progress_reports · session_notes<br/>DRAFT · PUBLISHED<br/>publish_* هي البوّابة"]:::free
+    f5["staff_profiles<br/>DRAFT · PUBLISHED · WITHDRAWN<br/>النشر يحتاج موافقة الأخصائي"]:::free
+    f6["therapists<br/>ACTIVE · ON_LEAVE · RESIGNED"]:::free
+    f7["users<br/>ACTIVE · SUSPENDED · LOCKED<br/>القفل من عدّاد المحاولات"]:::free
+    f8["cameras<br/>ONLINE · OFFLINE<br/>FAULT · DISABLED"]:::free
+  end`
+  }
+];
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: "'IBM Plex Sans Arabic','Segoe UI',sans-serif",
+  themeVariables: {
+    background: '#FBF7F0',
+    primaryColor: '#FFFFFF',
+    primaryTextColor: '#22333A',
+    primaryBorderColor: '#E8E1D4',
+    lineColor: '#2A7680',
+    fontSize: '13px',
+    clusterBkg: '#FBF7F0',
+    clusterBorder: '#E8E1D4'
+  },
+  flowchart: { htmlLabels: true, curve: 'basis', padding: 14 }
+});
+
+for (const d of DIAGRAMS) {
+  const host = document.getElementById(d.el);
+  host.innerHTML = `
+    <h2>${d.title}</h2>
+    <p class="sub">${d.sub}</p>
+    <div class="bar">
+      <button data-copy-svg="${d.el}">نسخ الـ SVG</button>
+      <button data-copy-src="${d.el}">نسخ مصدر Mermaid</button>
+    </div>
+    <!-- dir="ltr" ضروري لا تجميلي: الصفحة rtl، والشرطة المائلة محرف محايد،
+         فتُنقل إلى آخر السطر بصريًّا ويصير "/children" هو "children/". كل عقدة في
+         هذين المخطّطين تبدأ بمسار، فكلّها كانت تُقرأ مقلوبة. -->
+    <div class="canvas" id="c-${d.el}" dir="ltr"></div>
+    <details>
+      <summary>المصدر — ${d.file}</summary>
+      <pre id="p-${d.el}"></pre>
+    </details>`;
+  document.getElementById('p-' + d.el).textContent = d.src;
+  try {
+    const { svg } = await mermaid.render('m-' + d.el, d.src);
+    const host = document.getElementById('c-' + d.el);
+    host.innerHTML = svg;
+    /* Mermaid يكتب `style="max-width:<الطبيعي>px"` على الـ svg ويترك width بـ100%،
+       فالمخطّط يتمدّد أو ينضغط مع العمود. نثبّته على مقاس viewBox الطبيعي حتى يبقى
+       النصّ بحجمه، والحاوية هي التي تُمرَّر. */
+    const s = host.querySelector('svg'), vb = s.viewBox.baseVal;
+    s.removeAttribute('style');
+    s.setAttribute('width', Math.ceil(vb.width));
+    s.setAttribute('height', Math.ceil(vb.height));
+  } catch (e) {
+    document.getElementById('c-' + d.el).innerHTML =
+      `<div class="err">تعذّر رسم المخطّط — ${String(e).slice(0, 300)}<br>
+       المصدر سليم في <code>${d.file}</code>، والغالب أنّ الاتّصال بالإنترنت مقطوع
+       فلم تُحمَّل مكتبة Mermaid.</div>`;
+  }
+}
+
+const flash = (btn, text) => {
+  const old = btn.textContent;
+  btn.textContent = text; btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1400);
+};
+
+document.addEventListener('click', async (ev) => {
+  const b = ev.target.closest('button');
+  if (!b) return;
+
+  if (b.dataset.copySvg) {
+    const svg = document.getElementById('c-' + b.dataset.copySvg).querySelector('svg');
+    if (!svg) return;
+    await navigator.clipboard.writeText(new XMLSerializer().serializeToString(svg));
+    flash(b, 'نُسخ — الصقه في Figma');
+  }
+
+  if (b.dataset.copySrc) {
+    await navigator.clipboard.writeText(document.getElementById('p-' + b.dataset.copySrc).textContent);
+    flash(b, 'نُسخ المصدر');
+  }
+
+});
+</script>
+</body>
+</html>

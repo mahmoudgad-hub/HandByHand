@@ -1,0 +1,20 @@
+import {Component,Input,OnChanges,inject,signal,DestroyRef} from '@angular/core';
+import {HttpClient,HttpParams} from '@angular/common/http';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {HBH_CONFIG} from '@hbh/shared/config/app-config';
+import {FormatService} from '@hbh/shared/format/format.service';
+@Component({selector:'hbh-billing-ledger',template: `
+<section class="ledger"><form (submit)="$event.preventDefault();page.set(1);load()"><input aria-label="البحث بالاسم أو البيان" type="search" placeholder="ابحث بالاسم أو البيان" maxlength="100" [value]="query()" (input)="query.set($any($event.target).value)"><button class="hbh-btn" type="submit">بحث</button></form>
+@if(loading()){<p>جارٍ التحميل…</p>}@else if(failed()){<p role="alert">تعذر تحميل البيانات.</p><button class="hbh-btn" (click)="load()">إعادة المحاولة</button>}@else{
+<div class="table-wrap"><table><thead><tr>@for(col of columns();track col.key){<th>{{col.label}}</th>}</tr></thead><tbody>@for(row of rows();track row['id']){<tr>@for(col of columns();track col.key){<td>{{cell(row,col.key)}}</td>}</tr>}@empty{<tr><td [attr.colspan]="columns().length">لا توجد نتائج مطابقة.</td></tr>}</tbody></table></div>
+<footer><span>{{total()}} نتيجة · صفحة {{page()}}</span><button class="hbh-btn" [disabled]="page()===1" (click)="move(-1)">السابق</button><button class="hbh-btn" [disabled]="page()*25>=total()" (click)="move(1)">التالي</button></footer>}
+</section>`,styles:[`.ledger{background:white;border:1px solid #dcebef;border-radius:16px;padding:18px}.ledger form,.ledger footer{display:flex;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap}.ledger input{font:inherit;padding:12px;border:1px solid #dcebef;border-radius:10px;min-width:0;flex:1}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:560px}th,td{padding:14px;text-align:start;border-bottom:1px solid #e1edf1}th{background:#f0f9fb}footer span{margin-inline-end:auto}`]})
+export class BillingLedger implements OnChanges {
+ @Input() kind='payments';private http=inject(HttpClient);private base=inject(HBH_CONFIG).apiBaseUrl;private destroy=inject(DestroyRef);private format=inject(FormatService);private version=0;
+ protected rows=signal<Record<string,unknown>[]>([]);protected total=signal(0);protected page=signal(1);protected query=signal('');protected loading=signal(false);protected failed=signal(false);
+ ngOnChanges(){this.page.set(1);this.query.set('');this.load()}
+ protected columns(){return this.kind==='payments'?[{key:'name',label:'الطفل'},{key:'detail',label:'الفاتورة'},{key:'amount',label:'المبلغ'},{key:'status',label:'طريقة الدفع'},{key:'date',label:'تاريخ الدفع'}]:this.kind==='packages'?[{key:'name',label:'الباقة'},{key:'detail',label:'الخدمة'},{key:'amount',label:'السعر'},{key:'sessions',label:'عدد الجلسات'},{key:'validity',label:'الصلاحية بالأيام'}]:[{key:'name',label:'الطفل'},{key:'detail',label:'الباقة'},{key:'sessions',label:'الإجمالي'},{key:'used',label:'المستخدم'},{key:'remaining',label:'المتبقي'},{key:'date',label:'تاريخ الانتهاء'},{key:'status',label:'الحالة'}]}
+ protected cell(row:Record<string,unknown>,key:string){if(key==='amount')return this.format.money(Number(row[key]),String(row['currency']));if(key==='date')return this.format.shortDate(String(row[key]));const labels:Record<string,string>={ACTIVE:'نشطة',EXHAUSTED:'مستهلكة',EXPIRED:'منتهية',CANCELLED:'ملغاة',CASH:'نقدي',CARD:'بطاقة',TRANSFER:'تحويل'};return labels[String(row[key])]||String(row[key]??'—')}
+ protected move(delta:number){this.page.update(p=>p+delta);this.load()}
+ protected load(){const version=++this.version;this.loading.set(true);this.failed.set(false);this.http.get<{rows:Record<string,unknown>[];total:number}>(this.base+'/api/v1/billing/ledger',{params:new HttpParams().set('kind',this.kind).set('q',this.query().trim()).set('page',this.page())}).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:r=>{if(version!==this.version)return;this.rows.set(r.rows);this.total.set(r.total);this.loading.set(false)},error:()=>{if(version!==this.version)return;this.loading.set(false);this.failed.set(true)}})}
+}

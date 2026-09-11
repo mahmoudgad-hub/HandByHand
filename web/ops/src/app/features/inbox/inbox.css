@@ -1,0 +1,72 @@
+.inbox {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.inbox__row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--hbh-line, #e5eae8);
+  border-radius: 14px;
+  background: #fff;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.inbox__row--flat {
+  cursor: default;
+}
+
+.inbox__row:hover:not(.inbox__row--flat) {
+  border-color: var(--hbh-primary, #329c9a);
+}
+
+/* Unread carries a marker AND weight, not colour alone: a difference a
+   person cannot see without colour vision is not a difference. */
+.is-unread .inbox__row {
+  border-inline-start: 4px solid var(--hbh-primary, #329c9a);
+  background: var(--hbh-tint, #f4fbfa);
+}
+
+.is-unread .inbox__t {
+  font-weight: 700;
+}
+
+.inbox__ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--hbh-tint, #eef6f5);
+}
+
+.inbox__b {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.inbox__t {
+  font-size: 14px;
+}
+
+.inbox__s {
+  font-size: 13px;
+  color: var(--hbh-muted, #5f747a);
+}
+
+.inbox__when {
+  font-size: 11px;
+  color: var(--hbh-muted, #5f747a);
+}

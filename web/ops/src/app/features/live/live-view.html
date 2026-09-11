@@ -1,0 +1,75 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <button class="hbh-iconbtn" type="button"
+            [attr.aria-label]="'action.back' | t" (click)="back()">
+      <hbh-icon name="ic-back" />
+    </button>
+    <div>
+      <div class="hbh-pagehead__title">{{ 'live.title' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'live.sub' | t }}</div>
+    </div>
+  </div>
+</div>
+
+@if (opening()) {
+  <div class="hbh-notice">
+    <hbh-icon name="ic-clock" />
+    <div><b>{{ 'live.opening' | t }}</b></div>
+  </div>
+} @else if (errorKey()) {
+  <hbh-error-note [message]="errorKey() | t" [retryLabel]="'action.retry' | t"
+                  (retry)="open()" />
+} @else if (hasPicture()) {
+  <div class="hbh-live">
+    <!-- No controls, and that is the design rather than an omission: a seek
+         bar implies a recording to seek through, and nothing is ever
+         recorded. autoplay+muted because a browser will refuse to start an
+         unmuted video on its own and leave a still frame instead. -->
+    <video class="hbh-live__video" [src]="src()" autoplay muted playsinline></video>
+
+    <div class="hbh-live__side">
+      <div class="hbh-notice">
+        <hbh-icon name="ic-shield" />
+        <div>
+          <b>{{ 'live.noRecording' | t }}</b>
+          <p>{{ 'live.noRecordingNote' | t }}</p>
+        </div>
+      </div>
+
+      <!-- The mark. It writes a clinical note stamped with the offset into
+           this sitting - text inside the note, not a pointer, because there
+           is no recording for it to point into. -->
+      <form class="hbh-live__mark" (submit)="mark($event)">
+        <label class="hbh-fld__l" for="mark">{{ 'live.markLabel' | t }}</label>
+        <div class="hbh-fld__box">
+          <textarea id="mark" rows="3" [value]="markBody()"
+                    (input)="setMark($any($event.target).value)"></textarea>
+        </div>
+        <p class="hbh-fld__hint">{{ 'live.markHint' | t }}</p>
+        <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="submit"
+                [class.is-busy]="saving()" [disabled]="saving() || !markBody().trim()">
+          <hbh-icon name="ic-flag" />
+          {{ (saving() ? 'action.saving' : 'live.mark') | t }}
+        </button>
+      </form>
+
+      @if (marks().length) {
+        <div class="hbh-live__marks">
+          <p class="hbh-card-title">{{ 'live.marksThisSitting' | t }}</p>
+          @for (item of marks(); track item.at + item.body) {
+            <div class="hbh-live__markrow">
+              <span class="hbh-live__at" dir="ltr">{{ item.at }}</span>
+              <span>{{ item.body }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- The design shows who else is watching. There is no endpoint that
+           answers it, and inventing a list of names on a screen about a child
+           in therapy is the last place to guess. Every open IS recorded in
+           the audit log, where the centre can read it. -->
+      <p class="hbh-fld__hint">{{ 'live.whoWatching' | t }}</p>
+    </div>
+  </div>
+}

@@ -1,0 +1,83 @@
+<section class="scr">
+
+  @if (loading()) {
+    <div class="sec"><hbh-skeleton [count]="5" shape="row" /></div>
+  } @else if (failed()) {
+    <!-- FAILURE IS NOT EMPTY. C4's rule, and this screen is the easiest
+         place in the app to break it: a feed that came back empty and a feed
+         that did not come back look identical in the data and must never look
+         identical on the page. A family told "no notifications" when the
+         request failed is a family that stops checking. -->
+    <div class="sec">
+      <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()"
+                      [retryLabel]="'action.retry' | t" (retry)="load()" />
+    </div>
+  } @else if (data(); as feed) {
+
+    @if (feed.rows.length === 0) {
+      <!-- And a POSITIVE empty state. An empty feed is good news - nothing
+           has gone wrong, nothing is waiting - so it does not get the
+           apologetic treatment a failure gets. -->
+      <div class="sec">
+        <hbh-empty-state icon="ic-check-circle" [title]="'notifications.empty' | t"
+                         [note]="'notifications.emptyNote' | t" />
+      </div>
+    } @else {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'notifications.title' | t }}</h2>
+          @if (feed.unread > 0) {
+            <span class="hbh-badge hbh-badge--info">
+              {{ 'notifications.unread' | t: { count: feed.unread } }}
+            </span>
+          }
+        </div>
+
+        <div class="stack">
+          @for (item of feed.rows; track item.id) {
+            <!-- A button, not a link, and not a div.
+                 A button because some of these lead nowhere - SESSION_STARTED
+                 has no screen to open - and a link that navigates to the page
+                 it is already on is a dead control the size of a row. The
+                 handler decides; the markup does not promise. -->
+            <button class="row nrow" type="button"
+                    [class.nrow--unread]="!item.read"
+                    (click)="open(item)">
+              <span class="row__ic" [class]="tint(item)">
+                <hbh-icon [name]="icon(item)" />
+              </span>
+              <span class="row__b">
+                <span class="row__t">
+                  @if (!item.read) {
+                    <!-- The dot carries meaning, so it carries a label for a
+                         screen reader too. A coloured dot alone says nothing
+                         to somebody who cannot see it. -->
+                    <span class="nrow__dot" aria-hidden="true"></span>
+                    <span class="hbh-sr">{{ 'notifications.unreadOne' | t }}</span>
+                  }
+                  {{ item.title }}
+                </span>
+                <span class="row__s">
+                  @if (item.childName) {
+                    {{ item.childName }} <s>&middot;</s>
+                  }
+                  {{ format.dayMonthYear(item.createdAt) }}
+                </span>
+                @if (item.body) {
+                  <!-- The body is an invoice line or a decision note. It is
+                       never a clinical note: every notify_* function in the
+                       schema writes a title that says a thing happened and a
+                       link that says where to look. -->
+                  <span class="nrow__body">{{ item.body }}</span>
+                }
+              </span>
+              @if (item.target) {
+                <span class="row__e"><hbh-icon name="ic-chevron" class="row__go" /></span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+  }
+</section>

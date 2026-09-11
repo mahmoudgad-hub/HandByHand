@@ -1,0 +1,106 @@
+{
+  "$description": "Hand By Hand — design tokens مستخرجة حرفيًا من web/portal/src/styles/hbh-shared.css. صيغة Tokens Studio for Figma. أي تعديل هنا يجب أن يبقى مطابقًا لملف الـ CSS: مصدر الحقيقة هو الـ CSS، وهذا الملف نسخة للاستيراد.",
+  "brand": {
+    "teal": {
+      "900": { "value": "#1E5D64", "type": "color", "description": "الشريط الجانبي، الرؤوس الداكنة" },
+      "700": { "value": "#256B73", "type": "color", "description": "hover / pressed" },
+      "600": { "value": "#2A7680", "type": "color", "description": "اللون التفاعلي الأساسي — آمن للنص" },
+      "500": { "value": "#338A93", "type": "color", "description": "لون الهوية للتعبئة — كما في الشعار" },
+      "400": { "value": "#4FA3AC", "type": "color", "description": "accent" },
+      "300": { "value": "#7FC5CE", "type": "color", "description": "مقروء على الشريط الداكن" },
+      "100": { "value": "#DEEEF0", "type": "color", "description": "tint" }
+    },
+    "green": {
+      "600": { "value": "#5F7A45", "type": "color", "description": "آمن للنص" },
+      "500": { "value": "#7E9C60", "type": "color", "description": "لون الهوية للتعبئة" },
+      "300": { "value": "#ADC793", "type": "color" },
+      "100": { "value": "#EDF1E5", "type": "color" }
+    },
+    "coral": {
+      "600": { "value": "#C4543F", "type": "color", "description": "آمن للنص" },
+      "500": { "value": "#EB7866", "type": "color", "description": "لون الهوية للتعبئة" },
+      "300": { "value": "#F5A392", "type": "color" },
+      "100": { "value": "#FBE6E1", "type": "color" }
+    },
+    "slate": { "value": "#4E5051", "type": "color", "description": "رمادي \"skills center\" في الشعار" }
+  },
+  "surface": {
+    "bg": { "value": "#FAF6EE", "type": "color", "description": "الأرضية الكريمية" },
+    "surface": { "value": "#FFFFFF", "type": "color" },
+    "surface-2": { "value": "#FBF7F0", "type": "color" },
+    "neutral-100": { "value": "#F1ECE1", "type": "color", "description": "chip خامل" },
+    "neutral-200": { "value": "#E3DCCD", "type": "color", "description": "معطّل" },
+    "line": { "value": "#E8E1D4", "type": "color", "description": "كل الحدود" }
+  },
+  "text": {
+    "ink": { "value": "#22333A", "type": "color", "description": "النص الأساسي" },
+    "ink-2": { "value": "#4A5F68", "type": "color" },
+    "muted": { "value": "#4C6069", "type": "color", "description": "نص فقط — لا يُستخدم أبدًا كتعبئة" },
+    "on-dark": { "value": "#FFFFFF", "type": "color" },
+    "on-dark-2": { "value": "#C3DDE3", "type": "color" },
+    "on-dark-3": { "value": "#9CC3CD", "type": "color" },
+    "on-dark-4": { "value": "#7FB3BF", "type": "color" }
+  },
+  "semantic": {
+    "$description": "أزواج: الخلفية -bg مع النص -ink. القيمة العارية هي لون التعبئة (أشرطة، نقاط، مفاتيح) وليست لونًا للنص. الكورال لون هوية عمدًا ولا يُستخدم للخطأ حتى لا يختلط بـ danger.",
+    "success": { "value": "#2F9E7E", "type": "color" },
+    "success-bg": { "value": "#E4F4EE", "type": "color" },
+    "success-line": { "value": "#BEE4D6", "type": "color" },
+    "success-ink": { "value": "#1E7259", "type": "color", "description": "5.12:1 على success-bg" },
+    "progress": { "value": "#C98418", "type": "color" },
+    "progress-bg": { "value": "#FBF0DA", "type": "color" },
+    "progress-line": { "value": "#F0DCB4", "type": "color" },
+    "progress-ink": { "value": "#8A5A0E", "type": "color", "description": "5.24:1 على progress-bg" },
+    "danger": { "value": "#C2453A", "type": "color" },
+    "danger-bg": { "value": "#FAE7E4", "type": "color" },
+    "danger-line": { "value": "#F2CFC9", "type": "color" },
+    "danger-ink": { "value": "#A8352B", "type": "color", "description": "5.49:1 على danger-bg" },
+    "info": { "value": "#2A7680", "type": "color" },
+    "info-bg": { "value": "#DEEEF0", "type": "color" },
+    "info-line": { "value": "#C6E0E7", "type": "color" },
+    "info-ink": { "value": "#276C75", "type": "color", "description": "5.04:1 على info-bg" },
+    "purple": { "value": "#7C6BC4", "type": "color" },
+    "purple-bg": { "value": "#EEEAFA", "type": "color" },
+    "online": { "value": "#7FD4B0", "type": "color" }
+  },
+  "video": {
+    "$description": "أسطح الفيديو — مصغّرات الكاميرات ومشغّل البثّ",
+    "a": { "value": "#256B7C", "type": "color" },
+    "b": { "value": "#14454F", "type": "color" },
+    "c": { "value": "#0E2F37", "type": "color" },
+    "scrim": { "value": "rgba(6,32,38,0.55)", "type": "color" }
+  },
+  "radius": {
+    "sm": { "value": "10", "type": "borderRadius" },
+    "md": { "value": "14", "type": "borderRadius" },
+    "lg": { "value": "20", "type": "borderRadius" }
+  },
+  "shadow": {
+    "card": {
+      "value": [
+        { "color": "rgba(19,78,92,0.05)", "type": "dropShadow", "x": "0", "y": "1", "blur": "2", "spread": "0" },
+        { "color": "rgba(19,78,92,0.07)", "type": "dropShadow", "x": "0", "y": "6", "blur": "18", "spread": "0" }
+      ],
+      "type": "boxShadow"
+    },
+    "lg": {
+      "value": [
+        { "color": "rgba(19,78,92,0.14)", "type": "dropShadow", "x": "0", "y": "10", "blur": "34", "spread": "0" }
+      ],
+      "type": "boxShadow"
+    }
+  },
+  "font": {
+    "body": {
+      "value": "IBM Plex Sans Arabic",
+      "type": "fontFamilies",
+      "description": "احتياطي: Noto Kufi Arabic ← Segoe UI ← system-ui"
+    },
+    "display": {
+      "value": "Noto Kufi Arabic",
+      "type": "fontFamilies",
+      "description": "احتياطي: IBM Plex Sans Arabic ← Segoe UI ← system-ui"
+    }
+  },
+  "$note-for-figma": "الخطّان يُنزّلان من Google Fonts وهما متاحان داخل Figma بنفس الاسم. اضبط اتجاه النص RTL على كل Text layer عربي — Figma لا يستنتجه من المحتوى."
+}

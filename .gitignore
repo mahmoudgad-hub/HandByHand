@@ -1,0 +1,54 @@
+# ---- Go ----
+/api/bin/
+/api/hbhd
+/api/hbhd.exe
+*.test
+*.out
+coverage.*
+
+# ---- Node / Angular ----
+node_modules/
+dist/
+.angular/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# ---- Secrets & local config ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!db/**/*.key.sql
+
+# ---- Tooling ----
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# ---- OS ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- Test output ----
+/tests/e2e/test-results/
+/tests/e2e/playwright-report/
+/tests/**/__snapshots__/*.new
+
+# نسخ احتياطية — لم تعد داخل المشروع أصلًا (خارج OneDrive)
+/backups/
+
+# ---- بيانات شخصية — نُقلت خارج الشجرة (HBH-001) ----
+# سِيَر ذاتية وأرقام هواتف وصور أطفال بأسمائهم. مكانها الآن ~/hbh-inbox/
+# خارج أي مجلّد مزامنة، مثل /backups/ تمامًا.
+#
+# والأسماء تبقى هنا بعد النقل عن قصد: مجلّد يُعاد إنشاؤه بالاسم نفسه
+# — بسحب من واتساب أو نسخ من العميل — لا يدخل التاريخ بصمت. ودخولها
+# تاريخ git مرّة واحدة يعني بقاءها فيه، فالاستبعاد يسبق `git init`.
+/gallery/
+/whatsapp/
+/Image/
+/hbh-inbox/

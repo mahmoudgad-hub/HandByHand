@@ -1,0 +1,39 @@
+{
+  "name": "hbh-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hand By Hand - Angular workspace: parent portal and ops console, sharing web/shared.",
+  "scripts": {
+    "start": "ng serve portal",
+    "start:ops": "ng serve ops",
+    "build": "ng build portal && ng build ops",
+    "watch": "ng build --watch --configuration development",
+    "_comment:test": "Use scripts/web.sh test. `ng test` reports TOTAL: 0 SUCCESS and exits 0 for a project with no specs - the console had none for its whole life and npm test said passed. The guard that refuses a run that runs nothing lives there, because @angular/build:karma ignores failOnEmptyTestSuite.",
+    "test": "echo \"use: bash scripts/web.sh test\" && exit 1",
+    "lint": "ng lint"
+  },
+  "dependencies": {
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.6.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^20.0.0",
+    "@angular/cli": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.4.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "typescript": "~5.8.0"
+  }
+}

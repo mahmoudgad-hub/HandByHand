@@ -1,0 +1,15 @@
+/* =====================================================================
+ * The loading overlay.
+ *
+ * IN A FILE, NOT AN INLINE <style> BLOCK. The site is served with
+ * Content-Security-Policy: style-src 'self' (site.native.mjs and the
+ * nginx block), so an inline <style> is dropped in full and the
+ * overlay renders with no styling at all - unpositioned, unsized,
+ * as plain content at the top of the page.
+ *
+ * It looked fine only because loader.js sets the `hidden` attribute
+ * and reference.css carries [hidden]{display:none!important}. The
+ * design was dead; the element was merely invisible. The same rule
+ * blocks inline style="..." attributes - set a class, not a style.
+ * ===================================================================== */
+.site-loader{display:none}.site-loading .site-loader{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:#f6fbf9;font-family:Arial,sans-serif;color:#086576}.site-loader img{width:min(260px,65vw);height:auto;mix-blend-mode:multiply}.site-loader__ring{width:50px;height:50px;border:4px solid #dcefeb;border-top-color:#0099a5;border-right-color:#ff7968;border-bottom-color:#91bd70;border-radius:50%;animation:site-loader-spin .9s linear infinite}.site-loader p{font-size:15px;margin:0}.site-loader[hidden]{display:none!important}@keyframes site-loader-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.site-loader__ring{animation:none}}

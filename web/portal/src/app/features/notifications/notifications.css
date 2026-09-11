@@ -1,0 +1,47 @@
+/* The feed rides on .row, which the whole portal already uses for a list
+   item. What is added here is only what a notification has and a list row
+   does not: an unread mark, and a body line under the meta. */
+
+.nrow {
+  inline-size: 100%;
+  text-align: start;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* UNREAD IS A LEADING EDGE, NOT A BACKGROUND WASH.
+   A tinted row reads as "selected" or "warning" depending on the tint, and
+   twenty of them read as a page that is shouting. A 3px edge on the start
+   side is unambiguous, survives dark backgrounds, and costs no contrast on
+   the text itself. `inset-inline-start` rather than `left`, because this
+   interface is right-to-left. */
+.nrow--unread {
+  border-inline-start: 3px solid #2f6f8f;
+}
+
+.nrow__dot {
+  display: inline-block;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: #2f6f8f;
+  margin-inline-end: 6px;
+  vertical-align: middle;
+}
+
+.nrow__body {
+  display: block;
+  margin-block-start: 4px;
+  font-size: .9rem;
+  color: #55606a;
+  /* Two lines at most. An invoice description can run long and a feed where
+     one item is six lines tall stops being a feed. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.nrow:hover { background: #f6f8f9; }
+.nrow:focus-visible { outline: 2px solid #2f6f8f; outline-offset: 2px; }

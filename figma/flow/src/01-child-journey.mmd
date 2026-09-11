@@ -1,0 +1,66 @@
+%% رحلة الطفل — من طلب الالتحاق إلى التقرير والفاتورة
+%% المصدر: docs/architect/02-new-child-flow.md + db/migrations/0005,0018 + api/internal/http/server.go
+%% العُقد الكورالية الثلاث = الحلقات المقطوعة: مبنيّة في القاعدة، بلا مسار API.
+flowchart TB
+  classDef stage  fill:#FFFFFF,stroke:#E8E1D4,stroke-width:1px,color:#22333A
+  classDef entry  fill:#EDF1E5,stroke:#ADC793,stroke-width:1px,color:#22333A
+  classDef broken fill:#FBE6E1,stroke:#EB7866,stroke-width:2px,color:#C4543F
+  classDef money  fill:#DEEEF0,stroke:#C6E0E7,stroke-width:1px,color:#22333A
+
+  subgraph S1["١ — الالتحاق"]
+    direction RL
+    A1["طلب التحاق<br/>POST /enrolments · بلا مصادقة<br/>NEW"]
+    A2["تواصل الاستقبال<br/>PATCH /enrolments/{id}<br/>CONTACTED"]
+    A3["حجز تقييم — اختياري<br/>ASSESSMENT_BOOKED"]
+    A4["التحويل<br/>POST /enrolments/{id}/convert<br/>ENROLLED"]
+    A1 --> A2 --> A3 --> A4
+    A2 -.->|"بلا تقييم"| A4
+  end
+
+  subgraph S2["٢ — التأسيس"]
+    direction RL
+    B1["ملفّ طفل + وليّ أمر<br/>hbh.convert_enrolment<br/>رقم طفل من next_number"]
+    B2["حساب دخول للأسرة<br/>لا مسار — الحلقة ١"]
+    B3["إسناد لأخصائي — caseload<br/>لا مسار — الحلقة ٢"]
+    B4["خطة وأهداف<br/>قراءة فقط — الحلقة ٣"]
+    B1 --> B2 --> B3 --> B4
+  end
+
+  subgraph S3["٣ — التشغيل اليومي"]
+    direction RL
+    C1["فحص الفتحة<br/>POST /appointments/validate"]
+    C2["الحجز<br/>POST /appointments<br/>BOOKED"]
+    C3["تأكيد ثم حضور<br/>PATCH /appointments/{id}/status<br/>CONFIRMED → CHECKED_IN"]
+    C4["بدء الجلسة<br/>POST /appointments/{id}/session<br/>IN_PROGRESS"]
+    C5["بثّ مباشر<br/>POST /sessions/{id}/stream<br/>بموافقة LIVE_VIEW فقط"]
+    C1 --> C2 --> C3 --> C4 --> C5
+  end
+
+  subgraph S4["٤ — التوثيق"]
+    direction RL
+    D1["إغلاق الجلسة<br/>PATCH /sessions/{id}/close<br/>COMPLETED"]
+    D2["ملاحظة الجلسة<br/>PUT /sessions/{id}/note<br/>DRAFT"]
+    D3["نشر الملاحظة<br/>POST /notes/{id}/publish<br/>PUBLISHED"]
+    D4["قياس التقدّم<br/>measurements على الهدف"]
+    D5["التقرير ونشره<br/>POST /reports/{id}/publish<br/>لقطة jsonb — D-16"]
+    D1 --> D2 --> D3 --> D4 --> D5
+  end
+
+  subgraph S5["٥ — المال والرضا"]
+    direction RL
+    E1["بيع باقة<br/>POST /children/{id}/packages<br/>ACTIVE"]
+    E2["فاتورة<br/>create_invoice → add_line → issue<br/>DRAFT → ISSUED"]
+    E3["دفعة<br/>PARTIALLY_PAID → PAID"]
+    E4["استبيان الرضا<br/>GET /nps/due · POST /nps/{id}/response"]
+    E1 --> E2 --> E3 --> E4
+  end
+
+  A4 --> B1
+  B4 --> C1
+  C5 --> D1
+  D5 --> E1
+
+  class A1 entry
+  class A2,A3,A4,B1,C1,C2,C3,C4,C5,D1,D2,D3,D4,D5 stage
+  class B2,B3,B4 broken
+  class E1,E2,E3,E4 money

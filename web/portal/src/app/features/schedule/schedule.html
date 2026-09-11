@@ -1,0 +1,54 @@
+<section class="scr">
+
+  <div class="seg" role="tablist">
+    <button class="seg__i" type="button" role="tab"
+            [class.is-on]="scope() === 'upcoming'"
+            [attr.aria-selected]="scope() === 'upcoming'"
+            (click)="select('upcoming')">
+      {{ 'schedule.upcoming' | t }}
+    </button>
+    <button class="seg__i" type="button" role="tab"
+            [class.is-on]="scope() === 'past'"
+            [attr.aria-selected]="scope() === 'past'"
+            (click)="select('past')">
+      {{ 'schedule.past' | t }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <hbh-skeleton [count]="4" shape="row" />
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                    (retry)="load()" />
+  } @else if (groups().length === 0) {
+    <hbh-empty-state icon="ic-calendar"
+                     [title]="(scope() === 'upcoming'
+                               ? 'schedule.emptyUpcoming' : 'schedule.emptyPast') | t"
+                     [note]="'schedule.emptyNote' | t" />
+  } @else {
+    @for (group of groups(); track group.label) {
+      <p class="grp">{{ group.label }}</p>
+      <div class="stack">
+        @for (appointment of group.items; track appointment.id) {
+          @if (appointment.status === 'IN_PROGRESS') {
+            <!-- A session running now is the one row that leads somewhere:
+                 the live screen. Whether it opens is still the server's call. -->
+            <a hbhAppointmentRow [appointment]="appointment" routerLink="/live"></a>
+          } @else {
+            <div hbhAppointmentRow [appointment]="appointment"></div>
+          }
+        }
+      </div>
+    }
+  }
+
+  <div class="sec">
+    <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/requests">
+      <hbh-icon name="ic-send" />
+      {{ 'schedule.requestChange' | t }}
+    </a>
+    <p class="fld__hint" style="text-align:center">
+      {{ 'schedule.requestNote' | t }}
+    </p>
+  </div>
+</section>

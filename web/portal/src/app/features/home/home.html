@@ -1,0 +1,296 @@
+<section class="scr parent-home">
+
+  <!-- Switching child returns to the welcome screen, which is the only place
+       a child is chosen. -->
+  <a class="cbar" routerLink="/welcome">
+    <span class="cbar__ph"><hbh-icon name="ic-user" /></span>
+    <span class="cbar__b">
+      <span class="cbar__n">{{ child()?.fullName }}</span>
+      <span class="cbar__m">
+        {{ child()?.birthDate | hbhAge }}
+        &middot; {{ child()?.childNo }}
+      </span>
+    </span>
+    <span class="cbar__sw">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.switchChild' | t }}
+    </span>
+  </a>
+
+  @if (loading()) {
+    <div class="sec"><hbh-skeleton [count]="1" shape="card" /></div>
+    <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
+  } @else if (failed()) {
+    <div class="sec">
+      <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                      (retry)="load()" />
+    </div>
+  } @else if (data(); as summary) {
+
+  <!-- Two columns on a wide screen, one on a phone. The grid is the one
+       hbh-parent.css already defines for this portal, and it collapses on
+       its own at 1040px - so there is no second set of breakpoints here to
+       drift out of step with it.
+
+       What goes where is not arbitrary: the left column is what a parent
+       came to do today - watch, and know when the next session is - and the
+       right column is what they came to check. -->
+  <div class="hbh-pgrid">
+  <div class="hbh-pcol">
+
+    <!-- Next session -->
+    <div class="sec">
+      @if (summary.nextAppointment; as next) {
+        <div class="next">
+          <p class="next__l">{{ 'home.nextSession' | t }}</p>
+          <div class="next__g">
+            <span class="next__r">
+              <hbh-icon name="ic-calendar" />
+              <b>{{ whenLabel(next) }}</b>
+            </span>
+            <span class="next__r">
+              <hbh-icon name="ic-clock" />
+              <b dir="ltr">{{ format.time(next.startsAt) }}</b>
+            </span>
+            <span class="next__r">
+              <hbh-icon name="ic-activity" />
+              <span>{{ next.serviceName }}</span>
+            </span>
+            <span class="next__r">
+              <hbh-icon name="ic-user-check" />
+              <span>{{ next.therapistName }}</span>
+            </span>
+          </div>
+          <div class="next__f">
+            @if (summary.live) {
+              <a class="hbh-btn hbh-btn--light" routerLink="/live">
+                <hbh-icon name="ic-cast" />
+                {{ 'home.watchLive' | t }}
+              </a>
+            }
+            <a class="hbh-btn hbh-btn--ghost" routerLink="/requests">
+              {{ 'home.requestChange' | t }}
+            </a>
+          </div>
+        </div>
+      } @else {
+        <!-- No appointment, and something to DO about it. The screen said
+             "ask reception for an appointment" and offered no way to ask;
+             the only button anywhere near it was "change or cancel an
+             appointment", which is the one action that makes no sense when
+             there are none. A callback request is a real thing this portal
+             can send, so that is what is offered. -->
+        <div class="home-appointment-empty">
+        <h2 class="sec__t">{{ 'home.nextSession' | t }}</h2>
+        <div class="note note--info">
+          <hbh-icon name="ic-calendar" />
+          <span>{{ 'home.noNextSession' | t }}</span>
+        </div>
+        <a class="hbh-btn hbh-btn--primary hbh-btn--block" routerLink="/requests"
+           [queryParams]="{ kind: 'CALLBACK' }" style="margin-top:12px">
+          <hbh-icon name="ic-phone" />
+          {{ 'home.askForCallback' | t }}
+        </a>
+        </div>
+      }
+    </div>
+
+    <!-- Live. Both states carry the same promise: live only, never recorded. -->
+    <div class="sec">
+      @if (summary.live; as live) {
+        <div class="livec">
+          <span class="livec__b">
+            <span class="livec__f">
+              <span class="hbh-live-dot"></span> {{ 'live.now' | t }}
+            </span>
+            <p class="livec__s">{{ live.roomName }} &middot; {{ live.serviceName }}</p>
+            <p class="livec__n">{{ 'live.noRecording' | t }}</p>
+          </span>
+          <a class="hbh-btn hbh-btn--primary" routerLink="/live"
+             [attr.aria-label]="'home.watchLive' | t">
+            <hbh-icon name="ic-play" />
+          </a>
+        </div>
+      } @else {
+        <!-- ONE LINE when there is nothing to watch, which is nearly always.
+             This was a full card with a heading, two paragraphs and a big
+             disabled play button - the largest thing on the screen, saying
+             nothing, every day between sessions. A dead control that size
+             invites a tap and then refuses it. The card comes back, in full,
+             the moment there is a stream. -->
+        <p class="livec__idle">
+          <hbh-icon name="ic-cast" />
+          <span>{{ 'live.opensAutomatically' | t }}</span>
+        </p>
+      }
+    </div>
+
+    <!-- FOLLOWING THE CHILD. Second, after the next appointment and before
+         anything asked of the parent, because it is what the portal is for:
+         the screen could say when the next session was and what was owed,
+         and could not say whether the last one had happened.
+
+         Both halves are real reads this screen already made. Neither draws
+         when there is nothing: a child with no completed session and a
+         therapist who has published nothing produce no section at all,
+         rather than a card apologising for itself. -->
+    @if (summary.lastSession || summary.latestUpdate) {
+      <div class="sec">
+        <div class="sec__head"><h2 class="sec__t">{{ 'home.following' | t }}</h2></div>
+        <div class="stack">
+          @if (summary.lastSession; as last) {
+            <div class="row">
+              <span class="row__ic hbh-t--green"><hbh-icon name="ic-check-circle" /></span>
+              <span class="row__b">
+                <span class="row__t">{{ 'home.lastSession' | t }}</span>
+                <span class="row__s">
+                  {{ format.dayMonthYear(last.at) }}
+                  @if (last.serviceName) {
+                    <s>&middot;</s> {{ last.serviceName }}
+                  }
+                  @if (last.therapistName) {
+                    <s>&middot;</s> {{ last.therapistName }}
+                  }
+                </span>
+              </span>
+            </div>
+          }
+
+          @if (summary.latestUpdate; as update) {
+            <a class="row" routerLink="/reports">
+              <span class="row__ic hbh-t--blue"><hbh-icon name="ic-file" /></span>
+              <span class="row__b">
+                <span class="row__t">{{ update.title }}</span>
+                <span class="row__s">
+                  {{ update.authorName }}
+                  <s>&middot;</s> {{ format.dayMonthYear(update.publishedAt) }}
+                </span>
+              </span>
+              <span class="row__e"><hbh-icon name="ic-chevron" class="row__go" /></span>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- WHAT IS ASKED OF THE PARENT. Third: after the child's news, before
+         the money. One activity, not the whole programme - the list is a tap
+         away and a screen that reprints it here becomes two screens to keep
+         in step. -->
+    @if (summary.todayActivity; as activity) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'home.todayActivity' | t }}</h2>
+          <a class="sec__more" routerLink="/activities">{{ 'action.all' | t }}</a>
+        </div>
+        <a class="row" routerLink="/activities">
+          <span class="row__ic hbh-t--amber"><hbh-icon name="ic-puzzle" /></span>
+          <span class="row__b">
+            <span class="row__t">{{ activity.title }}</span>
+            @if (activity.instructions) {
+              <span class="row__s">{{ activity.instructions }}</span>
+            }
+          </span>
+          <span class="row__e"><hbh-icon name="ic-chevron" class="row__go" /></span>
+        </a>
+      </div>
+    }
+
+  </div><!-- /left column -->
+
+  <div class="hbh-pcol">
+
+    <!-- Upcoming -->
+    @if (summary.upcoming.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'home.upcoming' | t }}</h2>
+          <a class="sec__more" routerLink="/schedule">{{ 'action.all' | t }}</a>
+        </div>
+        <div class="stack">
+          @for (appointment of summary.upcoming; track appointment.id) {
+            <a hbhAppointmentRow [appointment]="appointment" routerLink="/schedule"></a>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Outstanding balance.
+         The unavailable case comes FIRST, because `dueAmount > 0` is false
+         for null and the card would otherwise vanish silently - a family
+         with money owing seeing no money card at all. -->
+    @if (summary.balanceUnavailable) {
+      <div class="sec">
+        <div class="due">
+          <span>
+            <span class="due__l">{{ 'billing.outstanding' | t }}</span>
+            <span class="due__a due__a--missing">{{ 'billing.balanceUnavailable' | t }}</span>
+          </span>
+          <a class="hbh-btn hbh-btn--ghost" routerLink="/billing">
+            {{ 'action.details' | t }}
+          </a>
+        </div>
+      </div>
+    } @else if (summary.dueAmount !== null && summary.dueAmount > 0) {
+      <div class="sec">
+        <div class="due">
+          <span>
+            <span class="due__l">{{ 'billing.outstanding' | t }}</span>
+            <span class="due__a" dir="ltr">
+              {{ summary.dueAmount | hbhMoney: summary.currency }}
+            </span>
+          </span>
+          <a class="hbh-btn hbh-btn--primary" routerLink="/billing">
+            {{ 'action.details' | t }}
+          </a>
+        </div>
+      </div>
+    }
+
+    <!-- Shortcuts. MOVED HERE from the left column, and the reason is the
+         shape of the page on a laptop rather than taste: the left column had
+         five sections and the right had two, so the right ended a screenful
+         short and the page finished in a band of empty cream. They belong
+         here on their own terms too - this column is what a parent came to
+         check, and every shortcut leads to exactly that. On a phone the
+         columns are one, and this simply follows the balance as it always
+         did. -->
+    <div class="sec home-shortcuts">
+      <div class="sec__head"><h2 class="sec__t">{{ 'home.shortcuts' | t }}</h2></div>
+      <div class="quick">
+        <a class="quick__i" routerLink="/progress">
+          <hbh-icon name="ic-target" />
+          {{ 'nav.progress' | t }}
+        </a>
+        <a class="quick__i" routerLink="/activities">
+          <hbh-icon name="ic-puzzle" />
+          {{ 'nav.activities' | t }}
+          @if (summary.openActivityCount > 0) {
+            <span class="hbh-badge hbh-badge--progress">
+              {{ summary.openActivityCount | hbhCount }}
+            </span>
+          }
+        </a>
+        <a class="quick__i" routerLink="/reports">
+          <hbh-icon name="ic-file" />
+          {{ 'nav.reports' | t }}
+          @if (summary.unreadReportCount > 0) {
+            <span class="hbh-badge hbh-badge--info">{{ 'label.new' | t }}</span>
+          }
+        </a>
+        <a class="quick__i" routerLink="/billing">
+          <hbh-icon name="ic-receipt" />
+          {{ 'nav.billing' | t }}
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /right column -->
+  </div><!-- /hbh-pgrid -->
+
+  <!-- The satisfaction question used to sit here, under the schedule and the
+       billing panel. It now opens as a dialog from the shell, so it is asked
+       once at the door rather than a third of the way down a page - and so it
+       is asked whichever screen the parent lands on, not only this one. -->
+  }
+</section>

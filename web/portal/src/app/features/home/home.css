@@ -1,0 +1,4 @@
+
+/* A figure that did not load. Deliberately not styled like a number:
+   it is a sentence, and it must not be mistaken for an amount. */
+.due__a--missing { font-size: .95rem; font-weight: 500; color: #8a5100; }

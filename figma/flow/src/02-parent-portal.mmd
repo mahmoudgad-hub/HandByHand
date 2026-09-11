@@ -1,0 +1,43 @@
+%% بوّابة وليّ الأمر — خريطة الملاحة
+%% المصدر: web/portal/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% لا مسار في هذا التطبيق يحمل معرّف طفل: الطفل المختار يعيش في ChildContextService،
+%% لأنّ تعديل شريط العنوان لا يجوز أن يوحي بأنّه يغيّر ما يُرى — الخادم هو من يقرّر.
+flowchart TB
+  classDef public fill:#EDF1E5,stroke:#ADC793,color:#22333A
+  classDef auth   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
+  classDef tab    fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
+  classDef guard  fill:#FBF0DA,stroke:#F0DCB4,color:#8A5A0E
+
+  SITE["الموقع التعريفي العام<br/>site/ — بلا مصادقة ولا API"]:::public
+  APPLY["/apply<br/>الطريق الوحيد بلا حارس<br/>الكتابة الوحيدة بلا مصادقة في الخدمة"]:::public
+
+  LOGIN["/login<br/>guestOnlyGuard"]:::auth
+  OTP["/login/otp<br/>رمز لمرّة واحدة"]:::auth
+  G1{{"authGuard"}}:::guard
+  WELCOME["/welcome<br/>اختيار الطفل"]:::auth
+  G2{{"childSelectedGuard"}}:::guard
+
+  SHELL["الهيكل — الرأس وشريط التبويبات"]:::auth
+
+  HOME["/home<br/>تبويب"]:::tab
+  SCHED["/schedule<br/>تبويب"]:::tab
+  PROG["/progress<br/>تبويب"]:::tab
+  ACT["/activities<br/>تبويب — البرنامج المنزلي"]:::tab
+  LIVE["/live<br/>بثّ الجلسة — عودة إلى /home"]:::auth
+  REPS["/reports<br/>تبويب"]:::tab
+  REP["/reports/:reportId<br/>عودة إلى /reports لا إلى /home"]:::auth
+  BILL["/billing<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
+  REQ["/requests<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
+  THER["/therapists/:therapistId<br/>المعرّف في المسار — عضو طاقم لا بيانات طفل"]:::auth
+  PROF["/profile<br/>تبويب"]:::tab
+  COMM["/communications<br/>تبويب — محادثة الأسرة والمركز<br/>لا يحتاج طفلًا مختارًا"]:::tab
+
+  SITE -->|"portalBaseUrl في site/config.js"| APPLY
+  APPLY -->|"بعد القبول والتحويل"| LOGIN
+  LOGIN --> OTP --> G1 --> WELCOME
+  WELCOME -->|"اختيار طفل"| G2
+  G2 --> SHELL
+  SHELL --> HOME & SCHED & PROG & ACT & BILL & REQ & COMM & PROF
+  HOME --> LIVE
+  HOME --> REPS --> REP
+  SCHED -->|"نقر اسم الأخصائي"| THER

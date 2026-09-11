@@ -1,0 +1,135 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'nav.satisfaction' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'nps.sub' | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="4" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (rows().length === 0) {
+  <hbh-empty-state icon="ic-star" [title]="'nps.empty' | t"
+                   [note]="'nps.emptyNote' | t" />
+} @else {
+  <div class="hbh-kpis">
+    @for (tile of tiles(); track tile.key) {
+      <div class="hbh-kpi" [attr.data-metric]="tile.key">
+        <div class="hbh-kpi__top">
+          <span class="hbh-iconbox" [class]="'hbh-iconbox hbh-t--' + tile.tone">
+            <hbh-icon [name]="tile.icon" />
+          </span>
+          <span class="hbh-kpi__label">{{ tile.labelKey | t }}</span>
+        </div>
+        <div class="hbh-kpi__value">{{ tile.value }}</div>
+        @if (tile.foot) {
+          <div class="hbh-kpi__foot">{{ tile.foot }}</div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="hbh-nps-charts">
+    <!-- ============================================================
+         The mean, as a half dial.
+         The band under it never stands alone: the number of answers it
+         rests on is printed with it. "Excellent" off one reply is true
+         of that reply and says nothing about the centre.
+         ============================================================ -->
+<section class="hbh-card rating-summary"><div class="hbh-card-head"><div class="hbh-card-title">مستوى الرضا العام</div></div><div class="rating-body"><span class="rating-trophy" aria-hidden="true">🏆</span><strong>{{ meanBandKey() ? (meanBandKey() | t) : 'لا توجد درجة متاحة' }}</strong><p>{{ basisText() }}</p><div class="rating-stars" aria-hidden="true">@for (star of [1,2,3,4,5]; track star) { <span [class.filled]="meanFraction()*5 >= star">★</span> }</div><small>{{ meanText() }} / 10</small></div></section>
+<section class="hbh-card trend-card"><div class="hbh-card-head"><div class="hbh-card-title">متوسط الدرجة عبر الوقت</div></div><div class="hbh-card-body">
+@if (trend().length) {<svg viewBox="0 0 400 190" class="trend-svg" role="img" aria-label="متوسط الدرجة الشهري من عشرة">
+@for (tick of [0,2,4,6,8,10]; track tick) {<line x1="42" x2="365" [attr.y1]="155-tick*13" [attr.y2]="155-tick*13" stroke="#e3eef3"/><text x="25" [attr.y]="159-tick*13">{{tick}}</text>}
+<polyline [attr.points]="trendLine()" fill="none" stroke="#00889c" stroke-width="2.5"/>
+@for (point of trend(); track point.month) {<circle [attr.cx]="point.x" [attr.cy]="point.y" r="4" fill="#00889c"/><text [attr.x]="point.x" [attr.y]="point.y-9" text-anchor="middle">{{point.score}}</text><text [attr.x]="point.x" y="179" text-anchor="middle">{{point.month}}</text>}
+</svg>} @else {<div class="trend-empty">لا توجد إجابات خلال آخر ٧ أشهر لعرض الرسم.</div>}
+</div></section>
+    <!-- ============================================================
+         How the answers split.
+         The denominator is ANSWERED and nothing else - a share of any
+         other total is a different question wearing the same per cent
+         sign. With no answers there are no percentages at all, because
+         0% of nothing is undefined, not zero.
+         ============================================================ -->
+    <section class="hbh-card">
+      <div class="hbh-card-head">
+        <div class="hbh-card-title">{{ 'nps.split' | t }}</div>
+      </div>
+      <div class="hbh-card-body hbh-nps-split">
+        <svg viewBox="0 0 42 42" class="hbh-donut" role="img"
+             [attr.aria-label]="'nps.split' | t">
+          <circle cx="21" cy="21" r="15.915" fill="none"
+                  stroke="var(--hbh-line)" stroke-width="6" />
+          @for (slice of slices(); track slice.key) {
+            @if (slice.share > 0) {
+              <circle cx="21" cy="21" r="15.915" fill="none"
+                      [attr.stroke]="slice.colour" stroke-width="6"
+                      [attr.stroke-dasharray]="slice.dash"
+                      [attr.stroke-dashoffset]="slice.offset"
+                      transform="rotate(-90 21 21)" />
+            }
+          }
+          <text x="21" y="20.4" text-anchor="middle" class="hbh-donut__num">
+            {{ format.count(answered()) }}
+          </text>
+          <text x="21" y="25" text-anchor="middle" class="hbh-donut__cap">
+            {{ 'nps.answeredTotal' | t }}
+          </text>
+        </svg>
+
+        <ul class="hbh-nps-legend">
+          @for (slice of slices(); track slice.key) {
+            <li>
+              <span class="hbh-nps-dot" [style.background]="slice.colour"></span>
+              <span class="hbh-nps-legend__l">{{ slice.labelKey | t }}</span>
+              <span class="hbh-nps-legend__v" dir="ltr">
+                {{ format.count(slice.count) }}
+                @if (answered() > 0) {
+                  <span class="hbh-muted">({{ sharePercent(slice) }})</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <h2 class="satisfaction-detail-title">تفاصيل رضا الأسر</h2>
+  <div class="hbh-tablewrap">
+    <table class="hbh-table">
+      <thead>
+        <tr>
+          @for (column of columns; track column.key) {
+            <th>{{ column.labelKey | t }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track rowKey(row, $index)) {
+          <tr>
+            @for (column of columns; track column.key) {
+              <!-- Counts and scores are figures and read left to right even
+                   on an Arabic page. -->
+              <td [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Said once, rather than left for a reader to infer from two columns that
+       disagree: these are two different measures of the same answers. -->
+  <p class="hbh-pagehead__sub" style="margin-top:14px">{{ 'nps.note' | t }}</p>
+}

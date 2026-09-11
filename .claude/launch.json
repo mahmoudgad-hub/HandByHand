@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "_comment": "Node does not exist on this machine - it lives in the hbh-web container, which republishes the dev servers on different ports (4200 -> 4210, 4300 -> 4310). These entries carry no command: they attach to the servers the container is already running. Starting them from here would only fail on a missing npm.",
+  "configurations": [
+    {
+      "name": "portal",
+      "url": "http://localhost:4210",
+      "port": 4210
+    },
+    {
+      "name": "ops",
+      "url": "http://localhost:4310",
+      "port": 4310
+    }
+  ]
+}

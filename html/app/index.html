@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hand By Hand — بوابة ولي الأمر</title>
+<link rel="stylesheet" href="../hbh-shared.css">
+<link rel="stylesheet" href="hbh-app.css">
+</head>
+<body class="hbh-app stg">
+<!-- =====================================================================
+     HBH icon sprite — مصدر واحد لكل الأيقونات
+     يُحقن داخل كل صفحة عند علامة ICONS بواسطة build.sh
+     في APEX: ضعه مرة واحدة في Page Template ▸ Body، وليس في كل صفحة.
+     ===================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="ic-grid"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></g>
+    <g id="ic-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g>
+    <g id="ic-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+    <g id="ic-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></g>
+    <g id="ic-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></g>
+    <g id="ic-calendar"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></g>
+    <g id="ic-cal-plus"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></g>
+    <g id="ic-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></g>
+    <g id="ic-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></g>
+    <g id="ic-file"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8M16 17H8"/></g>
+    <g id="ic-clipboard"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></g>
+    <g id="ic-card"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></g>
+    <g id="ic-receipt"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2z"/><path d="M8 8h8M8 12h8"/></g>
+    <g id="ic-money"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></g>
+    <g id="ic-chat"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></g>
+    <g id="ic-settings"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g>
+    <g id="ic-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></g>
+    <g id="ic-help"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></g>
+    <g id="ic-check"><polyline points="20 6 9 17 4 12"/></g>
+    <g id="ic-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></g>
+    <g id="ic-x-circle"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></g>
+    <g id="ic-x"><path d="M18 6 6 18M6 6l12 12"/></g>
+    <g id="ic-clock"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+    <g id="ic-up"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></g>
+    <g id="ic-down"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></g>
+    <g id="ic-warn"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></g>
+    <g id="ic-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></g>
+    <g id="ic-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></g>
+    <g id="ic-arrow"><path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/></g>
+    <g id="ic-back"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></g>
+    <g id="ic-chevron"><polyline points="9 18 15 12 9 6"/></g>
+    <g id="ic-chev-down"><polyline points="6 9 12 15 18 9"/></g>
+    <g id="ic-door"><path d="M3 21h18M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M14 12h.01"/></g>
+    <g id="ic-menu"><path d="M3 6h18M3 12h18M3 18h18"/></g>
+    <g id="ic-list"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></g>
+    <g id="ic-home"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></g>
+    <g id="ic-puzzle"><path d="M9 3a2 2 0 0 1 4 0v1h3a2 2 0 0 1 2 2v3h1a2 2 0 0 1 0 4h-1v3a2 2 0 0 1-2 2h-3v-1a2 2 0 0 0-4 0v1H5a2 2 0 0 1-2-2v-3h1a2 2 0 0 0 0-4H3V6a2 2 0 0 1 2-2h4z"/></g>
+    <g id="ic-shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></g>
+    <g id="ic-cast"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 20h.01"/></g>
+    <g id="ic-plus"><path d="M12 5v14M5 12h14"/></g>
+    <g id="ic-search"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></g>
+    <g id="ic-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></g>
+    <g id="ic-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></g>
+    <g id="ic-camera"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></g>
+    <g id="ic-mic"><rect x="9" y="1" width="6" height="11" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></g>
+    <g id="ic-volume"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></g>
+    <g id="ic-maximize"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></g>
+    <g id="ic-pip"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="6" rx="1"/></g>
+    <g id="ic-flag"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></g>
+    <g id="ic-dots"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></g>
+    <g id="ic-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></g>
+    <g id="ic-target"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></g>
+    <g id="ic-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></g>
+    <g id="ic-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><path d="M12 15V3"/></g>
+    <g id="ic-play"><polygon points="5 3 19 12 5 21 5 3"/></g>
+    <g id="ic-refresh"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></g>
+    <g id="ic-pin"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></g>
+    <g id="ic-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></g>
+    <g id="ic-send"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></g>
+    <g id="ic-mail"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></g>
+    <g id="ic-lock"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g>
+    <g id="ic-trash"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/></g>
+    <g id="ic-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><path d="M12 3v12"/></g>
+    <g id="ic-tag"><path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01"/></g>
+    <g id="ic-sliders"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></g>
+    <g id="ic-db"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></g>
+
+  </defs>
+</svg>
+
+<!-- =====================================================================
+     ديكور العرض — ليس جزءًا من التطبيق. يختفي على الهاتف وفي الطباعة.
+     ===================================================================== -->
+<div class="stg__bar">
+  <span class="stg__brand">
+    <img src="../hbh-logo-mark.png" alt="">
+    <img src="../hbh-logo-wordmark.png" alt="Hand By Hand Skills Center">
+  </span>
+  <span class="stg__tag">بوابة ولي الأمر — نموذج تفاعلي</span>
+  <span class="stg__spacer"></span>
+  <span class="hbh-muted">PostgreSQL · Go · Angular</span>
+</div>
+
+<nav class="stg__nav" id="stgNav"></nav>
+
+<!-- =====================================================================
+     الجهاز
+     ===================================================================== -->
+<div class="dev">
+  <div class="dev__frame">
+    <div class="dev__scr">
+      <div class="pa">
+
+        <!-- ---------- الشريط العلوي ---------- -->
+        <header class="pa__head" id="paHead" hidden>
+          <button class="pa__back" id="paBack" type="button" aria-label="رجوع">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-back"/></svg>
+          </button>
+          <div class="pa__ttl">
+            <div class="pa__title" id="paTitle">الرئيسية</div>
+            <div class="pa__sub" id="paSub"></div>
+          </div>
+          <button class="pa__act" type="button" aria-label="التنبيهات" data-go="requests">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-bell"/></svg>
+            <i></i>
+          </button>
+        </header>
+
+        <!-- ---------- الجسم ---------- -->
+        <main class="pa__body" id="paBody">
+
+<!-- =====================================================================
+     1. تسجيل الدخول
+     ===================================================================== -->
+<section class="scr is-on" id="s-login" data-chrome="none" data-label="الدخول">
+  <div class="auth">
+    <img class="auth__mark" src="../hbh-logo-mark.png" alt="">
+    <h1 class="auth__t">بوابة ولي الأمر</h1>
+    <p class="auth__s">أدخل رقم جوّالك المسجَّل في المركز.<br>سيصلك رمز تحقّق برسالة نصية.</p>
+
+    <div class="auth__form">
+      <div class="fld">
+        <label class="fld__l" for="f-phone">رقم الجوّال</label>
+        <div class="fld__box">
+          <span class="fld__cc">+20</span>
+          <input id="f-phone" type="tel" inputmode="numeric" maxlength="11" value="01001234567" placeholder="01XXXXXXXXX">
+        </div>
+        <p class="fld__hint">الرقم نفسه المسجَّل في ملف الطفل. لو تغيّر، كلّم الاستقبال.</p>
+      </div>
+      <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="button" data-go="otp">
+        إرسال رمز التحقّق
+      </button>
+    </div>
+
+    <p class="priv">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-shield"/></svg>
+      <span>بياناتك وبيانات أطفالك مرئية لك وحدك. لا يصل أي ولي أمر إلى ملف طفل غير أطفاله.</span>
+    </p>
+  </div>
+</section>
+
+<!-- =====================================================================
+     2. رمز التحقّق
+     ===================================================================== -->
+<section class="scr" id="s-otp" data-chrome="none" data-label="رمز التحقّق">
+  <div class="auth">
+    <img class="auth__mark" src="../hbh-logo-mark.png" alt="">
+    <h1 class="auth__t">أدخل رمز التحقّق</h1>
+    <p class="auth__s">أرسلنا رمزًا من ٦ أرقام إلى<br><b dir="ltr">+20 100 123 4567</b></p>
+
+    <div class="auth__form">
+      <div class="otp" id="otpBoxes">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 1">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 2">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 3">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 4">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 5">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="الرقم 6">
+      </div>
+      <div class="otp__foot">
+        <button class="hbh-link" type="button" data-go="login">تغيير الرقم</button>
+        <span>إعادة الإرسال خلال <span class="otp__timer" id="otpTimer">00:47</span></span>
+      </div>
+      <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="button" data-go="welcome" style="margin-top:18px">
+        تأكيد ودخول
+      </button>
+    </div>
+
+    <p class="priv">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clock"/></svg>
+      <span>الرمز صالح ١٥ دقيقة ولمرة واحدة. بعد خمس محاولات خاطئة يُقفل الحساب مؤقتًا.</span>
+    </p>
+  </div>
+</section>
+
+<!-- =====================================================================
+     3. الترحيب واختيار الطفل
+     ===================================================================== -->
+<section class="scr" id="s-welcome" data-chrome="none" data-label="الترحيب">
+  <div style="padding:20px 4px 8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px">
+      <span class="stg__brand"><img src="../hbh-logo-mark.png" alt="" style="width:34px"></span>
+      <button class="cbar__sw" type="button" data-go="login">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+        خروج
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-bottom:22px">
+      <p class="wel__hi">أهلاً بك</p>
+      <h1 class="wel__name">أ. علي محمود</h1>
+      <span class="wel__date">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+        الأربعاء، ٢ سبتمبر ٢٠٢٦
+      </span>
+    </div>
+
+    <div class="sec__head"><h2 class="sec__t">أطفالك</h2><span class="hbh-muted">اختر لعرض الملف</span></div>
+    <div class="stack">
+      <button class="kid kid--live" type="button" data-go="home">
+        <div class="kid__top">
+          <span class="kid__ph kid__ph--g">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+          </span>
+          <span class="kid__id">
+            <span class="kid__name">يوسف علي محمود</span>
+            <span class="kid__meta">٦ سنوات <s>·</s> CH-021 <s>·</s> تخاطب، علاج وظيفي</span>
+          </span>
+          <span class="hbh-badge hbh-badge--success">
+            <span class="hbh-live-dot"></span> جلسة جارية
+          </span>
+        </div>
+        <span class="kid__note">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+          <span>جلسة التخاطب بدأت الآن — <b>البث متاح</b></span>
+          <span class="kid__go">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg>
+          </span>
+        </span>
+      </button>
+
+      <button class="kid" type="button" data-go="home">
+        <div class="kid__top">
+          <span class="kid__ph">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+          </span>
+          <span class="kid__id">
+            <span class="kid__name">ملك علي محمود</span>
+            <span class="kid__meta">٤ سنوات <s>·</s> CH-034 <s>·</s> مهارات</span>
+          </span>
+        </div>
+        <span class="kid__note">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+          <span>الجلسة القادمة <b>الأحد ٦ سبتمبر، ١١:٠٠ ص</b></span>
+          <span class="kid__go">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg>
+          </span>
+        </span>
+      </button>
+    </div>
+
+    <div class="sec">
+      <div class="sec__head"><h2 class="sec__t">مستجدّات</h2></div>
+      <div class="stack">
+        <button class="row" type="button" data-go="reports">
+          <span class="row__ic hbh-t--blue">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg>
+          </span>
+          <span class="row__b">
+            <span class="row__t">تقرير تقدّم جديد</span>
+            <span class="row__s">يوسف <s>·</s> اعتمدته أ. سارة عبد الرحمن <s>·</s> أمس</span>
+          </span>
+        </button>
+        <button class="row" type="button" data-go="billing">
+          <span class="row__ic hbh-t--amber">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-receipt"/></svg>
+          </span>
+          <span class="row__b">
+            <span class="row__t">فاتورة مستحقة</span>
+            <span class="row__s">INV-2026-00418 <s>·</s> <span class="amt">1,750 ج.م</span></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     4. الرئيسية
+     ===================================================================== -->
+<section class="scr" id="s-home" data-tab="home" data-title="الرئيسية" data-sub="يوسف علي محمود" data-label="الرئيسية">
+  <button class="cbar" type="button" data-go="welcome">
+    <span class="cbar__ph">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+    </span>
+    <span class="cbar__b">
+      <span class="cbar__n">يوسف علي محمود</span>
+      <span class="cbar__m">٦ سنوات · CH-021</span>
+    </span>
+    <span class="cbar__sw">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-refresh"/></svg>
+      تبديل
+    </span>
+  </button>
+
+  <div class="sec">
+    <div class="next">
+      <p class="next__l">الجلسة القادمة</p>
+      <div class="next__g">
+        <span class="next__r">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+          <b>اليوم، ٢ سبتمبر</b>
+        </span>
+        <span class="next__r">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clock"/></svg>
+          <b dir="ltr">4:30 م</b>
+        </span>
+        <span class="next__r">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-activity"/></svg>
+          <span>تخاطب وتنمية لغة</span>
+        </span>
+        <span class="next__r">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+          <span>أ. سارة عبد الرحمن</span>
+        </span>
+      </div>
+      <div class="next__f">
+        <button class="hbh-btn hbh-btn--light" type="button" data-go="live">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-cast"/></svg>
+          مشاهدة مباشرة
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button" data-go="requests">
+          طلب تغيير الموعد
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="livec">
+      <span class="livec__b">
+        <span class="livec__f"><span class="hbh-live-dot"></span> مباشر الآن</span>
+        <p class="livec__s">غرفة ٢ — التخاطب</p>
+        <p class="livec__n">البث متاح طوال الجلسة فقط، ولا يُسجَّل ولا يُحفَظ.</p>
+      </span>
+      <button class="hbh-btn hbh-btn--primary" type="button" data-go="live">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-play"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">اختصارات</h2></div>
+    <div class="quick">
+      <button class="quick__i" type="button" data-go="progress">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-target"/></svg>
+        التقدّم
+      </button>
+      <button class="quick__i" type="button" data-go="activities">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-puzzle"/></svg>
+        البرنامج
+        <span class="hbh-badge hbh-badge--progress">٣</span>
+      </button>
+      <button class="quick__i" type="button" data-go="reports">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg>
+        التقارير
+        <span class="hbh-badge hbh-badge--info">جديد</span>
+      </button>
+      <button class="quick__i" type="button" data-go="billing">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-receipt"/></svg>
+        الفواتير
+      </button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head">
+      <h2 class="sec__t">مواعيد قادمة</h2>
+      <button class="sec__more" type="button" data-go="schedule">الكل</button>
+    </div>
+    <div class="stack">
+      <button class="row" type="button" data-go="schedule">
+        <span class="row__date"><b>٦</b><small>سبتمبر</small></span>
+        <span class="row__b">
+          <span class="row__t">علاج وظيفي</span>
+          <span class="row__s">أ. منى خالد <s>·</s> غرفة ٤</span>
+        </span>
+        <span class="row__e">
+          <span class="hbh-badge hbh-badge--success">مؤكَّد</span>
+          <span class="row__time">10:00 ص</span>
+        </span>
+      </button>
+      <button class="row" type="button" data-go="schedule">
+        <span class="row__date"><b>٩</b><small>سبتمبر</small></span>
+        <span class="row__b">
+          <span class="row__t">تخاطب وتنمية لغة</span>
+          <span class="row__s">أ. سارة عبد الرحمن <s>·</s> غرفة ٢</span>
+        </span>
+        <span class="row__e">
+          <span class="hbh-badge hbh-badge--info">محجوز</span>
+          <span class="row__time">4:30 م</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="due">
+      <span>
+        <span class="due__l">مستحق عليك</span>
+        <span class="due__a">1,750 ج.م</span>
+      </span>
+      <button class="hbh-btn hbh-btn--primary" type="button" data-go="billing">التفاصيل</button>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     5. المواعيد
+     ===================================================================== -->
+<section class="scr" id="s-schedule" data-tab="schedule" data-title="المواعيد" data-sub="يوسف علي محمود" data-label="المواعيد">
+  <div class="seg" data-seg>
+    <button class="seg__i is-on" type="button">القادمة</button>
+    <button class="seg__i" type="button">السابقة</button>
+  </div>
+
+  <p class="grp">اليوم — الأربعاء ٢ سبتمبر</p>
+  <div class="stack">
+    <button class="row" type="button" data-go="live">
+      <span class="row__date"><b>٢</b><small>سبتمبر</small></span>
+      <span class="row__b">
+        <span class="row__t">تخاطب وتنمية لغة</span>
+        <span class="row__s">أ. سارة عبد الرحمن <s>·</s> غرفة ٢ <s>·</s> ٤٥ د</span>
+      </span>
+      <span class="row__e">
+        <span class="hbh-badge hbh-badge--success"><span class="hbh-live-dot"></span> جارية</span>
+        <span class="row__time">4:30 م</span>
+      </span>
+    </button>
+  </div>
+
+  <p class="grp">الأسبوع القادم</p>
+  <div class="stack">
+    <button class="row" type="button">
+      <span class="row__date"><b>٦</b><small>سبتمبر</small></span>
+      <span class="row__b">
+        <span class="row__t">علاج وظيفي</span>
+        <span class="row__s">أ. منى خالد <s>·</s> غرفة ٤ <s>·</s> ٤٥ د</span>
+      </span>
+      <span class="row__e">
+        <span class="hbh-badge hbh-badge--success">مؤكَّد</span>
+        <span class="row__time">10:00 ص</span>
+      </span>
+    </button>
+    <button class="row" type="button">
+      <span class="row__date"><b>٩</b><small>سبتمبر</small></span>
+      <span class="row__b">
+        <span class="row__t">تخاطب وتنمية لغة</span>
+        <span class="row__s">أ. سارة عبد الرحمن <s>·</s> غرفة ٢ <s>·</s> ٤٥ د</span>
+      </span>
+      <span class="row__e">
+        <span class="hbh-badge hbh-badge--info">محجوز</span>
+        <span class="row__time">4:30 م</span>
+      </span>
+    </button>
+    <button class="row" type="button">
+      <span class="row__date"><b>١٣</b><small>سبتمبر</small></span>
+      <span class="row__b">
+        <span class="row__t">علاج وظيفي</span>
+        <span class="row__s">أ. منى خالد <s>·</s> غرفة ٤ <s>·</s> ٤٥ د</span>
+      </span>
+      <span class="row__e">
+        <span class="hbh-badge hbh-badge--info">محجوز</span>
+        <span class="row__time">10:00 ص</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="sec">
+    <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button" data-go="requests">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-send"/></svg>
+      طلب تغيير أو إلغاء موعد
+    </button>
+    <p class="fld__hint" style="text-align:center">
+      الطلب يصل للاستقبال ولا يغيّر الموعد بنفسه. تصلك رسالة عند الاعتماد.
+    </p>
+  </div>
+</section>
+
+<!-- =====================================================================
+     6. التقدّم
+     ===================================================================== -->
+<section class="scr" id="s-progress" data-tab="progress" data-title="التقدّم" data-sub="خطة العلاج — الربع الثالث ٢٠٢٦" data-label="التقدّم">
+  <div class="hbh-card">
+    <div class="hbh-card-head">
+      <span class="hbh-card-title">نطق صوت /س/ في وسط الكلمة</span>
+      <span class="hbh-badge hbh-badge--success">٧٨٪</span>
+    </div>
+    <div class="hbh-card-body">
+      <div class="chart">
+        <span class="chart__c"><span class="chart__v">32</span><span class="chart__b" style="height:32%"></span><span class="chart__l">يونيو</span></span>
+        <span class="chart__c"><span class="chart__v">41</span><span class="chart__b" style="height:41%"></span><span class="chart__l">يوليو</span></span>
+        <span class="chart__c"><span class="chart__v">55</span><span class="chart__b" style="height:55%"></span><span class="chart__l">يوليو</span></span>
+        <span class="chart__c"><span class="chart__v">60</span><span class="chart__b" style="height:60%"></span><span class="chart__l">أغسطس</span></span>
+        <span class="chart__c"><span class="chart__v">71</span><span class="chart__b" style="height:71%"></span><span class="chart__l">أغسطس</span></span>
+        <span class="chart__c"><span class="chart__v">78</span><span class="chart__b" style="height:78%"></span><span class="chart__l">سبتمبر</span></span>
+      </div>
+      <p class="fld__hint" style="text-align:center;margin-top:12px">
+        نسبة النطق الصحيح في ٢٠ محاولة — آخر قياس ٣١ أغسطس
+      </p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">أهداف الخطة</h2><span class="hbh-muted">٥ أهداف</span></div>
+    <div class="stack">
+      <div class="goal">
+        <div class="goal__h">
+          <span class="goal__t">نطق صوت /س/ في وسط الكلمة</span>
+          <span class="goal__pct">78%</span>
+        </div>
+        <div class="goal__bar"><span class="goal__fill goal__fill--g" style="width:78%"></span></div>
+        <div class="goal__m">الهدف ٨٠٪ <s>·</s> ١٢ قياسًا <s>·</s> آخر قياس ٣١ أغسطس</div>
+      </div>
+      <div class="goal">
+        <div class="goal__h">
+          <span class="goal__t">تكوين جملة من ٤ كلمات</span>
+          <span class="goal__pct">54%</span>
+        </div>
+        <div class="goal__bar"><span class="goal__fill" style="width:54%"></span></div>
+        <div class="goal__m">الهدف ٧٠٪ <s>·</s> ٩ قياسات <s>·</s> آخر قياس ٢٨ أغسطس</div>
+      </div>
+      <div class="goal">
+        <div class="goal__h">
+          <span class="goal__t">الإمساك بالقلم بقبضة ثلاثية</span>
+          <span class="goal__pct">35%</span>
+        </div>
+        <div class="goal__bar"><span class="goal__fill goal__fill--a" style="width:35%"></span></div>
+        <div class="goal__m">الهدف ٦٠٪ <s>·</s> ٦ قياسات <s>·</s> آخر قياس ٢٥ أغسطس</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <button class="row" type="button" data-go="reports">
+      <span class="row__ic hbh-t--blue">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg>
+      </span>
+      <span class="row__b">
+        <span class="row__t">تقرير التقدّم — أغسطس ٢٠٢٦</span>
+        <span class="row__s">اعتمدته أ. سارة عبد الرحمن <s>·</s> ١ سبتمبر</span>
+      </span>
+      <span class="row__e"><span class="hbh-badge hbh-badge--info">جديد</span></span>
+    </button>
+  </div>
+</section>
+
+<!-- =====================================================================
+     7. البرنامج المنزلي
+     ===================================================================== -->
+<section class="scr" id="s-activities" data-tab="activities" data-title="البرنامج المنزلي" data-sub="أسبوع ٣١ أغسطس — ٦ سبتمبر" data-label="البرنامج">
+  <div class="ring">
+    <svg class="ring__svg" viewBox="0 0 64 64" aria-hidden="true">
+      <circle class="ring__track" cx="32" cy="32" r="26"/>
+      <circle class="ring__val" cx="32" cy="32" r="26" stroke-dasharray="163.4" stroke-dashoffset="49"/>
+    </svg>
+    <span class="ring__b">
+      <span class="ring__n">70%</span>
+      <span class="ring__t">الالتزام هذا الأسبوع</span>
+      <span class="ring__s">٧ من ١٠ أنشطة. الالتزام يظهر لأخصائي طفلك ويساعده يضبط الخطة.</span>
+    </span>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">أنشطة اليوم</h2><span class="hbh-muted">اضغط للتسجيل</span></div>
+    <div class="stack">
+      <button class="task is-done" type="button" data-task>
+        <span class="task__box">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg>
+        </span>
+        <span class="task__b">
+          <span class="task__t">تكرار كلمات صوت /س/ — ١٠ دقائق</span>
+          <span class="task__s">سمسم، مسمار، بسبوسة. مرّة صباحًا ومرّة قبل النوم.</span>
+        </span>
+      </button>
+      <button class="task" type="button" data-task>
+        <span class="task__box">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg>
+        </span>
+        <span class="task__b">
+          <span class="task__t">لعبة الصلصال — ١٥ دقيقة</span>
+          <span class="task__s">كرات صغيرة بالأصابع الثلاثة، لتقوية قبضة القلم.</span>
+        </span>
+      </button>
+      <button class="task" type="button" data-task>
+        <span class="task__box">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg>
+        </span>
+        <span class="task__b">
+          <span class="task__t">قراءة قصة مصوّرة وسؤال «مين؟ وفين؟»</span>
+          <span class="task__s">قصة واحدة، وثلاثة أسئلة بعد كل صفحتين.</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="note note--info">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-info"/></svg>
+      <span>الأنشطة يحدّدها أخصائي طفلك من داخل الخطة العلاجية. لو نشاط صعب أو غير مناسب، سجّل ملاحظة وسيراها في الجلسة القادمة.</span>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     8. البث المباشر
+     ===================================================================== -->
+<section class="scr" id="s-live" data-back="home" data-title="بث مباشر" data-sub="غرفة ٢ — التخاطب" data-label="البث المباشر">
+  <div class="player">
+    <div class="player__top">
+      <span class="player__live"><span class="hbh-live-dot"></span> مباشر</span>
+      <span class="player__t" id="liveClock">00:12:41</span>
+    </div>
+    <div class="player__mid">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+      <p>معاينة البث<br>الصورة الحيّة تظهر هنا من كاميرا الغرفة</p>
+    </div>
+    <div class="player__bot">
+      <div class="player__meta">
+        <span>يوسف علي محمود</span> <s>·</s>
+        <span>أ. سارة عبد الرحمن</span> <s>·</s>
+        <span>تخاطب وتنمية لغة</span>
+      </div>
+      <div class="player__ctl">
+        <button class="player__btn" type="button" aria-label="كتم الصوت">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-volume"/></svg>
+        </button>
+        <button class="player__mark" type="button" data-toast="سُجِّلت اللحظة وأُرسلت للأخصائي">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-flag"/></svg>
+          تسجيل لحظة مهمّة
+        </button>
+        <button class="player__btn" type="button" aria-label="ملء الشاشة">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-maximize"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec stack">
+    <div class="note note--ok">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-shield"/></svg>
+      <span><b>بث مباشر فقط — لا تسجيل.</b> لا تُحفَظ الصورة ولا الصوت في أي مكان، ولا يوجد أرشيف يمكن الرجوع إليه لاحقًا.</span>
+    </div>
+    <div class="note note--info">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clock"/></svg>
+      <span>رابط المشاهدة صالح ١٥ دقيقة، ومربوط بك وبهذه الجلسة وحدها. لا يعمل مع أي شخص آخر ولا بعد انتهاء الجلسة.</span>
+    </div>
+    <div class="note note--warn">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+      <span>كل مشاهدة تُسجَّل باسمك ووقتها في سجل المركز.</span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <p class="grp">خارج وقت الجلسة يظهر الزر هكذا</p>
+    <div class="livec livec--off">
+      <span class="livec__b">
+        <span class="livec__f">غير متاح</span>
+        <p class="livec__s">لا توجد جلسة جارية</p>
+        <p class="livec__n">يفتح البث تلقائيًا عند بدء الأخصائي للجلسة.</p>
+      </span>
+      <button class="hbh-btn hbh-btn--primary" type="button" disabled>
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-play"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     9. التقارير والملاحظات
+     ===================================================================== -->
+<section class="scr" id="s-reports" data-back="home" data-title="التقارير والملاحظات" data-sub="يوسف علي محمود" data-label="التقارير">
+  <div class="seg" data-seg>
+    <button class="seg__i is-on" type="button">التقارير</button>
+    <button class="seg__i" type="button">ملاحظات الجلسات</button>
+  </div>
+
+  <div class="stack">
+    <button class="row" type="button" data-toast="جارٍ فتح التقرير">
+      <span class="row__ic hbh-t--blue">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg>
+      </span>
+      <span class="row__b">
+        <span class="row__t">تقرير التقدّم — أغسطس ٢٠٢٦</span>
+        <span class="row__s">أ. سارة عبد الرحمن <s>·</s> ١ سبتمبر</span>
+      </span>
+      <span class="row__e"><span class="hbh-badge hbh-badge--info">جديد</span></span>
+    </button>
+    <button class="row" type="button">
+      <span class="row__ic hbh-t--navy">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg>
+      </span>
+      <span class="row__b">
+        <span class="row__t">تقرير التقدّم — يوليو ٢٠٢٦</span>
+        <span class="row__s">أ. سارة عبد الرحمن <s>·</s> ٢ أغسطس</span>
+      </span>
+    </button>
+    <button class="row" type="button">
+      <span class="row__ic hbh-t--purple">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clipboard"/></svg>
+      </span>
+      <span class="row__b">
+        <span class="row__t">تقرير التقييم المبدئي</span>
+        <span class="row__s">أ. هدى سمير <s>·</s> ١٤ يونيو</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="sec">
+    <div class="note note--info">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-info"/></svg>
+      <span>لا تظهر هنا إلا الملاحظات التي اعتمدها الأخصائي للنشر. الملاحظات الداخلية بين فريق العلاج لا تُعرض على ولي الأمر.</span>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     10. الفواتير والباقات
+     ===================================================================== -->
+<section class="scr" id="s-billing" data-back="home" data-title="الفواتير والباقات" data-label="الفواتير">
+  <div class="due">
+    <span>
+      <span class="due__l">إجمالي المستحق</span>
+      <span class="due__a">1,750 ج.م</span>
+    </span>
+    <button class="hbh-btn hbh-btn--primary" type="button" data-toast="سيتواصل معك الاستقبال لإتمام الدفع">
+      طرق الدفع
+    </button>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">الباقات</h2></div>
+    <div class="stack">
+      <div class="pkg">
+        <div class="pkg__h">
+          <span class="pkg__t">باقة تخاطب — ١٢ جلسة</span>
+          <span class="pkg__c">5 / 12</span>
+        </div>
+        <div class="pkg__bar"><span class="pkg__fill" style="width:42%"></span></div>
+        <p class="pkg__m">باقي ٥ جلسات <s>·</s> تنتهي ٣٠ نوفمبر ٢٠٢٦</p>
+      </div>
+      <div class="pkg">
+        <div class="pkg__h">
+          <span class="pkg__t">باقة علاج وظيفي — ٨ جلسات</span>
+          <span class="pkg__c">2 / 8</span>
+        </div>
+        <div class="pkg__bar"><span class="pkg__fill" style="width:25%"></span></div>
+        <p class="pkg__m">باقي جلستان <s>·</s> تنتهي ١٥ أكتوبر ٢٠٢٦</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">الفواتير</h2></div>
+    <div class="stack">
+      <button class="row" type="button">
+        <span class="row__ic hbh-t--amber">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-receipt"/></svg>
+        </span>
+        <span class="row__b">
+          <span class="row__t">INV-2026-00418</span>
+          <span class="row__s">١ سبتمبر <s>·</s> باقة تخاطب</span>
+        </span>
+        <span class="row__e">
+          <span class="hbh-badge hbh-badge--progress">مستحقة</span>
+          <span class="amt">1,750 ج.م</span>
+        </span>
+      </button>
+      <button class="row" type="button">
+        <span class="row__ic hbh-t--green">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-receipt"/></svg>
+        </span>
+        <span class="row__b">
+          <span class="row__t">INV-2026-00377</span>
+          <span class="row__s">٣ أغسطس <s>·</s> باقة علاج وظيفي</span>
+        </span>
+        <span class="row__e">
+          <span class="hbh-badge hbh-badge--success">مدفوعة</span>
+          <span class="amt">2,400 ج.م</span>
+        </span>
+      </button>
+      <button class="row" type="button">
+        <span class="row__ic hbh-t--green">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-receipt"/></svg>
+        </span>
+        <span class="row__b">
+          <span class="row__t">INV-2026-00312</span>
+          <span class="row__s">١٤ يونيو <s>·</s> تقييم مبدئي</span>
+        </span>
+        <span class="row__e">
+          <span class="hbh-badge hbh-badge--success">مدفوعة</span>
+          <span class="amt">900 ج.م</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     11. الطلبات
+     ===================================================================== -->
+<section class="scr" id="s-requests" data-back="home" data-title="طلباتي" data-label="الطلبات">
+  <div class="stack">
+    <button class="quick__i" type="button" data-toast="تم إرسال الطلب للاستقبال" style="width:100%">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-cal-plus"/></svg>
+      طلب تغيير موعد
+    </button>
+    <button class="quick__i" type="button" data-toast="تم إرسال الطلب للاستقبال" style="width:100%">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x-circle"/></svg>
+      طلب إلغاء موعد
+    </button>
+    <button class="quick__i" type="button" data-toast="تم إرسال الطلب للاستقبال" style="width:100%">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-phone"/></svg>
+      طلب مكالمة من الأخصائي
+    </button>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">الطلبات السابقة</h2></div>
+    <div class="stack">
+      <div class="row">
+        <span class="row__ic hbh-t--green">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check-circle"/></svg>
+        </span>
+        <span class="row__b">
+          <span class="row__t">تغيير موعد ٢٦ أغسطس</span>
+          <span class="row__s">نُقل إلى ٢٧ أغسطس ١١:٠٠ ص</span>
+        </span>
+        <span class="row__e"><span class="hbh-badge hbh-badge--success">مقبول</span></span>
+      </div>
+      <div class="row">
+        <span class="row__ic hbh-t--amber">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clock"/></svg>
+        </span>
+        <span class="row__b">
+          <span class="row__t">مكالمة مع أ. منى خالد</span>
+          <span class="row__s">أُرسل أمس ٦:١٢ م</span>
+        </span>
+        <span class="row__e"><span class="hbh-badge hbh-badge--progress">قيد المراجعة</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="note note--info">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-info"/></svg>
+      <span>الطلب لا يغيّر الموعد بنفسه — الاستقبال هو من يعتمده بعد التأكّد من توفّر الأخصائي والغرفة.</span>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     12. حسابي
+     ===================================================================== -->
+<section class="scr" id="s-profile" data-tab="profile" data-title="حسابي" data-label="حسابي">
+  <div class="prof">
+    <span class="prof__ph">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+    </span>
+    <span class="prof__b">
+      <span class="prof__n">أ. علي محمود</span>
+      <span class="prof__m">+20 100 123 4567</span>
+    </span>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">أطفالي</h2></div>
+    <div class="stack">
+      <button class="opt" type="button" data-go="home">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+        <span class="opt__b">يوسف علي محمود<span class="opt__s">٦ سنوات · CH-021</span></span>
+        <span class="opt__go">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg>
+        </span>
+      </button>
+      <button class="opt" type="button" data-go="home">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+        <span class="opt__b">ملك علي محمود<span class="opt__s">٤ سنوات · CH-034</span></span>
+        <span class="opt__go">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">الموافقات</h2></div>
+    <div class="stack">
+      <div class="opt">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-cast"/></svg>
+        <span class="opt__b">مشاهدة البث المباشر<span class="opt__s">يسمح لك بمتابعة جلسات طفلك مباشرةً</span></span>
+        <button class="sw is-on" type="button" data-sw aria-label="مشاهدة البث المباشر"></button>
+      </div>
+      <div class="opt">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-mail"/></svg>
+        <span class="opt__b">إشعارات الرسائل النصية<span class="opt__s">تذكير بالمواعيد وتنبيه عند نشر تقرير</span></span>
+        <button class="sw is-on" type="button" data-sw aria-label="إشعارات الرسائل النصية"></button>
+      </div>
+      <div class="opt">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-camera"/></svg>
+        <span class="opt__b">استخدام صور الأنشطة<span class="opt__s">داخل تقارير التقدّم فقط، ولا تُنشر خارج المركز</span></span>
+        <button class="sw" type="button" data-sw aria-label="استخدام صور الأنشطة"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="stack">
+      <button class="opt" type="button" data-go="requests">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-send"/></svg>
+        <span class="opt__b">طلباتي</span>
+        <span class="opt__go">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg>
+        </span>
+      </button>
+      <button class="opt" type="button" data-toast="سيتواصل معك المركز">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-help"/></svg>
+        <span class="opt__b">مساعدة والتواصل مع المركز</span>
+        <span class="opt__go">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg>
+        </span>
+      </button>
+      <button class="opt" type="button" data-go="login">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+        <span class="opt__b">تسجيل الخروج</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+        </main>
+
+        <!-- ---------- التبويبات ---------- -->
+        <nav class="pa__tabs" id="paTabs" hidden>
+          <button class="pa__tab is-on" type="button" data-go="home">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-home"/></svg>
+            الرئيسية
+          </button>
+          <button class="pa__tab" type="button" data-go="schedule">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+            المواعيد
+          </button>
+          <button class="pa__tab" type="button" data-go="progress">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-target"/></svg>
+            التقدّم
+          </button>
+          <button class="pa__tab" type="button" data-go="activities">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-puzzle"/></svg>
+            البرنامج
+          </button>
+          <button class="pa__tab" type="button" data-go="profile">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+            حسابي
+          </button>
+        </nav>
+
+        <!-- ---------- رسالة منبثقة ---------- -->
+        <div class="toast" id="toast">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check-circle"/></svg>
+          <span id="toastText"></span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="stg__hint">
+  اضغط أي عنصر للتنقّل — أو استعمل <kbd>&larr;</kbd> <kbd>&rarr;</kbd> للتنقّل بين الشاشات.<br>
+  افتح الصفحة على هاتف وسيختفي الإطار ويملأ التطبيق الشاشة.
+</p>
+
+<script src="hbh-app.js"></script>
+</body>
+</html>

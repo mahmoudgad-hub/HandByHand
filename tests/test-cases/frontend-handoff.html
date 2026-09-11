@@ -1,0 +1,530 @@
+<title>ملاحظات واجهة Hand By Hand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* ---- tokens: light (the un-stamped default) ---------------------- */
+:root{
+  --ink:#12292C;
+  --ink-2:#3D5860;
+  --ink-3:#6B838C;
+  --ground:#FBF7F0;
+  --surface:#FFFFFF;
+  --surface-2:#F3EFE7;
+  --line:#E2DCD0;
+  --line-soft:#EDE8DE;
+
+  --brand:#1E5D64;
+  --brand-2:#2A7680;
+  --brand-pale:#DEEEF0;
+  --on-brand:#F4FAFA;
+
+  --sev-high:#B23A2E;
+  --sev-high-bg:#FBE6E1;
+  --sev-med:#95610F;
+  --sev-med-bg:#FBF0DA;
+  --sev-low:#4E6873;
+  --sev-low-bg:#E7EDEF;
+
+  --ok:#2F6B4F;
+  --ok-bg:#E3EFE7;
+
+  --shadow:0 1px 2px rgba(18,41,44,.05), 0 8px 24px -16px rgba(18,41,44,.28);
+  --radius:10px;
+}
+/* ---- tokens: dark, for viewers on system-dark ------------------- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E8F1F1;
+    --ink-2:#B3C6C9;
+    --ink-3:#8AA1A6;
+    --ground:#0E2427;
+    --surface:#143135;
+    --surface-2:#1A3B40;
+    --line:#28524F;
+    --line-soft:#1F4448;
+
+    --brand:#5FB3B8;
+    --brand-2:#7CC7CB;
+    --brand-pale:#1B4147;
+    --on-brand:#062023;
+
+    --sev-high:#F0938A;
+    --sev-high-bg:#3D211E;
+    --sev-med:#DFB570;
+    --sev-med-bg:#3A2F1B;
+    --sev-low:#9FB6BC;
+    --sev-low-bg:#1E3B40;
+
+    --ok:#7FC79E;
+    --ok-bg:#1B3529;
+
+    --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 28px -18px rgba(0,0,0,.7);
+  }
+}
+/* ---- tokens: dark, explicitly chosen ---------------------------- */
+:root[data-theme="dark"]{
+  --ink:#E8F1F1;
+  --ink-2:#B3C6C9;
+  --ink-3:#8AA1A6;
+  --ground:#0E2427;
+  --surface:#143135;
+  --surface-2:#1A3B40;
+  --line:#28524F;
+  --line-soft:#1F4448;
+
+  --brand:#5FB3B8;
+  --brand-2:#7CC7CB;
+  --brand-pale:#1B4147;
+  --on-brand:#062023;
+
+  --sev-high:#F0938A;
+  --sev-high-bg:#3D211E;
+  --sev-med:#DFB570;
+  --sev-med-bg:#3A2F1B;
+  --sev-low:#9FB6BC;
+  --sev-low-bg:#1E3B40;
+
+  --ok:#7FC79E;
+  --ok-bg:#1B3529;
+
+  --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 28px -18px rgba(0,0,0,.7);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
+  font-size:15px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:940px;margin:0 auto;padding:0 20px 88px}
+
+/* ---- masthead --------------------------------------------------- */
+.mast{
+  background:var(--brand);
+  color:var(--on-brand);
+  padding:34px 0 30px;
+  margin-bottom:30px;
+}
+.mast .wrap{padding-bottom:0}
+.eyebrow{
+  font-size:11.5px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;
+  color:color-mix(in srgb, var(--on-brand) 72%, transparent);
+  margin:0 0 10px;
+}
+.mast h1{
+  font-size:clamp(25px,4.2vw,34px);
+  font-weight:700;line-height:1.28;margin:0 0 12px;
+  text-wrap:balance;
+}
+.mast p{
+  margin:0;max-width:64ch;
+  color:color-mix(in srgb, var(--on-brand) 86%, transparent);
+  font-size:15.5px;
+}
+
+/* ---- summary strip ---------------------------------------------- */
+.strip{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+  margin:0 0 14px;
+}
+.stat{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:13px 15px;
+}
+.stat .n{
+  font-size:26px;font-weight:700;line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  display:block;
+}
+.stat .l{font-size:12.5px;color:var(--ink-3);font-weight:500}
+.stat.high .n{color:var(--sev-high)}
+.stat.med  .n{color:var(--sev-med)}
+.stat.low  .n{color:var(--sev-low)}
+
+.callout{
+  background:var(--sev-high-bg);
+  border:1px solid color-mix(in srgb, var(--sev-high) 34%, transparent);
+  border-radius:var(--radius);
+  padding:14px 17px;
+  margin:0 0 34px;
+  font-size:14.5px;
+}
+.callout b{color:var(--sev-high)}
+
+/* ---- section headings ------------------------------------------- */
+h2.sec{
+  font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);
+  margin:38px 0 14px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+
+/* ---- finding cards ---------------------------------------------- */
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-right:4px solid var(--sev-low);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.card.high{border-right-color:var(--sev-high)}
+.card.med{border-right-color:var(--sev-med)}
+
+.chead{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin-bottom:6px;
+}
+.id{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12px;font-weight:500;
+  background:var(--brand-pale);color:var(--brand);
+  padding:2px 8px;border-radius:5px;
+  direction:ltr;unicode-bidi:isolate;
+}
+.sev{
+  font-size:11.5px;font-weight:600;letter-spacing:.05em;
+  padding:2px 9px;border-radius:99px;
+}
+.sev.high{background:var(--sev-high-bg);color:var(--sev-high)}
+.sev.med{background:var(--sev-med-bg);color:var(--sev-med)}
+.sev.low{background:var(--sev-low-bg);color:var(--sev-low)}
+
+.card h3{
+  font-size:18px;font-weight:600;line-height:1.45;
+  margin:0 0 12px;text-wrap:balance;
+}
+
+.where{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12.5px;
+  color:var(--ink-2);
+  background:var(--surface-2);
+  border-radius:6px;
+  padding:8px 11px;
+  margin-bottom:14px;
+  direction:ltr;unicode-bidi:isolate;text-align:left;
+  overflow-x:auto;white-space:nowrap;
+}
+
+.block{margin-bottom:12px}
+.block:last-child{margin-bottom:0}
+.block .lbl{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);
+  display:block;margin-bottom:3px;
+}
+.block p{margin:0}
+.card p{margin:0 0 9px}
+.card p:last-child{margin-bottom:0}
+
+code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.88em;
+  background:var(--surface-2);
+  border-radius:4px;padding:1px 5px;
+  direction:ltr;unicode-bidi:isolate;
+}
+.card.high code,.card.med code{background:var(--surface-2)}
+/* On the brand ground the page's surface tokens are the wrong set: they
+   put near-white text on cream in light, and dark on dark in dark. */
+.mast code{
+  background:color-mix(in srgb, var(--on-brand) 15%, transparent);
+  color:inherit;
+}
+
+ul{margin:6px 0 0;padding-inline-start:20px}
+li{margin-bottom:5px}
+li::marker{color:var(--ink-3)}
+
+/* ---- endpoint table --------------------------------------------- */
+.tablewrap{
+  overflow-x:auto;
+  border:1px solid var(--line);
+  border-radius:8px;
+  margin:14px 0 4px;
+}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:560px}
+th{
+  text-align:right;
+  font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);
+  background:var(--surface-2);
+  padding:9px 12px;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+td{padding:8px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.mono{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12px;
+  direction:ltr;unicode-bidi:isolate;text-align:left;
+  white-space:nowrap;
+}
+.tag{
+  font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;
+  white-space:nowrap;
+}
+.tag.rename{background:var(--sev-med-bg);color:var(--sev-med)}
+.tag.none{background:var(--sev-high-bg);color:var(--sev-high)}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}
+
+.tnote{font-size:12.5px;color:var(--ink-3);margin:10px 0 0}
+
+/* ---- not-ours list ---------------------------------------------- */
+.notours{
+  background:var(--surface-2);
+  border:1px dashed var(--line);
+  border-radius:var(--radius);
+  padding:18px 22px;
+}
+.notours h3{font-size:16px;font-weight:600;margin:0 0 6px}
+.notours p{margin:0 0 10px;color:var(--ink-2);font-size:14px}
+.notours ul{margin:0;padding-inline-start:20px;font-size:14px;color:var(--ink-2)}
+
+footer{
+  margin-top:42px;padding-top:18px;
+  border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-3);
+}
+footer p{margin:0 0 5px}
+
+a{color:var(--brand-2)}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--brand-2);outline-offset:2px;border-radius:3px}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+
+<div dir="rtl" lang="ar">
+
+  <header class="mast">
+    <div class="wrap">
+      <p class="eyebrow">تسليم من تشغيلة الاختبار · ٤ سبتمبر ٢٠٢٦</p>
+      <h1>ثماني ملاحظات على الواجهة، واحدة منها تمنع تشغيل البوابة</h1>
+      <p>كلّها خرجت من تشغيل التطبيقين في متصفّح حقيقي مقابل خدمة Go الحيّة — لا من قراءة كود. وكلّ بند هنا يخصّ <code>web/</code> وحده؛ ما يخصّ الخادم والداتابيز مفصول في آخر الصفحة حتى لا يُطارَد من هنا.</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <div class="strip">
+      <div class="stat high"><span class="n">١</span><span class="l">عالية — مانعة للتشغيل</span></div>
+      <div class="stat med"><span class="n">١</span><span class="l">متوسطة</span></div>
+      <div class="stat low"><span class="n">٦</span><span class="l">منخفضة</span></div>
+      <div class="stat"><span class="n">١٣</span><span class="l">نقطة نهاية ترجع 404</span></div>
+    </div>
+
+    <div class="callout">
+      <b>ابدأ بـ FE-1.</b> باقي البنود تحسينات؛ هذا البند وحده يعني أن البوابة لا تعمل مقابل الخدمة الحقيقية اليوم — وليّ الأمر يدخل بنجاح ثم لا يصل إلى أي شاشة.
+    </div>
+
+    <h2 class="sec">المانع</h2>
+
+    <article class="card high">
+      <div class="chead">
+        <span class="id">FE-1</span>
+        <span class="sev high">عالية</span>
+      </div>
+      <h3>البوابة تنادي ستّ عشرة نقطة، والخدمة تعرف ثلاثًا منها فقط</h3>
+      <div class="where">web/portal/src/app/core/api/http-portal-api.ts · مقابل api/internal/http/server.go:50–99</div>
+
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>قُلب <code>useFixtures</code> إلى <code>false</code> وشُغّلت البوابة مقابل الخدمة: الدخول <b>ينجح</b> (<code>202</code> ثم <code>200</code>، والجلسة تُخزَّن)، ثم تنادي أول شاشة <code>GET /me/welcome</code> فترجع <code>404</code>، فتعرض «تعذّر تحميل البيانات» بلا بطاقة طفل واحدة. ولأن اختيار الطفل شرط لدخول أي شاشة، كل شاشة داخلية ترتدّ إلى <code>/welcome</code>.</p>
+        <p>الوظيفة موجودة في الخدمة كلّها تقريبًا — <b>الأسماء هي التي لا تلتقي</b>.</p>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>ما تناديه البوابة</th><th>الحالة</th><th>ما يقابله في الخدمة</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">GET /me</td><td><span class="tag ok">يعمل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">GET /children/{id}/appointments</td><td><span class="tag ok">يعمل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">GET /children/{id}/reports</td><td><span class="tag ok">يعمل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">GET /children/{id}/home-programme</td><td><span class="tag rename">إعادة تسمية</span></td><td class="mono">GET /children/{id}/activities</td></tr>
+            <tr><td class="mono">PUT /children/{id}/home-programme/{aid}</td><td><span class="tag rename">إعادة تسمية</span></td><td class="mono">POST /children/{id}/activities/{aid}/log</td></tr>
+            <tr><td class="mono">GET /me/requests</td><td><span class="tag rename">إعادة تسمية</span></td><td class="mono">GET /children/{id}/requests</td></tr>
+            <tr><td class="mono">POST /me/requests</td><td><span class="tag rename">إعادة تسمية</span></td><td class="mono">POST /children/{id}/requests</td></tr>
+            <tr><td class="mono">POST /sessions/{id}/stream-ticket</td><td><span class="tag rename">إعادة تسمية</span></td><td class="mono">POST /sessions/{id}/stream</td></tr>
+            <tr><td class="mono">POST /sessions/{id}/moments</td><td><span class="tag rename">إعادة تسمية</span></td><td class="mono">PUT /sessions/{id}/note</td></tr>
+            <tr><td class="mono">GET /children/{id}/progress</td><td><span class="tag rename">تركيب</span></td><td class="mono">/plans + /notes</td></tr>
+            <tr><td class="mono">GET /me/billing</td><td><span class="tag rename">تركيب</span></td><td class="mono">/invoices + /packages + /balance</td></tr>
+            <tr><td class="mono">GET /me/welcome</td><td><span class="tag none">لا مقابل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">GET /children/{id}/home</td><td><span class="tag none">لا مقابل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">GET /children/{id}/live</td><td><span class="tag none">لا مقابل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">GET /me/consents</td><td><span class="tag none">لا مقابل</span></td><td class="mono">—</td></tr>
+            <tr><td class="mono">PUT /me/consents/{key}</td><td><span class="tag none">لا مقابل</span></td><td class="mono">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">سبعة بنود تصلحها الواجهة وحدها. وخمسة — <code>/me/welcome</code> و<code>/children/{id}/home</code> و<code>/children/{id}/live</code> و<code>/me/consents</code> بنوعيها — <b>لا مقابل لها في الخدمة إطلاقًا</b>، وتحتاج قرارًا مع فريق الخادم قبل أي كود.</p>
+
+      <div class="block" style="margin-top:14px">
+        <span class="lbl">ما نغيّره</span>
+        <ul>
+          <li>إعادة تسمية النداءات السبعة إلى المسارات القائمة — تُغلق وحدها.</li>
+          <li>الجلوس مع فريق الخادم على الخمسة الباقية: إمّا تركيبها في الواجهة من نقاط موجودة، وإمّا نقاط تجميع جديدة (<code>/me/welcome</code> تحديدًا توفّر عدّة طلبات على شبكة هاتف).</li>
+          <li>فحص مطابقة عقد يقارن مسارات <code>http-portal-api.ts</code> بما يسجّله <code>server.go</code> ويفشل عند أي مسار بلا مقابل. عشرون سطرًا، ويمنع اتّساع الفجوة ثانيةً — فهي اتّسعت عبر أربع دفعات API بلا أن يصدر عنها صوت، ومجموعات القبول الثمانمئة والثمانية والثمانون كلّها خضراء وهذا قائم.</li>
+        </ul>
+      </div>
+    </article>
+
+    <h2 class="sec">نموذج لا يمكن أن ينجح</h2>
+
+    <article class="card med">
+      <div class="chead">
+        <span class="id">FE-2</span>
+        <span class="sev med">متوسطة</span>
+      </div>
+      <h3>زرّا «تغيير موعد» و«إلغاء موعد» لا يستطيعان إنتاج طلب صالح</h3>
+      <div class="where">web/portal/src/app/features/requests/requests.ts:49–52 · النموذج عند :65</div>
+
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>الشاشة فيها ثلاثة أزرار، وكلٌّ منها يفتح نموذجًا فيه <b>حقل نصّ واحد</b>. والسكيما تشترط:</p>
+        <div class="where" style="margin:10px 0">ck_req_appt : CHECK ((kind_code = 'CALLBACK') OR (appointment_id IS NOT NULL))</div>
+        <p>فكل نوع ليس <code>CALLBACK</code> يلزمه موعد مُعيَّن بالمعرّف، والنموذج لا يحوي أي وسيلة لاختيار موعد. على الخدمة الحقيقية: «مكالمة» ترجع <code>201</code> حتى بتفاصيل فارغة، و«تغيير موعد» و«إلغاء موعد» ترجعان <code>400</code> — <b>حتى بنصّ سليم مكتوب</b>.</p>
+        <p>ولا يظهر اليوم لأن البوابة على بيانات تجريبية تقبل الثلاثة وتردّ «أُرسل» — فالنموذج يخبر وليّ الأمر أن طلبه وصل، والخدمة كانت سترفضه.</p>
+      </div>
+
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p>إضافة اختيار موعد إلى النموذج — قائمة مواعيد الطفل القادمة — وتعطيل زرّي «تغيير» و«إلغاء» حتى يُختار واحد. والحقل النصّي يبقى اختياريًا كما هو. والحقل في جسم الطلب اسمه <code>body_ar</code> لا <code>note_ar</code>، ومعه <code>appointment_id</code>.</p>
+      </div>
+    </article>
+
+    <h2 class="sec">تحسينات في كونسول المركز</h2>
+
+    <article class="card low">
+      <div class="chead"><span class="id">FE-3</span><span class="sev low">منخفضة</span></div>
+      <h3>أرشفة ملفّ طفل بنقرة واحدة، بلا تأكيد ولا تراجع</h3>
+      <div class="where">web/ops/src/app/features/resource/resource-screen.ts:279</div>
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>زرّ «أرشفة» في صفّ الطفل ينفّذ <code>DELETE</code> فورًا، والصفّ يختفي من قائمة كل موظّف في اللحظة نفسها. الزرّ مجاور لزرّ «تعديل» مباشرةً في صفّ ضيّق.</p>
+        <p>الحذف ناعم والاستعادة تعمل (<code>204</code> ثم الصفّ يعود تحت «إظهار المؤرشف»)، فلا فقد للبيانات — لكن لا شيء يخبر من ضغط بالخطأ أن شيئًا حدث.</p>
+      </div>
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p>رسالة «أُرشِف — تراجع» تبقى ثوانيَ. أخفّ من نافذة تأكيد وتكفي، لأن الفعل قابل للعكس أصلًا.</p>
+      </div>
+    </article>
+
+    <article class="card low">
+      <div class="chead"><span class="id">FE-4</span><span class="sev low">منخفضة</span></div>
+      <h3>الحقول الناقصة تُبلَّغ واحدًا في كل مرّة، ولا يسمعها قارئ الشاشة</h3>
+      <div class="where">web/ops/src/app/features/resource/resource-screen.ts:233 · القالب :176</div>
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>الشاشة <b>تعلّم الحقل الناقص بصريًا</b> عبر <code>badField()</code> و<code>[class.is-bad]</code> — هذا يعمل. لكن السطر 233 يستعمل <code>.find(…)</code> فيقف عند <b>أول</b> حقل ناقص: نموذج «إضافة طفل» بأربعة حقول فارغة يحتاج ثلاث ضغطات «حفظ» لكشف ثلاثة حقول.</p>
+        <p>ولا يحمل أي حقل <code>aria-invalid</code>، فالعلامة البصرية وحدها لا تصل قارئ الشاشة — والنصّ الوحيد المنطوق «هذا الحقل مطلوب.» في أسفل النموذج، بلا ما يربطه بحقل.</p>
+      </div>
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p><code>.filter(…)</code> بدل <code>.find(…)</code> ليُبلَّغ عن كل الحقول الناقصة دفعةً واحدة · و<code>[attr.aria-invalid]</code> على كل حقل معلَّم · ورسالة تحت الحقل نفسه مربوطة بـ <code>aria-describedby</code>.</p>
+      </div>
+    </article>
+
+    <article class="card low">
+      <div class="chead"><span class="id">FE-5</span><span class="sev low">منخفضة</span></div>
+      <h3>عمود تاريخ الميلاد يعرض بلا سنة</h3>
+      <div class="where">resource-screen.ts:174 → format.service.ts:28 · resource-spec.ts:89</div>
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>طفلٌ تاريخ ميلاده <code>1900-01-01</code> يظهر في الجدول «١ يناير» — لا يفرّقه شيء عن طفل وُلد هذا العام. السبب أن كل خلية من نوع <code>date</code> تُرسم بـ <code>format.shortDate</code>، وتعريفها <code>{ day, month }</code> بلا سنة عن قصد: «الصيغة القصيرة داخل صفوف القوائم».</p>
+        <p>وهي صيغة صحيحة تمامًا لصفّ موعد هذا الأسبوع، وخاطئة لتاريخ تاريخي. والأمر نفسه على <code>start_date</code> و<code>end_date</code> في الخطط والباقات وعلى <code>measured_on</code>.</p>
+        <p>والأثر ليس تجميليًا: أدخلتُ 1900 في الاختبار وقبله النظام بحقّ — القيد يمنع المستقبل لا الماضي البعيد — <b>ثم عرضته الشاشة بما لا يكشف الخطأ</b>.</p>
+      </div>
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p>صيغة ثانية بسنة تُستعمل للتواريخ التاريخية، وتبقى <code>shortDate</code> لصفوف الجدول الزمني القريب.</p>
+      </div>
+    </article>
+
+    <article class="card low">
+      <div class="chead"><span class="id">FE-6</span><span class="sev low">منخفضة</span></div>
+      <h3>شاشات تُخفى بصلاحية «إدارة» بينما الخادم يسمح بقراءتها</h3>
+      <div class="where">web/ops/src/app/app.routes.ts:61, :71, :81</div>
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>شاشة الدخول تَعِد الموظّف: «إخفاء عنصر من القائمة ليس ضابطًا، فالمنع في الخادم». وهذا صحيح للكتابة — <code>POST /api/v1/services</code> بحساب الاستقبال يرجع <code>403</code> من سياسات RLS.</p>
+        <p>لكن شاشات «الأخصائيون» و«الغرف» و«الخدمات» مقيَّدة بـ <code>STAFF.MANAGE</code> و<code>CATALOG.MANAGE</code>، بينما الخادم يرجع <code>200</code> لقراءات الاستقبال على الموارد نفسها. فالمنع لهذه الثلاث <b>في العميل وحده</b>، والوعد المكتوب على الشاشة لا ينطبق عليها.</p>
+      </div>
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p>إمّا بناء شاشات القراءة على صلاحية قراءة حقيقية، وإمّا فتح عرضها لكل موظّف وتقييد <b>أزرار</b> الكتابة وحدها — وهو الأقرب لما تقوله السياسة فعلًا. القرار في أيّهما يخصّ المنتج لا الكود.</p>
+      </div>
+    </article>
+
+    <h2 class="sec">بندان صغيران</h2>
+
+    <article class="card low">
+      <div class="chead"><span class="id">FE-7</span><span class="sev low">منخفضة</span></div>
+      <h3>كلمة «تسجيل» على الشاشة التي تقول «لا تسجيل»</h3>
+      <div class="where">web/portal/src/assets/i18n/ar.json:133 · "live.markMoment"</div>
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p>شاشة البثّ تقول للعائلة بنصّها: «بثّ مباشر فقط — لا تسجيل. لا تُحفَظ الصورة ولا الصوت في أي مكان». وفي وسطها زرّ اسمه «تسجيل لحظة مهمّة». السلوك سليم تمامًا — <code>markMoment</code> يكتب ملاحظة نصّية بختم زمني — لكن الكلمة بجوار فيديو مباشر تُقرأ <span dir="ltr">record</span> قبل أن تُقرأ <span dir="ltr">log</span>، والفقرة التي توضّح تحتها لا فوقها.</p>
+      </div>
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p>سطر واحد: «تعليم لحظة مهمّة» أو «إرسال لحظة للأخصائي».</p>
+      </div>
+    </article>
+
+    <article class="card low">
+      <div class="chead"><span class="id">FE-8</span><span class="sev low">منخفضة</span></div>
+      <h3>كونسول المركز بلا أي فحص وحدة</h3>
+      <div class="where">ng test ops → 0 specs · ng test portal → 6 · ng test shared → 18</div>
+      <div class="block">
+        <span class="lbl">ما يحدث</span>
+        <p><code>web/ops</code> فيه حارس صلاحيات، ومعترِض مصادقة، وشاشة موارد عامّة تقود الشاشات الأربع كلّها — وصفر فحص وحدة. الاختبار الوحيد الذي رآه يدويّ.</p>
+        <p>وملاحظة تُربك القراءة: من يشغّل <code>ng test portal</code> وحده يرى <b>٦</b> بينما المجموع ٢٤، لأن <code>tsconfig.spec.json</code> يسحب <code>../shared/src/**</code> معه. الرقم الأول يوحي بتغطية أضعف مما هي.</p>
+      </div>
+      <div class="block">
+        <span class="lbl">ما نغيّره</span>
+        <p>البداية من الحارس و<code>readRefusal</code>/<code>refusalKey</code> — هما اللذان يقرّران ما يراه الموظّف عند كل رفض، وكلاهما منطق خالص يسهل اختباره.</p>
+      </div>
+    </article>
+
+    <h2 class="sec">ليس من نصيبكم</h2>
+
+    <div class="notours">
+      <h3>خمس ملاحظات أخرى من التشغيلة نفسها — خادم وداتابيز</h3>
+      <p>مذكورة هنا حتى لا تُطارَد من جانب الواجهة إن وصلكم التقرير كاملًا:</p>
+      <ul>
+        <li>بايت صفري في دخول الموظّفين يرفع <code>500</code> — فحص شكل ناقص قبل <code>verify_password</code>.</li>
+        <li><code>hbh_app</code> يملك <code>INSERT</code> غير مقيَّد على <code>audit_log</code>.</li>
+        <li>خطّة علاجية في <code>DRAFT</code> تصل العائلة، بينما التقرير في <code>DRAFT</code> لا يصل — سؤال تصميم للفريق.</li>
+        <li>مجموعات الاختبار بلا عزل: تشغيلتان على القاعدة المشتركة تهدمان تجهيزة بعضهما.</li>
+        <li>فجوتا توثيق: تشذيب المسافات في المدخلات غير مذكور في العقد، وجدول الحالة في الروادماب متأخّر.</li>
+      </ul>
+    </div>
+
+    <footer>
+      <p>المصدر الكامل بحالاته وأدلّته: <code>tests/test-cases/</code> — الملفّ <code>05-application-test.md</code> لاختبار التطبيقين، و<code>06-form-test.md</code> لاختبار النماذج، و<code>04-findings.md</code> للملاحظات كلّها بدرجاتها.</p>
+      <p>الخطّ الأساس وقت التشغيلة: ٨٨٨ فحصًا · ٠ فشل — ٥٣٥ داتابيز، ٣٢٩ API، ٢٤ Angular. ولا واحد منها يشغّل البوابة مقابل الخدمة، وهناك بالضبط يقع FE-1.</p>
+    </footer>
+
+  </div>
+</div>

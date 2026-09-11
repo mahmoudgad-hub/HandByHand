@@ -1,0 +1,149 @@
+<section class="scr">
+
+  @if (loading()) {
+    <hbh-skeleton [count]="1" shape="card" />
+    <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                    (retry)="load()" />
+  } @else if (data(); as overview) {
+
+    <div class="due">
+      <span>
+        <span class="due__l">{{ 'billing.totalOutstanding' | t }}</span>
+        @if (overview.dueAmount !== null) {
+          <span class="due__a" dir="ltr">
+            {{ overview.dueAmount | hbhMoney: overview.currency }}
+          </span>
+        } @else {
+          <!-- NOT "0 ج.م.". A total is only a total when every child's
+               balance arrived; short of that the figure is withheld and
+               the family is told why. -->
+          <span class="due__a due__a--missing">{{ 'billing.balanceUnavailable' | t }}</span>
+        }
+      </span>
+      @if (overview.dueAmount === null) {
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
+          {{ 'action.retry' | t }}
+        </button>
+      } @else {
+        <button class="hbh-btn hbh-btn--primary" type="button"
+                (click)="askAboutPayment()">
+          {{ 'billing.paymentMethods' | t }}
+        </button>
+      }
+    </div>
+
+    @if (overview.packagesUnavailable) {
+      <div class="sec">
+        <div class="sec__head"><h2 class="sec__t">{{ 'billing.packages' | t }}</h2></div>
+        <hbh-error-note [message]="'billing.packagesUnavailable' | t"
+                        [retryLabel]="'action.retry' | t" (retry)="load()" />
+      </div>
+    }
+    @if (overview.packages.length) {
+      <div class="sec">
+        <div class="sec__head"><h2 class="sec__t">{{ 'billing.packages' | t }}</h2></div>
+        <div class="stack">
+          @for (item of overview.packages; track item.id) {
+            <div class="pkg">
+              <div class="pkg__h">
+                <span class="pkg__t">{{ item.title }}</span>
+                <span class="pkg__c" dir="ltr">
+                  {{ item.used | hbhNum }} / {{ item.total | hbhNum }}
+                </span>
+              </div>
+              <div class="pkg__bar" role="progressbar"
+                   [attr.aria-valuenow]="usedShare(item)"
+                   [attr.aria-valuemin]="0" [attr.aria-valuemax]="100"
+                   [attr.aria-label]="item.title">
+                <span class="pkg__fill" [style.width.%]="usedShare(item)"></span>
+              </div>
+              <p class="pkg__m">
+                {{ remaining(item) | hbhPlural: 'billing.remaining' }}
+                <s>&middot;</s>
+                <!-- With the year. A package that runs out "on 12 March" is
+                     ambiguous the moment a year turns, and this is the date
+                     a family plans around. -->
+                {{ 'billing.expires' | t: { date: format.dayMonthYear(item.expiresAt) } }}
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="sec">
+      <div class="sec__head"><h2 class="sec__t">{{ 'billing.invoices' | t }}</h2></div>
+      @if (overview.invoicesUnavailable) {
+        <!-- "We could not load these" and "you have none" are different
+             sentences. This screen used to say the second one for both. -->
+        <hbh-error-note [message]="'billing.invoicesUnavailable' | t"
+                        [retryLabel]="'action.retry' | t" (retry)="load()" />
+      } @else if (overview.invoices.length === 0) {
+        <hbh-empty-state icon="ic-receipt" [title]="'billing.emptyInvoices' | t" />
+      } @else {
+        <div class="stack">
+          @for (invoice of overview.invoices; track invoice.id) {
+            <!-- Row and breakdown are one item. In the stack they are
+                 siblings, and the stack's gap would push the figures away
+                 from the invoice they belong to. -->
+            <div class="inv">
+            <div class="row">
+              <span class="row__ic" [class]="invoiceTint(invoice)">
+                <hbh-icon name="ic-receipt" />
+              </span>
+              <span class="row__b">
+                <!-- The invoice number is an identifier, not prose: Latin
+                     digits and left-to-right, the way it is printed. -->
+                <span class="row__t" dir="ltr">{{ invoice.number }}</span>
+                <span class="row__s">
+                  {{ format.shortDate(invoice.issuedAt) }}
+                  <s>&middot;</s> {{ invoice.description }}
+                </span>
+              </span>
+              <span class="row__e">
+                <hbh-status-badge [status]="invoice.status" />
+                <!-- The REMAINING amount is the headline, because that is the
+                     number the family acts on. The total sat here alone,
+                     which is why a 1,000 invoice appeared beside a 600
+                     outstanding summary and looked like a contradiction. -->
+                <span class="amt" dir="ltr">
+                  {{ owed(invoice) | hbhMoney: invoice.currency }}
+                </span>
+              </span>
+            </div>
+
+            <!-- The arithmetic, spelled out, only where it is not obvious.
+                 A fully paid or wholly unpaid invoice says everything in the
+                 badge and the figure above; a part-paid one does not. -->
+            @if (invoice.paidAmount > 0 && owed(invoice) > 0) {
+              <div class="inv__split">
+                <span>
+                  {{ 'billing.invoiceTotal' | t }}
+                  <b dir="ltr">{{ invoice.amount | hbhMoney: invoice.currency }}</b>
+                </span>
+                <span>
+                  {{ 'billing.invoicePaid' | t }}
+                  <b dir="ltr">{{ invoice.paidAmount | hbhMoney: invoice.currency }}</b>
+                </span>
+                <span>
+                  {{ 'billing.invoiceRemaining' | t }}
+                  <b dir="ltr">{{ owed(invoice) | hbhMoney: invoice.currency }}</b>
+                </span>
+              </div>
+            }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="sec">
+      <div class="note note--info">
+        <hbh-icon name="ic-info" />
+        <span>{{ 'billing.noOnlinePayment' | t }}</span>
+      </div>
+    </div>
+  }
+</section>

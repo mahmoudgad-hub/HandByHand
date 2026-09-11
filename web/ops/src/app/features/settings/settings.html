@@ -1,0 +1,292 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'nav.settings' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'settings.sub' | t }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="hbh-notice">
+  <hbh-icon name="ic-info" />
+  <div>
+    <b>{{ 'settings.centreRow' | t }}</b>
+    <p>{{ 'settings.centreRowNote' | t }}</p>
+  </div>
+</div>
+
+<div class="hbh-tablewrap" style="margin-top:16px">
+  <table class="hbh-table">
+    <thead>
+      <tr>
+        <th>{{ 'settings.setting' | t }}</th>
+        <th>{{ 'settings.value' | t }}</th>
+        <!-- The column it lives in. Whoever needs it changed has to find it,
+             and a screen that shows a value without naming its home sends
+             them to a developer for something that is one UPDATE. -->
+        <th>{{ 'settings.source' | t }}</th>
+        <th>{{ 'field.actions' | t }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of centre(); track row.source) {
+        <tr>
+          <td>
+            {{ row.labelKey | t }}
+            @if (row.noteKey) {
+              <div class="hbh-fld__hint">{{ row.noteKey | t }}</div>
+            }
+          </td>
+          <td [attr.dir]="row.ltr ? 'ltr' : null"><b>{{ row.value }}</b></td>
+          <td dir="ltr"><code>{{ row.source }}</code></td>
+          <td>
+            <div class="hbh-table__actions">
+              @if (row.field) {
+                <button class="hbh-rowbtn" type="button"
+                        [attr.aria-label]="'action.edit' | t" (click)="startEditCentre(row)">
+                  <hbh-icon name="ic-edit" />
+                </button>
+              } @else {
+                <!-- The centre code. No pencil rather than a disabled one: it
+                     carries no UPDATE grant at all, so there is no permission
+                     to go and ask for. -->
+                <span class="hbh-fld__hint">{{ 'settings.locked' | t }}</span>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (editingCentre(); as row) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelCentre()" aria-labelledby="centreTitle">
+    <form class="hbh-sheet__box" (submit)="saveCentre($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="centreTitle">{{ row.labelKey | t }}</h2>
+        <button class="hbh-iconbtn" type="button"
+                [attr.aria-label]="'action.cancel' | t" (click)="cancelCentre()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+
+      <div class="hbh-sheet__body">
+        @if (row.noteKey) {
+          <p class="hbh-fld__hint">{{ row.noteKey | t }}</p>
+        }
+
+        @if (row.field === 'weekend_days') {
+          <!-- Seven checkboxes and not a text box. The value is a set of ISO
+               day numbers, and asking somebody to type "[5,6]" into a form is
+               asking them to know the wire format. -->
+          <fieldset class="hbh-fld">
+            <legend class="hbh-fld__l">{{ 'settings.weekend' | t }}</legend>
+            @for (day of weekdays; track day) {
+              <label class="hbh-check">
+                <input type="checkbox" [checked]="weekendHas(day)"
+                       (change)="toggleWeekend(day, $any($event.target).checked)">
+                {{ 'weekday.' + day | t }}
+              </label>
+            }
+          </fieldset>
+        } @else if (row.field === 'time_zone' && zoneGroups().length) {
+          <!-- A list and not a box. The valid set is the engine's own tzdata,
+               five hundred names, and the difference between "Africa/Cairo"
+               and "Cairo" is a diary that opens and one that answers 500. -->
+          <div class="hbh-fld">
+            <label class="hbh-fld__l" for="centreZone">{{ 'settings.timeZone' | t }}</label>
+            <div class="hbh-fld__box">
+              <select id="centreZone" dir="ltr"
+                      (change)="setCentreDraft($any($event.target).value)">
+                @for (group of zoneGroups(); track group.region) {
+                  <optgroup [label]="group.region">
+                    @for (zone of group.zones; track zone.name) {
+                      <option [value]="zone.name"
+                              [selected]="zone.name === centreDraft()">{{ zone.label }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+            </div>
+            <div class="hbh-fld__hint">{{ 'settings.timeZoneHint' | t }}</div>
+          </div>
+        } @else {
+          <div class="hbh-fld">
+            <label class="hbh-fld__l" for="centreValue">{{ 'settings.value' | t }}</label>
+            <div class="hbh-fld__box">
+              <input id="centreValue" type="text"
+                     [attr.dir]="row.ltr ? 'ltr' : null"
+                     [value]="centreDraft()"
+                     (input)="setCentreDraft($any($event.target).value)">
+            </div>
+            @if (row.field === 'time_zone') {
+              <!-- The list did not load. Typing still works and the database
+                   still refuses a name it does not know, so this is a slower
+                   path and not a broken one. -->
+              <div class="hbh-fld__hint">{{ 'settings.timeZoneHint' | t }}</div>
+            }
+            @if (row.field === 'currency_code') {
+              <div class="hbh-fld__hint">{{ 'settings.currencyHint' | t }}</div>
+            }
+          </div>
+        }
+
+        @if (centreError()) {
+          <p class="hbh-fld__hint is-bad">{{ centreError() | t }}</p>
+        }
+      </div>
+
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
+          {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="saving()" (click)="cancelCentre()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}
+
+<!-- ==================================================================
+     The operating parameters.
+     ================================================================== -->
+<div class="hbh-pagehead" style="margin-top:26px">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'settings.params' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'settings.paramsSub' | t }}</div>
+    </div>
+  </div>
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.UNAVAILABLE' | t" [retryLabel]="'action.retry' | t" (retry)="load()" />
+} @else {
+  <div class="hbh-tablewrap">
+    <table class="hbh-table">
+      <thead>
+        <tr>
+          <th>{{ 'settings.param' | t }}</th>
+          <th>{{ 'settings.value' | t }}</th>
+          <th>{{ 'settings.default' | t }}</th>
+          <th>{{ 'field.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of params(); track p.code) {
+          <tr>
+            <td>
+              <code dir="ltr">{{ p.code }}</code>
+              @if (p.descriptionAr) {
+                <div class="hbh-fld__hint">{{ p.descriptionAr }}</div>
+              }
+            </td>
+            <td dir="ltr" class="hbh-table__num">
+              <b>{{ p.value }}</b>
+              @if (p.overridden) {
+                <span class="hbh-badge hbh-badge--info">{{ 'settings.overridden' | t }}</span>
+              }
+            </td>
+            <!-- The shipped default, kept visible next to the centre's own
+                 value. Without it "معدَّل" says something changed and not
+                 what it was, which is the half that matters when undoing. -->
+            <td dir="ltr">{{ p.overridden ? p.defaultValue : '—' }}</td>
+            <td>
+              <div class="hbh-table__actions">
+                @if (p.editable) {
+                  <button class="hbh-rowbtn" type="button"
+                          [attr.aria-label]="'action.edit' | t" (click)="startEdit(p)">
+                    <hbh-icon name="ic-edit" />
+                  </button>
+                  @if (p.overridden) {
+                    <!-- Only beside a value somebody chose. On a row already
+                         on its default the button would do nothing and say
+                         nothing, which reads as a broken button. -->
+                    <button class="hbh-rowbtn" type="button"
+                            [disabled]="clearing() === p.code"
+                            [attr.aria-label]="'settings.resetTo' | t"
+                            [attr.title]="('settings.resetTo' | t) + ' ' + p.defaultValue"
+                            (click)="clear(p)">
+                      <hbh-icon name="ic-refresh" />
+                    </button>
+                  }
+                } @else {
+                  <!-- Not a disabled pencil. A greyed control invites the
+                       reader to go and find the permission that turns it on,
+                       and there is none: this value is not a setting. -->
+                  <span class="hbh-fld__hint">{{ 'settings.locked' | t }}</span>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="hbh-tablefoot">
+    <span>{{ 'settings.editableCount' | t }} {{ editableCount() }} / {{ params().length }}</span>
+  </div>
+}
+
+@if (editing(); as param) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancel()" aria-labelledby="paramTitle">
+    <form class="hbh-sheet__box" (submit)="save($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="paramTitle" dir="ltr">{{ param.code }}</h2>
+        <button class="hbh-iconbtn" type="button"
+                [attr.aria-label]="'action.cancel' | t" (click)="cancel()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+
+      <div class="hbh-sheet__body">
+        @if (param.descriptionAr) {
+          <p class="hbh-fld__hint">{{ param.descriptionAr }}</p>
+        }
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="paramValue">{{ 'settings.value' | t }}</label>
+          <div class="hbh-fld__box">
+            <input id="paramValue" type="text" dir="ltr"
+                   [attr.inputmode]="param.dataType === 'NUMBER' ? 'decimal' : null"
+                   [value]="draft()"
+                   (input)="setDraft($any($event.target).value)">
+          </div>
+          <div class="hbh-fld__hint">
+            {{ 'settings.defaultIs' | t }} <code dir="ltr">{{ param.defaultValue }}</code>
+          </div>
+        </div>
+        @if (formError()) {
+          <p class="hbh-fld__hint is-bad">{{ formError() | t }}</p>
+        }
+      </div>
+
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
+          {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="saving()" (click)="cancel()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}
+
+<!-- The architectural decision this screen exists partly to state. It is not
+     a setting that happens to be off: RECORDING_ENABLED is in the table
+     above, marked not editable, and it stays that way whatever permission
+     anybody is given. -->
+<div class="hbh-notice" style="margin-top:18px">
+  <hbh-icon name="ic-video" />
+  <div>
+    <b>{{ 'settings.noRecording' | t }}</b>
+    <p>{{ 'settings.noRecordingNote' | t }}</p>
+  </div>
+</div>

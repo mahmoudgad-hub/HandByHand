@@ -1,0 +1,98 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">
+        {{ greetingKey() | t }}{{ auth.me()?.fullName ? '، ' + auth.me()?.fullName : '' }}
+      </div>
+      
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions dashboard-toolbar" (keydown.escape)="toolbarPanel.set(null)">
+    <div class="dashboard-date"><hbh-icon name="ic-calendar" /><time>{{ today() }}</time></div>
+    <button class="hbh-iconbtn toolbar-bell" type="button" aria-label="الإشعارات" title="الإشعارات" [attr.aria-expanded]="toolbarPanel() === 'alerts'" aria-controls="dashboard-toolbar-panel" (click)="toggleToolbar('alerts')"><hbh-icon name="ic-bell" />@if(alerts().length){<span class="toolbar-count">{{ alerts().length }}</span>}</button>
+    <button class="hbh-iconbtn" type="button" aria-label="المساعدة" title="المساعدة" [attr.aria-expanded]="toolbarPanel() === 'help'" aria-controls="dashboard-toolbar-panel" (click)="toggleToolbar('help')"><hbh-icon name="ic-help" /></button>
+    @if(toolbarPanel()) { <section id="dashboard-toolbar-panel" class="toolbar-panel" aria-live="polite"><div class="toolbar-panel-head"><strong>{{ toolbarPanel() === 'alerts' ? 'الإشعارات والمتابعة' : 'مساعدة لوحة التحكم' }}</strong><button class="hbh-iconbtn" type="button" aria-label="إغلاق" (click)="toolbarPanel.set(null)"><hbh-icon name="ic-x" /></button></div>
+    @if(toolbarPanel() === 'alerts') { @for(tile of alerts();track tile.key){<a [routerLink]="tile.link" [queryParams]="tile.linkQuery ?? null">{{tile.labelKey | t}} <b>{{countOf(tile)}}</b></a>} @empty {<p>لا توجد عناصر معلّقة ظاهرة حاليًا.</p>} }
+    @else {<p>اضغط على أي كارت لفتح قائمته، وعلى التنبيه لمتابعة العناصر المعلّقة. زر تحديث يعيد تحميل بيانات لوحة التحكم.</p>}
+    </section> }
+
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+<!-- Every tile is a link, filtered the same way it was counted. A number
+     nobody can act on is decoration. -->
+<div class="hbh-kpis">
+  @for (tile of tiles(); track tile.key) {
+    <a class="hbh-kpi" [class.is-action]="needsAction(tile)"
+       [routerLink]="tile.link" [queryParams]="tile.linkQuery ?? null">
+      <div class="hbh-kpi__top">
+        <!-- The tinted box is the design's, and it is doing work: at a glance
+             it separates the day as it stands from the things waiting on
+             somebody. A bare icon made every tile weigh the same. -->
+        <span class="hbh-iconbox" [class]="'hbh-iconbox hbh-t--' + tile.tone">
+          <hbh-icon [name]="tile.icon" />
+        </span>
+        <span class="hbh-kpi__label">{{ tile.labelKey | t }}</span>
+      </div>
+      @if (isPending(tile)) {
+        <div class="hbh-kpi__value"><span class="skel skel--num"></span></div>
+      } @else {
+        <div class="hbh-kpi__value">{{ countOf(tile) }}</div>
+      }
+      @if (wasRefused(tile)) {
+        <!-- A dash above, and the reason here. "0" would say nobody is
+             waiting, which is a different thing from not having asked. -->
+        <div class="hbh-kpi__foot">{{ 'dash.notAsked' | t }}</div>
+      }
+    </a>
+  }
+</div>
+
+
+<div class="dashboard-panels">
+<!-- The clinician's own day, first, because it is the only panel on this
+     page written for them. Everything else here is gated on a permission a
+     therapist does not hold, and correctly so - which left them a rooms
+     panel saying "not available" and nothing about the work they signed in
+     to do. It links to /my-day rather than repeating the list: a second
+     place for the same rows is a second place for them to be wrong. -->
+@if(isClinician()) {<section class="dash-panel my-day"><h2>يومك</h2>
+@if(myDayState()==='loading'){<p>جارٍ تحميل جدولك…</p>}
+@else if(myDayState()==='failed'){<p>تعذر تحميل جدولك اليوم.</p>}
+@else if(inProgress(); as row){<div class="my-day__now"><span class="my-day__tag">{{ row['session_id'] ? 'جلسة جارية' : 'الطفل حضر' }}</span><b>{{childName(row) || 'موعد'}}</b><small>{{format.time($any(row['starts_at']))}} — {{format.time($any(row['ends_at']))}}</small>
+<!-- The same three conditions day-spec uses, and for the same reason: this
+     is a shortcut to that operation, not a second version of it. -->
+@if(canStart(row)){<button class="hbh-btn hbh-btn--primary my-day__go" type="button" [disabled]="starting() !== null" (click)="startNow(row)"><hbh-icon name="ic-play"/>{{ 'sessions.start' | t }}</button>}
+@else if(row['session_id']){<a class="hbh-btn hbh-btn--ghost my-day__go" routerLink="/sessions"><hbh-icon name="ic-play"/>افتح الجلسة</a>}</div>}
+@else if(nextUp(); as row){<div class="my-day__now"><span class="my-day__tag">التالي</span><b>{{childName(row) || 'موعد'}}</b><small>{{format.time($any(row['starts_at']))}} — {{format.time($any(row['ends_at']))}} · {{statusLabel(row)}}</small>
+<!-- No start button here on purpose. The child has not been checked in,
+     and the schema starts a session from CHECKED_IN alone - offering it
+     would produce NOT_CHECKED_IN every time. -->
+</div>}
+@if(startFailed()){<p class="my-day__err">تعذّر بدء الجلسة. حدّث الصفحة وحاول مرة أخرى.</p>}
+@else {<p>لا توجد مواعيد متبقية لك اليوم.</p>}
+<!-- Only when the day HAS appointments. "0 من 0" on a day off is a line
+     that says nothing and still asks to be read. And the phrasing avoids
+     an Arabic plural: 1/2/3-10/11+ take four different forms, and a
+     template is the wrong place to decide which. -->
+@if(myDayState()==='ready' && myDay().length){<p class="my-day__rest">متبقٍ لك اليوم: {{ format.count(remaining()) }} من {{ format.count(myDay().length) }}</p>}
+<a routerLink="/my-day">فتح يومك ←</a></section>}
+@if(auth.can('APPOINTMENT.BOOK')) {<section class="dash-panel"><h2>نظرة على جدول اليوم</h2><div class="agenda-body">@if(agendaFailed()){<p>تعذر تحميل ملخص اليوم.</p>} @else if(agendaCount() < agendaParts.length){<p>جارٍ تحميل ملخص اليوم…</p>} @else {<div class="agenda-ring" [style.background]="ring()"><div><b>{{agendaTotal()}}</b><small>الإجمالي</small></div></div><ul>@for(part of agendaParts;track part.key){<li><i [style.background]="part.color"></i>{{part.label}}<b>{{agenda()[part.key] || 0}}</b></li>}</ul>}</div><a routerLink="/appointments">عرض الجدول الكامل ←</a></section>}
+<!-- Absent, not apologetic. An account without CATALOG.MANAGE was shown a
+     panel whose entire content was "room data is not available for this
+     account" - a permanent sentence about a screen they will never need,
+     taking the place a useful panel could have had. -->
+@if(roomsState()!=='denied') {<section class="dash-panel"><h2>غرف المركز</h2><div class="dashboard-rooms">@for(room of rooms();track room['room_id']){<a routerLink="/rooms"><hbh-icon name="ic-door"/><b>{{room['name_ar']}}</b><small>{{room['room_type'] || 'غرفة بالمركز'}}</small></a>} @empty {<p>{{roomsState() === 'loading' ? 'جارٍ التحميل…' : roomsState() === 'ready' ? 'لا توجد غرف مسجلة.' : 'تعذر تحميل بيانات الغرف.'}}</p>}</div>@if(roomsState()==='ready'){<a routerLink="/rooms">عرض كل الغرف ←</a>}</section>}
+<section class="dash-panel"><h2>التنبيهات والمتابعة</h2><div class="dashboard-alerts">@for(tile of alerts();track tile.key){<a [routerLink]="tile.link" [queryParams]="tile.linkQuery ?? null"><hbh-icon [name]="tile.icon"/><span>{{tile.labelKey | t}}</span><b>{{countOf(tile)}}</b><span>عرض</span></a>} @empty {<p>لا توجد عناصر معلّقة ظاهرة حاليًا.</p>}</div></section>
+</div>
+
+<div class="dashboard-bottom">
+@if(auth.can('APPOINTMENT.BOOK')) {<div class="bottom-metric"><hbh-icon name="ic-check-circle"/><span>نسبة الحضور</span><b>{{rate('attended')}}</b><small>من المواعيد المحسومة هذا الشهر</small></div><div class="bottom-metric"><hbh-icon name="ic-x-circle"/><span>نسبة عدم الحضور</span><b>{{rate('absent')}}</b><small>من المواعيد المحسومة هذا الشهر</small></div>}
+@if(auth.can('NPS.MANAGE')){<a class="bottom-metric" routerLink="/satisfaction"><hbh-icon name="ic-star"/><span>رضا أولياء الأمور</span><b>{{metrics()?.satisfaction?.mean == null ? '—' : format.number(metrics().satisfaction.mean)}} <em>/ 5</em></b><small>{{metrics()?.satisfaction?.count ?? '—'}} تقييم</small></a>}
+@if(auth.can('ENROLMENT.MANAGE')){<a class="bottom-metric" routerLink="/enrolments"><hbh-icon name="ic-user-plus"/><span>طلبات الالتحاق (هذا الشهر)</span><b>{{metrics()?.leads ?? '—'}}</b><small>طلبات مسجلة جديدة</small></a>}
+@if(auth.can('BILLING.VIEW')){<a class="bottom-metric" routerLink="/billing"><hbh-icon name="ic-receipt"/><span>مدفوعات معلّقة</span>@for(balance of metrics()?.outstanding ?? [];track balance.currency_code){<b>{{format.money(+balance.amount,balance.currency_code)}}</b><small>{{balance.invoices}} فاتورة</small>} @empty{<b>{{metrics() ? '0' : '—'}}</b><small>الفواتير الصادرة وغير المكتملة السداد</small>}</a>}
+</div>

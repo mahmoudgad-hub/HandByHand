@@ -1,0 +1,147 @@
+<section class="scr">
+
+  @if (loading()) {
+    <hbh-skeleton [count]="1" shape="card" />
+    <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                    (retry)="load()" />
+  } @else {
+
+    <div class="prof">
+      <span class="prof__ph"><hbh-icon name="ic-user" /></span>
+      <span class="prof__b">
+        <span class="prof__n">{{ guardian()?.fullName }}</span>
+        <!-- Masked by the server. The portal shows what it was given. -->
+        <span class="prof__m" dir="ltr">{{ guardian()?.phone }}</span>
+      </span>
+    </div>
+
+    <!-- The two fields this record holds that are the parent's own.
+         Absent entirely for an account with no guardian record - a member
+         of staff signed into the portal - because an empty form there
+         would invite them to fill in something that has nowhere to go. -->
+    @if (contact()) {
+      <div class="sec">
+        <div class="sec__head"><h2 class="sec__t">{{ 'profile.contact' | t }}</h2></div>
+        <p class="sec__note">{{ 'profile.contactNote' | t }}</p>
+        <div class="fld">
+          <label class="fld__l" for="p-email">{{ 'profile.email' | t }}</label>
+          <div class="fld__box">
+            <input id="p-email" type="email" inputmode="email" dir="ltr"
+                   autocomplete="email"
+                   [value]="draftEmail()"
+                   (input)="draftEmail.set($any($event.target).value)">
+          </div>
+        </div>
+        <div class="fld">
+          <label class="fld__l" for="p-city">{{ 'profile.city' | t }}</label>
+          <div class="fld__box">
+            <input id="p-city" type="text"
+                   [value]="draftCity()"
+                   (input)="draftCity.set($any($event.target).value)">
+          </div>
+        </div>
+        @if (contactError()) {
+          <p class="error" role="alert">{{ contactError() | t }}</p>
+        }
+        @if (contactDirty()) {
+          <div class="actions">
+            <button class="btn primary" type="button"
+                    [disabled]="savingContact()" (click)="saveContact()">
+              {{ (savingContact() ? 'action.saving' : 'action.save') | t }}
+            </button>
+            <button class="btn secondary" type="button"
+                    [disabled]="savingContact()" (click)="cancelContact()">
+              {{ 'action.cancel' | t }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="sec">
+      <div class="sec__head"><h2 class="sec__t">{{ 'profile.children' | t }}</h2></div>
+      <div class="stack">
+        @for (child of children(); track child.id) {
+          <button class="opt" type="button" (click)="openChild(child)">
+            <hbh-icon name="ic-user" />
+            <span class="opt__b">
+              {{ child.fullName }}
+              <span class="opt__s">
+                {{ child.birthDate | hbhAge }}
+                &middot; {{ child.childNo }}
+              </span>
+            </span>
+            <span class="opt__go"><hbh-icon name="ic-arrow" /></span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Consents. Withdrawing one takes effect on the server; the live screen
+         will be refused a ticket the moment live viewing is switched off. -->
+    <div class="sec">
+      <div class="sec__head"><h2 class="sec__t">{{ 'profile.consents' | t }}</h2></div>
+      <div class="stack">
+        <!-- Tracked by key AND child: watching is granted per child, so a
+             family with two children has two of these rows and they are not
+             the same row. -->
+        @for (consent of consents(); track consent.key + ':' + consent.childId) {
+          <div class="opt">
+            <hbh-icon [name]="consentIcon(consent)" />
+            <span class="opt__b">
+              {{ 'consent.' + consent.key | t }}
+              @if (consent.childName) {
+                <!-- Whose. Two identical rows with no name on them is the
+                     one thing this list must never be. -->
+                — {{ consent.childName }}
+              }
+              <span class="opt__s">{{ 'consent.' + consent.key + '.note' | t }}</span>
+            </span>
+            <!-- The child is part of the switch's NAME, not decoration: two
+                 live-view switches announcing the same words leave a screen
+                 reader user choosing blind between them. -->
+            <button class="sw" type="button"
+                    [class.is-on]="consent.granted"
+                    [disabled]="isSaving(consent)"
+                    role="switch"
+                    [attr.aria-checked]="consent.granted"
+                    [attr.aria-label]="('consent.' + consent.key | t)
+                                       + (consent.childName ? ' — ' + consent.childName : '')"
+                    (click)="toggleConsent(consent)"></button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="stack">
+        <a class="opt" routerLink="/requests">
+          <hbh-icon name="ic-send" />
+          <span class="opt__b">{{ 'nav.requests' | t }}</span>
+          <span class="opt__go"><hbh-icon name="ic-arrow" /></span>
+        </a>
+        <a class="opt" routerLink="/billing">
+          <hbh-icon name="ic-receipt" />
+          <span class="opt__b">{{ 'nav.billing' | t }}</span>
+          <span class="opt__go"><hbh-icon name="ic-arrow" /></span>
+        </a>
+        <button class="opt" type="button" (click)="help()">
+          <hbh-icon name="ic-help" />
+          <span class="opt__b">{{ 'profile.help' | t }}</span>
+          <span class="opt__go"><hbh-icon name="ic-arrow" /></span>
+        </button>
+        <button class="opt" type="button" (click)="signOut()">
+          <hbh-icon name="ic-lock" />
+          <span class="opt__b">{{ 'action.signOut' | t }}</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="priv" style="margin-top:18px">
+      <hbh-icon name="ic-shield" />
+      <span>{{ 'welcome.privacy' | t }}</span>
+    </p>
+  }
+</section>

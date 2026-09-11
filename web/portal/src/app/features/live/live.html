@@ -1,0 +1,111 @@
+<section class="scr">
+
+  @if (loading()) {
+    <hbh-skeleton [count]="1" shape="card" />
+  } @else {
+
+    <!-- The player. There is no scrubber, no timeline and no download,
+         because there is nothing recorded to move through. The clock counts
+         up from the moment the therapist started the session. -->
+    <div class="player" [class.player--idle]="!session()" #player>
+      <div class="player__top">
+        @if (playing()) {
+          <span class="player__live">
+            <span class="hbh-live-dot"></span> {{ 'live.badge' | t }}
+          </span>
+        }
+        @if (session()) {
+          <span class="player__t" dir="ltr">{{ elapsed() }}</span>
+        }
+      </div>
+
+      <div class="player__mid">
+        @if (playing()) {
+          <!-- The transport is decided with the streaming edge, not here. The
+               player is handed a URL the edge issued against an opaque
+               ticket; this screen never learns a camera address. -->
+          <hbh-icon name="ic-video" />
+          <p>{{ 'live.connecting' | t }}</p>
+        } @else {
+          <hbh-icon name="ic-x-circle" />
+          <p>{{ refusalKey() | t }}</p>
+        }
+      </div>
+
+      @if (session(); as current) {
+        <div class="player__bot">
+          <div class="player__meta">
+            <span>{{ current.childName }}</span> <s>&middot;</s>
+            <span>{{ current.therapistName }}</span> <s>&middot;</s>
+            <span>{{ current.serviceName }}</span>
+          </div>
+          <div class="player__ctl">
+            <button class="player__btn" type="button" [disabled]="!playing()"
+                    [attr.aria-pressed]="muted()"
+                    [attr.aria-label]="(muted() ? 'live.unmute' : 'live.mute') | t"
+                    (click)="toggleMute()">
+              <hbh-icon name="ic-volume" />
+            </button>
+            <button class="player__mark" type="button" [disabled]="!playing()"
+                    (click)="markMoment()">
+              <hbh-icon name="ic-flag" />
+              {{ 'live.markMoment' | t }}
+            </button>
+            <button class="player__btn" type="button" [disabled]="!playing()"
+                    [attr.aria-label]="'live.fullscreen' | t"
+                    (click)="toggleFullscreen(player)">
+              <hbh-icon name="ic-maximize" />
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- A refusal is shown as an action the parent can take, not a dead end. -->
+    @if (!playing()) {
+      <div class="sec">
+        @if (refusal() === 'consent') {
+          <div class="note note--warn">
+            <hbh-icon name="ic-warn" />
+            <span>{{ 'live.consentRequired' | t }}</span>
+          </div>
+          <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/profile"
+             style="margin-top:10px">
+            <hbh-icon name="ic-sliders" />
+            {{ 'live.openConsents' | t }}
+          </a>
+        } @else if (refusal() === 'expired') {
+          <hbh-error-note [message]="'live.ticketExpired' | t"
+                          [retryLabel]="'live.resume' | t"
+                          (retry)="requestTicket()" />
+        } @else if (refusal() === 'error') {
+          <hbh-error-note [message]="'error.load' | t"
+                          [retryLabel]="'action.retry' | t"
+                          (retry)="load()" />
+        } @else if (refusal() === 'denied') {
+          <div class="note note--warn">
+            <hbh-icon name="ic-shield" />
+            <span>{{ 'live.denied' | t }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- The three promises the centre makes about watching. They are stated
+         on the screen where they apply, not buried in a policy page. -->
+    <div class="sec stack">
+      <div class="note note--ok">
+        <hbh-icon name="ic-shield" />
+        <span>{{ 'live.noRecordingLong' | t }}</span>
+      </div>
+      <div class="note note--info">
+        <hbh-icon name="ic-clock" />
+        <span>{{ 'live.ticketBound' | t }}</span>
+      </div>
+      <div class="note note--warn">
+        <hbh-icon name="ic-eye" />
+        <span>{{ 'live.viewLogged' | t }}</span>
+      </div>
+    </div>
+  }
+</section>

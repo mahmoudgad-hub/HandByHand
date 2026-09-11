@@ -1,0 +1,621 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ headTitleKey | t }}</div>
+      <div class="hbh-pagehead__sub">{{ headSubKey | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    @for (item of (spec.resource === 'invoices' && billingTab() !== 'invoices' ? [] : creates()); track item.key) {
+      <button class="hbh-btn"
+              [class.hbh-btn--primary]="item.primary"
+              [class.hbh-btn--ghost]="!item.primary"
+              type="button" (click)="startCreate(item)">
+        <hbh-icon [name]="item.icon" />
+        {{ item.labelKey | t }}
+      </button>
+    }
+  </div>
+</div>
+
+@if (spec.resource === 'invoices') {<hbh-billing-overview />
+<nav class="hbh-filters" aria-label="أقسام الفواتير">@for(tab of [{key:'invoices',label:'الفواتير'},{key:'payments',label:'المدفوعات'},{key:'packages',label:'الباقات والأسعار'},{key:'balances',label:'أرصدة الجلسات'}];track tab.key){<button type="button" class="hbh-btn" [class.hbh-btn--primary]="billingTab()===tab.key" [attr.aria-pressed]="billingTab()===tab.key" (click)="billingTab.set(tab.key)">{{tab.label}}</button>}</nav>
+@if(billingTab()!=='invoices'){<hbh-billing-ledger [kind]="billingTab()" />}}
+@if(spec.resource!=='invoices'||billingTab()==='invoices'){
+@if(exportError()){<p role="alert">{{exportError()}}</p>}
+<div class="hbh-filters">
+  @if(spec.resource === 'invoices'){<button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="exporting() || loading() || failed()" (click)="exportInvoices()">{{exporting() ? 'جارٍ التصدير…' : 'تصدير كل النتائج CSV'}}</button>}
+  @if(spec.window === 'diary') {
+    <!-- No therapist picker on /my-day. The screen is one person's day and
+         already asks the service for their rows only; a dropdown offering
+         "all therapists" beside it would either undo that or - worse -
+         disagree with it. It did: the control rendered empty while the
+         query carried therapist_id, because a <select>'s value is bound in
+         the same pass that renders its options and the list arrives later.
+         A screen that contradicts itself is worse than either state.
+
+         Reception keeps it on /appointments, where choosing a colleague is
+         the whole job. -->
+    @if (!isMyDay) {
+      <select class="hbh-select" aria-label="الأخصائي" [value]="therapistFilter()" (change)="therapistFilter.set($any($event.target).value);refilter()"><option value="">كل الأخصائيين</option>@for(item of filterOptions()['therapists'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>
+    }
+    <select class="hbh-select" aria-label="الغرفة" [value]="roomFilter()" (change)="roomFilter.set($any($event.target).value);refilter()"><option value="">كل الغرف</option>@for(item of filterOptions()['rooms'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>
+    @if(spec.resource === 'appointments'){<select class="hbh-select" aria-label="الخدمة" [value]="serviceFilter()" (change)="serviceFilter.set($any($event.target).value);refilter()"><option value="">كل الخدمات</option>@for(item of filterOptions()['services'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>}
+    @if(filtersFailed()){<button type="button" class="hbh-btn" (click)="loadFilterOptions()">تعذر تحميل الفلاتر — إعادة المحاولة</button>}
+  }
+
+  @if (spec.resource === 'enrolments') {<button type="button" class="hbh-btn hbh-btn--ghost" [attr.aria-pressed]="boardView()" (click)="toggleBoard()">{{ boardView() ? 'عرض الجدول' : 'عرض مراحل المتابعة' }}</button>}
+  @if (spec.resource === 'reports') {<button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="loading() || failed() || !rows().length" (click)="exportPage()">تصدير الصفحة الحالية CSV</button>}
+  @if (spec.resource === 'appointments') {
+    <button class="hbh-btn hbh-btn--ghost" type="button" [attr.aria-pressed]="calendarView()" (click)="toggleCalendar()">
+      <hbh-icon name="ic-calendar" /> {{ calendarView() ? 'عرض الجدول' : 'التقويم الأسبوعي' }}
+    </button>
+  }
+  <!-- A diary opens on one day and steps a day at a time, because that is
+       how the desk works: yesterday's no-shows, today, tomorrow's list. -->
+  @if (spec.window === 'diary') {
+    <button class="hbh-iconbtn" type="button"
+            [attr.aria-label]="calendarView() ? 'الأسبوع السابق' : ('action.previousDay' | t)" (click)="shiftDay(calendarView() ? -7 : -1)">
+      <hbh-icon name="ic-chevron" />
+    </button>
+    <!-- A native date box HERE, unlike every stored date in the console -
+         and the echo beside it is why that is safe.
+
+         The control takes its format from the browser, so this can read
+         mm/dd/yyyy in an Arabic page. For a date that gets STORED that is
+         unacceptable and the console uses <hbh-date-parts> instead. This one
+         is a FILTER: picking the wrong day shows the wrong day's list, which
+         is seen and undone in a second, and the calendar plus the prev/next
+         buttons are genuinely the right controls for moving between days.
+         Three dropdowns would make the common action worse.
+         What was missing is confirmation of WHICH day is selected, in words
+         that cannot be read in the other order. -->
+    <div class="hbh-field">
+      <hbh-icon name="ic-calendar" />
+      <input type="date" [value]="day()"
+             (change)="setDay($any($event.target).value)">
+    </div>
+    <span class="hbh-daylabel">{{ format.dayMonthYear(day()) }}</span>
+    <button class="hbh-iconbtn" type="button"
+            [attr.aria-label]="calendarView() ? 'الأسبوع التالي' : ('action.nextDay' | t)" (click)="shiftDay(calendarView() ? 7 : 1)">
+      <hbh-icon name="ic-back" />
+    </button>
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="setToday()">
+      {{ 'action.today' | t }}
+    </button>
+  } @else if (spec.window === 'ledger') {
+    <!-- A ledger has no default day. Bounds are days here, not instants. -->
+    <div class="hbh-field">
+      <hbh-icon name="ic-calendar" />
+      <input type="date" [value]="from()" [attr.aria-label]="'field.from' | t"
+             (change)="setFrom($any($event.target).value)">
+    </div>
+    @if (from()) {
+      <span class="hbh-daylabel">{{ format.dayMonthYear(from()) }}</span>
+    }
+    <div class="hbh-field">
+      <hbh-icon name="ic-calendar" />
+      <input type="date" [value]="to()" [attr.aria-label]="'field.to' | t"
+             (change)="setTo($any($event.target).value)">
+    </div>
+    @if (to()) {
+      <span class="hbh-daylabel">{{ format.dayMonthYear(to()) }}</span>
+    }
+  }
+  <!-- A queue gets no date control at all. It is not an omission: filtering
+       this list by date is how the family who applied a month ago and was
+       never called back would disappear from it. -->
+
+  @if (spec.archivable) {
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="toggleArchived()"
+            [attr.aria-pressed]="showArchived()">
+      <hbh-icon name="ic-filter" />
+      {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
+    </button>
+  }
+
+  <!-- `selected` on each option, not `value` on the select. Angular sets the
+       select's value property in the same pass that renders its options, so
+       a value that arrives with the screen - one seeded from the address by a
+       dashboard link - is set against an empty list and lost. The rows came
+       back filtered while the control read "all statuses": the screen
+       disagreeing with itself, which is worse than either state alone. -->
+  <div class="hbh-field">
+    <hbh-icon name="ic-filter" />
+    <select [attr.aria-label]="'field.status' | t"
+            (change)="setStatus($any($event.target).value)">
+      <option value="" [selected]="status() === ''">{{ 'filter.allStatuses' | t }}</option>
+      @for (value of spec.statusFilter; track value) {
+        <option [value]="value" [selected]="status() === value">
+          {{ spec.statusPrefix + value | t }}
+        </option>
+      }
+    </select>
+  </div>
+
+  @if (spec.kindFilter) {
+    <div class="hbh-field">
+      <hbh-icon name="ic-tag" />
+      <select [attr.aria-label]="'field.kind' | t"
+              (change)="setKind($any($event.target).value)">
+        <option value="" [selected]="kind() === ''">{{ 'filter.allKinds' | t }}</option>
+        @for (value of spec.kindFilter; track value) {
+          <option [value]="value" [selected]="kind() === value">
+            {{ spec.kindPrefix + value | t }}
+          </option>
+        }
+      </select>
+    </div>
+  }
+</div>
+
+@if (spec.resource === 'invoices') {
+  <div class="invoice-statuses" aria-label="الفواتير حسب الحالة خلال الفترة المحددة">
+    @for (stage of spec.statusFilter; track stage) {
+      <button class="invoice-status" type="button" [class.is-selected]="status() === stage" (click)="setStatus(stage)"><span>{{ spec.statusPrefix + stage | t }}</span><strong>{{ invoiceCounts()[stage] ?? '—' }}</strong></button>
+    }
+  </div>
+}
+@if(spec.resource==='appointments'){
+<section class="appointment-attention"><h3>متابعة مواعيد {{calendarDate(day())}} · @if(isMyDay){مواعيدي}@else{كل الأخصائيين والغرف}</h3>
+@if(attentionLoading()){<p>جارٍ مراجعة المواعيد…</p>}@else if(attentionFailed()){<p role="alert">تعذر تحميل متابعة المواعيد.</p>}@else{
+<details><summary>بانتظار التأكيد ({{pendingAppointments().length}})</summary>@for(row of pendingAppointments();track rowKey(row)){<article><strong>{{appointmentName(row)}}</strong> · {{format.time($any(row['starts_at']))}}<div class="week-actions">@for(action of actionsFor(row);track action.key){<button class="hbh-btn hbh-btn--sm" (click)="startAction(action,row)">{{action.labelKey|t}}</button>}</div></article>}@empty{<p>لا توجد مواعيد بانتظار التأكيد.</p>}</details>
+<details><summary>تداخلات الأخصائي أو الغرفة ({{appointmentConflicts().length}})</summary>@for(pair of appointmentConflicts();track $index){<p>{{appointmentName(pair.first)}} · {{format.time($any(pair.first['starts_at']))}} — {{appointmentName(pair.second)}} · {{format.time($any(pair.second['starts_at']))}}</p>}@empty{<p>لا توجد تداخلات في المواعيد النشطة لهذا اليوم.</p>}</details>}
+</section>}
+@if (loading()) {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (boardView()) {
+  <div class="followup-board" role="region" aria-label="مراحل متابعة طلبات الالتحاق" tabindex="0">
+    @for (stage of spec.statusFilter; track stage) {
+      <section class="week-day"><h3>{{ spec.statusPrefix + stage | t }} <small>{{ boardRows(stage).length }}</small></h3>
+        @for (row of boardRows(stage); track rowKey(row)) {
+          <article class="week-appointment">
+            @for (column of spec.columns; track column.key) {<div [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</div>}
+            <div class="week-actions">@for (action of actionsFor(row); track action.key) {<button type="button" class="hbh-btn hbh-btn--sm" (click)="startAction(action, row)">{{ action.labelKey | t }}</button>}</div>
+          </article>
+        } @empty {<p class="week-empty">لا توجد طلبات في هذه المرحلة</p>}
+      </section>
+    }
+  </div>
+} @else if (calendarView()) {
+  <div class="week-calendar" role="region" aria-label="مواعيد الأسبوع" tabindex="0">
+    @for (day of week(); track day.date) {
+      <section class="week-day" [class.week-day--today]="day.date === format.today()">
+        <h3>{{ calendarDate(day.date) }} <small>{{ day.rows.length }} موعد</small></h3>
+@if(creates().length){<details class="hour-booking"><summary>حجز بساعة محددة</summary><p>يتم التحقق من التوافر قبل تأكيد الحجز.</p><div>@for(hour of bookingHours;track hour){<button type="button" class="hbh-btn hbh-btn--sm" (click)="bookHour(day.date,hour)">{{hour}}:00 · حجز</button>}</div></details>}
+        @for (row of day.rows; track rowKey(row)) {
+          <article class="week-appointment">
+            <span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span>
+            @for (column of spec.columns; track column.key) {
+              @if (column.key !== 'childNo') {
+                <div [class.week-appointment__name]="column.key === 'child'" [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</div>
+              }
+            }
+            <div class="week-actions">
+              @for (action of actionsFor(row); track action.key) {
+                @if (action.link) {
+                  <a class="hbh-btn hbh-btn--sm" [routerLink]="action.link(row)">{{ action.labelKey | t }}</a>
+                } @else {
+                  <button type="button" class="hbh-btn hbh-btn--sm" (click)="startAction(action, row)">{{ action.labelKey | t }}</button>
+                }
+              }
+            </div>
+          </article>
+        } @empty { <p class="week-empty">لا توجد مواعيد</p> }
+      </section>
+    }
+  </div>
+} @else if (isMyDay && !hasTherapistProfile()) {
+  <!-- Reception or an administrator on a clinician's route. They are told
+       whose screen this is, rather than shown an empty day that suggests
+       they have one and it happens to be free. The service has already
+       refused to widen; this only explains the refusal. -->
+  <hbh-empty-state icon="ic-list" [title]="'myDay.noProfile' | t"
+                   [note]="'myDay.noProfileNote' | t" />
+} @else if (rows().length === 0) {
+  <hbh-empty-state icon="ic-list" [title]="emptyKey | t"
+                   [note]="emptyNoteKey | t" />
+} @else {
+  <div class="hbh-tablewrap">
+    <table class="hbh-table">
+      <thead>
+        <tr>
+          @for (column of spec.columns; track column.key) {
+            <th>{{ column.labelKey | t }}</th>
+          }
+          <th>{{ 'field.status' | t }}</th>
+          <th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track rowKey(row)) {
+          <tr>
+            @for (column of spec.columns; track column.key) {
+              <!-- Clock times, money and identifiers read left to right even
+                   on an Arabic page; names do not. -->
+              <td [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</td>
+            }
+            <td>
+              <span class="hbh-badge" [class]="statusTone(row)">
+                {{ statusKey(row) | t }}
+              </span>
+            </td>
+            <td>
+              <div class="hbh-pagehead__actions">
+                @for (action of actionsFor(row); track action.key) {
+                  @if (action.link) {
+                    <!-- Goes somewhere. Drawn as a link so it gets the
+                         pointer, the middle click and the focus behaviour a
+                         navigation should have. -->
+                    <a class="hbh-btn hbh-btn--sm"
+                       [class.hbh-btn--primary]="action.primary"
+                       [class.hbh-btn--ghost]="!action.primary"
+                       [routerLink]="action.link(row)">
+                      <hbh-icon [name]="action.icon" />
+                      {{ action.labelKey | t }}
+                    </a>
+                  } @else {
+                    <button class="hbh-btn hbh-btn--sm"
+                            [class.hbh-btn--primary]="action.primary"
+                            [class.hbh-btn--ghost]="!action.primary"
+                            type="button" (click)="startAction(action, row)">
+                      <hbh-icon [name]="action.icon" />
+                      {{ action.labelKey | t }}
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- What the filter matches, not what this page holds. -->
+  <div class="hbh-pager">
+    <span class="hbh-pager__count">
+      {{ 'crud.showing' | t: {
+           shown: (rows().length | hbhNum),
+           total: (total() | hbhNum) } }}
+    </span>
+    @if (hasMorePages()) {
+      <div class="hbh-pager__nav">
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+          {{ 'action.previous' | t }}
+        </button>
+        <span class="hbh-pager__page">
+          {{ 'crud.page' | t: {
+               page: (page() | hbhNum),
+               count: (pageCount() | hbhNum) } }}
+        </span>
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="page() >= pageCount()" (click)="goToPage(page() + 1)">
+          {{ 'action.next' | t }}
+        </button>
+      </div>
+    }
+  </div>
+}
+
+<!-- One dialog for every verb on this screen. An action with no fields is a
+     confirmation; an action with fields collects them first. -->
+@if (open(); as dialog) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="close()" aria-labelledby="dayDialogTitle">
+    <form class="hbh-sheet__box" (submit)="submit($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="dayDialogTitle">{{ dialog.action.labelKey | t }}</h2>
+        <button class="hbh-iconbtn" type="button"
+                [attr.aria-label]="'action.cancel' | t" (click)="close()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+
+      <div class="hbh-sheet__body">
+        @if (dialog.action.noteKey) {
+          <p class="hbh-fld__hint">{{ dialog.action.noteKey | t }}</p>
+        }
+
+        @if (lookupsLoading()) {
+          <hbh-skeleton [count]="3" shape="row" />
+        }
+
+        <!-- ONE definition of a field, drawn twice: once in the main flow
+             and once inside the disclosure below. Two copies of this markup
+             would be two places for a control to learn something - which is
+             the defect the whole spec-driven screen exists to avoid. -->
+        <ng-template #fieldTpl let-field>
+          <div class="hbh-fld" [class.is-locked]="!fieldReady(field)">
+            <label class="hbh-fld__l" [attr.for]="'d-' + field.name">
+              {{ field.labelKey | t }}
+            </label>
+            <div class="hbh-fld__box" [class.is-bad]="badField() === field.name">
+              @if (field.kind === 'select' || field.kind === 'lookup') {
+                <!-- `selected` on the option, not `value` on the select -
+                     the same rule as the status filter above. The lookups
+                     arrive AFTER the first render, and a value bound
+                     against an empty option list is dropped, which would
+                     leave the placeholder showing over a real choice. -->
+                <select [id]="'d-' + field.name"
+                        [disabled]="!fieldReady(field)"
+                        (change)="setValue(field.name, $any($event.target).value)">
+                  @if (field.placeholderKey) {
+                    <option value="" [selected]="!values()[field.name]">
+                      {{ field.placeholderKey | t }}
+                    </option>
+                  }
+                  @for (option of optionsForOpen(field); track option.value) {
+                    <option [value]="option.value"
+                            [selected]="option.value === values()[field.name]">{{ option.labelKey | t }}</option>
+                  }
+                </select>
+              } @else if (field.kind === 'pair') {
+                <!-- ONE control, TWO answers. It lists only combinations the
+                     centre can deliver, so the incompatible one reception
+                     used to be able to choose is not merely discouraged -
+                     it is not in the list at all. -->
+                <select [id]="'d-' + field.name" [value]="pairValue()"
+                        [disabled]="pairsState() !== 'ready'"
+                        (change)="setPair(field.name, $any($event.target).value)">
+                  <option value="">{{ 'field.chooseServiceTherapist' | t }}</option>
+                  @for (option of pairs(); track option.value) {
+                    <option [value]="option.value">{{ option.labelKey }}</option>
+                  }
+                </select>
+              } @else if (field.kind === 'search') {
+                <!-- A combobox, and it keeps the promise: the arrow keys,
+                     Enter and Escape all work, because a control that
+                     announces role="combobox" to a screen reader and then
+                     ignores the arrow keys is worse than a plain text box. -->
+                <div class="childpick">
+                  <input [id]="'d-' + field.name" type="text" autocomplete="off"
+                         role="combobox" aria-autocomplete="list"
+                         [attr.aria-expanded]="childOpen()"
+                         [attr.aria-controls]="'d-' + field.name + '-list'"
+                         [attr.aria-activedescendant]="childActive() >= 0
+                           ? 'd-' + field.name + '-opt-' + childActive() : null"
+                         [placeholder]="'field.childSearchPlaceholder' | t"
+                         [value]="childTerm()"
+                         (input)="onChildType(field, $any($event.target).value)"
+                         (keydown)="onChildKey(field, $event)">
+                  @if (childOpen()) {
+                    <ul class="childpick__list" role="listbox"
+                        [id]="'d-' + field.name + '-list'">
+                      @if (childState() === 'short') {
+                        <li class="childpick__note">{{ 'field.childSearchShort' | t }}</li>
+                      } @else if (childState() === 'searching') {
+                        <li class="childpick__note">{{ 'field.childSearching' | t }}</li>
+                      } @else if (childState() === 'failed') {
+                        <!-- "We could not ask" is not "nobody by that name". -->
+                        <li class="childpick__note">{{ 'error.load' | t }}</li>
+                      } @else if (!childHits().length) {
+                        <li class="childpick__note">{{ 'field.childNoHits' | t }}</li>
+                      } @else {
+                        @for (hit of childHits(); track hit['child_id']; let i = $index) {
+                          <li role="option" [id]="'d-' + field.name + '-opt-' + i"
+                              [attr.aria-selected]="childActive() === i">
+                            <button type="button" class="childpick__one"
+                                    [class.is-active]="childActive() === i"
+                                    (click)="pickChild(field, hit)">
+                              {{ childLabel(hit) }}
+                            </button>
+                          </li>
+                        }
+                      }
+                    </ul>
+                  }
+                </div>
+              } @else if (field.kind === 'slots') {
+                <!-- WHICH WINDOWS WOULD BE ACCEPTED, instead of "would this
+                     one". Every time here has already been through the same
+                     hbh.validate_slot the booking goes through, so none of
+                     them can be offered and then refused for the therapist
+                     or the room. Picking one fills the two instants below
+                     AND the room - the room being the part that used to be
+                     guessed at and discovered occupied at check time. -->
+                <div class="slotpick">
+                  <!-- Carries the field's own id: the label above says
+                       "available slots" and must point at something real,
+                       and the day is what this control actually sets. -->
+                  <input class="slotpick__day" type="date" dir="ltr"
+                         [id]="'d-' + field.name"
+                         [value]="slotDate()"
+                         (change)="setSlotDate($any($event.target).value)">
+                  @if (slotsState() === 'loading') {
+                    <p class="hbh-fld__hint">{{ 'appointments.slotsLoading' | t }}</p>
+                  } @else if (slotsState() === 'denied') {
+                    <!-- 403, not an empty day. "You may not ask" and "there
+                         is nothing free" are different answers. -->
+                    <p class="hbh-fld__hint">{{ 'appointments.slotsDenied' | t }}</p>
+                  } @else if (slotsState() === 'failed') {
+                    <p class="hbh-fld__hint">{{ 'appointments.slotsFailed' | t }}</p>
+                  } @else if (slotsState() === 'idle') {
+                    <p class="hbh-fld__hint">{{ 'appointments.slotsPick' | t }}</p>
+                  } @else if (!slots().length) {
+                    <p class="hbh-fld__hint">{{ 'appointments.slotsNone' | t }}</p>
+                  } @else {
+                    <div class="slotpick__list">
+                      @for (slot of slots(); track slot.starts_at) {
+                        <button type="button" class="slotpick__one"
+                                [class.is-picked]="pickedSlot() === slot.starts_at"
+                                [attr.aria-pressed]="pickedSlot() === slot.starts_at"
+                                (click)="pickSlot(slot)">
+                          <b dir="ltr">{{ slotLabel(slot) }}</b>
+                          <small>{{ slot.room_name_ar }}</small>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else if (field.kind === 'textarea') {
+                <textarea [id]="'d-' + field.name" rows="3"
+                          [value]="values()[field.name]"
+                          (input)="setValue(field.name, $any($event.target).value)"></textarea>
+              } @else {
+                <!-- datetime-local collects the CENTRE's wall clock. It is
+                     converted to a UTC instant before it is sent; the browser
+                     zone never enters into it. -->
+                <input [id]="'d-' + field.name"
+                       [type]="field.kind === 'datetime' ? 'datetime-local'
+                             : field.kind === 'money' ? 'text' : 'text'"
+                       [attr.inputmode]="field.kind === 'money' ? 'decimal' : null"
+                       [attr.dir]="field.ltr ? 'ltr' : null"
+                       [value]="values()[field.name]"
+                       (input)="setValue(field.name, $any($event.target).value)">
+              }
+            </div>
+            @if (field.hintKey) {
+              <p class="hbh-fld__hint">{{ field.hintKey | t }}</p>
+            }
+            @if (field.narrowedByService) {
+              <!-- An empty narrowed list is a real answer, not a failure:
+                   nobody is linked to this service yet. Saying where that
+                   is fixed beats an empty dropdown that reads as broken. -->
+              @if (narrowing()) {
+                <p class="hbh-fld__hint">{{ 'appointments.therapistsLoading' | t }}</p>
+              } @else if (!optionsForOpen(field).length) {
+                <p class="hbh-fld__hint">{{ 'appointments.noTherapistForService' | t }}</p>
+              } @else {
+                <p class="hbh-fld__hint">{{ 'appointments.therapistsNarrowed' | t }}</p>
+              }
+            }
+            <!-- The end time, said rather than typed. Only where the service
+                 has a duration: inventing one for a service nobody
+                 configured would book the wrong length and look deliberate. -->
+            @if (field.kind === 'pair') {
+              @if (pairsState() === 'loading') {
+                <p class="hbh-fld__hint">{{ 'appointments.pairsLoading' | t }}</p>
+              } @else if (pairsState() === 'failed') {
+                <p class="hbh-fld__hint">{{ 'error.load' | t }}</p>
+              } @else if (!pairs().length) {
+                <!-- No pair exists at all: nobody in this centre is linked
+                     to any service. Nothing can be booked until that is
+                     fixed, and the screen says where. -->
+                <p class="hbh-fld__hint">{{ 'appointments.noPairs' | t }}</p>
+              }
+            }
+            @if (field.name === 'starts_at' && values()['starts_at']) {
+              @if (chosenMinutes()) {
+                <p class="hbh-fld__hint" dir="auto">
+                  {{ 'appointments.endsAt' | t }}
+                  <b dir="ltr">{{ format.time(derivedEnd() + ':00') }}</b>
+                  · {{ 'appointments.ofMinutes' | t }} {{ format.count(chosenMinutes()) }}
+                </p>
+              } @else {
+                <p class="hbh-fld__hint">{{ 'appointments.noDuration' | t }}</p>
+              }
+            }
+            @if (!fieldReady(field)) {
+              <p class="hbh-fld__hint">{{ 'appointments.needsFirst' | t }}</p>
+            }
+          </div>
+        </ng-template>
+
+        <!-- The ordinary booking, in the order reception works: who, then
+             what care, then when, then anything to say about it. -->
+        @for (field of primaryFields(); track field.name; let i = $index) {
+          @if (sectionBreak(primaryFields(), i); as head) {
+            <h3 class="hbh-sheet__sec">{{ head | t }}</h3>
+          }
+          <ng-container [ngTemplateOutlet]="fieldTpl"
+                        [ngTemplateOutletContext]="{ $implicit: field }" />
+        }
+
+        <!-- Legal and rare, behind one press. A therapist who agrees to
+             stay twenty minutes late is a real booking and must not need a
+             developer - but it is not what the other ninety-nine are. -->
+        @if (secondaryFields().length) {
+          <button class="hbh-btn hbh-btn--ghost hbh-sheet__more" type="button"
+                  [attr.aria-expanded]="advancedOpen()" (click)="toggleAdvanced()">
+            <hbh-icon name="ic-filter" />
+            {{ (advancedOpen() ? 'appointments.hideManual' : 'appointments.showManual') | t }}
+          </button>
+          @if (advancedOpen()) {
+            @for (field of secondaryFields(); track field.name; let i = $index) {
+              @if (sectionBreak(secondaryFields(), i); as head) {
+                <h3 class="hbh-sheet__sec">{{ head | t }}</h3>
+              }
+              <ng-container [ngTemplateOutlet]="fieldTpl"
+                            [ngTemplateOutletContext]="{ $implicit: field }" />
+            }
+          }
+        }
+
+        <!-- The read-back. By the time a time is chosen the child is off
+             the top of the dialog, and the wrong child is the one mistake
+             here that reaches a family. -->
+        @if (reviewKeyOf(dialog.action); as reviewKey) {
+          @if (reviewRows().length) {
+            <div class="hbh-review">
+              <h3 class="hbh-sheet__sec">{{ reviewKey | t }}</h3>
+              <dl>
+                @for (row of reviewRows(); track row.labelKey) {
+                  <div><dt>{{ row.labelKey | t }}</dt><dd>{{ row.value }}</dd></div>
+                }
+              </dl>
+            </div>
+          }
+        }
+
+        <!-- The slot answer, in its own place. A refusal here arrived as a
+             200: a question was asked and answered, and nothing failed. -->
+        @if (slotCheck(); as answer) {
+          <p class="hbh-signin__err" [class.is-ok]="answer.ok" role="status">
+            <hbh-icon [name]="answer.ok ? 'ic-check-circle' : 'ic-warn'" />
+            <span>
+              {{ slotKey(answer) | t }}
+            </span>
+          </p>
+        }
+
+        @if (formError()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" />
+            <span>{{ formError() | t }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="hbh-sheet__foot">
+        <!-- Disabled while saving, which is the double-click guard. It is
+             NOT the protection: the three exclusion constraints on
+             hbh.appointments are, and they stay the thing that decides.
+             This only stops the second request from being sent at all.
+
+             Also disabled until every required field is answered - not a
+             second copy of the rules, just a button that stops looking
+             ready before it is. -->
+        <button class="hbh-btn hbh-btn--primary" type="submit"
+                [class.is-busy]="saving()" [disabled]="saving() || !canConfirm()">
+          {{ (saving() ? 'action.saving' : dialog.action.labelKey) | t }}
+        </button>
+        <!-- Asked of the OPEN action, not of the screen: billing has two
+             screen-level actions and only a booking has a slot to check.
+
+             SECONDARY now, and it was the main workflow before: the only
+             way to learn whether a time was free was to propose one and
+             press this. With the free windows listed, re-checking is the
+             exception - useful when a form has sat open while somebody
+             else booked, and no longer the way the screen is used. -->
+        @if (dialog.row === null && hasCheck(dialog.action)) {
+          <button class="hbh-btn hbh-btn--ghost" type="button"
+                  [class.is-busy]="checking()" [disabled]="checking() || saving()"
+                  (click)="check()">
+            <hbh-icon name="ic-search" />
+            {{ 'appointments.checkSlot' | t }}
+          </button>
+        }
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="saving()" (click)="close()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}
+
+}

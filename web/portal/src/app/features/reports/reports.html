@@ -1,0 +1,80 @@
+<section class="scr">
+
+  <div class="seg" role="tablist">
+    <button class="seg__i" type="button" role="tab"
+            [class.is-on]="scope() === 'reports'"
+            [attr.aria-selected]="scope() === 'reports'"
+            (click)="select('reports')">
+      {{ 'reports.tabReports' | t }}
+    </button>
+    <button class="seg__i" type="button" role="tab"
+            [class.is-on]="scope() === 'notes'"
+            [attr.aria-selected]="scope() === 'notes'"
+            (click)="select('notes')">
+      {{ 'reports.tabNotes' | t }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <hbh-skeleton [count]="3" shape="row" />
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                    (retry)="load()" />
+  } @else if (items().length === 0) {
+    <hbh-empty-state icon="ic-file"
+                     [title]="(scope() === 'reports'
+                               ? 'reports.emptyReports' : 'reports.emptyNotes') | t"
+                     [note]="'reports.emptyNote' | t" />
+  } @else {
+    <div class="stack">
+      @for (report of items(); track report.id) {
+        <!-- A button only where there is something to open. A session note
+             has no detail endpoint and its whole text is the line below, so
+             drawing it as a control would promise a screen that does not
+             exist - which is what the "not switched on yet" message was
+             apologising for. -->
+        @if (openable(report)) {
+          <button class="row" type="button" (click)="open(report)">
+            <span class="row__ic" [class]="tint(report)">
+              <hbh-icon [name]="icon(report)" />
+            </span>
+            <span class="row__b">
+              <span class="row__t">{{ report.title }}</span>
+              <span class="row__s">
+                {{ report.authorName }}
+                <s>&middot;</s> {{ format.dayMonthYear(report.publishedAt) }}
+              </span>
+            </span>
+            <span class="row__e">
+              @if (report.unread) {
+                <span class="hbh-badge hbh-badge--info">{{ 'label.new' | t }}</span>
+              }
+              <hbh-icon name="ic-chevron" class="row__go" />
+            </span>
+          </button>
+        } @else {
+          <div class="row">
+            <span class="row__ic" [class]="tint(report)">
+              <hbh-icon [name]="icon(report)" />
+            </span>
+            <span class="row__b">
+              <span class="row__t">{{ report.title }}</span>
+              <span class="row__s">
+                {{ report.authorName }}
+                <s>&middot;</s> {{ format.dayMonthYear(report.publishedAt) }}
+              </span>
+            </span>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <div class="sec">
+    <div class="note note--info">
+      <hbh-icon name="ic-info" />
+      <span>{{ 'reports.publishedOnly' | t }}</span>
+    </div>
+  </div>
+</section>
+

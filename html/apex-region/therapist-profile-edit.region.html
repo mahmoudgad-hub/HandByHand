@@ -1,0 +1,264 @@
+
+      <!-- =====================================================
+           شريط الحالة. زرّ المعاينة ليس ترفًا: شاشة تحرير لا تُري
+           صاحبها النتيجة تُنتج ملفّات لم يرها أحد بعينَي قارئها.
+           ===================================================== -->
+      <div class="hbh-tpe__bar">
+        <span class="hbh-tpe__t">ملفّ أ. مروة عبد الرحمن</span>
+        <span class="hbh-badge hbh-badge--progress">مسوّدة — فيها ٣ تعديلات غير منشورة</span>
+        <span class="hbh-tpe__sp"></span>
+        <a class="hbh-btn hbh-btn--ghost" href="therapist-profile.html">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+          عايِن كما يراه وليّ الأمر
+        </a>
+        <button class="hbh-btn hbh-btn--primary" type="button">انشر التغييرات</button>
+      </div>
+
+      <div class="hbh-tpe">
+        <div>
+
+          <section class="hbh-card" style="margin-bottom:16px">
+            <div class="hbh-card-head"><h2 class="hbh-card-title">الأساسيات</h2></div>
+            <div class="hbh-card-body">
+
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="tp-name">الاسم كما يظهر لوليّ الأمر</label>
+                <div class="hbh-fld__box">
+                  <input id="tp-name" type="text" value="أ. مروة عبد الرحمن">
+                </div>
+              </div>
+
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="tp-title">المسمّى الوظيفي</label>
+                <div class="hbh-fld__box">
+                  <select id="tp-title">
+                    <option>أخصائي تخاطب أوّل</option>
+                    <option>أخصائي تخاطب</option>
+                    <option>أخصائي علاج وظيفي</option>
+                  </select>
+                </div>
+                <p class="hbh-fld__hint">من جدول المسمّيات، لا نصًّا حرًّا: مسمّى مكتوب بحرّية يصير عشرة مسمّيات لوظيفة واحدة.</p>
+              </div>
+
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="tp-bio">نبذة بصوتها</label>
+                <div class="hbh-fld__box">
+                  <textarea id="tp-bio" rows="4">أعمل مع الأطفال من عمر سنتين إلى تسع سنوات. أبدأ دائمًا بجلسة تقييم ألعب فيها مع الطفل قبل أن أقيس أي شيء، لأن الطفل الذي يخاف من الغرفة لا يُظهر ما يعرفه.</textarea>
+                </div>
+                <p class="hbh-fld__hint">
+                  ٤٠٠ حرف كحدّ أقصى، وبضمير المتكلّم. النبذة التي تكتبها الإدارة
+                  بالنيابة تُقرأ كإعلان، والأسرة تميّز الفرق.
+                </p>
+              </div>
+
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="tp-start">سنة بداية العمل بالمهنة</label>
+                <div class="hbh-fld__box">
+                  <input id="tp-start" type="text" inputmode="numeric" value="2014" dir="ltr">
+                </div>
+                <p class="hbh-fld__hint">
+                  الخبرة تُحسب منها ولا تُدخَل: عدد سنوات مخزَّن يبلى بصمت في كل
+                  عيد ميلاد للمهنة — نفس سبب اشتقاق عمر الطفل من تاريخ الميلاد.
+                </p>
+              </div>
+
+            </div>
+          </section>
+
+          <section class="hbh-card" style="margin-bottom:16px">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">الصورة</h2>
+              <span class="hbh-badge hbh-badge--success">منشورة</span>
+            </div>
+            <div class="hbh-card-body">
+              <div class="hbh-tpdrop">
+                <b>اسحب صورة، أو اختر ملفًّا</b>
+                ‏JPG أو PNG · الحدّ ٥ ميجابايت · تُقصّ رأسيًّا ٣:٤
+              </div>
+              <p class="hbh-fld__hint">
+                الصورة اختيارية. الملفّ بلا صورة يعرض الشكل الرمزي، ولا يُعرض
+                ناقصًا ولا يُخفى من نتائج البحث بسببها.
+              </p>
+            </div>
+          </section>
+
+          <!-- اللغات: لغة أمّ واحدة على الأكثر، ولكل لغة مستوى وعلامة
+               تقول هل تُدار بها جلسة فعلًا — «تقرأ الإنجليزية» ليست
+               «تعالج بالإنجليزية». -->
+          <section class="hbh-card" style="margin-bottom:16px">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">اللغات</h2>
+              <button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button">أضف لغة</button>
+            </div>
+            <div class="hbh-card-body">
+              <div class="hbh-tperows">
+                <div class="hbh-tperow">
+                  <svg class="hbh-i hbh-tperow__grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grip"/></svg>
+                  <div class="hbh-tperow__b">
+                    <div class="hbh-tperow__t">العربية — المصرية</div>
+                    <div class="hbh-tperow__s">تُدير الجلسة بها</div>
+                  </div>
+                  <span class="hbh-badge hbh-badge--success">لغة أمّ</span>
+                  <button class="hbh-tperow__x" type="button" aria-label="حذف اللغة">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x"/></svg>
+                  </button>
+                </div>
+                <div class="hbh-tperow">
+                  <svg class="hbh-i hbh-tperow__grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grip"/></svg>
+                  <div class="hbh-tperow__b">
+                    <div class="hbh-tperow__t">الإنجليزية</div>
+                    <div class="hbh-tperow__s">بطلاقة · تُدير الجلسة بها</div>
+                  </div>
+                  <button class="hbh-tperow__x" type="button" aria-label="حذف اللغة">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x"/></svg>
+                  </button>
+                </div>
+                <div class="hbh-tperow">
+                  <svg class="hbh-i hbh-tperow__grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grip"/></svg>
+                  <div class="hbh-tperow__b">
+                    <div class="hbh-tperow__t">لغة الإشارة المصرية</div>
+                    <div class="hbh-tperow__s">مستوى تواصل</div>
+                  </div>
+                  <button class="hbh-tperow__x" type="button" aria-label="حذف اللغة">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x"/></svg>
+                  </button>
+                </div>
+              </div>
+              <p class="hbh-fld__hint">لغة أمّ واحدة على الأكثر. القيد في القاعدة، لا في هذه الشاشة.</p>
+            </div>
+          </section>
+
+          <section class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">الشهادات</h2>
+              <button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button">أضف شهادة</button>
+            </div>
+            <div class="hbh-card-body">
+              <div class="hbh-tperows">
+                <div class="hbh-tperow">
+                  <svg class="hbh-i hbh-tperow__grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grip"/></svg>
+                  <div class="hbh-tperow__b">
+                    <div class="hbh-tperow__t">PROMPT — المستوى التمهيدي</div>
+                    <div class="hbh-tperow__s">PROMPT Institute · ٢٠٢٢ · ملف مرفوع</div>
+                  </div>
+                  <span class="hbh-badge hbh-badge--success">الصورة ظاهرة</span>
+                  <button class="hbh-tperow__x" type="button" aria-label="حذف الشهادة">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x"/></svg>
+                  </button>
+                </div>
+                <div class="hbh-tperow">
+                  <svg class="hbh-i hbh-tperow__grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grip"/></svg>
+                  <div class="hbh-tperow__b">
+                    <div class="hbh-tperow__t">مقياس ستانفورد بينيه — الصورة الخامسة</div>
+                    <div class="hbh-tperow__s">مركز التقييم النفسي · ٢٠١٩ · ملف مرفوع</div>
+                  </div>
+                  <span class="hbh-badge hbh-badge--muted">الصورة مخفيّة</span>
+                  <button class="hbh-tperow__x" type="button" aria-label="حذف الشهادة">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x"/></svg>
+                  </button>
+                </div>
+                <div class="hbh-tperow">
+                  <svg class="hbh-i hbh-tperow__grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grip"/></svg>
+                  <div class="hbh-tperow__b">
+                    <div class="hbh-tperow__t">الإنعاش القلبي الرئوي للأطفال</div>
+                    <div class="hbh-tperow__s">الهلال الأحمر المصري · ٢٠٢٣</div>
+                  </div>
+                  <!-- شهادة إنعاش منتهية على ملفّ منشور مشكلة امتثال،
+                       لا تفصيلة واجهة. والتنبيه على شاشة مَن يجدّدها. -->
+                  <span class="hbh-badge hbh-badge--progress">تنتهي بعد ٧ أشهر</span>
+                  <button class="hbh-tperow__x" type="button" aria-label="حذف الشهادة">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="note note--warn" style="margin-top:14px">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-warn"/></svg>
+                <span>
+                  <b>صورة الشهادة تُنشر مغلقة افتراضيًّا.</b>
+                  الشهادة المصرية المصوّرة تحمل غالبًا الرقم القومي وتاريخ الميلاد
+                  وتوقيعًا — ونشرها لأولياء الأمور نشرٌ لبيانات شخصية لم يطلبها أحد.
+                  البيانات النصّية (الاسم، الجهة، السنة) تكفي وتظهر دائمًا؛ وفتح
+                  الصورة قرار واعٍ يتّخذه صاحبها.
+                </span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- =====================================================
+             العمود الجانبي: «ما يراه وليّ الأمر» إجابة السؤال
+             الوحيد الذي يقلق الأخصائي وهو يملأ النموذج.
+             ===================================================== -->
+        <div>
+          <section class="hbh-card" style="margin-bottom:16px">
+            <div class="hbh-card-head"><h2 class="hbh-card-title">ما يراه وليّ الأمر</h2></div>
+            <div class="hbh-card-body">
+              <div class="hbh-tpvis">
+                <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                  <span>الاسم والمسمّى</span>
+                </div>
+                <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                  <span>الصورة والنبذة</span>
+                </div>
+                <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                  <span>اللغات والمؤهّلات</span>
+                </div>
+                <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                  <span>بيانات الشهادات نصًّا</span>
+                </div>
+                <div class="hbh-tpvis__i hbh-tpvis__i--off">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye-off"/></svg>
+                  <span>صور الشهادات — واحدة من ٦</span>
+                </div>
+                <!-- معروضان مقفلَين عمدًا: الطمأنة أن الحقل غير قابل
+                     للفتح أقوى من غيابه. -->
+                <div class="hbh-tpvis__i hbh-tpvis__i--locked">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+                  <span>الرقم القومي · الهاتف · البريد · العنوان</span>
+                </div>
+                <div class="hbh-tpvis__i hbh-tpvis__i--locked">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+                  <span>الراتب · التقييم الوظيفي · الإجازات</span>
+                </div>
+              </div>
+              <p class="hbh-fld__hint" style="margin-top:12px">
+                الصفّان المقفلان ليسا خيارًا في هذه الشاشة، ولا في أيّ شاشة.
+              </p>
+            </div>
+          </section>
+
+          <section class="hbh-card" style="margin-bottom:16px">
+            <div class="hbh-card-head"><h2 class="hbh-card-title">النشر</h2></div>
+            <div class="hbh-card-body">
+              <p class="hbh-fld__hint" style="margin-top:0">
+                وليّ الأمر يرى <b>النسخة المنشورة</b>. التعديل هنا لا يظهر عنده حتى
+                تُضغط «انشر التغييرات».
+              </p>
+              <p class="hbh-fld__hint">
+                آخر نشر: ١٤ أغسطس ٢٠٢٦ · بواسطة الإدارة<br>
+                موافقة الأخصائي على النشر: مسجَّلة ٢ أغسطس ٢٠٢٦
+              </p>
+            </div>
+          </section>
+
+          <section class="hbh-card">
+            <div class="hbh-card-head"><h2 class="hbh-card-title">مَن يحرّر هذا الملف</h2></div>
+            <div class="hbh-card-body">
+              <p class="hbh-fld__hint" style="margin-top:0">
+                الأخصائي يحرّر ملفّه هو، والإدارة تحرّر أيّ ملف — تبريران مختلفان
+                ففرعان مختلفان في التخويل. تجاوز إداري مبنيّ على صلاحية وحدها يعطي
+                كلّ أخصائي سلطةً على ملفّات زملائه، لأن الصلاحيتين تجتمعان في الدور
+                الواحد.
+              </p>
+            </div>
+          </section>
+        </div>
+
+      </div>
+

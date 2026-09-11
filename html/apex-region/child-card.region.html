@@ -1,0 +1,255 @@
+
+      <!-- ما يظهر على الشاشة ولا يُطبع -->
+      <div class="hbh-noprint">
+
+        <div class="hbh-tpe__bar">
+          <span class="hbh-tpe__t">كرت هويّة — محمد علي</span>
+          <span class="hbh-badge hbh-badge--info">CH-00221</span>
+          <span class="hbh-tpe__sp"></span>
+          <button class="hbh-btn hbh-btn--ghost" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-printer"/></svg>
+            اطبع كرتًا واحدًا
+          </button>
+          <button class="hbh-btn hbh-btn--primary" type="button">اطبع ورقة كاملة</button>
+        </div>
+
+        <div class="hbh-tpe">
+          <div>
+
+            <section class="hbh-card" style="margin-bottom:16px">
+              <div class="hbh-card-head">
+                <h2 class="hbh-card-title">المعاينة — بالمقاس الحقيقي</h2>
+                <span class="hbh-muted">‏85.6 × 54 مم · مقاس البطاقة البنكية</span>
+              </div>
+              <div class="hbh-card-body">
+                <div class="hbh-cardprev">
+
+                  <!-- ============ الوجه ============ -->
+                  <figure>
+                    <div class="hbh-idcard">
+                      <span class="hbh-idcard__photo">
+                        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+                      </span>
+                      <div class="hbh-idcard__b">
+                        <span class="hbh-idcard__brand">
+                          <img src="hbh-logo-mark.png" alt="">
+                          <img src="hbh-logo-wordmark.png" alt="Hand by Hand" style="height:5mm">
+                        </span>
+                        <div class="hbh-idcard__kind">كرت هويّة الطفل</div>
+                        <div class="hbh-idcard__name">محمد علي حسن</div>
+                        <!-- تاريخ الميلاد لا العمر: العمر يبلى، والكرت يعيش سنة. -->
+                        <div class="hbh-idcard__meta">
+                          تاريخ الميلاد: ١٥ مارس ٢٠٢٠<br>
+                          الخدمة: تخاطب · الأخصائي: أ. مروة عبد الرحمن
+                        </div>
+                        <div class="hbh-idcard__no">CH-00221</div>
+                      </div>
+                      <div class="hbh-idcard__foot">
+                        <span>Hand by Hand Skills Center</span>
+                        <span>02 2XXX XXXX</span>
+                      </div>
+                    </div>
+                    <figcaption>الوجه</figcaption>
+                  </figure>
+
+                  <!-- ============ الظهر ============ -->
+                  <figure>
+                    <div class="hbh-idcard hbh-idcard--back">
+
+                      <!-- رقمان لا رقم. المساحة التي كان يأخذها التنبيه
+                           الطبيّ ذهبت هنا، وهذه مقايضة مقصودة: رقمان
+                           حقيقيان يُردّ على أحدهما أنفع في طوارئ من سطر
+                           صحّي كُتب مرّة وبَلِيَ بصمت على ورقة لا تعرف
+                           أنه تغيّر.
+                           والترتيب كلّيّ لا جزئيّ:
+                           is_primary_flg ثم created_at ثم guardian_id
+                           فاصلًا قاطعًا. ORDER BY على العلم وحده ليس
+                           ترتيبًا قاطعًا، فيختار المحرّك عند التساوي.
+
+                           والشقّ الأول مضمون منذ الهجرة 0032:
+                           uix_gc_one_primary فهرس فريد على child_id
+                           بشرط is_primary_flg AND active_flg — والشرط
+                           الثاني ضروري لأن الحذف ناعم، وفهرس على العلم
+                           وحده كان يمنع تسمية وليّ أمر أساسي جديد بعد
+                           أرشفة الأول، إلى الأبد.
+
+                           والفاصلان الباقيان يعالجان ما لا يغطّيه
+                           الفهرس: أكثر من وليّ أمر غير أساسي. -->
+                      <div class="hbh-idcard__block">
+                        <div class="hbh-idcard__k">في حالة الطوارئ — يُتّصل بـ</div>
+                        <div class="hbh-idcard__v">
+                          علي حسن — الأب
+                          <small>0100 000 0000</small>
+                        </div>
+                      </div>
+
+                      <div class="hbh-idcard__block">
+                        <div class="hbh-idcard__k">أو</div>
+                        <div class="hbh-idcard__v">
+                          هدى محمود — الأم
+                          <small>0122 000 0000</small>
+                        </div>
+                      </div>
+
+                      <div class="hbh-idcard__block">
+                        <div class="hbh-idcard__k">المركز</div>
+                        <div class="hbh-idcard__v">
+                          Hand by Hand Skills Center
+                          <small>02 2XXX XXXX</small>
+                        </div>
+                      </div>
+
+                      <p class="hbh-idcard__found">
+                        إذا وجدت هذا الكرت، من فضلك أعده إلى المركز على الرقم
+                        أعلاه. لا يحمل هذا الكرت رقمًا قوميًّا ولا عنوان سكن.
+                      </p>
+                    </div>
+                    <figcaption>الظهر</figcaption>
+                  </figure>
+
+                </div>
+              </div>
+            </section>
+
+            <div class="note note--warn" style="margin-bottom:16px">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-printer"/></svg>
+              <span>
+                <b>قبل أوّل طباعة: فعِّل «طباعة الخلفيات والصور» في نافذة الطابعة.</b>
+                الكرت مصمَّم ليخرج مقروءًا بدونها — النصّ حبر داكن على أبيض —
+                لكن حدود اللون والصورة تحتاجها. اطبع كرتًا واحدًا وقِسه بمسطرة
+                قبل المئة: طابعة مضبوطة على «ملء الصفحة» تكبّر الكرت فيخرج
+                بمقاس لا يدخل أيّ محفظة.
+              </span>
+            </div>
+
+          </div>
+
+          <!-- ============ ما يدخل الكرت وما لا يدخله ============ -->
+          <div>
+            <section class="hbh-card" style="margin-bottom:16px">
+              <div class="hbh-card-head"><h2 class="hbh-card-title">ما على الكرت</h2></div>
+              <div class="hbh-card-body">
+                <div class="hbh-tpvis">
+                  <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                    <span>الصورة والاسم</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                    <span>تاريخ الميلاد ورقم الحالة</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                    <span>رقما طوارئ</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--on">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+                    <span>رقم طوارئ ثانٍ</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--locked">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+                    <span>أيّ بيان صحّيّ</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--locked">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+                    <span>الرقم القومي</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--locked">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+                    <span>عنوان السكن</span>
+                  </div>
+                  <div class="hbh-tpvis__i hbh-tpvis__i--locked">
+                    <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+                    <span>التشخيص وخطّة العلاج</span>
+                  </div>
+                </div>
+                <p class="hbh-fld__hint" style="margin-top:12px">
+                  الثلاثة المقفلة ليست خيارًا في هذه الشاشة. الكرت يُفقَد،
+                  وما عليه يصير متاحًا لمن وجده.
+                </p>
+              </div>
+            </section>
+
+            <section class="hbh-card">
+              <div class="hbh-card-head"><h2 class="hbh-card-title">لماذا لا يحمل بيانًا صحّيًّا</h2></div>
+              <div class="hbh-card-body">
+                <p class="hbh-fld__hint" style="margin-top:0">
+                  السكيما لا تحمل حقلًا طبيًّا للطفل أصلًا، وهذا موافق للتصميم
+                  لا نقص فيه. فالكرت لا يطبع شيئًا من هذا الباب.
+                </p>
+                <p class="hbh-fld__hint">
+                  وحتى لو أُضيف الحقل: <b>كل ما بُني من ضوابط يقف عند حافة
+                  الطابعة.</b> الورقة تُنسى في حضانة وتُصوَّر وتُرسَل، ولا
+                  سجلّ قراءة لها. وتبلى بصمت — سطر كُتب سنةً يصير خطأً في
+                  التالية والورقة لا تعرف. وخطؤها ضرر جسديّ لا شاشة خاطئة.
+                </p>
+                <p class="hbh-fld__hint">
+                  الرقمان على الظهر هما البديل: مَن يردّ يعرف الحالة
+                  ويعرف ما تغيّر فيها اليوم.
+                </p>
+              </div>
+            </section>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+           الورقة التي تُطبع فعلًا: عشرة كروت على A4.
+           تظهر على الشاشة كمعاينة وتُطبع وحدها.
+           ============================================================ -->
+      <section class="hbh-card hbh-noprint" style="margin-top:16px">
+        <div class="hbh-card-head">
+          <h2 class="hbh-card-title">ورقة الطباعة — ١٠ كروت على A4</h2>
+          <span class="hbh-muted">للطابعة العادية، بلا مطبعة</span>
+        </div>
+        <div class="hbh-card-body" style="overflow-x:auto">
+          <div class="hbh-cardsheet" style="transform:scale(.62);transform-origin:top right">
+            <div class="hbh-idcard">
+              <span class="hbh-idcard__photo">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+              </span>
+              <div class="hbh-idcard__b">
+                <span class="hbh-idcard__brand"><img src="hbh-logo-mark.png" alt=""></span>
+                <div class="hbh-idcard__kind">كرت هويّة الطفل</div>
+                <div class="hbh-idcard__name">محمد علي حسن</div>
+                <div class="hbh-idcard__no">CH-00221</div>
+              </div>
+            </div>
+            <div class="hbh-idcard">
+              <span class="hbh-idcard__photo">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+              </span>
+              <div class="hbh-idcard__b">
+                <span class="hbh-idcard__brand"><img src="hbh-logo-mark.png" alt=""></span>
+                <div class="hbh-idcard__kind">كرت هويّة الطفل</div>
+                <div class="hbh-idcard__name">سلمى أحمد فؤاد</div>
+                <div class="hbh-idcard__no">CH-00222</div>
+              </div>
+            </div>
+            <div class="hbh-idcard">
+              <span class="hbh-idcard__photo">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+              </span>
+              <div class="hbh-idcard__b">
+                <span class="hbh-idcard__brand"><img src="hbh-logo-mark.png" alt=""></span>
+                <div class="hbh-idcard__kind">كرت هويّة الطفل</div>
+                <div class="hbh-idcard__name">يوسف طارق سعيد</div>
+                <div class="hbh-idcard__no">CH-00223</div>
+              </div>
+            </div>
+            <div class="hbh-idcard">
+              <span class="hbh-idcard__photo">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+              </span>
+              <div class="hbh-idcard__b">
+                <span class="hbh-idcard__brand"><img src="hbh-logo-mark.png" alt=""></span>
+                <div class="hbh-idcard__kind">كرت هويّة الطفل</div>
+                <div class="hbh-idcard__name">ملك عمرو زكي</div>
+                <div class="hbh-idcard__no">CH-00224</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+

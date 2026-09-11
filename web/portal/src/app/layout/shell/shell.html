@@ -1,0 +1,154 @@
+<div class="pa">
+
+  <!-- Keyboard users land here first. Without it, reaching the screen's own
+       content means tabbing past the header and the whole nav on every
+       navigation. -->
+  <a class="hbh-skip" href="#paBody">{{ 'a11y.skipToContent' | t }}</a>
+
+  <!-- ==================================================================
+       The wide bar: brand, navigation, account chip. portal.css hides it
+       below 900px, where the title bar and the tabs below take over.
+       ================================================================== -->
+  <header class="hbh-webhead">
+    <div class="hbh-webhead__in">
+
+      <a class="hbh-brand" routerLink="/home" [attr.aria-label]="'app.name' | t">
+        <img class="hbh-logo hbh-brand__logo" src="assets/brand/hbh-logo-mark.png"
+             width="38" height="39" alt="">
+        <img class="hbh-logo hbh-brand__wm" src="assets/brand/hbh-logo-wordmark.png"
+             width="122" height="48" alt="">
+      </a>
+
+      <nav class="hbh-webnav" [attr.aria-label]="'nav.primary' | t">
+        @for (item of webNav; track item.key) {
+          <a class="hbh-webnav__item" [class.is-active]="chrome().tab === item.key"
+             [routerLink]="item.path"
+             [attr.aria-current]="chrome().tab === item.key ? 'page' : null">
+            <hbh-icon [name]="item.icon" />
+            {{ item.labelKey | t }}
+          </a>
+        }
+      </nav>
+
+      <div class="hbh-webtools">
+        <!-- A BELL WAS THE WRONG SIGN, three times over. It said
+             "notifications" on a button that opens "my requests"; there is no
+             notifications feature to open; and the dot on it counted the
+             attention items from the home screen - an unpaid invoice, an
+             unfinished activity - which have nothing to do with requests and
+             are already listed, in full, on the screen it did not lead to.
+
+             It is now what it always was: the way to the requests this family
+             has sent the centre. Named in words on the wide bar, where there
+             is room for a label and an icon alone is a guess. -->
+        <a class="hbh-webnav__item" routerLink="/requests"
+           [class.is-active]="chrome().tab === 'requests'"
+           [attr.aria-current]="chrome().tab === 'requests' ? 'page' : null">
+          <hbh-icon name="ic-chat" />
+          {{ 'nav.requests' | t }}
+        </a>
+
+        <!-- THE BELL IS BACK, AND THIS TIME IT OPENS SOMETHING.
+             The note above records why it was removed: it said
+             "notifications" and opened "my requests", and its dot counted
+             attention items from the home screen. Both of those are fixed by
+             the same thing - there is now a notifications feature, and the
+             count on it is the number of unread notifications and nothing
+             else.
+
+             THE COUNT IS ABSENT WHEN IT IS UNKNOWN. `unread()` is null when
+             the request failed, and null draws no badge. A zero there would
+             tell a family nothing is waiting on the strength of a call that
+             never answered. -->
+        <a class="hbh-webnav__item hbh-bell" routerLink="/notifications"
+           [attr.aria-label]="'notifications.title' | t">
+          <hbh-icon name="ic-bell" />
+          {{ 'notifications.title' | t }}
+          @if (unread(); as n) {
+            @if (n > 0) {
+              <span class="hbh-badge hbh-badge--info">{{ n }}</span>
+            }
+          }
+        </a>
+
+        <!-- A link to the account screen, not a menu that opens nothing. An
+             empty name leaves the plain label rather than a placeholder that
+             reads as somebody signed in under a blank. -->
+        <a class="hbh-userchip" routerLink="/profile"
+           [attr.aria-current]="chrome().tab === 'profile' ? 'page' : null">
+          <span class="hbh-avatar hbh-userchip__ph"><hbh-icon name="ic-user" /></span>
+          <div>
+            {{ guardianName() || ('nav.profile' | t) }}
+            @if (guardianName()) {
+              <small>{{ 'role.guardian' | t }}</small>
+            }
+          </div>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================================================================
+       The phone's title bar. Hidden at 900px and above, where the bar
+       overhead carries the navigation.
+
+       The back arrow appears only where a screen declares a parent, so it
+       never offers a way out that leads nowhere.
+       ================================================================== -->
+  <header class="pa__head">
+    @if (chrome().back; as back) {
+      <a class="pa__back" [routerLink]="back" [attr.aria-label]="'action.back' | t">
+        <hbh-icon name="ic-back" />
+      </a>
+    }
+
+    <div class="pa__ttl">
+      <div class="pa__title">{{ chrome().titleKey | t }}</div>
+      @if (subtitle()) {
+        <div class="pa__sub">{{ subtitle() }}</div>
+      }
+    </div>
+
+    <!-- Same on the phone: requests, and named as requests. No dot here
+         either - it was counting the home screen's attention items. -->
+    <a class="pa__act" routerLink="/requests" [attr.aria-label]="'nav.requests' | t">
+      <hbh-icon name="ic-chat" />
+    </a>
+  </header>
+
+  <!-- The scroll container on the phone; an ordinary block on a laptop. -->
+  <main class="pa__body" id="paBody" tabindex="-1">
+
+    <!-- A screen the top bar cannot point at still needs a way back. Shown
+         only at 900px and above: below that the title bar's arrow is the way
+         back, and two of them would be one too many. -->
+    @if (chrome().back; as back) {
+      <a class="pa__crumb" [routerLink]="back">
+        <hbh-icon name="ic-back" />
+        {{ 'action.back' | t }}
+      </a>
+    }
+
+    <router-outlet />
+  </main>
+
+  <!-- Tab bar. aria-current marks the active tab for assistive tech, which
+       the colour change alone would not. Hidden at 900px and above. -->
+  <nav class="pa__tabs" [attr.aria-label]="'nav.primary' | t">
+    @for (tab of tabs; track tab.key) {
+      <a class="pa__tab" [class.is-on]="chrome().tab === tab.key"
+         [routerLink]="tab.path"
+         [attr.aria-current]="chrome().tab === tab.key ? 'page' : null">
+        <hbh-icon [name]="tab.icon" />
+        {{ tab.labelKey | t }}
+      </a>
+    }
+  </nav>
+
+  <!-- The satisfaction dialog is NOT here. The welcome screen - the first
+       thing a parent sees after signing in, and the whole point of asking
+       "straight after login" - stands outside this shell, so a dialog mounted
+       here would miss it. It lives at the application root instead. -->
+
+</div>

@@ -1,0 +1,138 @@
+<section class="scr">
+
+  @if (loading()) {
+    <hbh-skeleton [count]="1" shape="card" />
+    <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                    (retry)="load()" />
+  } @else if (data(); as overview) {
+
+    @if (overview.goals.length === 0) {
+      <hbh-empty-state icon="ic-target" [title]="'progress.empty' | t"
+                       [note]="'progress.emptyNote' | t" />
+    }
+
+    <!-- Chart: one goal's measurements over time. -->
+    @if (charted(); as goal) {
+      <div class="hbh-card">
+        <div class="hbh-card-head">
+          <span class="hbh-card-title">{{ goal.title }}</span>
+          @if (measured(goal)) {
+            <span class="hbh-badge hbh-badge--success">{{ goal.currentPercent | hbhNum }}%</span>
+          }
+        </div>
+        <div class="hbh-card-body">
+          <div class="chart">
+            @for (point of goal.series; track point.takenAt) {
+              <span class="chart__c">
+                <span class="chart__v">{{ point.value | hbhNum }}</span>
+                <span class="chart__b" [style.height.%]="point.value"></span>
+                <span class="chart__l">{{ format.monthName(point.takenAt) }}</span>
+              </span>
+            }
+          </div>
+          @if (goal.lastMeasuredAt; as measured) {
+            <p class="fld__hint" style="text-align:center;margin-top:12px">
+              {{ 'progress.lastMeasured' | t: { date: format.shortDate(measured) } }}
+            </p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Every goal in the plan -->
+    @if (overview.goals.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'progress.goals' | t }}</h2>
+          <span class="hbh-muted">
+            {{ overview.goals.length | hbhPlural: 'progress.goalCount' }}
+          </span>
+        </div>
+        <div class="stack">
+          @for (goal of overview.goals; track goal.id) {
+            <div class="goal">
+              <div class="goal__h">
+                <span class="goal__t">{{ goal.title }}</span>
+                <!-- A percentage ONLY when something was actually measured.
+                     This used to print the baseline when nothing had been,
+                     so a goal with no assessment read as 20% achieved. -->
+                @if (measured(goal)) {
+                  <span class="goal__pct" dir="ltr">{{ goal.currentPercent | hbhNum }}%</span>
+                } @else {
+                  <span class="goal__pct goal__pct--none">{{ 'progress.notMeasured' | t }}</span>
+                }
+              </div>
+
+              @if (measured(goal)) {
+                <!-- The bar is a share of the TARGET, and aria says so: the
+                     max is the target, not a hundred, so a screen reader is
+                     told "54 out of 70" rather than "54 per cent". -->
+                <div class="goal__bar"
+                     role="progressbar"
+                     [attr.aria-valuenow]="goal.currentPercent"
+                     [attr.aria-valuemin]="0" [attr.aria-valuemax]="goal.targetPercent"
+                     [attr.aria-label]="goal.title">
+                  <span class="goal__fill" [class]="barTone(goal)"
+                        [style.width.%]="barWidth(goal)"></span>
+                </div>
+              }
+
+              <div class="goal__m">
+                @if (measured(goal)) {
+                  <!-- What the number means, in words. "54%" alone does not
+                       say 54 per cent of what. -->
+                  {{ 'progress.ofTarget' | t: {
+                       current: (goal.currentPercent | hbhCount),
+                       target: (goal.targetPercent | hbhCount) } }}
+                  @if (goal.lastMeasuredAt; as measuredOn) {
+                    <s>&middot;</s>
+                    {{ 'progress.lastMeasured' | t: { date: format.dayMonthYear(measuredOn) } }}
+                  }
+                  <s>&middot;</s>
+                  {{ goal.measurementCount | hbhPlural: 'progress.measurements' }}
+                } @else {
+                  <!-- No measurement. The baseline and the target are still
+                       worth saying - they are what the therapist set - but
+                       they are labelled as the start and the aim, never as
+                       progress. -->
+                  @if (goal.baselinePercent !== null) {
+                    {{ 'progress.fromBaseline' | t: {
+                         baseline: (goal.baselinePercent | hbhCount),
+                         target: (goal.targetPercent | hbhCount) } }}
+                  } @else {
+                    {{ 'progress.target' | t: { percent: (goal.targetPercent | hbhCount) } }}
+                  }
+                  <s>&middot;</s>
+                  {{ 'progress.awaitingFirst' | t }}
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- The report behind the numbers -->
+    @if (overview.latestReport; as report) {
+      <div class="sec">
+        <a class="row" routerLink="/reports">
+          <span class="row__ic hbh-t--blue"><hbh-icon name="ic-file" /></span>
+          <span class="row__b">
+            <span class="row__t">{{ report.title }}</span>
+            <span class="row__s">
+              {{ report.authorName }}
+              <s>&middot;</s> {{ format.shortDate(report.publishedAt) }}
+            </span>
+          </span>
+          @if (report.unread) {
+            <span class="row__e">
+              <span class="hbh-badge hbh-badge--info">{{ 'label.new' | t }}</span>
+            </span>
+          }
+        </a>
+      </div>
+    }
+  }
+</section>

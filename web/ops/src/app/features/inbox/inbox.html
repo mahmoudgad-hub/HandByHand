@@ -1,0 +1,72 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'inbox.title' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'inbox.sub' | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    @if (data(); as feed) {
+      <button class="hbh-btn hbh-btn--ghost" type="button"
+              [attr.aria-pressed]="unreadOnly()" (click)="toggleUnread()">
+        <hbh-icon name="ic-filter" />
+        {{ (unreadOnly() ? 'inbox.showAll' : 'inbox.showUnread') | t }}
+        @if (feed.unread) { <span class="hbh-badge">{{ feed.unread }}</span> }
+      </button>
+    }
+    <button class="hbh-btn hbh-btn--ghost" type="button"
+            [disabled]="loading()" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="4" shape="row" />
+} @else if (failed()) {
+  <!-- "We could not load these" and "you have nothing" are different
+       sentences. A screen that prints the second when it means the first
+       tells somebody their work is done. -->
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (!rows().length) {
+  <hbh-empty-state icon="ic-bell"
+                   [title]="(unreadOnly() ? 'inbox.noUnread' : 'inbox.empty') | t"
+                   [note]="'inbox.emptyNote' | t" />
+} @else {
+  <ul class="inbox">
+    @for (item of rows(); track item.id) {
+      <li class="inbox__item" [class.is-unread]="!item.read">
+        <!-- A button when it leads somewhere, a plain row when it does not.
+             A row that looks clickable and is not is worse than one that
+             never offered. -->
+        @if (item.target) {
+          <button class="inbox__row" type="button" (click)="open(item)">
+            <span class="inbox__ic"><hbh-icon [name]="icon(item)" /></span>
+            <span class="inbox__b">
+              <span class="inbox__t">{{ item.title }}</span>
+              @if (item.body) { <span class="inbox__s">{{ item.body }}</span> }
+              <span class="inbox__when">{{ format.dayMonthYear(item.at) }} · {{ format.time(item.at) }}</span>
+            </span>
+            <hbh-icon name="ic-arrow" />
+          </button>
+        } @else {
+          <div class="inbox__row inbox__row--flat">
+            <span class="inbox__ic"><hbh-icon [name]="icon(item)" /></span>
+            <span class="inbox__b">
+              <span class="inbox__t">{{ item.title }}</span>
+              @if (item.body) { <span class="inbox__s">{{ item.body }}</span> }
+              <span class="inbox__when">{{ format.dayMonthYear(item.at) }} · {{ format.time(item.at) }}</span>
+            </span>
+            @if (!item.read) {
+              <button class="hbh-btn hbh-btn--ghost" type="button" (click)="markRead(item)">
+                {{ 'inbox.markRead' | t }}
+              </button>
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+}

@@ -1,0 +1,10 @@
+# Everything the build does not need. Keeps the context small and keeps
+# a stray .env out of the image.
+bin/
+hbhd
+hbhd.exe
+*.test
+*.out
+.env
+.env.*
+README.md

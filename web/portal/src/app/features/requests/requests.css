@@ -1,0 +1,28 @@
+/* The prototype had no compose field, because it sent nothing. */
+.req__note {
+  width: 100%;
+  border: 1px solid var(--hbh-line);
+  border-radius: var(--hbh-radius-sm);
+  background: var(--hbh-surface-2);
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--hbh-ink);
+  resize: vertical;
+  outline: none;
+}
+.req__note:focus {
+  border-color: var(--hbh-teal-400);
+  box-shadow: 0 0 0 3px var(--hbh-info-bg);
+}
+
+.req__actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 12px;
+}
+.req__actions .hbh-btn {
+  flex: 1;
+}
+.requests-page{max-width:1050px;margin-inline:auto}.requests-heading{margin:0 0 22px}.requests-heading h1{font-size:22px;color:var(--hbh-ink);margin:0 0 4px}.requests-heading p{font-size:13px;color:var(--hbh-muted);line-height:1.8;margin:0}.request-options{display:grid;gap:12px}.request-option{background:var(--hbh-surface);border:1px solid var(--hbh-line);border-radius:18px;box-shadow:0 7px 22px rgba(19,78,92,.055);overflow:hidden}.request-toggle{display:flex;align-items:center;gap:11px;width:100%;min-height:60px;padding:12px 18px;background:transparent;border:0;color:var(--hbh-ink);font:inherit;font-size:15px;font-weight:600;text-align:start;cursor:pointer}.request-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--hbh-info-bg);color:var(--hbh-teal-600);flex-shrink:0}.is-cancel .request-icon{background:var(--hbh-danger-bg);color:var(--hbh-danger)}.request-chevron{margin-inline-start:auto;width:22px;height:22px;fill:none;stroke:var(--hbh-teal-600);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s}.is-open .request-chevron{transform:rotate(180deg)}.request-panel{padding:4px 20px 18px}.request-panel[hidden]{display:none}.request-panel .fld__l{display:block;font-size:14px;margin-bottom:7px}.req__note{box-sizing:border-box;min-height:100px;background:var(--hbh-surface);border-radius:13px;font-size:14px}.request-help{display:flex;justify-content:space-between;gap:16px;align-items:baseline}.request-help .fld__hint{font-size:12px;line-height:1.8;margin:5px 0}.request-count{font-size:12px;color:var(--hbh-muted);white-space:nowrap}.req__actions{margin-top:13px}.req__actions .hbh-btn{min-height:44px}.requests-page .row{border-radius:18px;padding:17px}.request-toggle:focus-visible{outline:3px solid var(--hbh-teal-400);outline-offset:-4px}.request-toggle:disabled{cursor:wait}.requests-page .note{border-radius:15px}@media(max-width:480px){.request-panel{padding:4px 14px 16px}.request-toggle{padding:10px 14px;font-size:14px}.request-help{gap:8px}.requests-heading h1{font-size:20px}.req__actions{gap:8px}.req__actions .hbh-btn{padding-inline:10px;font-size:13px}}@media(prefers-reduced-motion:reduce){.request-chevron{transition:none}}

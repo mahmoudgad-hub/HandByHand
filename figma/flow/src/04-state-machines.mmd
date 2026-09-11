@@ -1,0 +1,118 @@
+%% آلات الحالة الثماني المحروسة — مستخرَجة حرفيًا من دوال legal_*_transition في db/migrations/
+%% القاعدة ٥: الحالات آلات حالة. لا تحديث حرّ لعمود حالة، ولا من مدير المركز.
+%% أي انتقال غير مذكور هنا يرفضه المشغّل في القاعدة بالكود المذكور على كل صندوق.
+%% ---
+%% تنبيه لمن يعدّل هذا الملفّ: لا تترك سطر تعليق فارغًا (%% وحده على السطر).
+%% مُحلّل Mermaid 11 يقرؤه كبداية موجّه (directive) فيفشل المخطّط كلّه بـ
+%% "Expecting 'NEWLINE','SPACE','GRAPH', got 'NODE_STRING'" — والصفحة تعرض
+%% الثلاثة الباقية سليمة، فيبدو الخطأ في المخطّط لا في سطر التعليق.
+%% ---
+%% مراجعة 2026-09-10: «الثماني» صحيحة — وهي كل ما له دالة legal_*_transition.
+%% لكنّ في السكيما ثماني أعمدة حالة أخرى محكومة بـCHECK وحده بلا دالة انتقال،
+%% وكانت غائبة عن هذا المخطّط تمامًا. أُضيفت في المجموعة الأخيرة بلون مختلف:
+%% الفرق ليس شكليًّا — المحروسة ترفض الانتقال غير الشرعي، وغير المحروسة تقبل أي
+%% قيمة من قائمتها. مَن يصمّم شاشة على الثانية يصمّم على قاعدة لا يفرضها أحد.
+flowchart LR
+  classDef start fill:#EDF1E5,stroke:#ADC793,color:#22333A
+  classDef mid   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
+  classDef good  fill:#E4F4EE,stroke:#BEE4D6,color:#1E7259
+  classDef bad   fill:#FAE7E4,stroke:#F2CFC9,color:#A8352B
+  classDef free  fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
+
+  subgraph EN["طلب الالتحاق — 0018 · الرفض HB090"]
+    direction LR
+    e1["NEW"]:::start
+    e2["CONTACTED"]:::mid
+    e3["ASSESSMENT_BOOKED"]:::mid
+    e4["ENROLLED"]:::good
+    e5["REJECTED"]:::bad
+    e6["DUPLICATE"]:::bad
+    e1 --> e2 & e5 & e6
+    e2 --> e3 & e4 & e5 & e6
+    e3 --> e4 & e5
+  end
+
+  subgraph AP["الموعد — 0005 · الرفض HB020"]
+    direction LR
+    a1["BOOKED"]:::start
+    a2["CONFIRMED"]:::mid
+    a3["CHECKED_IN"]:::mid
+    a4["COMPLETED"]:::good
+    a5["CANCELLED"]:::bad
+    a6["NO_SHOW"]:::bad
+    a1 --> a2 & a5 & a6
+    a2 --> a3 & a5 & a6
+    a3 --> a4 & a5
+  end
+
+  subgraph SE["الجلسة — 0005"]
+    direction LR
+    s1["IN_PROGRESS"]:::start
+    s2["COMPLETED"]:::good
+    s3["ABORTED"]:::bad
+    s1 --> s2 & s3
+  end
+
+  subgraph PL["الخطة العلاجية — 0006"]
+    direction LR
+    p1["DRAFT"]:::start
+    p2["ACTIVE"]:::mid
+    p3["COMPLETED"]:::good
+    p4["CANCELLED"]:::bad
+    p1 --> p2 & p4
+    p2 --> p3 & p4
+  end
+
+  subgraph AS["التقييم — 0023"]
+    direction LR
+    t1["DRAFT"]:::start
+    t2["COMPLETED"]:::mid
+    t3["PUBLISHED"]:::good
+    t1 --> t2 --> t3
+    t3 -->|"سحب — يأخذ التوقيع معه"| t2
+    t2 --> t1
+  end
+
+  subgraph IN["الفاتورة — 0008 · الرفض HB050"]
+    direction LR
+    i1["DRAFT"]:::start
+    i2["ISSUED"]:::mid
+    i3["PARTIALLY_PAID"]:::mid
+    i4["PAID"]:::good
+    i5["CANCELLED"]:::bad
+    i1 --> i2 & i5
+    i2 --> i3 & i4 & i5
+    i3 --> i4 & i5
+  end
+
+  subgraph WL["قائمة الانتظار — 0022"]
+    direction LR
+    w1["WAITING"]:::start
+    w2["OFFERED"]:::mid
+    w3["BOOKED"]:::good
+    w4["CANCELLED"]:::bad
+    w5["EXPIRED"]:::bad
+    w1 --> w2 & w4 & w5
+    w2 --> w3 & w4 & w5
+    w2 -->|"عرض لاغٍ — يحتفظ بدوره"| w1
+  end
+
+  subgraph RQ["طلب وليّ الأمر — 0007"]
+    direction LR
+    r1["NEW"]:::start
+    r2["ACCEPTED"]:::good
+    r3["REJECTED"]:::bad
+    r1 --> r2 & r3
+  end
+
+  subgraph FREE["أعمدة حالة بلا دالة انتقال — CHECK وحده يحرسها"]
+    direction LR
+    f1["children<br/>ACTIVE · INACTIVE<br/>GRADUATED · WITHDRAWN"]:::free
+    f2["child_packages<br/>ACTIVE · EXHAUSTED<br/>EXPIRED · CANCELLED<br/>expire_packages تعلّم"]:::free
+    f3["plan_goals<br/>OPEN · MET · DROPPED"]:::free
+    f4["progress_reports · session_notes<br/>DRAFT · PUBLISHED<br/>publish_* هي البوّابة"]:::free
+    f5["staff_profiles<br/>DRAFT · PUBLISHED · WITHDRAWN<br/>النشر يحتاج موافقة الأخصائي"]:::free
+    f6["therapists<br/>ACTIVE · ON_LEAVE · RESIGNED"]:::free
+    f7["users<br/>ACTIVE · SUSPENDED · LOCKED<br/>القفل من عدّاد المحاولات"]:::free
+    f8["cameras<br/>ONLINE · OFFLINE<br/>FAULT · DISABLED"]:::free
+  end

@@ -1,0 +1,350 @@
+@if (spec().resource === 'guardians') {
+<div class="family-top"><div class="family-title"><h1><hbh-icon name="ic-users" /> أولياء الأمور</h1><p>إدارة بيانات أولياء الأمور والبحث عنهم واختيار أحدهم لعرض التفاصيل</p><button type="button" class="hbh-btn hbh-btn--primary" (click)="startCreate()" [disabled]="!canWrite()"><hbh-icon name="ic-plus" /> إضافة ولي أمر جديد</button></div>
+<div class="family-tools"><div class="hbh-filters"><div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" aria-label="بحث أولياء الأمور" placeholder="ابحث بالاسم أو رقم الجوال..." [formControl]="search" (keyup.enter)="searchNow()"></div><button type="button" class="hbh-btn hbh-btn--ghost" (click)="search.setValue(''); searchNow()">مسح <hbh-icon name="ic-refresh" /></button><button type="button" class="hbh-btn hbh-btn--ghost" (click)="searchNow()">بحث</button></div>
+<div class="family-filterline"><label><hbh-icon name="ic-filter" /><select aria-label="السجلات المعروضة" [value]="showArchived() ? 'all' : 'active'" (change)="toggleArchived()"><option value="active">السجلات النشطة</option><option value="all">تضمين المؤرشف</option></select></label><button class="hbh-btn hbh-btn--ghost" type="button" (click)="selectTab(1)"><hbh-icon name="ic-users" /> عرض كل الأطفال</button></div></div></div>
+} @else {
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ spec().titleKey | t }}</div>
+      <div class="hbh-pagehead__sub">{{ spec().subKey | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    @if (spec().resource === 'rooms' || spec().resource === 'cameras') {
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()" [disabled]="loading()">تحديث</button>
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="roomCards.set(!roomCards())">عرض الكروت / الجدول</button>
+    }
+    @if (canWrite()) {
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="toggleArchived()"
+              [attr.aria-pressed]="showArchived()">
+        <hbh-icon name="ic-filter" />
+        {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
+      </button>
+      <!-- A fixed-row resource has no add button. The rows are the schema's
+           - one per <section> the public page has - and the service grants
+           no INSERT at all, so this control could only produce an error. -->
+      @if (!spec().fixedRows) {
+        <button class="hbh-btn hbh-btn--primary" type="button" (click)="startCreate()">
+          <hbh-icon name="ic-plus" />
+          {{ 'action.add' | t }}
+        </button>
+      }
+    }
+  </div>
+</div>
+
+<!-- Several resources on one screen become tabs: rooms and their cameras,
+     services and packages and the activity library. They belong together in
+     a person's head, so they belong on one page. -->
+@if (specs.length > 1) {
+  <div class="hbh-tabbar" role="tablist">
+    @for (item of specs; track item.resource; let i = $index) {
+      <button class="hbh-tabbar__item" type="button" role="tab"
+              [class.is-active]="tabIndex() === i"
+              [attr.aria-selected]="tabIndex() === i"
+              (click)="selectTab(i)">
+        {{ item.titleKey | t }}
+      </button>
+    }
+  </div>
+}
+
+@if (spec().searchable) {
+  <div class="hbh-filters">
+    <div class="hbh-field hbh-field--grow">
+      <hbh-icon name="ic-search" />
+      <input type="search" [formControl]="search" (keyup.enter)="searchNow()"
+             [attr.placeholder]="spec().resource === 'guardians' ? 'ابحث باسم ولي الأمر أو رقم الجوال' : ('action.searchPlaceholder' | t)">
+    </div>
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="searchNow()">
+      {{ 'action.search' | t }}
+    </button>
+  </div>
+}
+
+}
+@if (loading()) {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (rows().length === 0) {
+  @if (searching()) {
+    <!-- "Nothing matched" and "nothing exists" are different facts, and the
+         answer to each is a different action. Telling somebody who searched
+         for a name to "add a new record" is advice about the wrong problem. -->
+    <hbh-empty-state icon="ic-search" [title]="'crud.noMatch' | t"
+                     [note]="'crud.noMatchNote' | t" />
+    <div class="hbh-empty-action">
+      <button type="button" class="hbh-btn hbh-btn--ghost"
+              (click)="search.setValue(''); searchNow()">
+        {{ 'crud.clearSearch' | t }} <hbh-icon name="ic-refresh" />
+      </button>
+    </div>
+  } @else {
+    <hbh-empty-state icon="ic-list" [title]="'crud.empty' | t"
+                     [note]="'crud.emptyNote' | t" />
+  }
+} @else {
+@if ((spec().resource === 'rooms' || spec().resource === 'cameras') && roomCards()) {
+  <div class="room-cards">
+    @for (row of rows(); track row[spec().idColumn]) {
+      <article class="room-card">
+        <header><hbh-icon [name]="spec().resource === 'rooms' ? 'ic-door' : 'ic-video'" /><h3>{{ cell(row, 'name_ar') }}</h3><span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span></header>
+        @if (spec().resource === 'rooms') {
+          <p>{{ cell(row, 'code') }}</p><p>{{ cell(row, 'notes_ar') }}</p>
+          @if (roomSessions()[cell(row, 'room_id')]; as session) {
+            <span class="hbh-badge hbh-badge--success">جلسة جارية اليوم</span>
+            <p>{{ nestedName(session, 'child') }} · {{ nestedName(session, 'therapist') }}</p>
+            @if (auth.can('LIVE.VIEW')) {<a class="hbh-btn hbh-btn--ghost" [routerLink]="['/sessions', session['session_id'], 'live']">عرض الجلسة</a>}
+          } @else {<p>{{ roomSessions()[cell(row, 'room_id')] === null ? 'لا توجد جلسة جارية ضمن مواعيد اليوم' : (!auth.can('SESSION.START') || roomsFailed()[cell(row, 'room_id')] ? 'حالة الجلسات غير متاحة' : 'جارٍ تحميل حالة الجلسات…') }}</p>}
+        } @else {<p>رقم الغرفة: {{ cell(row, 'room_id') }}</p><p><span class="hbh-badge" [class.hbh-badge--success]="row['status'] === 'ONLINE'">الحالة المسجلة: {{ cameraStatus(row) }}</span></p><p>آخر اتصال: {{ row['last_seen_at'] ? format.shortDate(cell(row,'last_seen_at')) + ' · ' + format.time(cell(row,'last_seen_at')) : 'لم يُسجل اتصال' }}</p>}
+        @if (canWrite() && !isArchived(row)) {<button class="hbh-btn hbh-btn--ghost" type="button" (click)="startEdit(row)"><hbh-icon name="ic-edit" /> تعديل البيانات</button>}
+      </article>
+    }
+  </div>
+} @else if (spec().resource === 'guardians') {
+<div class="hbh-tablewrap family-master"><table class="hbh-table"><thead><tr><th>#</th><th>اسم ولي الأمر</th><th>رقم الهوية</th><th>رقم الجوال</th><th>البريد الإلكتروني</th><th>نوع العلاقة</th><th>عدد الأبناء</th><th>المدينة</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>
+@for (row of rows(); track row['guardian_id']; let i=$index) {<tr [class.family-selected]="selectedGuardian()?.['guardian_id'] === row['guardian_id']"><td>{{ (page()-1)*limit()+i+1 }}</td><td><button class="family-name" type="button" (click)="openGuardian(row)">{{ cell(row,'full_name_ar') }}</button></td><td dir="ltr">{{ cell(row,'national_id') || '—' }}</td><td dir="ltr">{{ cell(row,'mobile') || '—' }}</td><td>{{ cell(row,'email') || '—' }}</td><td>{{ cell(row,'relationship') || '—' }}</td><td>{{ guardianCounts()[cell(row,'guardian_id')] ?? '—' }}</td><td>{{ cell(row,'city') || '—' }}</td><td><span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span></td><td><button class="family-view" type="button" (click)="openGuardian(row)"><hbh-icon name="ic-eye" /> عرض</button> @if (canWrite() && !isArchived(row)) { <button class="family-view" type="button" aria-label="تعديل بيانات ولي الأمر" title="تعديل البيانات" (click)="startEdit(row)"><hbh-icon name="ic-edit" /></button> }</td></tr>}
+</tbody></table></div>
+} @else {
+  <div class="hbh-tablewrap">
+    <table class="hbh-table">
+      <thead>
+        <tr>
+          @for (field of listFields(); track field.name) {
+            <th>{{ field.labelKey | t }}</th>
+          }
+          <th>{{ 'field.status' | t }}</th>
+          <th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track cell(row, spec().idColumn)) {
+          <tr [class.is-archived]="isArchived(row)" [class.family-selected]="spec().resource === 'guardians' && selectedGuardian()?.['guardian_id'] === row['guardian_id']">
+            @for (field of listFields(); track field.name; let first = $first) {
+              <!-- Identifiers, numbers and dates read left to right even on
+                   an Arabic page; names and titles do not. -->
+              <td [attr.dir]="field.ltr ? 'ltr' : null">
+                @if (first && spec().resource === 'guardians') {
+                  <button type="button" class="hbh-btn hbh-btn--ghost" (click)="openGuardian(row)">{{ display(row, field) }} <hbh-icon name="ic-chevron" /></button>
+                } @else if (first && spec().rowLink) {
+                  <!-- The first column only. A whole row of links would make
+                       every cell look like a different destination. -->
+                  <a class="hbh-link" [routerLink]="spec().rowLink!(idOf(row))">
+                    {{ display(row, field) }}
+                  </a>
+                } @else {
+                  {{ display(row, field) }}
+                }
+              </td>
+            }
+            <td>
+              <span class="hbh-badge" [class]="statusTone(row)">
+                {{ statusKey(row) | t }}
+              </span>
+            </td>
+            <td>
+              <div class="hbh-pagehead__actions">
+                @if (canWrite() && !isArchived(row)) {
+                  <button class="hbh-iconbtn" type="button"
+                          [attr.aria-label]="'action.edit' | t" (click)="startEdit(row)">
+                    <hbh-icon name="ic-edit" />
+                  </button>
+                }
+                <!-- No archiving on a fixed-row resource, and the reason is
+                     not tidiness. The exporter reads `WHERE active_flg`, so
+                     an archived section leaves the map entirely - and the
+                     public page hides a section only on an explicit false.
+                     Archiving a HIDDEN section would put it back on the
+                     internet, under a button that reads as removal. -->
+                @if (canWrite() && !spec().fixedRows) {
+                  @if (isArchived(row)) {
+                    <button class="hbh-iconbtn" type="button"
+                            [attr.aria-label]="'action.restore' | t" (click)="restore(row)">
+                      <hbh-icon name="ic-refresh" />
+                    </button>
+                  } @else {
+                    <!-- Archive, not delete. The row stays and can come back. -->
+                    <button class="hbh-iconbtn" type="button"
+                            [attr.aria-label]="'action.archive' | t" (click)="archive(row)">
+                      <hbh-icon name="ic-trash" />
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+}
+  <!-- What the filter matches, not what this page holds. Without it a list
+       capped at the page size looks like the whole centre, and the screen
+       misleads without ever erroring. -->
+  <div class="hbh-pager">
+    <span class="hbh-pager__count">
+      {{ 'crud.showing' | t: {
+           shown: (rows().length | hbhNum),
+           total: (total() | hbhNum) } }}
+    </span>
+    @if (hasMorePages() || spec().resource === 'guardians') {
+      <div class="hbh-pager__nav">
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+          {{ 'action.previous' | t }}
+        </button>
+        <span class="hbh-pager__page">
+          {{ 'crud.page' | t: {
+               page: (page() | hbhNum),
+               count: (pageCount() | hbhNum) } }}
+        </span>
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="page() >= pageCount()" (click)="goToPage(page() + 1)">
+          {{ 'action.next' | t }}
+        </button>
+      </div>
+    }
+  </div>
+}
+
+@if (spec().resource === 'guardians') {
+  @if (selectedGuardian(); as guardian) {
+    <section class="family-detail" aria-label="تفاصيل ولي الأمر">
+      <div class="family-section-heading"><h3><hbh-icon name="ic-users" />أبناء ولي الأمر</h3></div>
+      <div class="hbh-filters">
+        <div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" aria-label="البحث في أبناء ولي الأمر" placeholder="ابحث باسم الطفل أو كود الحالة" [formControl]="familySearch" (keyup.enter)="loadFamily(1)"></div>
+        <button type="button" class="hbh-btn hbh-btn--ghost" (click)="loadFamily(1)">بحث</button>
+      </div>
+      @if (familyLoading()) { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (familyFailed()) { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadFamily(familyPage())" /> }
+      @else {
+        <div class="hbh-tablewrap"><table class="hbh-table family-children">
+          <thead><tr><th>الاسم</th><th>كود الحالة</th><th>تاريخ الميلاد</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+          <tbody>@for (child of familyChildren(); track child['child_id']) {
+            <tr><td><a class="hbh-link" [routerLink]="['/children', child['child_id']]">{{ cell(child, 'full_name_ar') }}</a></td><td dir="ltr">{{ cell(child, 'child_no') }}</td><td dir="ltr">{{ cell(child, 'birth_date') || '—' }}</td><td><span class="hbh-badge">{{ cell(child, 'status') === 'ACTIVE' ? 'نشط' : cell(child, 'status') }}</span></td><td><a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', child['child_id']]">عرض الملف <hbh-icon name="ic-chevron" /></a></td></tr>
+          } @empty { <tr><td colspan="5">لا يوجد أطفال مطابقون للبحث أو مرتبطون بولي الأمر.</td></tr> }</tbody>
+        </table></div>
+        <div class="hbh-pager"><span>ظاهر {{ familyChildren().length }} من {{ familyTotal() }}</span><div class="hbh-pager__nav">
+          <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="familyPage() <= 1" (click)="loadFamily(familyPage()-1)">السابق</button>
+          <span class="hbh-badge">{{ familyPage() }}</span>
+          <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="familyPage()*familyLimit() >= familyTotal()" (click)="loadFamily(familyPage()+1)">التالي</button>
+        </div></div>
+      }
+    </section>
+  } @else { <div class="family-select-note"><hbh-icon name="ic-users" /> اختر ولي أمر من الجدول لعرض بياناته وأطفاله هنا.</div> }
+}
+
+<!-- One editor for create and edit: the only difference is whether the
+     service is asked to POST or PATCH. Two panels would be two places to
+     forget a field. -->
+@if (editing()) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancel()" aria-labelledby="editorTitle">
+    <form class="hbh-sheet__box hbh-sheet__box--editor" (submit)="save($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="editorTitle">
+          {{ (isNew() ? 'action.add' : 'action.edit') | t }} — {{ spec().titleKey | t }}
+        </h2>
+        <button class="hbh-iconbtn" type="button"
+                [attr.aria-label]="'action.cancel' | t" (click)="cancel()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+
+      <div class="hbh-sheet__body">
+        @for (field of formFields(); track field.name) {
+          <div class="hbh-fld">
+            <label class="hbh-fld__l" [attr.for]="'f-' + field.name">
+              {{ field.labelKey | t }}
+            </label>
+            <div class="hbh-fld__box" [class.is-bad]="badField() === field.name">
+              @if (field.readOnly) {
+                <!-- Shown so the row can be identified, never sent. On the
+                     sections screen this is the only thing that says WHICH
+                     section the switch below belongs to. `display` is used
+                     rather than the raw value so a code reads as its Arabic
+                     name here exactly as it does in the list. -->
+                <input [id]="'f-' + field.name" readonly
+                       [attr.dir]="field.ltr ? 'ltr' : null"
+                       [value]="display(editing()!, field)">
+              } @else if (field.kind === 'switch') {
+                <!-- A real checkbox, not a two-option select. The control
+                     still holds a string, like every other control here, and
+                     save() turns it into a JSON boolean - the column is
+                     boolean and the service binds what it is given.
+                     Before this, `switch` fell through to the text input at
+                     the bottom and the editor was asked to type "true". -->
+                <label class="hbh-fld__switch">
+                  <input type="checkbox" [id]="'f-' + field.name"
+                         [checked]="controls()[field.name].value === 'true'"
+                         (change)="setSwitch(field, $event)">
+                  <span>{{ (controls()[field.name].value === 'true' ? 'flag.yes' : 'flag.no') | t }}</span>
+                </label>
+              } @else if (field.kind === 'select') {
+                <select [id]="'f-' + field.name" [formControl]="controls()[field.name]">
+                  @for (option of field.options ?? []; track option.value) {
+                    <option [value]="option.value">{{ option.labelKey | t }}</option>
+                  }
+                </select>
+              } @else if (field.kind === 'textarea') {
+                <!-- Line breaks are the content here, not formatting: the
+                     public page renders one line per instruction. An input
+                     cannot hold a newline, so it would flatten what the
+                     editor typed without saying so. -->
+                <textarea [id]="'f-' + field.name" rows="4"
+                          [attr.dir]="field.ltr ? 'ltr' : null"
+                          [formControl]="controls()[field.name]"></textarea>
+              } @else if (field.kind === 'date') {
+                <!-- Three named parts, not <input type="date">. That control
+                     takes its format from the BROWSER, so an English Chrome
+                     drew mm/dd/yyyy inside this Arabic form and 7 March was
+                     stored as 3 July with nothing to catch it. A named month
+                     cannot be read in the wrong order. Same answer the portal
+                     already uses on its enrolment form. -->
+                <hbh-date-parts [fieldId]="'f-' + field.name"
+                                [value]="controls()[field.name].value"
+                                (valueChange)="controls()[field.name].setValue($event)" />
+              } @else {
+                <!-- A `ref` is a number box here on purpose. The kind changes
+                     how a foreign key READS in the list; it does not change
+                     how one is written. Identifiers are still typed, which is
+                     the decision recorded above PLANS_SPEC with its reasons. -->
+                <input [id]="'f-' + field.name"
+                       [type]="field.kind === 'time' ? 'time'
+                             : field.kind === 'number' || field.kind === 'ref' ? 'number' : 'text'"
+                       [attr.dir]="field.ltr ? 'ltr' : null"
+                       [formControl]="controls()[field.name]">
+              }
+            </div>
+          </div>
+        }
+
+        @if (editing(); as guardian) {
+          @if (spec().resource === 'guardians') { <div class="hbh-fld"><label class="hbh-fld__l" for="guardian-child-count">عدد الأبناء (محسوب تلقائيًا)</label><div class="hbh-fld__box"><input id="guardian-child-count" readonly [value]="guardianCounts()[cell(guardian, 'guardian_id')] ?? (isNew() ? 0 : '—')"></div></div>
+          <div class="hbh-fld"><label class="hbh-fld__l" for="guardian-record-status">الحالة</label><div class="hbh-fld__box"><input id="guardian-record-status" readonly [value]="statusKey(guardian) | t"></div></div>
+        }
+        }
+        @if (formError()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" />
+            <span>{{ formError() | t }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--primary" type="submit"
+                [class.is-busy]="saving()" [disabled]="saving()">
+          {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="saving()" (click)="cancel()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}

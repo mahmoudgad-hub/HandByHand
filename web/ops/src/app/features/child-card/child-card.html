@@ -1,0 +1,80 @@
+@if (loading()) {
+  <hbh-skeleton [count]="3" shape="card" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'child.loadFailed' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else {
+
+  <!-- Everything above the cards is hbh-noprint: the sheet that comes out of
+       the printer is cards and nothing else. -->
+  <div class="hbh-pagehead hbh-noprint">
+    <div class="hbh-pagehead__left">
+      <button class="hbh-iconbtn" type="button"
+              [attr.aria-label]="'action.back' | t" (click)="back()">
+        <hbh-icon name="ic-back" />
+      </button>
+      <div>
+        <div class="hbh-pagehead__title">{{ 'card.title' | t }} — {{ name() }}</div>
+        <div class="hbh-pagehead__sub" dir="ltr">{{ childNo() }}</div>
+      </div>
+    </div>
+    <div class="hbh-pagehead__actions">
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="printOne()">
+        <hbh-icon name="ic-printer" />
+        {{ 'card.printOne' | t }}
+      </button>
+      <button class="hbh-btn hbh-btn--primary" type="button" (click)="printSheet()">
+        <hbh-icon name="ic-printer" />
+        {{ 'card.printSheet' | t }}
+      </button>
+    </div>
+  </div>
+
+  @if (contacts().length === 0) {
+    <!-- The back of the card is two telephone numbers. Without a guardian
+         there is nothing to print there, and a card whose emergency side is
+         blank is worse than no card: somebody turns it over expecting help. -->
+    <div class="hbh-notice hbh-noprint">
+      <hbh-icon name="ic-warn" />
+      <div>
+        <b>{{ 'card.noContacts' | t }}</b>
+        <p>{{ 'card.noContactsNote' | t }}</p>
+      </div>
+    </div>
+  }
+
+  <div class="hbh-card hbh-noprint" style="margin-top:14px">
+    <p class="hbh-card-title">{{ 'card.preview' | t }}</p>
+    <p class="hbh-fld__hint">{{ 'card.size' | t }}</p>
+    <!-- Said once, on the screen and not on the card: whoever prints this
+         should know why it is plain, or the next person will "improve" it
+         with a coloured fill and print a hundred blank sheets. -->
+
+    <!-- Why the centre's telephone is not on the card. Stated where whoever
+         prints it will read it, so nobody adds a number by hand. -->
+    <p class="hbh-fld__hint">{{ 'card.noCentrePhone' | t }}</p>
+  </div>
+
+
+<ng-template #front>
+<div class="identity-card" [class.girl]="girl()">
+ <div class="card-logo"><img class="card-full-logo" src="assets/brand/card-logo.png" alt="Hand by Hand Skills Center"></div>
+ <div class="card-motto">كل خطوة.. <br>تصنع فرقًا <span>{{ girl() ? '♥' : '★' }}</span></div>
+ <img class="card-portrait" [class.is-illustration]="!portrait()" [src]="portrait() || ('assets/brand/child-' + (girl() ? 'girl' : 'boy') + '.png')" (error)="photoFailed.set(true)" alt="صورة الطفل">
+ <div class="card-data"><h3>{{ 'card.kind' | t }}</h3><h2>{{ name() }}</h2>
+ <p><hbh-icon name="ic-calendar" /> تاريخ الميلاد: {{ birthDate() }}</p><p><hbh-icon name="ic-users" /> الجنس: {{ girl() ? 'أنثى' : 'ذكر' }}</p>
+ <p><hbh-icon name="ic-phone" /> رقم التواصل: <b dir="ltr">{{ text(contacts()[0] || null, 'mobile') || '—' }}</b></p>
+ <p><hbh-icon name="ic-receipt" /> رقم الملف: <b dir="ltr">{{ childNo() }}</b></p></div>
+ <div class="card-wave">معًا.. <small>نمنح كل طفل فرصة أفضل</small></div>
+</div></ng-template>
+<div class="hbh-cardprev" [class.sheet-mode]="wholeSheet()">
+<figure><ng-container *ngTemplateOutlet="front"/><figcaption class="hbh-noprint">{{ 'card.front' | t }}</figcaption></figure>
+<figure><div class="identity-card card-back" [class.girl]="girl()">
+<div class="card-logo"><img class="card-full-logo" src="assets/brand/card-logo.png" alt="Hand by Hand Skills Center"></div><h3 class="back-centre">{{ centreName() }}</h3>
+<div class="back-contacts">@for (contact of contacts(); track contact['guardian_id']; let first=$first) {
+<div class="emergency"><small>{{ (first ? 'card.emergency' : 'card.orElse') | t }}</small><b>{{ text(contact,'full_name_ar') }} @if (text(contact, 'relationship_code')) { — {{ 'relationship.' + text(contact, 'relationship_code') | t }} }</b><strong dir="ltr"><hbh-icon name="ic-phone" /> {{ text(contact,'mobile') }}</strong></div>}
+</div><div class="found"><b>ملاحظات هامة</b><p>{{ 'card.ifFound' | t }}</p></div><div class="back-footer"><span class="card-sun" aria-hidden="true">{{ girl() ? '🌈' : '☀' }}</span><b>أطفال اليوم<br>قادة الغد</b><span class="card-leaves" aria-hidden="true">❧</span></div>
+</div><figcaption class="hbh-noprint">{{ 'card.back' | t }}</figcaption></figure>
+</div>
+@if (wholeSheet()) { <div class="hbh-cardsheet">@for(copy of sheet; track $index) { <ng-container *ngTemplateOutlet="front"/> }</div> }
+}

@@ -1,0 +1,676 @@
+/* =====================================================================
+   Hand By Hand - ops console, application-level layout
+   File: ops/src/styles/ops.css
+   Loaded after hbh-shared.css, hbh-admin.css and hbh-screens.css.
+
+   Those three are the design system, synced from html/ and never edited
+   here. This file is only what the running application needs on top of
+   them: owning the viewport height, and the two screens that sit outside
+   the sidebar shell.
+
+   No hex literal. Every colour is a token from hbh-shared.css.
+   ===================================================================== */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+hbh-root {
+  display: block;
+  min-height: 100%;
+}
+
+/* The shell is a two-column grid in hbh-admin.css; it needs the height. */
+.hbh-shell {
+  min-height: 100vh;
+}
+
+/* The content column scrolls, the sidebar does not - it is already sticky
+   and full height, and a page that scrolls both loses the menu. */
+.hbh-main {
+  min-width: 0;
+  padding: 22px 24px 40px;
+}
+.hbh-main:focus {
+  outline: none;
+}
+
+/* Routed screens are elements, not blocks. */
+hbh-login, hbh-dashboard, hbh-children, hbh-denied {
+  display: block;
+}
+
+/* Sign-in and the refusal page render outside the shell and own the page. */
+hbh-login {
+  min-height: 100vh;
+}
+
+/* ---------------------------------------------------------------------
+   The console is a desk tool. Below a laptop it is usable, not pretty:
+   the sidebar stops being a column and becomes a strip along the top, so
+   a receptionist checking something on a phone still has the menu.
+   --------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .hbh-shell {
+    grid-template-columns: 1fr;
+  }
+  .hbh-side {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    overflow-x: auto;
+  }
+  .hbh-side__brand {
+    margin-bottom: 0;
+    flex: none;
+  }
+  .hbh-side__wm {
+    display: none;
+  }
+  .hbh-nav {
+    flex-direction: row;
+    flex: 1;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .hbh-nav__item {
+    white-space: nowrap;
+  }
+  .hbh-side__user {
+    margin-top: 0;
+    flex: none;
+  }
+  /* The name and centre take the width a phone does not have; the avatar
+     and the sign-out control are what still need reaching. */
+  .hbh-side__user div {
+    display: none;
+  }
+  .hbh-main {
+    padding: 16px 14px 32px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Pager. It states the count first and offers the buttons second: the
+   number is what tells someone they are not seeing everything, and that
+   matters even on a single page.
+   --------------------------------------------------------------------- */
+.hbh-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.hbh-pager__count {
+  font-size: 12px;
+  color: var(--hbh-muted);
+}
+.hbh-pager__nav {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.hbh-pager__page {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--hbh-ink-2);
+}
+
+/* On the narrow strip the sidebar is a row, so the written sign-out row has
+   nowhere to go - the icon in the user block carries it there instead. */
+@media (max-width: 860px) {
+  .hbh-side__signout {
+    display: none;
+  }
+}
+
+/* And on a desktop the icon is redundant: the written row is right below it,
+   and two ways out in the same corner is one too many. */
+@media (min-width: 861px) {
+  .hbh-side__out {
+    display: none;
+  }
+}
+
+/* =====================================================================
+   Satisfaction - the dial and the doughnut
+
+   Drawn as inline SVG, with no charting library. The project's rule is
+   one charting library, chosen once and written down; this console has
+   neither the library nor that decision on record, and two arcs are not
+   what that choice should be spent on. A dependency added quietly for
+   the first pie is how the decision gets made by accident.
+
+   No hex literal here either - every colour is a token, so the shapes
+   follow the palette when it moves.
+   ===================================================================== */
+
+.hbh-nps-charts {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  /* One column on a narrow screen. The dial and the split are read one
+     after the other, not compared side by side, so stacking loses
+     nothing. */
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 861px) {
+  .hbh-nps-charts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.hbh-nps-gauge,
+.hbh-nps-split {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.hbh-gauge {
+  width: 190px;
+  flex: none;
+}
+
+.hbh-nps-gauge__read {
+  min-width: 120px;
+}
+
+.hbh-nps-gauge__num {
+  font-family: var(--hbh-display);
+  font-size: 38px;
+  line-height: 1.1;
+  color: var(--hbh-ink);
+}
+
+.hbh-nps-gauge__of,
+.hbh-nps-gauge__basis {
+  font-size: 12px;
+  color: var(--hbh-muted);
+}
+
+.hbh-nps-gauge__band {
+  margin-top: 6px;
+  font-weight: 700;
+  color: var(--hbh-teal-700);
+}
+
+/* The basis sits tight under the band on purpose: they are one
+   statement, and a gap invites the band to be read alone. */
+.hbh-nps-gauge__basis {
+  margin-top: 2px;
+}
+
+.hbh-donut {
+  width: 150px;
+  flex: none;
+}
+
+.hbh-donut__num {
+  font-family: var(--hbh-display);
+  font-size: 7px;
+  fill: var(--hbh-ink);
+}
+
+.hbh-donut__cap {
+  font-size: 3px;
+  fill: var(--hbh-muted);
+}
+
+.hbh-nps-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  flex: 1 1 160px;
+}
+
+.hbh-nps-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.hbh-nps-legend__l {
+  flex: 1;
+  color: var(--hbh-ink-2);
+}
+
+.hbh-nps-legend__v {
+  font-variant-numeric: tabular-nums;
+  color: var(--hbh-ink);
+}
+
+.hbh-nps-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* =====================================================================
+   Team - master and detail
+
+   The list on one side, one person's everything on the other. It
+   collapses to a single column below the sidebar's own breakpoint,
+   where a two-pane layout would give each pane half of not enough.
+   ===================================================================== */
+
+.hbh-md {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  margin-top: 16px;
+}
+
+@media (min-width: 861px) {
+  .hbh-md {
+    grid-template-columns: minmax(240px, 300px) 1fr;
+    align-items: start;
+  }
+}
+
+.hbh-md__list {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.hbh-md__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--hbh-line);
+  border-radius: var(--hbh-radius);
+  background: var(--hbh-surface);
+  cursor: pointer;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+}
+
+.hbh-md__item.is-active {
+  border-color: var(--hbh-teal-500);
+  background: var(--hbh-teal-100);
+}
+
+.hbh-md__item.is-archived .hbh-md__name {
+  text-decoration: line-through;
+}
+
+.hbh-md__face {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  background: var(--hbh-neutral-100);
+}
+
+.hbh-md__face--none {
+  display: grid;
+  place-items: center;
+  color: var(--hbh-muted);
+}
+
+.hbh-md__who {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.hbh-md__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hbh-md__role {
+  font-size: 12px;
+  color: var(--hbh-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hbh-md__detail {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+
+.hbh-md__media {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  margin-top: 12px;
+}
+
+@media (min-width: 700px) {
+  .hbh-md__media {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.hbh-md__slotT {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.hbh-md__preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--hbh-radius);
+  background: var(--hbh-neutral-100);
+  display: block;
+}
+
+.hbh-md__preview--none {
+  display: grid;
+  place-items: center;
+  color: var(--hbh-muted);
+}
+
+.hbh-md__slotA {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* The file input is inside the label, so the label IS the button. Hidden
+   with the shared screen-reader class rather than display:none, which
+   would take it out of the tab order and leave the control unreachable
+   from a keyboard. */
+.hbh-md__note {
+  font-size: 12px;
+  color: var(--hbh-muted);
+  margin: 8px 0 0;
+}
+
+.hbh-md__blockers {
+  margin: 6px 0 0;
+  padding-inline-start: 18px;
+}
+
+/* The add button sits on the tab bar, pushed to the far end: it acts on
+   whichever tab is open, so it belongs with them rather than in the page
+   header where it would look like it added a team member. */
+.hbh-md__add {
+  margin-inline-start: auto;
+}
+
+/* Which gate a certificate is still waiting on, beside its status. The
+   database refuses the publish either way; this only says so first. */
+.hbh-md__gate {
+  display: inline-block;
+  margin-inline-start: 6px;
+  font-size: 11px;
+  color: var(--hbh-progress);
+}
+
+/* ---- team profile: portrait, chips, drop zone, media grid ---------- */
+
+.hbh-md__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hbh-md__portrait {
+  position: relative;
+  width: 132px;
+  margin: 0 auto 8px;
+}
+
+.hbh-md__avatar {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: var(--hbh-neutral-100);
+  border: 3px solid var(--hbh-teal-100);
+}
+
+.hbh-md__avatar--none {
+  display: grid;
+  place-items: center;
+  color: var(--hbh-muted);
+}
+
+/* The camera badge IS the file input's label, so the whole badge is the
+   control. The input is hidden with the shared screen-reader class and
+   not display:none, which would take it out of the tab order. */
+.hbh-md__camera {
+  position: absolute;
+  inset-inline-end: 6px;
+  bottom: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--hbh-teal-500);
+  color: var(--hbh-on-dark);
+  cursor: pointer;
+  border: 2px solid var(--hbh-surface);
+}
+
+.hbh-md__center { text-align: center; }
+
+.hbh-md__count {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--hbh-muted);
+  text-align: end;
+}
+
+.hbh-md__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hbh-md__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--hbh-teal-100);
+  color: var(--hbh-teal-900);
+  font-size: 13px;
+}
+
+.hbh-md__chipX {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+}
+
+.hbh-md__chipAdd {
+  display: flex;
+  gap: 8px;
+}
+
+.hbh-md__chipAdd input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The whole panel is a label wrapping the file input, so a click anywhere
+   on it opens the picker. */
+.hbh-md__drop {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 22px;
+  margin: 14px 0;
+  border: 2px dashed var(--hbh-teal-300);
+  border-radius: var(--hbh-radius-lg);
+  background: var(--hbh-surface-2);
+  cursor: pointer;
+  text-align: center;
+}
+
+.hbh-md__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.hbh-md__tile {
+  margin: 0;
+  border: 1px solid var(--hbh-line);
+  border-radius: var(--hbh-radius);
+  overflow: hidden;
+  background: var(--hbh-surface);
+  position: relative;
+}
+
+.hbh-md__tile.is-archived { opacity: .55; }
+
+.hbh-md__thumb {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  background: var(--hbh-neutral-100);
+}
+
+.hbh-md__dur {
+  position: absolute;
+  inset-inline-start: 8px;
+  top: 8px;
+  padding: 2px 6px;
+  border-radius: var(--hbh-radius-sm);
+  background: rgba(0, 0, 0, .62);
+  color: var(--hbh-on-dark);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hbh-md__tileFoot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px;
+}
+
+.hbh-md__tileA {
+  margin-inline-start: auto;
+  display: flex;
+  gap: 2px;
+}
+
+/* ---- access: people, roles, screens -------------------------------- */
+
+.hbh-acc__search { margin-bottom: 8px; }
+
+.hbh-acc__role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--hbh-line);
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.hbh-acc__role:last-of-type { border-bottom: 0; }
+
+.hbh-acc__roleName {
+  font-weight: 600;
+  flex: 1;
+  min-width: 120px;
+}
+
+.hbh-acc__card { margin-top: 14px; }
+
+.hbh-acc__label {
+  font-size: 12px;
+  color: var(--hbh-muted);
+  margin: 10px 0 6px;
+}
+
+/* A permission code is an identifier, so it reads left to right and in a
+   monospaced face even inside an Arabic page. */
+.hbh-acc__chipCode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--hbh-neutral-100);
+  color: var(--hbh-ink-2);
+}
+
+.hbh-acc__foot {
+  margin-top: 14px;
+  justify-content: flex-end;
+}
+
+.hbh-acc__docs {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.hbh-acc__docs li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.hbh-acc__docs li .hbh-link { flex: 1; }
+
+/* A fetch-and-open control that reads as a link. It cannot BE a link:
+   the route needs the session token, and a navigation sends no headers. */
+.hbh-acc__docLink {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: start;
+}
+
+/* The setup code, shown once. Monospaced and spaced out because it is
+   read off a screen and typed by hand, often by two different people. */
+.hbh-acc__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  letter-spacing: .06em;
+  word-break: break-all;
+  background: var(--hbh-surface-2);
+  border: 1px solid var(--hbh-line);
+  border-radius: var(--hbh-radius-sm);
+  padding: 8px 10px;
+  margin: 8px 0;
+  user-select: all;
+}

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hand By Hand Skills Center</title>
+  <meta name="description" content="موقع Hand By Hand التعريفي">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav-wrap">
+    <a class="brand" href="#home">
+      <img src="assets/logo.png" alt="Hand By Hand Skills Center">
+    </a>
+
+    <nav id="nav" class="nav">
+      <a class="active" href="#home" data-i18n="nav.home">الرئيسية</a>
+      <a href="#about" data-i18n="nav.about">من نحن</a>
+      <a href="#services" data-i18n="nav.services">خدماتنا</a>
+      <a href="#team" data-i18n="nav.team">فريق العمل</a>
+      <a href="#videos" data-i18n="nav.videos">فيديوهات من المركز</a>
+      <a href="#reviews" data-i18n="nav.reviews">آراء العملاء</a>
+      <a href="#faq" data-i18n="nav.faq">الأسئلة الشائعة</a>
+      <a href="#contact" data-i18n="nav.contact"><span data-i18n="cta.contact">تواصل معنا</span></a>
+    </nav>
+
+    <div class="nav-side">
+      <!-- OWNER: ضع رقم الهاتف الحقيقي -->
+      <a class="phone" href="tel:+20123456789">
+        <svg viewBox="0 0 24 24"><path d="M7 4 4 7c0 7 6 13 13 13l3-3-4-4-2 2c-3-1-5-3-6-6l2-2-3-3Z"/></svg>
+        <span dir="ltr">+20 112 345 6789</span>
+      </a>
+      <a class="btn primary small" href="#booking">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+        <span data-i18n="cta.book">احجز تقييمًا الآن</span>
+      </a>
+    </div>
+
+    
+      <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path>
+        </svg>
+        <span id="langToggleText">EN</span>
+      </button>
+
+      <button class="menu-btn" aria-controls="nav" aria-expanded="false">
+      <span class="sr-only">فتح القائمة</span>
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<section class="hero" id="home">
+  <span class="blob blob-1"></span><span class="blob blob-2"></span><span class="blob blob-3"></span>
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <h1><span data-i18n="hero.together">معًا</span> <em>..</em> <span data-i18n="hero.title">نصنع فرقًا أكبر</span></h1>
+      <p data-i18n="hero.subtitle">مركز متخصص في تنمية مهارات الأطفال<br>من خلال برامج علاجية متكاملة وخطط فردية.</p>
+
+      <div class="mini-benefits">
+        <div><span class="circle coral"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.8A4 4 0 0 1 19 10c0 5.4-7 10-7 10Z"/></svg></span><b data-i18n="benefit.care">رعاية<br>وشراكة</b></div>
+        <div><span class="circle green"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c.5-4.4 2.8-7 6-7s5.5 2.6 6 7M14 14c3.3 0 5.5 2 6 5"/></svg></span><b data-i18n="benefit.programs">برامج<br>متخصصة</b></div>
+        <div><span class="circle blue"><svg viewBox="0 0 24 24"><path d="M4 19V9h3v10M10 19V5h3v14M16 19v-7h3v7"/></svg></span><b data-i18n="benefit.future">مستقبل<br>أفضل</b></div>
+      </div>
+
+      <div class="hero-actions">
+        <a class="btn primary" href="#booking"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span data-i18n="cta.book">احجز تقييمًا الآن</span></a>
+        <a class="btn outline" href="#contact"><svg viewBox="0 0 24 24"><path d="m4 12 16-8-6 16-3-7-7-1Z"/></svg><span data-i18n="cta.contact">تواصل معنا</span></a>
+      </div>
+    </div>
+
+    <div class="hero-image">
+      <div class="hero-photo"><img src="assets/hero.webp" alt="مشهد توضيحي لطفل مع أخصائية أثناء نشاط تعليمي"></div>
+      <i class="leaf leaf-a"></i><i class="leaf leaf-b"></i>
+    </div>
+  </div>
+</section>
+
+<section class="section services" id="services">
+  <div class="container">
+    <div class="section-title"><h2 data-i18n="sections.services">خدماتنا</h2><p data-i18n="sections.servicesSub">برامج متكاملة تلبي احتياجات طفلك</p></div>
+    <div class="services-head">
+      <a class="btn outline compact" href="#"><span data-i18n="cta.allServices">عرض جميع الخدمات</span></a>
+    </div>
+    <div class="services-grid">
+      <article><span class="service-icon s1"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6Z"/><path d="M8 10h8M8 13h5"/></svg></span><h3 data-i18n="services.speech">تخاطب وتنمية لغة</h3><b>→</b></article>
+      <article><span class="service-icon s2"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8c3 0 4-2 7-2s4 2 7 2M5 16c3 0 4 2 7 2s4-2 7-2"/></svg></span><h3 data-i18n="services.occupational">علاج وظيفي</h3><b>→</b></article>
+      <article><span class="service-icon s3"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="6" height="6"/><rect x="13" y="5" width="6" height="6"/><rect x="5" y="13" width="6" height="6"/><rect x="13" y="13" width="6" height="6"/></svg></span><h3 data-i18n="services.aba">تحليل سلوك تطبيقي (ABA)</h3><b>→</b></article>
+      <article><span class="service-icon s4"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg></span><h3 data-i18n="services.music">علاج بالموسيقى</h3><b>→</b></article>
+      <article><span class="service-icon s5"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8 9c2 2 6 2 8 0M8 15c2-2 6-2 8 0"/></svg></span><h3 data-i18n="services.sensory">تكامل حسي</h3><b>→</b></article>
+      <article><span class="service-icon s6"><svg viewBox="0 0 24 24"><path d="M4 5h7v14H4V5ZM13 5h7v14h-7V5Z"/><path d="M7 9h1M16 9h1M7 13h1M16 13h1"/></svg></span><h3 data-i18n="services.academic">أكاديمي وصعوبات تعلم</h3><b>→</b></article>
+    </div>
+  </div>
+</section>
+
+<section class="section video-section" id="videos">
+  <div class="container">
+    <div class="section-row">
+      <div class="section-title left"><h2 data-i18n="sections.videos">فيديوهات من المركز</h2><p data-i18n="sections.videosSub">لقطات تعليمية بعد الحصول على موافقات النشر المناسبة</p></div>
+      <a class="btn outline compact" href="#"><span data-i18n="cta.moreVideos">عرض المزيد من الفيديوهات</span></a>
+    </div>
+    <div class="videos-grid">
+      <article><button class="video-btn"><img src="assets/video-1.webp" alt="صورة مصغرة لفيديو تعليمي"><span class="play">▶</span></button><h3 data-i18n="videos.speech">جلسة تخاطب وتنمية لغة</h3></article>
+      <article><button class="video-btn"><img src="assets/video-2.webp" alt="صورة مصغرة لفيديو تعليمي"><span class="play">▶</span></button><h3 data-i18n="videos.occupational">جلسة علاج وظيفي</h3></article>
+      <article><button class="video-btn"><img src="assets/video-3.webp" alt="صورة مصغرة لفيديو تعليمي"><span class="play">▶</span></button><h3 data-i18n="videos.skills">أنشطة تنمية مهارات</h3></article>
+      <article><button class="video-btn"><img src="assets/video-4.webp" alt="صورة مصغرة لفيديو تعليمي"><span class="play">▶</span></button><h3 data-i18n="videos.aba">برنامج تحليل السلوك (ABA)</h3></article>
+    </div>
+  </div>
+</section>
+
+<section class="section reviews" id="reviews">
+  <div class="container">
+    <div class="section-row">
+      <div class="section-title left"><h2 data-i18n="sections.reviews">آراء أولياء الأمور</h2><p data-i18n="sections.reviewsSub">مكان مخصص لآراء حقيقية بعد موافقة أصحابها</p></div>
+      <a class="btn outline compact" href="#"><span data-i18n="cta.moreReviews">عرض المزيد من الآراء</span></a>
+    </div>
+
+    <div class="review-wrap">
+      <button class="slider-arrow next" aria-label="التالي">›</button>
+      <div class="review-track" id="reviewTrack">
+        <article class="review-card"><span class="quote">“</span><p><!-- OWNER: استبدل برأي حقيقي --> اكتب هنا رأيًا حقيقيًا من ولي أمر بعد الحصول على موافقته على النشر.</p><div class="stars">★★★★★</div><small>ولي أمر</small></article>
+        <article class="review-card"><span class="quote">“</span><p><!-- OWNER: استبدل برأي حقيقي --> مكان مخصص لرأي حقيقي عن المتابعة، الخطة، والتواصل مع الأسرة.</p><div class="stars">★★★★★</div><small>ولي أمر</small></article>
+        <article class="review-card"><span class="quote">“</span><p><!-- OWNER: استبدل برأي حقيقي --> لا تستخدم نصوصًا مختلقة؛ أضف فقط التقييمات الموثقة والحقيقية.</p><div class="stars">★★★★★</div><small>ولي أمر</small></article>
+      </div>
+      <button class="slider-arrow prev" aria-label="السابق">‹</button>
+    </div>
+    <div class="dots"><i class="on"></i><i></i><i></i></div>
+  </div>
+</section>
+
+<section class="section team" id="team">
+  <div class="container">
+    <div class="section-row">
+      <div class="section-title left"><h2 data-i18n="sections.team">فريقنا من المدربين والأخصائيين</h2><p data-i18n="sections.teamSub">خبرات متنوعة بهدف تقديم أفضل دعم لأطفالنا</p></div>
+      <a class="btn outline compact" href="#"><span data-i18n="cta.teamAll">تعرف على فريقنا كاملًا</span></a>
+    </div>
+    <div class="team-grid">
+      <article class="trainer"><img src="assets/trainer-1.webp" alt="صورة توضيحية لعضو فريق"><div><h3><!-- OWNER --> أ. كريم حسام</h3><p><!-- OWNER --> مدرب مهارات</p><span>in</span></div></article>
+      <article class="trainer"><img src="assets/trainer-2.webp" alt="صورة توضيحية لعضو فريق"><div><h3><!-- OWNER --> أ. منى خالد</h3><p><!-- OWNER --> أخصائية تحليل سلوك (ABA)</p><span>in</span></div></article>
+      <article class="trainer"><img src="assets/trainer-3.webp" alt="صورة توضيحية لعضو فريق"><div><h3><!-- OWNER --> أ. أحمد علي</h3><p><!-- OWNER --> أخصائي علاج وظيفي</p><span>in</span></div></article>
+      <article class="trainer"><img src="assets/trainer-4.webp" alt="صورة توضيحية لعضو فريق"><div><h3><!-- OWNER --> أ. سارة محمد</h3><p><!-- OWNER --> أخصائية تخاطب</p><span>in</span></div></article>
+    </div>
+  </div>
+</section>
+
+<section class="section why" id="about">
+  <div class="container">
+    <div class="section-title"><h2 data-i18n="sections.why">لماذا Hand by Hand ؟</h2></div>
+    <div class="why-grid">
+      <div class="stats-card">
+        <article><span class="stat-icon coral">♡</span><b><!-- OWNER: الرقم الحقيقي --> —</b><small>طفل وأسرة</small></article>
+        <article><span class="stat-icon green">♧</span><b><!-- OWNER: الرقم الحقيقي --> —</b><small>برامج متخصصة</small></article>
+        <article><span class="stat-icon yellow">♕</span><b><!-- OWNER: الرقم الحقيقي --> —</b><small>سنوات من العطاء</small></article>
+        <article><span class="stat-icon blue">▥</span><b><!-- OWNER: النسبة الحقيقية --> —</b><small>رضا أولياء الأمور</small></article>
+      </div>
+      <div class="why-list">
+        <p><span data-i18n="why.individual">خطط فردية لكل طفل</span> <span>✓</span></p>
+        <p><span data-i18n="why.safe">بيئة آمنة وداعمة</span> <span>✓</span></p>
+        <p><span data-i18n="why.team">فريق متخصص وخبير</span> <span>✓</span></p>
+        <p><span data-i18n="why.followup">متابعة مستمرة وقياس النتائج</span> <span>✓</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="booking">
+  <div class="container cta-inner">
+    <div class="cta-copy"><h2 data-i18n="ctaJourney.title">ابدأ رحلة طفلك اليوم</h2><p><span data-i18n="cta.book">احجز تقييمًا الآن</span> وامنح طفلك فرصة لمستقبل أفضل</p></div>
+    <a class="btn primary big" href="#contact">ابدأ رحلة طفلك اليوم <span>‹</span></a>
+    <div class="cta-side"><strong><span>معًا</span><br>نصنع فرقًا أكبر</strong></div>
+  </div>
+</section>
+
+<section class="section contact" id="contact">
+  <div class="container contact-grid">
+    <div><h2 data-i18n="sections.contact">تواصل معنا</h2><p><!-- OWNER --> ضع بيانات المركز الحقيقية هنا.</p></div>
+    <div><b>الهاتف</b><span>01XXXXXXXXX</span></div>
+    <div><b>مواعيد العمل</b><span>الأحد إلى الخميس</span></div>
+    <div><b>العطلة</b><span>الجمعة والسبت</span></div>
+  </div>
+</section>
+
+<section class="section faq" id="faq">
+  <div class="container">
+    <div class="section-title"><h2 data-i18n="sections.faq">الأسئلة الشائعة</h2></div>
+    <div class="faq-list">
+      <details><summary data-i18n="faq.q1">هل الجلسات فردية؟</summary><p data-i18n="faq.a1">نعم، الجلسة مخصصة لطفل واحد.</p></details>
+      <details><summary data-i18n="faq.q2">هل يتم تسجيل البث المباشر؟</summary><p data-i18n="faq.a2">لا. البث مباشر فقط ولا يتم تسجيله أو حفظه.</p></details>
+      <details><summary data-i18n="faq.q3">كيف أحجز تقييمًا؟</summary><p>اضغط على زر «<span data-i18n="cta.book">احجز تقييمًا الآن</span>» ثم تواصل مع المركز أو اربطه بنموذج طلب الالتحاق.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="video-modal" id="videoModal" hidden>
+  <button class="backdrop" data-close aria-label="إغلاق"></button>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="x" data-close aria-label="إغلاق">×</button>
+    <div class="video-placeholder"><span>▶</span><h2>مكان الفيديو الحقيقي</h2><p>استبدل هذا العنصر بفيديو MP4 مصرح بنشره.</p></div>
+  </div>
+</div>
+
+<footer>
+  <div class="container footer-row">
+    <div class="social"><span>f</span><span>◎</span><span>▶</span><span>◉</span><span>in</span></div>
+    <nav><a href="#home">الرئيسية</a><a href="#about" data-i18n="nav.about">من نحن</a><a href="#services" data-i18n="nav.services">خدماتنا</a><a href="#team" data-i18n="nav.team">فريق العمل</a><a href="#videos">فيديوهات</a><a href="#reviews" data-i18n="nav.reviews">آراء العملاء</a><a href="#contact" data-i18n="nav.contact"><span data-i18n="cta.contact">تواصل معنا</span></a></nav>
+    <div class="copy">جميع الحقوق محفوظة<br>Hand by Hand Skills Center</div>
+  </div>
+</footer>
+</body>
+</html>

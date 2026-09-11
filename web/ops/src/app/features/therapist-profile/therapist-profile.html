@@ -1,0 +1,273 @@
+@if (loading()) {
+  <hbh-skeleton [count]="5" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else {
+
+  <div class="hbh-pagehead">
+    <div class="hbh-pagehead__left">
+      <button class="hbh-iconbtn" type="button"
+              [attr.aria-label]="'action.back' | t" (click)="back()">
+        <hbh-icon name="ic-back" />
+      </button>
+      <div>
+        <div class="hbh-pagehead__title">
+          {{ name() }}
+          <span class="hbh-badge"
+                [class.hbh-badge--success]="isPublished()"
+                [class.hbh-badge--muted]="!isPublished()">
+            {{ 'status.profile.' + status() | t }}
+          </span>
+        </div>
+        <div class="hbh-pagehead__sub">{{ 'tprofile.sub' | t }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consent and publication, first, because they decide whether anything
+       below this line is visible to a family at all. -->
+  <div class="hbh-notice">
+    <hbh-icon name="ic-shield" />
+    <div>
+      <b>{{ (hasConsent() ? 'tprofile.consentOn' : 'tprofile.consentOff') | t }}</b>
+      <p>{{ 'tprofile.consentNote' | t }}</p>
+      <div class="hbh-pagehead__actions" style="margin-top:10px">
+        @if (isSelf()) {
+          <!-- Only the therapist. The service refuses everybody else with
+               NOT_YOUR_CONSENT - an administrator holding every permission
+               included - so offering the button would be a refusal every
+               time, and would imply a manager can agree on their behalf. -->
+          @if (hasConsent()) {
+            <button class="hbh-btn hbh-btn--ghost" type="button"
+                    [disabled]="saving()" (click)="withdrawConsent()">
+              {{ 'tprofile.withdraw' | t }}
+            </button>
+          } @else {
+            <button class="hbh-btn hbh-btn--primary" type="button"
+                    [disabled]="saving()" (click)="giveConsent()">
+              <hbh-icon name="ic-check" />
+              {{ 'tprofile.give' | t }}
+            </button>
+          }
+        } @else {
+          <span class="hbh-fld__hint">{{ 'tprofile.onlyOwner' | t }}</span>
+        }
+
+        @if (canManage() && !isPublished()) {
+          <button class="hbh-btn hbh-btn--primary" type="button"
+                  [disabled]="saving()" (click)="publish()">
+            <hbh-icon name="ic-send" />
+            {{ 'tprofile.publish' | t }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- The columns the therapist writes about themselves. -->
+  <div class="hbh-card" style="margin-top:16px">
+    <p class="hbh-card-title">{{ 'tprofile.about' | t }}</p>
+
+    <div class="hbh-fld">
+      <label class="hbh-fld__l" for="tp-bio">{{ 'tprofile.bio' | t }}</label>
+      <div class="hbh-fld__box">
+        <textarea id="tp-bio" rows="4" [value]="bio()"
+                  (input)="bio.set($any($event.target).value)"></textarea>
+      </div>
+      <p class="hbh-fld__hint">{{ 'tprofile.bioHint' | t }}</p>
+    </div>
+
+    <div class="hbh-fld">
+      <label class="hbh-fld__l" for="tp-year">{{ 'tprofile.practiceYear' | t }}</label>
+      <div class="hbh-fld__box">
+        <input id="tp-year" type="number" dir="ltr" [value]="practiceYear()"
+               (input)="practiceYear.set($any($event.target).value)">
+      </div>
+      <!-- The YEAR, never a count of years: a stored count is wrong on the
+           next anniversary and silently wrong every year after. -->
+      <p class="hbh-fld__hint">{{ 'tprofile.practiceHint' | t }}</p>
+    </div>
+
+    <div class="hbh-fld">
+      <label class="hbh-fld__l" for="tp-from">{{ 'tprofile.ageRange' | t }}</label>
+      <div class="hbh-pagehead__actions">
+        <div class="hbh-fld__box" style="flex:1">
+          <input id="tp-from" type="number" dir="ltr" [value]="ageFrom()"
+                 [attr.placeholder]="'tprofile.fromMonths' | t"
+                 (input)="ageFrom.set($any($event.target).value)">
+        </div>
+        <div class="hbh-fld__box" style="flex:1">
+          <input type="number" dir="ltr" [value]="ageTo()"
+                 [attr.placeholder]="'tprofile.toMonths' | t"
+                 (input)="ageTo.set($any($event.target).value)">
+        </div>
+      </div>
+      <p class="hbh-fld__hint">{{ 'tprofile.ageHint' | t }}</p>
+    </div>
+
+    <button class="hbh-btn hbh-btn--primary" type="button"
+            [class.is-busy]="saving()" [disabled]="saving()" (click)="saveProfile()">
+      {{ (saving() ? 'action.saving' : 'action.save') | t }}
+    </button>
+    <!-- Says what an emptied box does, because the service distinguishes
+         "not sent" from "clear it" and this screen owns all four fields. -->
+    <p class="hbh-fld__hint">{{ 'tprofile.clearNote' | t }}</p>
+  </div>
+
+  <!-- Languages. In a speech centre the language the therapist will actually
+       SPEAK to the child is a clinical matching criterion, not a badge. -->
+  <div class="hbh-card" style="margin-top:16px">
+    <p class="hbh-card-title">{{ 'tprofile.languages' | t }}</p>
+
+    @if (languages().length) {
+      <div class="hbh-tablewrap">
+        <table class="hbh-table">
+          <thead>
+            <tr>
+              <th>{{ 'tprofile.language' | t }}</th>
+              <th>{{ 'tprofile.level' | t }}</th>
+              <th>{{ 'tprofile.runsSessions' | t }}</th>
+              <th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lang of languages(); track text(lang, 'lang_code')) {
+              <tr>
+                <td>
+                  {{ 'lang.' + text(lang, 'lang_code') | t }}
+                  @if (lang['is_native']) {
+                    <span class="hbh-badge hbh-badge--info">{{ 'tprofile.native' | t }}</span>
+                  }
+                </td>
+                <td>{{ 'level.' + text(lang, 'level_code') | t }}</td>
+                <td>{{ (lang['runs_sessions'] ? 'answer.yes' : 'answer.no') | t }}</td>
+                <td>
+                  <button class="hbh-iconbtn" type="button" [disabled]="saving()"
+                          [attr.aria-label]="'action.archive' | t"
+                          (click)="removeLanguage(text(lang, 'lang_code'))">
+                    <hbh-icon name="ic-trash" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="hbh-filters" style="margin-top:12px">
+      <div class="hbh-field">
+        <hbh-icon name="ic-globe" />
+        <select [value]="newLang()" [attr.aria-label]="'tprofile.language' | t"
+                (change)="newLang.set($any($event.target).value)">
+          @for (code of ['ar', 'en', 'fr', 'de', 'esl']; track code) {
+            <option [value]="code" [selected]="newLang() === code">
+              {{ 'lang.' + code | t }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="hbh-field">
+        <select [value]="newLevel()" [attr.aria-label]="'tprofile.level' | t"
+                (change)="newLevel.set($any($event.target).value)">
+          @for (level of levels; track level) {
+            <option [value]="level" [selected]="newLevel() === level">
+              {{ 'level.' + level | t }}
+            </option>
+          }
+        </select>
+      </div>
+      <!-- Separate from the level, because "reads English" and "can run a
+           session in English" are different facts. -->
+      <label class="hbh-fld__hint">
+        <input type="checkbox" [checked]="newRuns()"
+               (change)="newRuns.set($any($event.target).checked)">
+        {{ 'tprofile.runsSessions' | t }}
+      </label>
+      <label class="hbh-fld__hint">
+        <input type="checkbox" [checked]="newNative()"
+               (change)="newNative.set($any($event.target).checked)">
+        {{ 'tprofile.native' | t }}
+      </label>
+      <button class="hbh-btn hbh-btn--ghost" type="button"
+              [disabled]="saving()" (click)="addLanguage()">
+        <hbh-icon name="ic-plus" />
+        {{ 'action.add' | t }}
+      </button>
+    </div>
+    <p class="hbh-fld__hint">{{ 'tprofile.nativeOnce' | t }}</p>
+  </div>
+
+  <div class="hbh-card" style="margin-top:16px">
+    <p class="hbh-card-title">{{ 'tprofile.certificates' | t }}</p>
+
+    @if (certificates().length) {
+      <div class="hbh-tablewrap">
+        <table class="hbh-table">
+          <thead>
+            <tr>
+              <th>{{ 'field.title' | t }}</th>
+              <th>{{ 'tprofile.issuer' | t }}</th>
+              <th>{{ 'tprofile.year' | t }}</th>
+              <th>{{ 'tprofile.image' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cert of certificates(); track text(cert, 'certificate_id')) {
+              <tr>
+                <td>{{ text(cert, 'title_ar') }}</td>
+                <td>{{ text(cert, 'issuer_ar') }}</td>
+                <td dir="ltr">{{ text(cert, 'year_awarded') }}</td>
+                <td>
+                  @if (cert['has_image']) {
+                    <!-- Its own control, never folded into a general save: an
+                         Egyptian certificate scan usually carries a national
+                         identity number, a date of birth and a signature. -->
+                    <button class="hbh-btn hbh-btn--sm"
+                            [class.hbh-btn--primary]="cert['is_image_public']"
+                            [class.hbh-btn--ghost]="!cert['is_image_public']"
+                            type="button" [disabled]="saving()"
+                            (click)="toggleImage(cert)">
+                      <hbh-icon [name]="cert['is_image_public'] ? 'ic-eye' : 'ic-eye-off'" />
+                      {{ (cert['is_image_public']
+                            ? 'tprofile.imageShown' : 'tprofile.imageHiddenLabel') | t }}
+                    </button>
+                  } @else {
+                    <span class="hbh-fld__hint">{{ 'tprofile.noImage' | t }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="hbh-filters" style="margin-top:12px">
+      <div class="hbh-field hbh-field--grow">
+        <input type="text" [value]="certTitle()"
+               [attr.placeholder]="'field.title' | t"
+               (input)="certTitle.set($any($event.target).value)">
+      </div>
+      <div class="hbh-field">
+        <input type="text" [value]="certIssuer()"
+               [attr.placeholder]="'tprofile.issuer' | t"
+               (input)="certIssuer.set($any($event.target).value)">
+      </div>
+      <div class="hbh-field">
+        <input type="number" dir="ltr" [value]="certYear()"
+               [attr.placeholder]="'tprofile.year' | t"
+               (input)="certYear.set($any($event.target).value)">
+      </div>
+      <button class="hbh-btn hbh-btn--ghost" type="button"
+              [disabled]="saving()" (click)="addCertificate()">
+        <hbh-icon name="ic-plus" />
+        {{ 'action.add' | t }}
+      </button>
+    </div>
+    <!-- No upload control: there is no endpoint that accepts a file yet, so a
+         button here would open a dialog leading nowhere. -->
+    <p class="hbh-fld__hint">{{ 'tprofile.noUploadYet' | t }}</p>
+  </div>
+}

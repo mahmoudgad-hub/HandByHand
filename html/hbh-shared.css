@@ -1,0 +1,901 @@
+/* =====================================================================
+   Hand By Hand Skills Center - shared design tokens & components
+   File: hbh-shared.css
+   Upload to APEX as a Static Application File, then reference as
+     #APP_FILES#hbh-shared.css
+   Everything is scoped under .hbh-app so Universal Theme is untouched.
+
+   Palette is derived from the centre logo: teal, green and coral on a
+   warm cream ground. Every colour used anywhere in the UI is a
+   token declared here - no component file may hardcode a hex value.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@600;700&display=swap');
+
+.hbh-app{
+  /* ---- brand: the three logo colours ----
+     The -500 values are sampled straight out of assets/hbh-logo-mark.png:
+       teal  = left hand + left child + the first "Hand"
+       green = middle child + circle + bubble + "by"
+       coral = right hand + right child + the second "Hand"
+     The -500 shades are FILL colours. They do not reach 4.5:1 on white,
+     so text and links use the darker -600 shades instead. */
+  --hbh-teal-900:#1E5D64;   /* sidebar, dark headers */
+  --hbh-teal-700:#256B73;   /* hover / pressed */
+  --hbh-teal-600:#2A7680;   /* primary interactive (text-safe) */
+  --hbh-teal-500:#338A93;   /* brand fill — as in the logo */
+  --hbh-teal-400:#4FA3AC;   /* accent */
+  --hbh-teal-300:#7FC5CE;   /* legible on the dark sidebar */
+  --hbh-teal-100:#DEEEF0;   /* tint */
+
+  --hbh-green-600:#5F7A45;  /* text-safe */
+  --hbh-green-500:#7E9C60;  /* brand fill — as in the logo */
+  --hbh-green-300:#ADC793;  /* legible on the dark sidebar */
+  --hbh-green-100:#EDF1E5;
+
+  --hbh-coral-600:#C4543F;  /* text-safe */
+  --hbh-coral-500:#EB7866;  /* brand fill — as in the logo */
+  --hbh-coral-300:#F5A392;  /* legible on the dark sidebar */
+  --hbh-coral-100:#FBE6E1;
+
+  --hbh-slate:#4E5051;      /* the "skills center" grey in the logo */
+
+  /* ---- surfaces ---- */
+  --hbh-bg:#FAF6EE;
+  --hbh-surface:#FFFFFF;
+  --hbh-surface-2:#FBF7F0;
+  --hbh-neutral-100:#F1ECE1;   /* muted chip / inert fill */
+  --hbh-neutral-200:#E3DCCD;   /* disabled */
+
+  /* ---- text ---- */
+  --hbh-ink:#22333A;
+  --hbh-ink-2:#4A5F68;
+  /* Text, never a fill: every declaration of this token across both apps is
+     `color`, and none is a background. #7D9199 reached only 3.29:1 on white
+     and 3.05:1 on the cream ground, and it carries the smallest type in the
+     system - meta lines, hints, chart labels, the muted badge. #576B76 clears
+     4.5:1 on every surface it is used on: --hbh-surface, --hbh-bg,
+     --hbh-surface-2 and --hbh-neutral-100. */
+  --hbh-muted:#4C6069;
+  --hbh-line:#E8E1D4;
+
+  /* ---- semantic ----
+     coral stays a brand/illustration colour and is deliberately NOT used
+     for errors, so it can never be confused with --hbh-danger. */
+  --hbh-success:#2F9E7E;  --hbh-success-bg:#E4F4EE;  --hbh-success-line:#BEE4D6;
+  --hbh-progress:#C98418; --hbh-progress-bg:#FBF0DA; --hbh-progress-line:#F0DCB4;
+  --hbh-danger:#C2453A;   --hbh-danger-bg:#FAE7E4;   --hbh-danger-line:#F2CFC9;
+  --hbh-info:#2A7680;     --hbh-info-bg:#DEEEF0;     --hbh-info-line:#C6E0E7;
+  --hbh-purple:#7C6BC4;   --hbh-purple-bg:#EEEAFA;
+
+  /* ---- semantic, text-safe ----
+     The four values above are FILL colours, and not one of them reaches
+     4.5:1 against its own -bg tint: success 2.93:1, progress 2.73:1,
+     danger 4.19:1, info 4.40:1 - and every one of those pairs carries 11px
+     badge text. This is the same discipline the brand block above already
+     applies with teal-500 as the fill and teal-600 as the text; it simply
+     was never extended to the semantic four.
+
+     A tint pair uses  background:var(--hbh-X-bg)  with  color:var(--hbh-X-ink).
+     A solid chip uses  background:var(--hbh-X-ink)  with  color:#fff.
+     The plain --hbh-X stays the fill for bars, dots, rings and switches,
+     where the 3:1 graphics threshold applies and it passes. */
+  --hbh-success-ink:#1E7259;   /* 5.12:1 on --hbh-success-bg  */
+  --hbh-progress-ink:#8A5A0E;  /* 5.24:1 on --hbh-progress-bg */
+  --hbh-danger-ink:#A8352B;    /* 5.49:1 on --hbh-danger-bg   */
+  --hbh-info-ink:#276C75;      /* 5.04:1 on --hbh-info-bg     */
+
+  /* ---- on-dark text (sidebar, navy cards, video player) ---- */
+  --hbh-on-dark:#FFFFFF;
+  --hbh-on-dark-2:#C3DDE3;
+  --hbh-on-dark-3:#9CC3CD;
+  --hbh-on-dark-4:#7FB3BF;
+  --hbh-online:#7FD4B0;
+
+  /* ---- video surfaces (camera thumbnails, live player) ---- */
+  --hbh-video-a:#256B7C;
+  --hbh-video-b:#14454F;
+  --hbh-video-c:#0E2F37;
+  --hbh-video-scrim:6,32,38;   /* rgb triplet for rgba() overlays */
+
+  /* ---- shape ---- */
+  --hbh-radius:14px;
+  --hbh-radius-sm:10px;
+  --hbh-radius-lg:20px;
+  --hbh-shadow:0 1px 2px rgba(19,78,92,.05), 0 6px 18px rgba(19,78,92,.07);
+  --hbh-shadow-lg:0 10px 34px rgba(19,78,92,.14);
+
+  --hbh-font:'IBM Plex Sans Arabic','Noto Kufi Arabic','Segoe UI',system-ui,sans-serif;
+  --hbh-display:'Noto Kufi Arabic','IBM Plex Sans Arabic','Segoe UI',system-ui,sans-serif;
+
+  font-family:var(--hbh-font);
+  color:var(--hbh-ink);
+  background:var(--hbh-bg);
+  -webkit-font-smoothing:antialiased;
+}
+
+.hbh-app *,
+.hbh-app *::before,
+.hbh-app *::after{ box-sizing:border-box; }
+
+.hbh-app h1,.hbh-app h2,.hbh-app h3,.hbh-app h4,.hbh-app p,.hbh-app ul,.hbh-app li{
+  margin:0; padding:0; list-style:none;
+}
+/* :where() keeps these resets at zero extra weight.
+   Without it `.hbh-app button` (0,1,1) outranks `.hbh-btn--primary` (0,1,0),
+   so `background:none` wins and a primary button loses its teal fill - while
+   the same class on an `<a>` looks correct. That is why the fill has to be
+   asked for by an element name to break: the bug only shows on one tag. */
+.hbh-app :where(button){ font:inherit; color:inherit; cursor:pointer; border:0; background:none; }
+.hbh-app :where(a){ color:inherit; text-decoration:none; }
+.hbh-app code{ font-family:ui-monospace,'Cascadia Mono',monospace; font-size:.92em; }
+
+/* <s> is used throughout as a faint separator between meta fields. Several
+   components style it and several forget to, and a forgotten one renders a
+   struck-through middot that reads as a stray glyph. Declared once here so
+   no component has to remember. */
+.hbh-app s{ text-decoration:none; opacity:.45; }
+
+/* ---------- generic surfaces ---------- */
+.hbh-card{
+  background:var(--hbh-surface);
+  border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius);
+  box-shadow:var(--hbh-shadow);
+}
+.hbh-card-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:16px 18px; border-bottom:1px solid var(--hbh-line);
+}
+.hbh-card-title{ font-family:var(--hbh-display); font-size:15px; font-weight:700; }
+.hbh-card-body{ padding:16px 18px; }
+.hbh-card-foot{
+  padding:12px 18px; border-top:1px solid var(--hbh-line);
+  text-align:center;
+}
+
+/* ---------- pill badges ---------- */
+.hbh-badge{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:999px;
+  font-size:11px; font-weight:600; line-height:1.6; white-space:nowrap;
+}
+.hbh-badge--success { background:var(--hbh-success-bg);  color:var(--hbh-success-ink); }
+.hbh-badge--progress{ background:var(--hbh-progress-bg); color:var(--hbh-progress-ink); }
+.hbh-badge--info    { background:var(--hbh-info-bg);     color:var(--hbh-info-ink); }
+.hbh-badge--danger  { background:var(--hbh-danger-bg);   color:var(--hbh-danger-ink); }
+.hbh-badge--muted   { background:var(--hbh-neutral-100); color:var(--hbh-muted); }
+
+/* ---------- buttons ---------- */
+.hbh-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:10px 16px; border-radius:var(--hbh-radius-sm);
+  font-size:13px; font-weight:600; transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.hbh-btn--primary{ background:var(--hbh-teal-600); color:var(--hbh-on-dark); }
+@media (hover:hover){ .hbh-btn--primary:hover{ background:var(--hbh-teal-700); } }
+.hbh-btn--ghost{ background:var(--hbh-surface); border:1px solid var(--hbh-line); color:var(--hbh-ink-2); }
+@media (hover:hover){ .hbh-btn--ghost:hover{ border-color:var(--hbh-teal-400); color:var(--hbh-teal-600); } }
+.hbh-btn--block{ width:100%; }
+
+/* ---------- link with arrow ---------- */
+.hbh-link{
+  display:inline-flex; align-items:center; gap:6px;
+  color:var(--hbh-teal-600); font-size:13px; font-weight:600;
+}
+@media (hover:hover){ .hbh-link:hover{ color:var(--hbh-teal-700); } }
+.hbh-link .hbh-i{ width:14px; height:14px; }
+/* arrow follows the reading direction */
+[dir="rtl"] .hbh-link .hbh-i--next{ transform:scaleX(-1); }
+
+/* ---------- avatars ---------- */
+.hbh-avatar{
+  border-radius:50%; object-fit:cover; flex:none;
+  background:var(--hbh-teal-100);
+}
+.hbh-avatar--ring{ box-shadow:0 0 0 3px var(--hbh-surface), 0 0 0 5px var(--hbh-teal-400); }
+
+/* ---------- icon glyph box ---------- */
+.hbh-i{ width:18px; height:18px; flex:none; stroke-width:1.9; }
+.hbh-iconbox{
+  width:44px; height:44px; border-radius:12px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+}
+.hbh-iconbox .hbh-i{ width:21px; height:21px; }
+
+/* icon tints — the fill/tint pair used by .hbh-iconbox and any tinted chip.
+   Shared because both the ops app and the parent portal use them. */
+.hbh-t--blue   { background:var(--hbh-info-bg);     color:var(--hbh-teal-600); }
+.hbh-t--green  { background:var(--hbh-success-bg);  color:var(--hbh-success-ink); }
+.hbh-t--amber  { background:var(--hbh-progress-bg); color:var(--hbh-progress-ink); }
+.hbh-t--purple { background:var(--hbh-purple-bg);   color:var(--hbh-purple); }
+.hbh-t--navy   { background:var(--hbh-neutral-100); color:var(--hbh-teal-700); }
+.hbh-t--red    { background:var(--hbh-danger-bg);   color:var(--hbh-danger-ink); }
+
+/* ---------- brand logo + wordmark ----------
+   assets/hbh-logo-mark.png      الرمز (الأيدي والأطفال والدائرة)
+   assets/hbh-logo-wordmark.png  الكلمات (hand by hand / skills center)
+   الملفان PNG بخلفية شفافة، مقصوصان على حدود المحتوى بالضبط. */
+.hbh-logo{ display:block; flex:none; height:auto; }
+
+/* بديل نصّي للكلمات — يُستعمل حيث لا تصلح الصورة (نسخة عربية،
+   بريد، طباعة نصّية). ألوانه بنفس ترتيب الشعار. */
+.hbh-wm{ white-space:nowrap; }
+.hbh-wm b,
+.hbh-wm i,
+.hbh-wm em{ font-style:normal; font-weight:inherit; }
+.hbh-wm b { color:var(--hbh-teal-600); }
+.hbh-wm i { color:var(--hbh-green-600); }
+.hbh-wm em{ color:var(--hbh-coral-600); }
+
+/* على الخلفية الفيروزية الغامقة تُستخدم درجات أفتح لتبقى مقروءة */
+.hbh-wm--on-dark b { color:var(--hbh-teal-300); }
+.hbh-wm--on-dark i { color:var(--hbh-green-300); }
+.hbh-wm--on-dark em{ color:var(--hbh-coral-300); }
+
+/* ---------- tiny helpers ---------- */
+.hbh-muted{ color:var(--hbh-muted); font-size:12.5px; }
+.hbh-delta{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; }
+.hbh-delta--up  { color:var(--hbh-success-ink); }
+.hbh-delta--down{ color:var(--hbh-danger-ink); }
+.hbh-delta--flat{ color:var(--hbh-muted); }
+.hbh-sr{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap;
+}
+
+/* ---------- live dot ---------- */
+.hbh-live-dot{
+  width:8px; height:8px; border-radius:50%; background:currentColor; flex:none;
+  animation:hbh-pulse 1.6s ease-in-out infinite;
+}
+@keyframes hbh-pulse{
+  0%,100%{ opacity:1;   transform:scale(1); }
+  50%    { opacity:.35; transform:scale(.75); }
+}
+@media (prefers-reduced-motion:reduce){
+  .hbh-live-dot{ animation:none; }
+}
+
+/* =====================================================================
+   States every screen needs, in both applications
+   ---------------------------------------------------------------------
+   Loading, empty and error are drawn by components that now live in
+   web/shared, so their styles live here rather than in either app's own
+   sheet. A copy per app is how the two would drift - which already
+   happened once in this project with the component sheet.
+   ===================================================================== */
+
+/* Keyboard focus. The prototypes never showed a ring; a shipped screen
+   must, and it has to survive on cream and on the dark teal alike. */
+.hbh-app :focus-visible{
+  outline:2px solid var(--hbh-teal-600);
+  outline-offset:2px;
+  border-radius:var(--hbh-radius-sm);
+}
+
+/* A text field is drawn as a box around the control - the icon, the country
+   code and the input are one thing to the eye - and that box already lights
+   up on :focus-within. Letting the ring above also land on the bare <input>
+   drew a SECOND ring inside the first, hugging only part of the field and
+   sitting off-centre against it. The container owns the focus; the control
+   inside it does not draw its own. */
+.hbh-app .hbh-fld__box :focus-visible,
+.hbh-app .fld__box :focus-visible,
+.hbh-app .hbh-field :focus-visible,
+.hbh-app .otp :focus-visible{
+  outline:none;
+}
+.hbh-app button[disabled]{ cursor:not-allowed; opacity:.75; }
+.hbh-btn.is-busy{ pointer-events:none; opacity:.7; }
+
+/* Skip link: off-screen until focused, then above everything. */
+.hbh-skip{ position:absolute; inset-inline-start:-9999px; top:0; z-index:100; }
+.hbh-skip:focus{
+  inset-inline-start:8px; top:8px; padding:9px 14px;
+  border-radius:var(--hbh-radius-sm);
+  background:var(--hbh-teal-600); color:var(--hbh-on-dark);
+  font-size:13px; font-weight:600;
+}
+
+/* Nothing to show, said plainly. */
+.state{
+  display:flex; flex-direction:column; align-items:center; gap:9px;
+  padding:34px 20px; text-align:center;
+  color:var(--hbh-muted); font-size:12px; line-height:1.8;
+}
+.state .hbh-i{ width:26px; height:26px; color:var(--hbh-neutral-200); }
+.state__t{ font-size:13px; font-weight:600; color:var(--hbh-ink-2); }
+
+/* Placeholders shaped like the rows that will replace them, so the layout
+   does not jump when the answer arrives. */
+.skel{
+  border-radius:var(--hbh-radius);
+  background:linear-gradient(90deg,
+    var(--hbh-neutral-100) 25%, var(--hbh-surface-2) 37%, var(--hbh-neutral-100) 63%);
+  background-size:400% 100%;
+  animation:hbh-skel 1.3s ease infinite;
+}
+.skel--row { height:66px; }
+.skel--card{ height:132px; }
+@keyframes hbh-skel{
+  from{ background-position:100% 50%; }
+  to  { background-position:0 50%; }
+}
+@media (prefers-reduced-motion:reduce){ .skel{ animation:none; } }
+
+/* A failure the reader can act on - never a status code or a stack. */
+.err{
+  display:flex; align-items:flex-start; gap:9px;
+  padding:12px 13px; border-radius:var(--hbh-radius);
+  background:var(--hbh-danger-bg); border:1px solid var(--hbh-danger-line);
+  color:var(--hbh-danger-ink); font-size:11.5px; line-height:1.85;
+}
+.err .hbh-i{ width:15px; height:15px; flex:none; margin-top:3px; }
+
+/* Offline. Above everything, because it explains every failure below it. */
+/* Fixed to the top of the viewport with viewport-fit=cover, so it needs
+   the top inset for the same reason .pa__head does - otherwise the one
+   bar whose whole job is to be read sits under the status bar. */
+.netbar{
+  position:fixed; inset-inline:0; top:0; z-index:90;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:calc(8px + env(safe-area-inset-top)) 14px 8px;
+  background:var(--hbh-progress-bg); border-bottom:1px solid var(--hbh-progress-line);
+  color:var(--hbh-progress-ink); font-size:12px; font-weight:600;
+}
+.netbar .hbh-i{ width:15px; height:15px; flex:none; }
+
+/* ---------------------------------------------------------------------
+   Pressed states.
+
+   Every hover rule above is now behind @media (hover:hover), because on a
+   phone there is nothing to hover: the rules never fired, and on some
+   mobile browsers a :hover style sticks to the last element tapped until
+   something else is touched. That left the touch-first app with no
+   feedback at all - tapping a card did nothing visible until the route
+   changed, which on a slow connection reads as a dead button.
+
+   :active is what a finger gets. It is deliberately a scale and a ground
+   change rather than a colour change: it has to be legible in the quarter
+   second it exists, and it must not depend on the element's own palette,
+   because these selectors cover a white card, a teal button and a
+   translucent control on video.
+
+   transform is named explicitly in the transition, not `all` - the
+   shorthand animated box-shadow and layout properties too, on every
+   element that carried it.
+   --------------------------------------------------------------------- */
+.hbh-app :where(a, button, [role="button"], .hbh-card, .row, .kid,
+                .quick__i, .task, .opt, .cbar, .seg__i, .hbh-kid,
+                .hbh-quick__item, .hbh-news, .hbh-conv, .hbh-rowbtn){
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+/* Surfaces that sit on the page: they sink slightly and their ground
+   warms. 0.985 is small on purpose - a card that visibly shrinks reads
+   as a bug on a list of eight. */
+.hbh-app :where(.row, .kid, .quick__i, .task, .opt, .cbar, .hbh-card,
+                .hbh-kid, .hbh-quick__item, .hbh-news, .hbh-conv):active{
+  transform:scale(.985);
+  background:var(--hbh-surface-2);
+  transition:transform .06s ease, background .06s ease;
+}
+
+/* Buttons already carry a fill, so the ground is left alone and only the
+   press registers. */
+.hbh-app :where(.hbh-btn, .hbh-iconbtn, .hbh-backbtn, .hbh-rowbtn,
+                .pa__back, .pa__act, .cbar__sw, .seg__i,
+                .hbh-signin__peek, .hbh-webbtn):active{
+  transform:scale(.96);
+  transition:transform .06s ease;
+}
+
+/* On video and on the teal panel the ground is dark, so the press
+   brightens instead of warming. */
+.hbh-app :where(.player__btn, .player__mark, .hbh-ctrlbtn, .hbh-markbtn,
+                .hbh-nav__item, .hbh-side__out):active{
+  transform:scale(.96);
+  filter:brightness(1.18);
+  transition:transform .06s ease, filter .06s ease;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .hbh-app :where(a, button, [role="button"], .hbh-card, .row, .kid,
+                  .quick__i, .task, .opt, .cbar, .seg__i, .hbh-kid,
+                  .hbh-quick__item, .hbh-news, .hbh-conv,
+                  .hbh-rowbtn):active{
+    transform:none;
+  }
+}
+
+/* A disabled control must not answer a press at all. */
+.hbh-app :where(button, a)[disabled]:active,
+.hbh-app :where(button, a):disabled:active,
+.hbh-app :where(button, a)[aria-disabled="true"]:active{
+  transform:none;
+  filter:none;
+  background:inherit;
+}
+
+/* ---------- inline note ----------
+   A short, tinted line of guidance beside the thing it explains - not an
+   alert and not an error. It lived in hbh-app.css, which only the parent
+   portal loads, so the console and the parent web pages had no callout at
+   all and reached for a plain card instead. Both apps load this file, so
+   it belongs here.
+
+   Moved, not copied: two callout components with the same job drift, and
+   the one nobody edits is the one that goes stale. */
+.note{
+  display:flex; align-items:flex-start; gap:9px;
+  padding:12px 13px; border-radius:var(--hbh-radius);
+  font-size:11.5px; line-height:1.85;
+}
+.note .hbh-i{ width:15px; height:15px; flex:none; margin-top:3px; }
+.note--info{ background:var(--hbh-info-bg); border:1px solid var(--hbh-info-line); color:var(--hbh-teal-700); }
+.note--warn{ background:var(--hbh-progress-bg); border:1px solid var(--hbh-progress-line); color:var(--hbh-progress-ink); }
+.note--ok  { background:var(--hbh-success-bg); border:1px solid var(--hbh-success-line); color:var(--hbh-success-ink); }
+.note b{ font-weight:700; }
+
+/* The service's request id under an unactionable failure. Quiet, small and
+   selectable: its whole job is to be read out or copied into a message to
+   the centre. */
+.hbh-app .err__trace{
+  margin-top:7px; font-size:10.5px; letter-spacing:.4px;
+  color:var(--hbh-muted); user-select:all;
+}
+
+/* =====================================================================
+   Toast - what just happened, in two of the logo's three colours
+   =====================================================================
+   It lives here and not in a per-application file because BOTH apps
+   render <hbh-toast/>. It was defined in the portal's stylesheet alone,
+   so every confirmation and every refusal in the console was unstyled:
+   the element was in the page, carried the right words, and looked like
+   stray text.
+
+   Two tones. A refusal used to arrive in the same green with the same
+   tick as a success - "you do not have permission" behind a check mark,
+   which somebody reads at a glance and walks away satisfied. */
+.hbh-app .toast{
+  position:fixed; inset-inline:16px; bottom:24px; z-index:60;
+  margin-inline:auto; max-width:420px;
+  display:flex; align-items:center; gap:9px;
+  padding:12px 14px; border-radius:12px;
+  background:var(--hbh-ink); color:var(--hbh-on-dark);
+  font-size:12.5px; font-weight:600; line-height:1.7;
+  box-shadow:var(--hbh-shadow-lg);
+  opacity:0; transform:translateY(10px); pointer-events:none;
+  transition:opacity .22s ease, transform .22s ease;
+}
+.hbh-app .toast.is-on{ opacity:1; transform:none; }
+/* Green from the logo for a success, coral from the logo for a refusal.
+   Neither is a generic traffic-light colour: both are sampled from the
+   centre's own mark, and on the dark toast the -300 steps are the ones
+   that stay legible. */
+.hbh-app .toast .hbh-i{ width:17px; height:17px; flex:none; color:var(--hbh-green-300); }
+.hbh-app .toast--error{ background:var(--hbh-coral-600); }
+.hbh-app .toast--error .hbh-i{ color:var(--hbh-coral-300); }
+
+/* =====================================================================
+   Spinner - work with no shape to outline
+   =====================================================================
+   A skeleton is better for a list that is loading, because it shows what
+   is coming and the page does not jump. This is for a pressed button, a
+   save, a stream opening: a yes or a no, with nothing to outline.
+
+   Three arcs in the three logo colours, so it belongs to this product. */
+.hbh-app .hbh-spin{
+  display:inline-block; width:22px; height:22px; flex:none;
+  position:relative;
+}
+.hbh-app .hbh-spin--sm{ width:16px; height:16px; }
+.hbh-app .hbh-spin--lg{ width:34px; height:34px; }
+.hbh-app .hbh-spin__r{
+  position:absolute; inset:0; border-radius:50%;
+  border:2.5px solid var(--hbh-neutral-100);
+  border-top-color:var(--hbh-teal-500);
+  border-inline-end-color:var(--hbh-green-500);
+  border-bottom-color:var(--hbh-coral-500);
+  animation:hbh-spin .8s linear infinite;
+}
+.hbh-app .hbh-spin--lg .hbh-spin__r{ border-width:3.5px; }
+.hbh-app .hbh-spin__t{ font-size:12.5px; color:var(--hbh-muted); }
+@keyframes hbh-spin{ to{ transform:rotate(360deg); } }
+
+/* A spinner is the commonest trigger on a page for somebody who gets
+   migraine or nausea from motion, and this one is in front of families
+   in a clinical setting. Reduced motion leaves a still ring that still
+   reads as busy. */
+@media (prefers-reduced-motion:reduce){
+  .hbh-app .hbh-spin__r{ animation:none; }
+}
+
+/* A button that is waiting shows the ring, not just a fade.
+   Done here rather than in each template: every button already carries
+   .is-busy while its call is in flight, so this reaches all of them and
+   there is no screen left showing only a dimmed label. The ring is drawn
+   in the button's own text colour so it works on the filled primary and
+   on the ghost alike. */
+.hbh-app .hbh-btn.is-busy{ pointer-events:none; opacity:.85; }
+.hbh-app .hbh-btn.is-busy::before{
+  content:""; width:14px; height:14px; flex:none; border-radius:50%;
+  border:2px solid currentColor; border-top-color:transparent;
+  animation:hbh-spin .8s linear infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  .hbh-app .hbh-btn.is-busy::before{ animation:none; }
+}
+
+
+/* =====================================================================
+   Sign-in layout - shared by the console and the parent portal.
+
+   Both apps sign people in and both draw the same three bands, so this
+   lives here rather than in either app stylesheet. What differs is the
+   card contents, and that stays with each app.
+
+   Three bands on a light ground: the story, the photograph, and the card.
+   The weight is carried by the photograph, not by a field of colour - a
+   console is opened every morning and looked at for hours, and a
+   full-height saturated panel is heavy for a daily tool.
+
+   The card comes FIRST in the DOM. In an RTL page the first grid column
+   lands on the right, so that is both the reading start and the tab
+   order. Nobody signing into their own workplace every morning needs to
+   read the pitch first.
+   ===================================================================== */
+.hbh-signin{
+  min-height:100vh;
+  min-height:100dvh;   /* the URL bar collapses; 100vh keeps the old height */
+  display:grid;
+  /* Three explicit columns, right to left: the card, the photograph, the
+     story. Two of them in one cell with a justify-self would have needed
+     the story to carry padding the width of the image - a number that
+     goes wrong the moment either changes. */
+  grid-template-columns:minmax(360px,34%) minmax(230px,28%) minmax(0,1fr);
+  background:var(--hbh-bg);
+  position:relative;
+  overflow:hidden;
+}
+
+/* The page ground. Three soft washes in the three brand colours - the
+   green and the coral appear nowhere else in either app, and a palette
+   that ships two thirds unused is a palette in name. Mixed from the
+   tokens, so a brand change carries. */
+.hbh-signin::before{
+  content:"";
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(38% 34% at 4% 6%,
+      color-mix(in srgb, var(--hbh-green-500) 16%, transparent) 0%, transparent 62%),
+    radial-gradient(34% 30% at 2% 96%,
+      color-mix(in srgb, var(--hbh-teal-500) 14%, transparent) 0%, transparent 60%),
+    radial-gradient(30% 26% at 98% 4%,
+      color-mix(in srgb, var(--hbh-coral-500) 12%, transparent) 0%, transparent 58%);
+}
+
+/* =====================================================================
+   The story - logo, headline, blurb, four marks, motto
+   ===================================================================== */
+.hbh-signin__story{
+  grid-column:3; grid-row:1;
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+  padding:34px 40px;
+  /* Capped, so the column does not sprawl on a wide monitor. A capped
+     block in a grid cell takes the inline start, which in RTL is the edge
+     against the photograph - so brand, headline, blurb and marks all share
+     one edge and the slack falls at the page margin. */
+  max-width:560px; min-width:0;
+}
+
+/* The brand block sits on the cream ground here, not on dark teal, so the
+   bitmap logo is on the surface it was drawn for and needs no plate. */
+/* fit-content: the block carries direction:ltr for the Latin wordmark, so
+   without it the logo took the far edge while every Arabic line under it
+   started at the other one. A block that hugs its content takes the
+   parent.s inline start, and the parent is the RTL one. */
+.hbh-signin__brand{
+  display:flex; align-items:center; gap:10px; direction:ltr;
+  width:fit-content;
+}
+.hbh-signin__logo{ width:52px; height:auto; flex:none; }
+.hbh-signin__wm  { width:150px; height:auto; flex:none; }
+.hbh-signin__brandline{
+  font-size:12.5px; color:var(--hbh-muted); margin-top:8px;
+  padding-top:8px; border-top:1px solid var(--hbh-line);
+  max-width:210px;
+}
+
+.hbh-signin__pitch{ margin:auto 0; padding:26px 0; max-width:44ch; }
+
+.hbh-signin__head{
+  font-family:var(--hbh-display);
+  font-size:clamp(26px,3.2vw,38px); font-weight:700; line-height:1.45;
+  color:var(--hbh-ink);
+}
+/* The second half of the headline carries the accent and the swash. The
+   underline is a gradient on the background, not a border: a border sits
+   on the box and this has to sit under the words and stop where they do. */
+.hbh-signin__head b{
+  display:inline-block; color:var(--hbh-teal-600); font-weight:700;
+  background:linear-gradient(to top,
+    color-mix(in srgb, var(--hbh-progress) 38%, transparent) 0 6px,
+    transparent 6px);
+  padding-inline:2px;
+}
+.hbh-signin__blurb{
+  font-size:14px; color:var(--hbh-ink-2); line-height:2; margin-top:16px;
+  max-width:42ch;
+}
+
+/* Four marks. A row of tiles reads faster than four stacked rows, and it
+   is where the rest of the palette earns its place: one tint each, and
+   the tint is the only thing that differs. */
+.hbh-signin__feats{
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px; margin-top:30px;
+}
+.hbh-signin__feat{ text-align:center; min-width:0; }
+.hbh-signin__feat i{
+  display:flex; align-items:center; justify-content:center;
+  width:52px; height:52px; margin:0 auto 10px;
+  border-radius:50%;
+}
+.hbh-signin__feat .hbh-i{ width:23px; height:23px; }
+.hbh-signin__feat b{ display:block; font-size:12.5px; font-weight:600; line-height:1.6; }
+.hbh-signin__feat span{ display:block; font-size:12px; color:var(--hbh-muted); line-height:1.6; }
+.hbh-signin__feat--coral i{ background:var(--hbh-coral-100); color:var(--hbh-coral-600); }
+.hbh-signin__feat--teal  i{ background:var(--hbh-info-bg);    color:var(--hbh-teal-600); }
+.hbh-signin__feat--green i{ background:var(--hbh-green-100);  color:var(--hbh-green-600); }
+.hbh-signin__feat--amber i{ background:var(--hbh-progress-bg);color:var(--hbh-progress-ink); }
+
+/* The centre's own line, in both languages. The English is the wordmark's
+   and was already on the logo; the Arabic is what staff actually say. */
+.hbh-signin__motto{
+  display:flex; align-items:center; gap:14px;
+  margin-top:auto; padding-top:22px;
+}
+.hbh-signin__motto .hbh-i{
+  width:34px; height:34px; flex:none; color:var(--hbh-progress-ink);
+  /* A thin stroke, so the -ink twin reads as a light line rather than a
+     heavy one. The suite caught the fill token here and it was right to:
+     a decorative flourish is still drawn with a colour, and a guard that
+     makes an exception for taste stops guarding. */
+  stroke-width:1.4;
+}
+.hbh-signin__mottoAr{
+  font-family:var(--hbh-display); font-size:17px; font-weight:700;
+  color:var(--hbh-teal-700); line-height:1.5;
+}
+.hbh-signin__mottoEn{
+  font-size:12px; color:var(--hbh-muted); direction:ltr; text-align:start;
+  letter-spacing:.04em; margin-top:2px;
+}
+
+/* =====================================================================
+   The photograph
+   ---------------------------------------------------------------------
+   A slot, not a requirement. Set --hbh-signin-photo to a url() and it
+   fills; leave it unset and the shape keeps its gradient and reads as a
+   deliberate panel rather than a hole. Nothing on this screen depends on
+   the image existing.
+
+       .hbh-signin{ --hbh-signin-photo:url("assets/brand/signin.jpg"); }
+
+   The mask is an elliptical radius on the inline-start edge, echoing the
+   rounded forms in the logo. A photograph of a child in a therapy centre
+   is a consent matter before it is a design one.
+   ===================================================================== */
+.hbh-signin__photo{
+  /* grid-row:1 explicitly. The card takes column 1 and the story column 3,
+     both in row 1; auto-placement then put this in row 2 and the image
+     landed as a flat band under the page instead of a full-height panel. */
+  grid-column:2; grid-row:1;
+  position:relative; z-index:0;
+  /* A shaped panel, not a capsule. At 38%/20% the two ends met and the
+     silhouette read as a lozenge; the photograph inside would have been
+     cropped into one too. */
+  border-radius:22% 22% 22% 22% / 9% 9% 9% 9%;
+  overflow:hidden;
+  background:
+    var(--hbh-signin-photo, none) center / cover no-repeat,
+    linear-gradient(150deg,
+      color-mix(in srgb, var(--hbh-teal-500) 24%, var(--hbh-surface)) 0%,
+      color-mix(in srgb, var(--hbh-green-500) 20%, var(--hbh-surface)) 100%);
+}
+
+/* The callout on the photograph. It carries its own ground because the
+   image under it is unknown - a scrim that works on one photograph fails
+   on the next, and a white pill works on both. */
+.hbh-signin__bubble{
+  position:absolute; inset-inline-start:18px; bottom:34px;
+  max-width:190px;
+  padding:13px 16px;
+  border-radius:20px 20px 20px 4px;
+  background:var(--hbh-surface);
+  box-shadow:var(--hbh-shadow-lg);
+  font-family:var(--hbh-display);
+  font-size:13px; font-weight:700; line-height:1.75;
+  color:var(--hbh-teal-700);
+}
+
+/* =====================================================================
+   Narrow: the story and the photograph go, the card stays
+   ---------------------------------------------------------------------
+   Not scaled down - removed. A four-across row of marks and a shaped
+   photograph on a 390px phone are two elements fighting for a column that
+   fits neither, and the card is the only thing on this screen anyone came
+   for.
+   ===================================================================== */
+@media (max-width:980px){
+  /* minmax(0,1fr), not 1fr. A 1fr track carries an automatic minimum of
+     min-content, and the card.s content pushed that to 468px inside a
+     420px phone - so the column was wider than the screen and the card
+     was clipped by the overflow:hidden above rather than scrolling.
+     Nothing errored, the page rendered, and the card was cut down one
+     side. */
+  .hbh-signin{ grid-template-columns:minmax(0,1fr); }
+  .hbh-signin__story,
+  .hbh-signin__photo{ display:none; }
+  .hbh-signin__main{ padding:26px 20px; }
+}
+.hbh-signin__main{
+  display:flex; align-items:center; justify-content:center;
+  padding:38px 34px;
+}
+/* No card. The cream ground IS the surface here - the white fields read
+   against it, and a white card under white fields would flatten both. The
+   emptiness was the column width, fixed above, not a missing container. */
+/* The card. White on the cream ground with a shadow, so the one thing on
+   this screen anyone came for is the one thing that lifts off the page. */
+.hbh-signin__box{
+  width:100%; max-width:400px;
+  background:var(--hbh-surface);
+  border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius-lg);
+  box-shadow:var(--hbh-shadow-lg);
+  padding:32px 30px;
+}
+/* The fields are white too. On a white card that leaves a hairline as the
+   only thing saying where to type, so they take the inset ground. */
+.hbh-signin__box .hbh-fld__box{ background:var(--hbh-surface-2); }
+.hbh-signin__step{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:4px 11px; border-radius:999px;
+  background:var(--hbh-info-bg); border:1px solid var(--hbh-info-line);
+  font-size:11px; font-weight:600; color:var(--hbh-teal-600);
+}
+.hbh-signin__t{
+  font-family:var(--hbh-display); font-size:22px; font-weight:700;
+  line-height:1.5; margin-top:13px;
+}
+.hbh-signin__s{ font-size:12.5px; color:var(--hbh-muted); line-height:1.95; margin-top:8px; }
+.hbh-signin__form{ margin-top:24px; }
+
+/* ---------- sign-in card: pieces the parent portal adds ----------
+   The console card opens straight into two fields; the parent card opens
+   with a badge and closes with a second way in. Declared here beside the
+   layout they sit in, not in either app file, because the next screen that
+   needs "or, if you have no file yet" will be in the other app. */
+
+/* A lock in a ring, above the title. The portal asks a stranger for their
+   mobile number as its very first act, and the badge is the screen saying
+   what kind of place this is before the field does. */
+.hbh-signin__badge{
+  width:78px; height:78px; margin:0 auto 18px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--hbh-info-bg);
+  color:var(--hbh-teal-600);
+  box-shadow:inset 0 0 0 1px var(--hbh-info-line);
+}
+.hbh-signin__badge .hbh-i{ width:34px; height:34px; }
+
+.hbh-signin__eyebrow{
+  font-size:13px; font-weight:700; color:var(--hbh-coral-600);
+  margin-bottom:10px;
+}
+
+/* "or" between the two ways in. A rule on each side rather than a bare
+   word: the line is what says these are alternatives, not a sequence. */
+.hbh-signin__or{
+  display:flex; align-items:center; gap:13px;
+  margin:22px 0;
+  font-size:12.5px; color:var(--hbh-muted);
+}
+.hbh-signin__or::before,
+.hbh-signin__or::after{
+  content:""; height:1px; flex:1; background:var(--hbh-line);
+}
+
+/* The second way in - for a family with no file, whose number this form
+   will refuse. It is a button, not a footnote: without it the front door
+   only opens for people already inside. */
+.hbh-signin__join{
+  display:block; width:100%; text-align:start;
+  padding:15px 18px; border-radius:var(--hbh-radius-sm);
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  font-size:14px; font-weight:600; color:var(--hbh-ink);
+}
+.hbh-signin__join small{
+  display:block; margin-top:4px;
+  font-size:12.5px; font-weight:400; color:var(--hbh-muted);
+}
+@media (hover:hover){
+  .hbh-signin__join:hover{ border-color:var(--hbh-teal-400); color:var(--hbh-teal-600); }
+}
+
+/* The promise, at the foot of the card. */
+.hbh-signin__privacy{
+  display:flex; align-items:flex-start; gap:9px;
+  margin-top:24px;
+  font-size:12px; color:var(--hbh-muted); line-height:1.9;
+}
+.hbh-signin__privacy .hbh-i{
+  width:16px; height:16px; flex:none; margin-top:3px; color:var(--hbh-teal-600);
+}
+
+/* Three marks, not four. The parent portal carries the centre's own three
+   words - the ones already on the wordmark - and a fourth would be an
+   invention; the console carries four capabilities, which is a list and
+   can hold one more. */
+.hbh-signin__feats--three{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+
+/* Wide: the brand is out in the story column, so the copy inside the card
+   would be the same logo twice on one screen. Below the cut the story is
+   gone and the card's copy is the only one. Lives here, not in either app
+   file - the portal draws the same two and does not load hbh-admin.css,
+   so it was showing both. */
+@media (min-width:981px){
+  .hbh-signin__box > .hbh-signin__brand{ display:none; }
+}
+
+/* The parent card carries more than the console's two fields - a badge, a
+   second way in, and a promise - so it is given a little more room. */
+.hbh-app hbh-login .hbh-signin__box{ max-width:460px; }
+
+/* ---------- sign-in: the language chip and the card footer ----------
+   Both arrived on the console screen first and the portal named them
+   differently. One component, one name: two names for one thing is how a
+   system starts drifting, and the second one never gets the fix.
+
+   NOTE: as written in both templates this chip is a <span> with no click
+   handler, and there is only an ar.json - it looks like a control and does
+   nothing. Styled as a label rather than a button on purpose, so it does
+   not promise a press. Make it a <button> the day an en bundle exists. */
+.hbh-signin__lang{
+  /* inline-START, which in an RTL page is the right corner - where both
+     references put it. inset-inline-end read as "the far side" and put it
+     on the left, mirrored from the design. */
+  position:absolute; top:22px; inset-inline-start:26px; z-index:3;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:9px 15px; border-radius:999px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  box-shadow:var(--hbh-shadow);
+  font-size:13px; font-weight:600; color:var(--hbh-ink-2);
+}
+.hbh-signin__lang .hbh-i{ width:16px; height:16px; color:var(--hbh-teal-600); }
+
+/* The card's own footer: the promise, the centre, and no year. A hardcoded
+   year is wrong every January and nobody notices until a parent does. */
+.hbh-signin__foot{
+  display:flex; align-items:flex-start; gap:10px;
+  margin-top:22px; padding-top:16px;
+  border-top:1px solid var(--hbh-line);
+  font-size:11.5px; color:var(--hbh-muted); line-height:1.85;
+}
+.hbh-signin__foot span:first-of-type{
+  display:flex; align-items:flex-start; gap:7px; flex:1; min-width:0;
+}
+.hbh-signin__foot span:last-of-type{ text-align:end; flex:none; }
+.hbh-signin__foot .hbh-i{ width:14px; height:14px; flex:none; margin-top:3px; }
+.hbh-signin__foot > .hbh-i{ color:var(--hbh-coral-600); }
+
+/* The headline stacks whether its first half is a <br> or a <span>. The
+   portal template moved to a span and the two halves ran onto one line -
+   a change in one file that only shows in the other. */
+.hbh-signin__head span{ display:block; }

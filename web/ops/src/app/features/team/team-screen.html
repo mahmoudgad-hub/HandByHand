@@ -1,0 +1,519 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'site.team' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'team.sub' | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    @if (canWrite()) {
+      <button class="hbh-btn hbh-btn--primary" type="button" (click)="startAddMember()">
+        <hbh-icon name="ic-user-plus" />
+        {{ 'team.addMember' | t }}
+      </button>
+    }
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="5" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (members().length === 0) {
+  <hbh-empty-state icon="ic-users" [title]="'team.noMembers' | t"
+                   [note]="'team.noMembersNote' | t" />
+} @else {
+  <div class="hbh-md">
+    <!-- ============ the master: who is on the team ============ -->
+    <aside class="hbh-md__list">
+      @for (member of members(); track cell(member, 'member_id')) {
+        <button class="hbh-md__item" type="button"
+                [class.is-active]="cell(member, 'member_id') === (selectedId() + '')"
+                [class.is-archived]="isArchived(member)"
+                (click)="select(member)">
+          @if (cell(member, 'photo_path')) {
+            <img class="hbh-md__face" alt="" [src]="assetUrl(cell(member, 'photo_path'))">
+          } @else {
+            <span class="hbh-md__face hbh-md__face--none"><hbh-icon name="ic-user" /></span>
+          }
+          <span class="hbh-md__who">
+            <span class="hbh-md__name">{{ cell(member, 'name_ar') }}</span>
+            <span class="hbh-md__role">{{ cell(member, 'role_ar') }}</span>
+          </span>
+          <span class="hbh-badge" [class]="statusTone(member)">
+            {{ statusKey(member) | t }}
+          </span>
+        </button>
+      }
+    </aside>
+
+    <!-- ============ the detail ============ -->
+    @if (selected(); as member) {
+      <section class="hbh-md__detail">
+        <div class="hbh-md__head">
+          <div>
+            <div class="hbh-card-title">{{ cell(member, 'name_ar') }}</div>
+            <span class="hbh-muted">{{ cell(member, 'role_ar') }}</span>
+          </div>
+          @if (canWrite() && dirty()) {
+            <!-- Only while something has actually changed. A save button that
+                 is always lit says nothing about whether there is anything to
+                 save. -->
+            <div class="hbh-pagehead__actions">
+              <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelProfile()">
+                <hbh-icon name="ic-x" />
+                {{ 'action.cancel' | t }}
+              </button>
+              <button class="hbh-btn hbh-btn--primary" type="button"
+                      [disabled]="savingProfile()" (click)="saveProfile()">
+                <hbh-icon name="ic-check" />
+                {{ (savingProfile() ? 'action.saving' : 'team.saveChanges') | t }}
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (blockers().length) {
+          <div class="hbh-notice hbh-notice--warn">
+            <hbh-icon name="ic-warn" />
+            <div>
+              <strong>{{ 'team.notPublishable' | t }}</strong>
+              <ul class="hbh-md__blockers">
+                @for (blocker of blockers(); track blocker) {
+                  <li>{{ blocker }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+
+        <div class="hbh-tabbar" role="tablist">
+          <button class="hbh-tabbar__item" type="button" role="tab"
+                  [class.is-active]="tab() === 'profile'"
+                  [attr.aria-selected]="tab() === 'profile'" (click)="showTab('profile')">
+            <hbh-icon name="ic-user" /> {{ 'team.tabProfile' | t }}
+          </button>
+          <button class="hbh-tabbar__item" type="button" role="tab"
+                  [class.is-active]="tab() === 'facts'"
+                  [attr.aria-selected]="tab() === 'facts'" (click)="showTab('facts')">
+            <hbh-icon name="ic-list" /> {{ 'site.facts' | t }} ({{ memberFacts().length }})
+          </button>
+          <button class="hbh-tabbar__item" type="button" role="tab"
+                  [class.is-active]="tab() === 'videos'"
+                  [attr.aria-selected]="tab() === 'videos'" (click)="showTab('videos')">
+            <hbh-icon name="ic-video" /> {{ 'team.tabVideos' | t }} ({{ memberVideos().length }})
+          </button>
+          <button class="hbh-tabbar__item" type="button" role="tab"
+                  [class.is-active]="tab() === 'certificates'"
+                  [attr.aria-selected]="tab() === 'certificates'" (click)="showTab('certificates')">
+            <hbh-icon name="ic-file" /> {{ 'site.certificates' | t }} ({{ memberCertificates().length }})
+          </button>
+          <button class="hbh-tabbar__item" type="button" role="tab"
+                  [class.is-active]="tab() === 'photos'"
+                  [attr.aria-selected]="tab() === 'photos'" (click)="showTab('photos')">
+            <hbh-icon name="ic-grid" /> {{ 'team.tabPhotos' | t }} ({{ memberPhotos().length }})
+          </button>
+        </div>
+
+        <!-- ---------------- the profile ---------------- -->
+        @if (tab() === 'profile') {
+          <div class="hbh-card">
+            <div class="hbh-card-body team-profile-grid"><div class="team-photo-panel"><div class="hbh-md__portrait">
+                @if (cell(member, 'photo_path')) {
+                  <img class="hbh-md__avatar" alt=""
+                       [src]="assetUrl(cell(member, 'photo_path'))">
+                } @else {
+                  <span class="hbh-md__avatar hbh-md__avatar--none">
+                    <hbh-icon name="ic-user" />
+                  </span>
+                }
+                @if (canWrite()) {
+                  <label class="hbh-md__camera" [attr.title]="'team.changePhoto' | t">
+                    <hbh-icon name="ic-camera" />
+                    <span class="hbh-sr">{{ 'team.changePhoto' | t }}</span>
+                    <input type="file" accept="image/*" class="hbh-sr"
+                           [disabled]="busy() !== null" (change)="onPickPortrait($event)">
+                  </label>
+                }
+              </div>
+              <p class="hbh-md__note hbh-md__center">
+                {{ (busy() === 'portrait' ? 'team.uploading' : 'team.photoHint') | t }}
+              </p>
+              @if (canWrite() && cell(member, 'photo_path')) {
+                <p class="hbh-md__center">
+                  <button class="hbh-btn hbh-btn--ghost" type="button" (click)="removePortrait()">
+                    {{ 'team.removePhoto' | t }}
+                  </button>
+                </p>
+              }
+
+              </div><div class="hbh-fld">
+                <label class="hbh-fld__l" for="p-name_ar">{{ 'team.fullName' | t }} *</label>
+                <div class="hbh-fld__box">
+                  <input id="p-name_ar" type="text" [formControl]="profile()['name_ar']">
+                </div>
+              </div>
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="p-role_ar">{{ 'team.jobTitle' | t }} *</label>
+                <div class="hbh-fld__box">
+                  <input id="p-role_ar" type="text" [formControl]="profile()['role_ar']">
+                </div>
+              </div>
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="p-org_ar">{{ 'team.org' | t }}</label>
+                <div class="hbh-fld__box">
+                  <input id="p-org_ar" type="text" [formControl]="profile()['org_ar']">
+                </div>
+              </div>
+              <div class="hbh-fld">
+                <label class="hbh-fld__l" for="p-bio_ar">{{ 'team.bio' | t }}</label>
+                <div class="hbh-fld__box">
+                  <textarea id="p-bio_ar" rows="4" [maxlength]="bioMax"
+                            [formControl]="profile()['bio_ar']"></textarea>
+                </div>
+                <!-- The limit is a CHECK on the column; showing the count is
+                     how somebody learns it while typing rather than on save. -->
+                <p class="hbh-md__count" dir="ltr">{{ bioLength() }}/{{ bioMax }}</p>
+              </div>
+
+              <div class="hbh-fld">
+                <label class="hbh-fld__l">
+                  <hbh-icon name="ic-tag" /> {{ 'team.specialties' | t }}
+                </label>
+                <div class="hbh-md__chips">
+                  @for (item of memberSpecialties(); track cell(item, 'specialty_id')) {
+                    <span class="hbh-md__chip">
+                      {{ cell(item, 'name_ar') }}
+                      @if (canWrite()) {
+                        <button type="button" class="hbh-md__chipX"
+                                [attr.aria-label]="'action.archive' | t"
+                                (click)="removeSpecialty(item)">×</button>
+                      }
+                    </span>
+                  }
+                </div>
+                @if (canWrite()) {
+                  <form class="hbh-md__chipAdd" (submit)="addSpecialty($event)">
+                    <input type="text" [formControl]="specialtyInput"
+                           [attr.placeholder]="'team.addSpecialty' | t">
+                    <button class="hbh-btn hbh-btn--ghost" type="submit">
+                      <hbh-icon name="ic-plus" /> {{ 'action.add' | t }}
+                    </button>
+                  </form>
+                }
+              </div>
+            </div>
+          </div>
+
+        }
+
+        <!-- ---------------- the qualifications ----------------
+             Its own tab now, beside the films and the photographs, rather
+             than a second tab bar underneath the profile form. Two tab bars
+             stacked on one screen read as one control that has lost track
+             of itself, and the qualifications were the half nobody found. -->
+        @if (tab() === 'facts') {
+          @if (canWrite()) {
+            <div class="hbh-tabbar">
+              <button class="hbh-btn hbh-btn--primary hbh-md__add" type="button"
+                      (click)="showList('facts'); startAdd()">
+                <hbh-icon name="ic-plus" /> {{ 'action.add' | t }}
+              </button>
+            </div>
+          }
+
+          @if (memberFacts().length === 0) {
+            <hbh-empty-state icon="ic-list" [title]="'team.noFacts' | t"
+                             [note]="'team.noFactsNote' | t" />
+          } @else {
+            <div class="hbh-tablewrap">
+              <table class="hbh-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'site.fact' | t }}</th>
+                    <th>{{ 'site.order' | t }}</th>
+                    <th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (fact of memberFacts(); track cell(fact, 'fact_id')) {
+                    <tr [class.is-archived]="isArchived(fact)">
+                      <td>{{ cell(fact, 'text_ar') }}</td>
+                      <td dir="ltr">{{ cell(fact, 'sort_order') }}</td>
+                      <td>
+                        <div class="hbh-pagehead__actions">
+                          @if (canWrite() && !isArchived(fact)) {
+                            <button class="hbh-iconbtn" type="button"
+                                    [attr.aria-label]="'action.edit' | t"
+                                    (click)="startEditRow(fact, 'facts')">
+                              <hbh-icon name="ic-edit" />
+                            </button>
+                            <button class="hbh-iconbtn" type="button"
+                                    [attr.aria-label]="'action.archive' | t"
+                                    (click)="archiveRow(fact, 'facts')">
+                              <hbh-icon name="ic-trash" />
+                            </button>
+                          } @else if (canWrite()) {
+                            <button class="hbh-iconbtn" type="button"
+                                    [attr.aria-label]="'action.restore' | t"
+                                    (click)="restoreRow(fact, 'facts')">
+                              <hbh-icon name="ic-refresh" />
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- ---------------- films and photographs ----------------
+             One gallery component for both: they differ in what a browser
+             does with the file and in nothing else that matters here. -->
+        @if (tab() === 'videos' || tab() === 'photos') {
+          @if (canWrite()) {
+            <label class="hbh-md__drop">
+              <hbh-icon [name]="tab() === 'videos' ? 'ic-video' : 'ic-upload'" />
+              <strong>{{ (tab() === 'videos' ? 'team.addVideo' : 'team.addPhoto') | t }}</strong>
+              <span class="hbh-md__note">
+                {{ (tab() === 'videos' ? 'team.videoLimits' : 'team.photoLimits') | t }}
+              </span>
+              <input type="file" multiple class="hbh-sr"
+                     [accept]="tab() === 'videos' ? 'video/mp4,video/webm' : 'image/*'"
+                     [disabled]="busy() !== null"
+                     (change)="onPickMedia($event, tab() === 'videos' ? 'VIDEO' : 'PHOTO')">
+            </label>
+            @if (busy() === 'VIDEO' || busy() === 'PHOTO') {
+              <p class="hbh-md__note">{{ 'team.uploading' | t }}</p>
+            }
+            <p class="hbh-md__note">{{ 'team.mediaConsentNote' | t }}</p>
+          }
+
+          @if ((tab() === 'videos' ? memberVideos() : memberPhotos()).length === 0) {
+            <hbh-empty-state [icon]="icon(tab() === 'videos' ? 'ic-video' : 'ic-grid')"
+                             [title]="'team.noMedia' | t" [note]="'team.noMediaNote' | t" />
+          } @else {
+            <div class="hbh-md__grid">
+              @for (item of (tab() === 'videos' ? memberVideos() : memberPhotos());
+                    track cell(item, 'media_id')) {
+                <figure class="hbh-md__tile" [class.is-archived]="isArchived(item)">
+                  @if (tab() === 'videos') {
+                    <video class="hbh-md__thumb" controls preload="none"
+                           [poster]="assetUrl(cell(item, 'poster_path') || cell(member, 'photo_path'))"
+                           [src]="assetUrl(cell(item, 'path'))"></video>
+                    @if (duration(item)) {
+                      <span class="hbh-md__dur" dir="ltr">{{ duration(item) }}</span>
+                    }
+                  } @else {
+                    <img class="hbh-md__thumb" alt="" [src]="assetUrl(cell(item, 'path'))">
+                  }
+                  <figcaption class="hbh-md__tileFoot">
+                    <span class="hbh-badge" [class]="statusTone(item)">
+                      {{ statusKey(item) | t }}
+                    </span>
+                    @if (!cell(item, 'consent_given_at')) {
+                      <span class="hbh-md__gate">{{ 'team.gate.consent' | t }}</span>
+                    }
+                    @if (canWrite()) {
+                      <span class="hbh-md__tileA">
+                        @if (!cell(item, 'consent_given_at')) {
+                          <button class="hbh-iconbtn" type="button"
+                                  [attr.aria-label]="'team.recordConsent' | t"
+                                  (click)="consentMedia(item)">
+                            <hbh-icon name="ic-check-circle" />
+                          </button>
+                        }
+                        <button class="hbh-iconbtn" type="button"
+                                [attr.aria-label]="'action.archive' | t"
+                                (click)="removeMedia(item)">
+                          <hbh-icon name="ic-trash" />
+                        </button>
+                      </span>
+                    }
+                  </figcaption>
+                </figure>
+              }
+            </div>
+          }
+        }
+
+        <!-- ---------------- certificates ---------------- -->
+        @if (tab() === 'certificates') {
+          @if (canWrite()) {
+            <div class="hbh-tabbar">
+              <button class="hbh-btn hbh-btn--primary hbh-md__add" type="button"
+                      (click)="showList('certificates'); startAdd()">
+                <hbh-icon name="ic-plus" /> {{ 'action.add' | t }}
+              </button>
+            </div>
+          }
+          @if (memberCertificates().length === 0) {
+            <hbh-empty-state icon="ic-file" [title]="'team.noCerts' | t"
+                             [note]="'team.noCertsNote' | t" />
+          } @else {
+            <div class="hbh-md__grid">
+              @for (cert of memberCertificates(); track cell(cert, 'certificate_id')) {
+                <figure class="hbh-md__tile" [class.is-archived]="isArchived(cert)">
+                  <img class="hbh-md__thumb" alt="" [src]="assetUrl(cell(cert, 'path'))">
+                  <figcaption class="hbh-md__tileFoot">
+                    <span class="hbh-badge" [class]="statusTone(cert)">
+                      {{ statusKey(cert) | t }}
+                    </span>
+                    <!-- Which of the three gates is still open. The database
+                         refuses the publish either way; this says so first. -->
+                    @if (!cell(cert, 'consent_given_at')) {
+                      <span class="hbh-md__gate">{{ 'team.gate.consent' | t }}</span>
+                    }
+                    @if (!cell(cert, 'redaction_checked_at')) {
+                      <span class="hbh-md__gate">{{ 'team.gate.redaction' | t }}</span>
+                    }
+                    @if (canWrite()) {
+                      <span class="hbh-md__tileA">
+                        <button class="hbh-iconbtn" type="button"
+                                [attr.aria-label]="'action.edit' | t"
+                                (click)="startEditRow(cert, 'certificates')">
+                          <hbh-icon name="ic-edit" />
+                        </button>
+                        <button class="hbh-iconbtn" type="button"
+                                [attr.aria-label]="'action.archive' | t"
+                                (click)="archiveRow(cert, 'certificates')">
+                          <hbh-icon name="ic-trash" />
+                        </button>
+                      </span>
+                    }
+                  </figcaption>
+                </figure>
+              }
+            </div>
+          }
+        }
+      </section>
+    }
+  </div>
+}
+
+<!-- Adding a member: a name and a role, which is all the table requires.
+     No consent field and no status - a member is created as a draft, and
+     both the consent and the publish are separate acts with their own
+     gates in the database. -->
+@if (addingMember()) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelAddMember()"
+          aria-labelledby="addMemberTitle">
+    <form class="hbh-sheet__box hbh-sheet__box--editor" (submit)="saveMember($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="addMemberTitle">{{ 'team.addMember' | t }}</h2>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.cancel' | t"
+                (click)="cancelAddMember()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+      <div class="hbh-sheet__body">
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="n-name">{{ 'team.fullName' | t }} *</label>
+          <div class="hbh-fld__box">
+            <input id="n-name" type="text" [formControl]="newMember()['name_ar']">
+          </div>
+        </div>
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="n-role">{{ 'team.jobTitle' | t }} *</label>
+          <div class="hbh-fld__box">
+            <input id="n-role" type="text" [formControl]="newMember()['role_ar']">
+          </div>
+        </div>
+        <p class="hbh-md__note">{{ 'team.addMemberNote' | t }}</p>
+        @if (formError()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" /><span>{{ formError() | t }}</span>
+          </p>
+        }
+      </div>
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelAddMember()">
+          {{ 'action.cancel' | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
+          {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}
+
+<!-- One editor for a qualification and for a certificate, and for creating
+     and editing alike. member_id is nowhere in it: it comes from whoever is
+     open, which is the whole reason this screen is master and detail. -->
+@if (editing(); as open) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelEdit()"
+          aria-labelledby="teamEditorTitle">
+    <form class="hbh-sheet__box hbh-sheet__box--editor" (submit)="saveRow($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="teamEditorTitle">
+          {{ (isNewRow() ? 'action.add' : 'action.edit') | t }} —
+          {{ (open.kind === 'facts' ? 'site.fact' : 'site.certificates') | t }}
+        </h2>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.cancel' | t"
+                (click)="cancelEdit()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+
+      <div class="hbh-sheet__body">
+        <p class="hbh-muted">
+          {{ 'team.forMember' | t: { name: cell(selected() ?? {}, 'name_ar') } }}
+        </p>
+
+        @for (field of editorFields(); track field.name) {
+          <div class="hbh-fld">
+            <label class="hbh-fld__l" [attr.for]="'t-' + field.name">
+              {{ field.labelKey | t }}
+            </label>
+            <div class="hbh-fld__box" [class.is-bad]="badField() === field.name">
+              <input [id]="'t-' + field.name"
+                     [type]="field.kind === 'date' ? 'date'
+                           : field.kind === 'number' ? 'number' : 'text'"
+                     [attr.dir]="field.ltr ? 'ltr' : null"
+                     [formControl]="controls()[field.name]">
+            </div>
+            @if (field.name === 'path' && canWrite()) {
+              <div class="hbh-md__slotA">
+                <label class="hbh-btn hbh-btn--ghost">
+                  <hbh-icon name="ic-upload" />
+                  {{ (busy() === 'scan' ? 'team.uploading' : 'team.chooseScan') | t }}
+                  <input type="file" accept="image/*,application/pdf" class="hbh-sr"
+                         [disabled]="busy() !== null" (change)="onPickCertificate($event)">
+                </label>
+              </div>
+              <p class="hbh-md__note">{{ 'team.scanNote' | t }}</p>
+            }
+          </div>
+        }
+
+        @if (formError()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" /><span>{{ formError() | t }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelEdit()">
+          {{ 'action.cancel' | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
+          {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}
+@if (cropFile(); as file) {
+  <hbh-portrait-crop [file]="file" (cancel)="cropFile.set(null)" (cropped)="saveCroppedPortrait($event)" />
+}

@@ -1,0 +1,181 @@
+<!-- The card comes FIRST in the DOM. In an RTL page the first grid column
+     lands on the right, so that is both the reading start and the tab
+     order: a parent opens this to type a number, not to read about us.
+
+     The layout - .hbh-signin and the three bands under it - lives in
+     hbh-shared.css and is the same one the staff console uses. What
+     differs is what is inside the card and which three marks the story
+     carries. -->
+<div class="hbh-signin">
+  <span class="hbh-signin__lang"><hbh-icon name="ic-globe" />{{ 'login.language' | t }}</span>
+
+  <main class="hbh-signin__main">
+    <form class="hbh-signin__box" (submit)="submit($event)">
+
+      <!-- The brand, on narrow screens only: above 980px it is out in the
+           story column and this would be the same logo twice. -->
+      <span class="hbh-signin__brand">
+        <img class="hbh-logo hbh-signin__logo" src="assets/brand/hbh-logo-mark.png"
+             width="52" height="53" alt="">
+        <img class="hbh-logo hbh-signin__wm" src="assets/brand/hbh-logo-wordmark.png"
+             width="150" height="58" [attr.alt]="'app.name' | t">
+      </span>
+
+      <!-- A lock in a ring. This screen's first act is to ask a stranger
+           for their mobile number; the badge says what kind of place is
+           asking before the field does. -->
+      <span class="hbh-signin__badge" aria-hidden="true">
+        <hbh-icon name="ic-shield" />
+      </span>
+
+      <h1 class="hbh-signin__t">{{ 'login.title' | t }}</h1>
+      <p class="hbh-signin__s">{{ 'login.intro' | t }}</p>
+
+      <div class="hbh-signin__form">
+        <div class="fld">
+          <label class="fld__l" for="phone">{{ 'login.phoneLabel' | t }}</label>
+          <div class="fld__box" [class.is-bad]="showError() && phone.invalid">
+            <!-- NO "+20" HERE, and its absence is the decision.
+
+                 This field asks for 01XXXXXXXXX - eleven digits starting
+                 with a zero, which is the national form the centre records
+                 and the only one hbh.guardians.mobile accepts. A "+20" chip
+                 beside it composed, on screen, into "+20 01…", and that is
+                 not a number in either notation: the international form
+                 DROPS the leading zero.
+
+                 So the two together said something false, and the one that
+                 had to go is the one carrying no information. The placeholder
+                 and the hint below already say the shape exactly.
+
+                 The same trap was met on the printed child card, where
+                 config.phoneCountryCode stood in for a telephone number the
+                 system does not hold - see child-card.ts. A country code is
+                 not a prefix you can staple to anything. -->
+            <input #phoneBox id="phone" type="tel" inputmode="numeric" maxlength="11"
+                   autocomplete="tel-national" autofocus enterkeyhint="send"
+                   [attr.placeholder]="'login.phonePlaceholder' | t"
+                   [formControl]="phone"
+                   (input)="onInput(phone.value)"
+                   [attr.aria-invalid]="showError() && phone.invalid"
+                   [attr.aria-describedby]="showError() && phone.invalid ? 'phone-err' : 'phone-hint'">
+            <hbh-icon name="ic-phone" />
+          </div>
+          @if (showError() && phone.invalid) {
+            <p class="fld__err" id="phone-err" role="alert">{{ 'login.phoneInvalid' | t }}</p>
+          } @else {
+            <p class="fld__hint" id="phone-hint">{{ 'login.phoneHint' | t }}</p>
+          }
+        </div>
+
+        @if (failed()) {
+          <p class="fld__err" role="alert">{{ 'error.network' | t }}</p>
+        }
+
+        <!-- Not a field error: the number is well formed, it is simply on
+             no child's file. It carries the way forward with it - a refusal
+             with no next step leaves the family exactly where the old
+             silent redirect did. -->
+        <!-- Two reasons, two sentences, because they lead two different ways.
+             A number on no file is paired with the enrolment link below. An
+             application already on the centre's desk is paired with nothing:
+             the only correct next step is to wait, and offering the form
+             again would have a family fill it twice. -->
+        @if (noCode() === 'NOT_REGISTERED') {
+          <div class="err" role="alert">
+            <hbh-icon name="ic-info" />
+            <span>{{ 'login.notRegistered' | t }}</span>
+          </div>
+        } @else if (noCode() === 'ENROLMENT_PENDING') {
+          <div class="err" role="alert">
+            <hbh-icon name="ic-info" />
+            <span>{{ 'login.enrolmentPending' | t }}</span>
+          </div>
+        }
+
+        <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="submit"
+                [class.is-busy]="busy()" [disabled]="busy()">
+          <hbh-icon name="ic-send" />
+          {{ (busy() ? 'login.sending' : 'login.send') | t }}
+        </button>
+      </div>
+
+      <p class="hbh-signin__or">{{ 'login.or' | t }}</p>
+
+      <!-- The way in for a family that has no file yet, and therefore no
+           number this form would recognise. A button, not a footnote:
+           without it the centre's front door only opens for people who are
+           already inside. -->
+      <button class="hbh-signin__join" type="button" (click)="goToApply()">
+        <hbh-icon name="ic-users" />
+        {{ 'login.firstTime' | t }}
+        <small>{{ 'login.applyHere' | t }}</small>
+      </button>
+
+      <p class="hbh-signin__privacy">
+        <hbh-icon name="ic-shield" />
+        <span>{{ 'login.privacy' | t }}</span>
+      </p>
+
+    </form>
+  </main>
+
+  <!-- The photograph. A slot: set --hbh-signin-photo on .hbh-signin and it
+       fills, leave it unset and the shape keeps its own gradient. -->
+  <div class="hbh-signin__photo" aria-hidden="true">
+    <p class="hbh-signin__bubble">{{ 'login.photoNote' | t }}</p>
+  </div>
+
+  <aside class="hbh-signin__story">
+
+    <span class="hbh-signin__brand">
+      <img class="hbh-logo hbh-signin__logo" src="assets/brand/hbh-logo-mark.png"
+           width="52" height="53" alt="">
+      <img class="hbh-logo hbh-signin__wm" src="assets/brand/hbh-logo-wordmark.png"
+           width="150" height="58" [attr.alt]="'app.name' | t">
+    </span>
+
+    <div class="hbh-signin__pitch">
+      <p class="hbh-signin__eyebrow">{{ 'login.eyebrow' | t }}</p>
+      <!-- Two halves, and the second carries the accent and the swash. Two
+           keys rather than one with markup inside: a translator moving the
+           emphasis is changing wording, not HTML. -->
+      <h2 class="hbh-signin__head">
+        <span>{{ 'login.headlineA' | t }}</span>
+        <b>{{ 'login.headlineB' | t }}</b>
+      </h2>
+      <p class="hbh-signin__blurb">{{ 'login.blurb' | t }}</p>
+
+      <!-- Three, not four: these are the centre's own three words, the
+           ones already printed on the wordmark. A fourth would be an
+           invention. -->
+      <div class="hbh-signin__feats hbh-signin__feats--three">
+        <div class="hbh-signin__feat hbh-signin__feat--coral">
+          <i><hbh-icon name="ic-heart" /></i>
+          <b>{{ 'login.valTalkT' | t }}</b>
+          <span>{{ 'login.valTalkS' | t }}</span>
+        </div>
+        <div class="hbh-signin__feat hbh-signin__feat--green">
+          <i><hbh-icon name="ic-users" /></i>
+          <b>{{ 'login.valBondT' | t }}</b>
+          <span>{{ 'login.valBondS' | t }}</span>
+        </div>
+        <div class="hbh-signin__feat hbh-signin__feat--teal">
+          <i><hbh-icon name="ic-chart" /></i>
+          <b>{{ 'login.valGrowT' | t }}</b>
+          <span>{{ 'login.valGrowS' | t }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hbh-signin__motto">
+      <hbh-icon name="ic-send" />
+      <span>
+        <span class="hbh-signin__mottoAr">{{ 'login.photoNote' | t }}</span>
+      </span>
+    </div>
+
+  </aside>
+
+</div>
+<router-outlet />

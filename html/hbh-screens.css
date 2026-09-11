@@ -1,0 +1,800 @@
+/* =====================================================================
+   Hand By Hand — مكوّنات الشاشات الداخلية لتطبيق العمليات
+   File: hbh-screens.css  ->  #APP_FILES#hbh-screens.css
+   يُحمَّل بعد hbh-shared.css و hbh-admin.css.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------
+   1. رأس الصفحة الداخلية
+   --------------------------------------------------------------- */
+.hbh-pagehead{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:16px; flex-wrap:wrap; margin-bottom:16px;
+}
+.hbh-pagehead__left{ display:flex; align-items:center; gap:12px; min-width:0; }
+.hbh-pagehead__title{ font-family:var(--hbh-display); font-size:19px; font-weight:700; }
+.hbh-pagehead__sub{ font-size:12.5px; color:var(--hbh-muted); margin-top:3px; }
+.hbh-pagehead__actions{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+
+.hbh-backbtn{
+  width:36px; height:36px; border-radius:10px; flex:none;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-ink-2); box-shadow:var(--hbh-shadow);
+}
+@media (hover:hover){ .hbh-backbtn:hover{ color:var(--hbh-teal-600); border-color:var(--hbh-teal-400); } }
+[dir="rtl"] .hbh-backbtn .hbh-i{ transform:scaleX(-1); }
+
+/* ---------------------------------------------------------------
+   2. شريط التبويبات
+   --------------------------------------------------------------- */
+.hbh-tabbar{
+  display:flex; gap:4px; padding:5px; margin-bottom:14px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:12px; box-shadow:var(--hbh-shadow);
+  overflow-x:auto; scrollbar-width:thin;
+}
+.hbh-tabbar__item{
+  padding:8px 14px; border-radius:9px; white-space:nowrap;
+  font-size:13px; font-weight:600; color:var(--hbh-muted);
+  display:flex; align-items:center; gap:7px; transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+@media (hover:hover){ .hbh-tabbar__item:hover{ color:var(--hbh-teal-600); background:var(--hbh-surface-2); } }
+.hbh-tabbar__item.is-active{ background:var(--hbh-teal-600); color:#fff; }
+@media (hover:hover){ .hbh-tabbar__item.is-active:hover{ background:var(--hbh-teal-700); color:#fff; } }
+.hbh-tabbar__item .hbh-i{ width:15px; height:15px; }
+
+/* شريط مُبسّط (تبويبات ثانوية) */
+.hbh-tabbar--soft .hbh-tabbar__item.is-active{
+  background:var(--hbh-info-bg); color:var(--hbh-teal-600);
+}
+
+/* مجموعة أزرار مُقسّمة (شبكة / قائمة) */
+.hbh-segmented{
+  display:inline-flex; padding:3px; gap:3px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:10px; box-shadow:var(--hbh-shadow);
+}
+.hbh-segmented__item{
+  display:flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:8px;
+  font-size:12.5px; font-weight:600; color:var(--hbh-muted);
+}
+.hbh-segmented__item .hbh-i{ width:15px; height:15px; }
+.hbh-segmented__item.is-active{ background:var(--hbh-teal-600); color:#fff; }
+
+/* ---------------------------------------------------------------
+   3. حقول الفلترة والبحث
+   --------------------------------------------------------------- */
+.hbh-filters{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.hbh-field{
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:10px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  box-shadow:var(--hbh-shadow); font-size:12.5px; color:var(--hbh-ink-2);
+}
+.hbh-field:focus-within{ border-color:var(--hbh-teal-400); }
+.hbh-field .hbh-i{ width:15px; height:15px; color:var(--hbh-muted); }
+.hbh-field select,
+.hbh-field input{
+  font:inherit; color:inherit; border:0; outline:none;
+  background:none; min-width:0; width:100%;
+}
+.hbh-field select{ cursor:pointer; }
+.hbh-field--grow{ flex:1 1 220px; }
+.hbh-field--sel{ min-width:150px; }
+
+/* ---------------------------------------------------------------
+   4. تخطيطات عامة
+   --------------------------------------------------------------- */
+.hbh-split{ display:grid; gap:14px; align-items:start; grid-template-columns:300px minmax(0,1fr); }
+.hbh-split--wide{ grid-template-columns:minmax(0,1fr) 330px; }
+.hbh-stack{ display:flex; flex-direction:column; gap:14px; }
+.hbh-grid2{ display:grid; gap:14px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+/* ---------------------------------------------------------------
+   5. بطاقة هوية الطفل
+   --------------------------------------------------------------- */
+.hbh-idcard{ padding:20px 16px 6px; text-align:center; }
+.hbh-idcard .hbh-avatar{ width:84px; height:84px; display:block; margin:0 auto 12px; }
+.hbh-idcard__name{ font-family:var(--hbh-display); font-size:18px; font-weight:700; }
+.hbh-idcard__meta{
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  flex-wrap:wrap; font-size:12px; color:var(--hbh-muted); margin-top:5px;
+}
+.hbh-idcard__meta s{ text-decoration:none; opacity:.45; }
+.hbh-idcard__badges{ display:flex; justify-content:center; gap:6px; margin-top:10px; }
+
+/* قائمة تعريفية مفتاح/قيمة */
+.hbh-deflist{ display:flex; flex-direction:column; margin-top:14px; }
+.hbh-deflist__row{
+  display:flex; align-items:center; gap:9px;
+  padding:11px 0; border-top:1px solid var(--hbh-line);
+  font-size:12.5px; text-align:start;
+}
+.hbh-deflist__row .hbh-i{ width:15px; height:15px; color:var(--hbh-muted); flex:none; }
+.hbh-deflist__k{ color:var(--hbh-muted); }
+.hbh-deflist__v{ margin-inline-start:auto; font-weight:600; text-align:end; min-width:0; }
+.hbh-deflist__v--ltr{ direction:ltr; }
+
+/* ---------------------------------------------------------------
+   6. الأهداف + حلقة التقدّم
+   --------------------------------------------------------------- */
+.hbh-goalsrow{ display:flex; align-items:center; gap:20px; }
+.hbh-goals{ display:flex; flex-direction:column; gap:11px; flex:1; min-width:0; }
+.hbh-goal{ display:flex; align-items:flex-start; gap:9px; font-size:13px; line-height:1.6; }
+.hbh-goal__tick{
+  width:18px; height:18px; border-radius:50%; flex:none; margin-top:1px;
+  background:var(--hbh-success-bg); color:var(--hbh-success-ink);
+  display:flex; align-items:center; justify-content:center;
+}
+.hbh-goal__tick .hbh-i{ width:11px; height:11px; stroke-width:3; }
+.hbh-goal--todo .hbh-goal__tick{ background:var(--hbh-neutral-100); color:var(--hbh-muted); }
+
+.hbh-ring{ position:relative; width:112px; height:112px; flex:none; }
+.hbh-ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.hbh-ring__hole{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.hbh-ring__hole b{
+  font-family:var(--hbh-display); font-size:23px; font-weight:700; line-height:1;
+  direction:ltr;
+}
+.hbh-ring__hole small{ font-size:10.5px; color:var(--hbh-muted); margin-top:4px; text-align:center; }
+
+/* ---------------------------------------------------------------
+   7. اقتباس / ملخّص نصّي
+   --------------------------------------------------------------- */
+.hbh-quote{
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  border-radius:12px; padding:13px 14px;
+  font-size:13px; line-height:1.8;
+}
+.hbh-quote__by{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; flex-wrap:wrap; margin-top:11px;
+  font-size:11.5px; color:var(--hbh-muted);
+}
+
+/* ---------------------------------------------------------------
+   8. الجداول
+   --------------------------------------------------------------- */
+.hbh-tablewrap{ overflow-x:auto; }
+.hbh-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:680px; }
+.hbh-table th{
+  text-align:start; font-size:11.5px; font-weight:600; color:var(--hbh-muted);
+  padding:11px 12px; background:var(--hbh-surface-2);
+  border-bottom:1px solid var(--hbh-line); white-space:nowrap;
+}
+.hbh-table td{ padding:11px 12px; border-bottom:1px solid var(--hbh-line); vertical-align:middle; }
+.hbh-table tbody tr:last-child td{ border-bottom:0; }
+@media (hover:hover){ .hbh-table tbody tr:hover{ background:var(--hbh-surface-2); } }
+/* أرقام وأوقات: ترتيب LTR داخلي، ومحاذاة إلى بداية السطر في اتجاه الصفحة */
+.hbh-table__num{ direction:ltr; text-align:end; font-variant-numeric:tabular-nums; white-space:nowrap; }
+[dir="ltr"] .hbh-table__num{ text-align:start; }
+.hbh-table__who{ display:flex; align-items:center; gap:8px; }
+.hbh-table__who .hbh-avatar{ width:28px; height:28px; }
+.hbh-table__actions{ display:flex; gap:5px; justify-content:flex-end; }
+.hbh-rowbtn{
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-muted); border:1px solid transparent;
+}
+.hbh-rowbtn .hbh-i{ width:14px; height:14px; }
+@media (hover:hover){ .hbh-rowbtn:hover{ color:var(--hbh-teal-600); background:var(--hbh-info-bg); } }
+@media (hover:hover){ .hbh-rowbtn--live:hover{ color:var(--hbh-danger-ink); background:var(--hbh-danger-bg); } }
+
+/* ---------------------------------------------------------------
+   9. بطاقات الغرف مع الكاميرات
+   --------------------------------------------------------------- */
+.hbh-roomgrid{ display:grid; gap:14px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.hbh-roomcard{
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); box-shadow:var(--hbh-shadow); overflow:hidden;
+}
+.hbh-roomcard__head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:8px; padding:12px 14px;
+}
+.hbh-roomcard__name{ font-size:13.5px; font-weight:700; }
+.hbh-roomcard__type{ font-size:11px; color:var(--hbh-muted); margin-top:2px; }
+
+.hbh-roomcard__thumb{
+  position:relative; aspect-ratio:16/10;
+  background:
+    radial-gradient(120% 90% at 50% 15%, var(--hbh-video-a) 0%, var(--hbh-video-b) 55%, var(--hbh-video-c) 100%);
+  display:flex; align-items:center; justify-content:center;
+}
+.hbh-roomcard__thumb .hbh-i{ width:34px; height:34px; color:rgba(255,255,255,.30); }
+/* خطوط خفيفة توحي بلقطة كاميرا دون استخدام صور خارجية */
+.hbh-roomcard__thumb::after{
+  content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 1px,transparent 1px 5px);
+  pointer-events:none;
+}
+.hbh-camtag{
+  position:absolute; top:9px; inset-inline-start:9px; z-index:1;
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 9px; border-radius:999px;
+  font-size:10.5px; font-weight:700; letter-spacing:.03em;
+}
+.hbh-camtag--live{ background:var(--hbh-danger); color:#fff; }
+.hbh-camtag--idle{ background:rgba(255,255,255,.16); color:var(--hbh-on-dark-2); }
+.hbh-camtag--off { background:rgba(255,255,255,.12); color:var(--hbh-on-dark-4); }
+
+.hbh-roomcard__foot{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding:10px 12px; border-top:1px solid var(--hbh-line);
+}
+.hbh-camset{ display:flex; gap:5px; }
+
+/* ---------------------------------------------------------------
+   10. شاشة البث المباشر
+   --------------------------------------------------------------- */
+.hbh-player{
+  border-radius:var(--hbh-radius); overflow:hidden;
+  background:var(--hbh-video-c); box-shadow:var(--hbh-shadow-lg);
+}
+.hbh-player__stage{
+  position:relative; aspect-ratio:16/9;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; text-align:center; color:var(--hbh-on-dark-3);
+  background:radial-gradient(120% 90% at 50% 20%, var(--hbh-video-a) 0%, var(--hbh-video-b) 55%, var(--hbh-video-c) 100%);
+}
+.hbh-player__stage::after{
+  content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.04) 0 1px,transparent 1px 6px);
+  pointer-events:none;
+}
+.hbh-player__stage .hbh-i--big{ width:52px; height:52px; color:rgba(255,255,255,.28); }
+.hbh-player__hint{ font-size:12px; color:var(--hbh-on-dark-4); max-width:340px; line-height:1.7; }
+
+.hbh-player__top{
+  position:absolute; top:12px; inset-inline:12px; z-index:2;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.hbh-livepill{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px; border-radius:999px;
+  background:var(--hbh-danger); color:#fff;
+  font-size:11px; font-weight:700; letter-spacing:.04em;
+}
+.hbh-timer{
+  padding:5px 10px; border-radius:8px;
+  background:rgba(var(--hbh-video-scrim),.62); color:#fff;
+  font-size:12px; font-weight:600;
+  direction:ltr; font-variant-numeric:tabular-nums;
+}
+
+.hbh-player__ctrl{
+  position:absolute; bottom:0; inset-inline:0; z-index:2;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:14px 12px 12px;
+  background:linear-gradient(to top, rgba(var(--hbh-video-scrim),.78), rgba(var(--hbh-video-scrim),0));
+}
+.hbh-ctrlbtn{
+  width:36px; height:36px; border-radius:10px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.13); color:#fff;
+  backdrop-filter:blur(3px);
+}
+@media (hover:hover){ .hbh-ctrlbtn:hover{ background:rgba(255,255,255,.26); } }
+.hbh-ctrlbtn .hbh-i{ width:17px; height:17px; }
+.hbh-markbtn{
+  margin-inline-start:auto;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:9px 15px; border-radius:10px;
+  background:#fff; color:var(--hbh-teal-900);
+  font-size:12.5px; font-weight:700;
+}
+@media (hover:hover){ .hbh-markbtn:hover{ background:var(--hbh-teal-100); } }
+.hbh-markbtn .hbh-i{ width:15px; height:15px; color:var(--hbh-progress-ink); }
+
+/* اللحظات المهمة = ملاحظات إكلينيكية بتوقيت، وليست مقاطع مسجّلة */
+.hbh-moments{ display:flex; flex-direction:column; gap:9px; }
+.hbh-moment{
+  display:flex; gap:10px; padding:10px 11px;
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  border-radius:11px; font-size:12.5px; line-height:1.6;
+}
+.hbh-moment__t{
+  flex:none; font-weight:700; color:var(--hbh-teal-600);
+  direction:ltr; font-variant-numeric:tabular-nums; font-size:11.5px; padding-top:1px;
+}
+.hbh-notice{
+  display:flex; align-items:flex-start; gap:9px;
+  padding:11px 12px; border-radius:11px;
+  background:var(--hbh-info-bg); border:1px solid var(--hbh-info-line);
+  font-size:12px; line-height:1.7; color:var(--hbh-ink-2);
+}
+.hbh-notice .hbh-i{ color:var(--hbh-teal-600); margin-top:2px; }
+
+/* ---------------------------------------------------------------
+   11. الاستجابة
+   --------------------------------------------------------------- */
+@media (max-width:1250px){
+  .hbh-roomgrid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:1180px){
+  .hbh-split,
+  .hbh-split--wide{ grid-template-columns:1fr; }
+}
+@media (max-width:820px){
+  .hbh-grid2{ grid-template-columns:1fr; }
+  .hbh-goalsrow{ flex-direction:column; align-items:stretch; gap:14px; }
+  .hbh-ring{ align-self:center; }
+}
+@media (max-width:640px){
+  .hbh-roomgrid{ grid-template-columns:1fr; }
+  .hbh-markbtn{ margin-inline-start:0; width:100%; justify-content:center; }
+}
+
+/* =====================================================================
+   12. تقويم أسبوعي (صفحة المواعيد)
+   عطلة نهاية الأسبوع في مصر الجمعة والسبت — أعمدتها مظلَّلة.
+   ===================================================================== */
+.hbh-cal{ overflow-x:auto; }
+.hbh-cal__grid{
+  display:grid;
+  grid-template-columns:56px repeat(5,minmax(104px,1fr)) repeat(2,minmax(62px,.55fr));
+  min-width:700px;
+}
+.hbh-cal__head{
+  position:sticky; top:0; z-index:2;
+  background:var(--hbh-surface-2);
+  border-bottom:1px solid var(--hbh-line);
+  padding:9px 8px; text-align:center;
+}
+.hbh-cal__day{ font-size:12.5px; font-weight:700; }
+.hbh-cal__date{ font-size:10.5px; color:var(--hbh-muted); margin-top:2px; direction:ltr; }
+.hbh-cal__head--off{ background:var(--hbh-neutral-100); }
+.hbh-cal__head--off .hbh-cal__day{ color:var(--hbh-muted); }
+
+.hbh-cal__time{
+  border-bottom:1px solid var(--hbh-line);
+  border-inline-end:1px solid var(--hbh-line);
+  padding:6px 6px 0; text-align:center;
+  font-size:10.5px; color:var(--hbh-muted);
+  direction:ltr; white-space:nowrap;
+}
+.hbh-cal__cell{
+  border-bottom:1px solid var(--hbh-line);
+  border-inline-end:1px solid var(--hbh-line);
+  min-height:52px; padding:4px;
+}
+.hbh-cal__cell--off{ background:var(--hbh-neutral-100); }
+
+.hbh-ev{
+  display:block; width:100%; text-align:start;
+  border-radius:8px; padding:5px 7px;
+  font-size:11px; line-height:1.45;
+  border-inline-start:3px solid transparent;
+}
+.hbh-ev + .hbh-ev{ margin-top:4px; }
+.hbh-ev b{ display:block; font-weight:600; }
+.hbh-ev span{ color:var(--hbh-muted); font-size:10px; }
+.hbh-ev--teal  { background:var(--hbh-teal-100);     border-inline-start-color:var(--hbh-teal-500); }
+.hbh-ev--green { background:var(--hbh-green-100);    border-inline-start-color:var(--hbh-green-500); }
+.hbh-ev--coral { background:var(--hbh-coral-100);    border-inline-start-color:var(--hbh-coral-500); }
+.hbh-ev--amber { background:var(--hbh-progress-bg);  border-inline-start-color:var(--hbh-progress); }
+.hbh-ev--muted { background:var(--hbh-neutral-100);  border-inline-start-color:var(--hbh-muted); opacity:.75; }
+
+/* =====================================================================
+   13. بطاقات الأشخاص (الأخصائيون)
+   ===================================================================== */
+.hbh-people{ display:grid; gap:14px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.hbh-person{
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); box-shadow:var(--hbh-shadow);
+  padding:16px;
+}
+.hbh-person__top{ display:flex; align-items:center; gap:12px; }
+.hbh-person__top .hbh-avatar{ width:52px; height:52px; }
+.hbh-person__name{ font-family:var(--hbh-display); font-size:15px; font-weight:700; }
+.hbh-person__role{ font-size:11.5px; color:var(--hbh-muted); margin-top:3px; }
+.hbh-person__stats{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  margin:14px 0 12px; text-align:center;
+}
+.hbh-person__stat b{
+  display:block; font-family:var(--hbh-display);
+  font-size:16px; font-weight:700; direction:ltr;
+}
+.hbh-person__stat span{ font-size:10.5px; color:var(--hbh-muted); }
+.hbh-person__foot{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding-top:11px; border-top:1px solid var(--hbh-line);
+}
+
+/* شريط نسبة */
+.hbh-bar{
+  height:7px; border-radius:999px; overflow:hidden;
+  background:var(--hbh-neutral-100);
+}
+.hbh-bar__fill{ height:100%; border-radius:999px; background:var(--hbh-teal-500); }
+.hbh-bar__fill--full{ background:var(--hbh-danger); }
+.hbh-bar__fill--low { background:var(--hbh-success); }
+.hbh-barrow{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:11px; color:var(--hbh-muted); margin-bottom:6px;
+}
+
+/* =====================================================================
+   14. لوحة كانبان (العملاء المحتملون)
+   ===================================================================== */
+.hbh-kanban{
+  display:grid; gap:12px; align-items:start;
+  grid-template-columns:repeat(5,minmax(200px,1fr));
+  overflow-x:auto; padding-bottom:6px;
+}
+.hbh-kcol{
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); padding:10px; min-width:200px;
+}
+.hbh-kcol__head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; margin-bottom:10px; padding:0 2px;
+}
+.hbh-kcol__title{ font-size:12.5px; font-weight:700; }
+.hbh-kcol__list{ display:flex; flex-direction:column; gap:9px; }
+.hbh-lead{
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:11px; padding:11px; box-shadow:var(--hbh-shadow);
+  text-align:start; width:100%;
+}
+.hbh-lead__name{ font-size:13px; font-weight:600; }
+.hbh-lead__meta{
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  font-size:11px; color:var(--hbh-muted); margin-top:6px;
+}
+.hbh-lead__meta .hbh-i{ width:12px; height:12px; }
+.hbh-lead__foot{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; margin-top:9px;
+}
+
+/* =====================================================================
+   15. المحادثات (التواصل)
+   ===================================================================== */
+.hbh-convlist{ display:flex; flex-direction:column; max-height:520px; overflow-y:auto; }
+.hbh-conv{
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px; border-bottom:1px solid var(--hbh-line);
+  text-align:start; width:100%;
+}
+@media (hover:hover){ .hbh-conv:hover{ background:var(--hbh-surface-2); } }
+.hbh-conv.is-active{ background:var(--hbh-teal-100); }
+.hbh-conv .hbh-avatar{ width:36px; height:36px; }
+.hbh-conv__body{ flex:1; min-width:0; }
+.hbh-conv__name{ font-size:13px; font-weight:600; }
+.hbh-conv__last{
+  font-size:11.5px; color:var(--hbh-muted); margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.hbh-conv__side{ text-align:end; flex:none; }
+.hbh-conv__time{ font-size:10.5px; color:var(--hbh-muted); direction:ltr; }
+.hbh-conv__unread{
+  display:inline-block; min-width:18px; padding:1px 5px; margin-top:5px;
+  border-radius:999px; background:var(--hbh-teal-600); color:var(--hbh-on-dark);
+  font-size:10px; font-weight:700; text-align:center;
+}
+
+.hbh-thread{ display:flex; flex-direction:column; height:520px; }
+.hbh-thread__body{
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:12px;
+  background:var(--hbh-surface-2);
+}
+.hbh-msg{ max-width:78%; }
+.hbh-msg__bubble{
+  padding:10px 13px; border-radius:14px;
+  font-size:13px; line-height:1.7;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+}
+.hbh-msg__meta{ font-size:10.5px; color:var(--hbh-muted); margin-top:5px; }
+.hbh-msg--out{ align-self:flex-end; }
+.hbh-msg--out .hbh-msg__bubble{
+  background:var(--hbh-teal-600); color:var(--hbh-on-dark); border-color:transparent;
+}
+.hbh-msg--out .hbh-msg__meta{ text-align:end; }
+.hbh-msg--in{ align-self:flex-start; }
+.hbh-msg--in .hbh-msg__meta{ text-align:start; }
+.hbh-msg__day{
+  align-self:center; padding:3px 12px; border-radius:999px;
+  background:var(--hbh-neutral-100); color:var(--hbh-muted); font-size:10.5px;
+}
+.hbh-thread__foot{
+  display:flex; align-items:center; gap:9px;
+  padding:12px; border-top:1px solid var(--hbh-line);
+}
+
+/* =====================================================================
+   16. الإعدادات
+   ===================================================================== */
+.hbh-setnav{ display:flex; flex-direction:column; padding:6px; }
+.hbh-setnav__item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px;
+  font-size:13px; font-weight:500; color:var(--hbh-ink-2);
+}
+@media (hover:hover){ .hbh-setnav__item:hover{ background:var(--hbh-surface-2); color:var(--hbh-teal-600); } }
+.hbh-setnav__item.is-active{
+  background:var(--hbh-teal-100); color:var(--hbh-teal-600); font-weight:600;
+}
+.hbh-setnav__item .hbh-i{ width:16px; height:16px; }
+
+.hbh-param{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:13px 0; border-top:1px solid var(--hbh-line);
+}
+.hbh-param:first-child{ border-top:0; padding-top:0; }
+.hbh-param__key{ flex:1 1 220px; min-width:0; }
+.hbh-param__name{ font-size:13px; font-weight:600; }
+.hbh-param__code{
+  font-family:ui-monospace,"Cascadia Mono",monospace;
+  font-size:10.5px; color:var(--hbh-muted); direction:ltr; margin-top:3px;
+}
+.hbh-param__val{ flex:0 0 auto; }
+.hbh-param__hint{ flex:1 1 100%; font-size:11.5px; color:var(--hbh-muted); line-height:1.6; }
+
+.hbh-switch{
+  display:inline-block;
+  width:42px; height:24px; border-radius:999px; flex:none;
+  background:var(--hbh-neutral-200); position:relative; transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.hbh-switch::after{
+  content:""; position:absolute; top:3px; inset-inline-start:3px;
+  width:18px; height:18px; border-radius:50%;
+  background:var(--hbh-surface); box-shadow:var(--hbh-shadow);
+  transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.hbh-switch.is-on{ background:var(--hbh-teal-600); }
+.hbh-switch.is-on::after{ inset-inline-start:21px; }
+.hbh-switch.is-locked{ opacity:.55; cursor:not-allowed; }
+
+/* =====================================================================
+   17. استجابة الشاشات الجديدة
+   ===================================================================== */
+@media (max-width:1250px){
+  .hbh-people{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:820px){
+  .hbh-people{ grid-template-columns:1fr; }
+  .hbh-msg{ max-width:88%; }
+}
+
+/* ---------------------------------------------------------------
+   تحرير ملفّ الأخصائي
+   الأخصائي يحرّر ملفّه هو، والإدارة تحرّر أيّ ملف — تبريران
+   مختلفان ففرعان مختلفان في التخويل. تجاوز إداري مبنيّ على صلاحية
+   وحدها يعطي كلّ أخصائي سلطةً على ملفّات زملائه، لأن الصلاحيتين
+   تجتمعان في الدور الواحد.
+   --------------------------------------------------------------- */
+.hbh-tpe{ display:grid; gap:18px; grid-template-columns:minmax(0,1fr) 300px; align-items:start; }
+
+/* شريط الحالة: مسوّدة ومنشور، لا تحرير حيّ — نفس منطق التقرير
+   المنشور: ما يراه وليّ الأمر لقطة لا استعلام حيّ. */
+.hbh-tpe__bar{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:13px 16px; margin-bottom:18px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); box-shadow:var(--hbh-shadow);
+}
+.hbh-tpe__t{ font-family:var(--hbh-display); font-size:16px; font-weight:700; }
+.hbh-tpe__sp{ flex:1; }
+
+/* صفّ قابل للترتيب والحذف — لغة أو شهادة */
+.hbh-tperows{ display:flex; flex-direction:column; gap:9px; }
+.hbh-tperow{
+  display:flex; align-items:center; gap:11px;
+  padding:11px 13px; border-radius:var(--hbh-radius-sm);
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+}
+.hbh-tperow__grip{ color:var(--hbh-neutral-200); flex:none; cursor:grab; }
+.hbh-tperow__b{ flex:1; min-width:0; }
+.hbh-tperow__t{ font-size:13.5px; font-weight:600; }
+.hbh-tperow__s{ font-size:11.5px; color:var(--hbh-muted); margin-top:2px; }
+.hbh-tperow__x{ color:var(--hbh-muted); flex:none; }
+@media (hover:hover){ .hbh-tperow__x:hover{ color:var(--hbh-danger-ink); } }
+
+.hbh-tpdrop{
+  border:1.5px dashed var(--hbh-neutral-200); border-radius:var(--hbh-radius);
+  padding:22px; text-align:center; background:var(--hbh-surface-2);
+  color:var(--hbh-muted); font-size:13px;
+}
+.hbh-tpdrop b{ display:block; color:var(--hbh-ink-2); font-size:13.5px; margin-bottom:4px; }
+
+/* «ما يراه وليّ الأمر» — إجابة السؤال الوحيد الذي يقلق الأخصائي وهو
+   يملأ النموذج. والصفوف المقفلة تُعرض ولا تُخفى: الطمأنة أن الحقل
+   غير قابل للفتح أقوى من غيابه. */
+.hbh-tpvis{ display:flex; flex-direction:column; gap:2px; }
+.hbh-tpvis__i{
+  display:flex; align-items:center; gap:9px;
+  padding:9px 0; border-bottom:1px solid var(--hbh-line);
+  font-size:13px;
+}
+.hbh-tpvis__i:last-child{ border-bottom:none; }
+.hbh-tpvis__i span{ flex:1; min-width:0; }
+.hbh-tpvis__i--on  .hbh-i{ color:var(--hbh-success-ink); }
+.hbh-tpvis__i--off .hbh-i{ color:var(--hbh-muted); }
+.hbh-tpvis__i--off span{ color:var(--hbh-muted); }
+/* مقفل بالبناء لا بالإعداد: لا مفتاح، ولا حتى مفتاح معطّل. */
+.hbh-tpvis__i--locked .hbh-i{ color:var(--hbh-danger-ink); }
+
+@media (max-width:1040px){
+  .hbh-tpe{ grid-template-columns:1fr; }
+}
+
+/* ===============================================================
+   كرت هويّة الطفل — يُطبع ويمشي مع الطفل
+
+   القياس ISO/IEC 7810 ID-1: ‏85.6 × 54 مم، وهو مقاس البطاقة
+   البنكية — يدخل أي محفظة وأي حامل كرت، ولا يحتاج مطبعة خاصّة.
+
+   القاعدة التي تحكم كل لون هنا: **المتصفّحات لا تطبع ألوان
+   الخلفيات افتراضيًّا.** كرت مصمَّم بتعبئة فيروزية ونصّ أبيض يخرج
+   من الطابعة ورقةً بيضاء عليها نصّ أبيض — أي فارغًا. فكل نصّ هنا
+   حبر داكن على أبيض، واللون يعيش في الحدود والخطوط الرفيعة التي
+   تنجو بلا خلفية. و print-color-adjust مضبوط لمن يفعّلها، لكن
+   الكرت لا يعتمد عليها.
+
+   ولا رقم قومي على الكرت إطلاقًا. الكرت يخرج من المركز ويُفقَد،
+   وما عليه يصير متاحًا لمن وجده. رقم الحالة يكفي للتعريف الداخلي.
+   =============================================================== */
+.hbh-idcard{
+  width:85.6mm; height:54mm;
+  box-sizing:border-box;
+  background:#fff;
+  border:0.35mm solid var(--hbh-teal-600);
+  border-radius:3mm;
+  padding:4mm 4.5mm;
+  display:flex; gap:4mm;
+  font-family:var(--hbh-font);
+  color:var(--hbh-ink);
+  overflow:hidden;
+  position:relative;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+
+/* الصورة: ‏22×28 مم. أصغر من كده لا يُعرَف منها طفل، وهي سبب
+   وجود الكرت. */
+.hbh-idcard__photo{
+  width:22mm; height:28mm; flex:none;
+  border:0.3mm solid var(--hbh-line);
+  border-radius:1.5mm; overflow:hidden;
+  background:var(--hbh-neutral-100);
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.hbh-idcard__photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+.hbh-idcard__photo .hbh-i{ width:11mm; height:11mm; color:var(--hbh-neutral-200); margin-bottom:3mm; }
+
+.hbh-idcard__b{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.hbh-idcard__brand{ display:flex; align-items:center; gap:1.6mm; direction:ltr; }
+.hbh-idcard__brand img{ height:6mm; width:auto; }
+.hbh-idcard__kind{
+  font-size:6.5pt; font-weight:600; color:var(--hbh-teal-600);
+  letter-spacing:.04em; margin-top:2.4mm;
+}
+.hbh-idcard__name{
+  font-family:var(--hbh-display); font-size:12.5pt; font-weight:700;
+  line-height:1.35; margin-top:0.8mm;
+}
+.hbh-idcard__meta{
+  font-size:7.5pt; color:var(--hbh-ink-2); line-height:1.65; margin-top:1.4mm;
+}
+/* رقم الحالة يُقرأ ويُنسَخ في الاستقبال: أرقام لاتينية، LTR،
+   ومتباعدة قليلًا حتى لا يختلط 0 بـ O عند القراءة الصوتية. */
+.hbh-idcard__no{
+  margin-top:auto;
+  font-size:10pt; font-weight:700; direction:ltr; letter-spacing:.06em;
+  color:var(--hbh-teal-900);
+}
+.hbh-idcard__foot{
+  position:absolute; inset-inline:4.5mm; bottom:2.6mm;
+  padding-top:1.4mm; border-top:0.2mm solid var(--hbh-line);
+  font-size:6pt; color:var(--hbh-muted); display:flex;
+  justify-content:space-between; gap:2mm;
+}
+.hbh-idcard__foot span{ direction:ltr; }
+
+/* ---- الظهر: ما يُقرأ في لحظة يكون فيها أحد قلقًا ---- */
+.hbh-idcard--back{ flex-direction:column; gap:0; }
+.hbh-idcard__block{ padding-bottom:2.2mm; margin-bottom:2.2mm; border-bottom:0.2mm solid var(--hbh-line); }
+.hbh-idcard__block:last-of-type{ border-bottom:0; }
+.hbh-idcard__k{ font-size:6.5pt; font-weight:600; color:var(--hbh-teal-600); }
+.hbh-idcard__v{ font-size:9pt; font-weight:600; line-height:1.5; margin-top:0.6mm; }
+.hbh-idcard__v small{ display:block; font-size:7.5pt; font-weight:500; color:var(--hbh-ink-2); direction:ltr; }
+/* التنبيه الطبيّ إطار لا تعبئة: التعبئة تختفي في الطباعة العادية،
+   وهذا هو السطر الذي لا يجوز أن يختفي. */
+.hbh-idcard__alert{
+  border:0.3mm solid var(--hbh-danger-ink); border-radius:1.5mm;
+  padding:1.6mm 2mm; margin-bottom:2.2mm;
+}
+.hbh-idcard__alert .hbh-idcard__k{ color:var(--hbh-danger-ink); }
+.hbh-idcard__found{
+  margin-top:auto; font-size:6.5pt; color:var(--hbh-ink-2); line-height:1.6;
+}
+
+/* ---- ورقة A4 للطابعة العادية: عشرة كروت ---- */
+.hbh-cardsheet{
+  display:grid; grid-template-columns:repeat(2,85.6mm);
+  gap:5mm; justify-content:center; align-content:start;
+  background:var(--hbh-surface); padding:10mm;
+}
+
+/* ---- معاينة على الشاشة ---- */
+.hbh-cardprev{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+.hbh-cardprev figure{ margin:0; }
+.hbh-cardprev figcaption{ font-size:12px; color:var(--hbh-muted); margin-top:8px; text-align:center; }
+
+@media print{
+  /* الهوامش من الطابعة، والورقة تُملأ بالكروت وحدها. */
+  @page{ size:A4; margin:8mm; }
+  body{ background:#fff; }
+  .hbh-shell, .hbh-side, .hbh-topbar, .hbh-noprint{ display:none !important; }
+  .hbh-main{ padding:0 !important; }
+  .hbh-cardsheet{ padding:0; gap:4mm; background:none; }
+  /* الكرت لا يُقصّ عبر صفحتين. */
+  .hbh-idcard{ break-inside:avoid; page-break-inside:avoid; }
+}
+
+/* ---------------------------------------------------------------
+   The empty slot.
+
+   The grid drew appointments and had no way to make one. Booking meant
+   going to a dialog and typing a start and an end into two
+   datetime-local fields - which render in the BROWSER's locale, so an
+   Egyptian centre on an English Chrome types into mm/dd/yyyy. Clicking
+   the hour you want removes the question: the dialog opens already
+   holding the day and the hour, and typing a date becomes the fallback
+   path rather than the only one.
+
+   Invisible at rest on purpose. Thirty-five empty cells each showing a
+   plus is noise on the one screen that has to be readable at a glance;
+   the target appears when a pointer is over it, and is always drawn for
+   a keyboard, which has no hover to reveal it.
+   --------------------------------------------------------------- */
+.hbh-cal__slot{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:100%; height:100%; min-height:44px;
+  border:1px dashed transparent; border-radius:9px;
+  color:transparent;
+  font-size:11px; font-weight:600;
+  transition:color .12s ease, border-color .12s ease, background .12s ease;
+}
+.hbh-cal__slot .hbh-i{ width:14px; height:14px; }
+@media (hover:hover){
+  .hbh-cal__slot:hover{
+    border-color:var(--hbh-teal-400);
+    background:var(--hbh-info-bg);
+    color:var(--hbh-teal-600);
+  }
+}
+/* A keyboard has no hover to reveal it, so focus draws it outright. */
+.hbh-cal__slot:focus-visible{
+  border-color:var(--hbh-teal-600);
+  background:var(--hbh-info-bg);
+  color:var(--hbh-teal-600);
+}
+/* A slot in a closed hour or on a weekend is not offered at all: an
+   affordance that leads to a refusal is worse than none. */
+.hbh-cal__cell--off .hbh-cal__slot{ display:none; }
+
+/* ---------------------------------------------------------------
+   Now, and what is already behind us.
+
+   The grid buckets by the hour rather than placing blocks in proportion
+   to their minutes, so a hairline at 10:37 would be a line drawn across
+   a row it does not belong to. The hour itself is marked instead - it is
+   the unit the grid actually uses - and the hours before it recede, so
+   the eye lands on the part of the week that can still be changed.
+   --------------------------------------------------------------- */
+.hbh-cal__cell--now{
+  background:var(--hbh-info-bg);
+  box-shadow:inset 0 2px 0 0 var(--hbh-teal-600);
+}
+.hbh-cal__time--now{ color:var(--hbh-teal-600); font-weight:700; }
+.hbh-cal__cell--past{ background:var(--hbh-surface-2); }
+.hbh-cal__cell--past .hbh-ev{ opacity:.62; }
+.hbh-cal__cell--past .hbh-cal__slot{ display:none; }

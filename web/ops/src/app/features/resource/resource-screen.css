@@ -1,0 +1,80 @@
+:host.family-screen { display:block; padding:20px; border:1px solid #dceef1; border-radius:22px; background:linear-gradient(135deg,#f0fbfc,#fff 55%); }
+:host.family-screen .hbh-pagehead { margin-bottom:18px; }
+:host.family-screen .hbh-pagehead__title { font-size:25px; }
+:host.family-screen .hbh-tabbar { margin-bottom:18px; }
+:host.family-screen .hbh-tablewrap { border:1px solid #e2eef3; border-radius:14px; padding:0; overflow-x:auto; }
+:host.family-screen .hbh-table th { background:#f0f8fc; color:#205876; font-weight:700; }
+:host.family-screen .hbh-table td { padding:12px 16px; }
+:host.family-screen .hbh-table tbody tr:nth-child(even) { background:#f8fcfe; }
+:host.family-screen .hbh-table tbody tr.family-selected { background:#dff3fc; }
+:host.family-screen .hbh-table .hbh-btn { min-height:34px; padding:7px 12px; font-size:14px; }
+:host.family-screen .hbh-pager { padding:12px 4px; margin:0 0 12px; align-items:center; }
+.family-detail { background:white; border:1px solid #dcecf2; border-radius:18px; padding:20px; box-shadow:0 5px 24px #15576b08; margin-top:12px; }
+.family-summary { display:flex; flex-wrap:wrap; align-items:center; gap:20px; padding-bottom:22px; border-bottom:1px solid #e5f0f3; }
+.family-person { display:flex; align-items:center; gap:14px; flex:1; min-width:220px; }
+.family-person h2 { font-size:20px; margin:0 0 8px; color:#064d67; }
+.family-avatar { display:grid; place-items:center; width:66px; height:66px; background:#ddf3fa; color:#0097ad; border-radius:50%; flex-shrink:0; }
+.family-avatar hbh-icon { width:32px; height:32px; }
+.family-contact { display:flex; gap:14px; align-items:center; padding:14px 20px; background:#f0faff; border-radius:12px; color:#008cac; }
+.family-contact small,.family-contact b { display:block; }
+.family-contact b { margin-top:5px; }
+.family-section-heading h3 { display:flex; gap:10px; align-items:center; font-size:18px; color:#07566b; }
+.family-select-note { display:flex; align-items:center; justify-content:center; gap:12px; padding:25px; background:#eef9fc; color:#417187; border:1px dashed #c9e7ed; border-radius:14px; }
+.family-detail .hbh-pager__nav { display:flex; gap:10px; align-items:center; }
+@media(max-width:640px) {
+  :host.family-screen { padding:10px; border-radius:14px; }
+  .family-detail { padding:12px; }
+  .family-summary { gap:12px; align-items:stretch; }
+  .family-person,.family-contact { flex-basis:100%; min-width:0; }
+  .family-summary>.hbh-btn { width:100%; justify-content:center; }
+  :host.family-screen .hbh-table { min-width:570px; }
+  :host.family-screen .hbh-pager { flex-wrap:wrap; gap:12px; }
+}
+/* Compact family workspace, matching the supplied two-panel reference. */
+:host.family-screen{padding:12px;border:0;border-radius:12px;background:linear-gradient(180deg,#effbfd 0,#fff 180px);box-shadow:0 0 18px #029bb110}
+.family-top{display:grid;grid-template-columns:1fr 2fr;gap:24px;align-items:center;margin-bottom:14px}
+.family-title h1{font-size:23px;margin:0 0 5px;display:flex;gap:9px;align-items:center;color:#07546d}
+.family-title p{font-size:12px;color:#5c8298;margin:0 0 8px}
+.family-title .hbh-btn{min-height:34px;padding:7px 14px;font-size:12px;border-radius:7px}
+.family-tools .hbh-filters{margin:0 0 10px;gap:7px;flex-direction:row}
+.family-tools .hbh-field{min-width:0;height:36px;border-radius:7px}
+.family-tools .hbh-btn{min-height:36px;padding:6px 12px;border-radius:7px;font-size:12px}
+.family-filterline{display:flex;gap:10px}
+.family-filterline label{display:flex;align-items:center;gap:8px;background:white;border:1px solid #e0edf3;border-radius:7px;padding:6px 12px;min-width:180px;color:#0397ae}
+.family-filterline select{border:0;background:transparent;color:#315c78;font:inherit;font-size:12px;flex:1;min-width:0}
+:host.family-screen .hbh-table th{padding:9px 12px;font-size:12px;white-space:nowrap}
+:host.family-screen .hbh-table td{padding:7px 12px;font-size:13px;height:40px}
+:host.family-screen .hbh-table{min-width:600px}
+.family-name{border:0;background:transparent;font:inherit;color:#164e70;font-weight:700;cursor:pointer;text-align:start}
+.family-view{display:inline-flex;gap:8px;align-items:center;background:#eefaff;border:0;border-radius:7px;color:#0092b1;padding:5px 12px;cursor:pointer;font:inherit;font-size:12px}
+.family-view hbh-icon{width:16px;height:16px}
+:host.family-screen .hbh-pager{font-size:12px;padding:8px;margin:0;background:#fbfdff;border-bottom:1px solid #e2eef3;border-radius:0 0 12px 12px}
+:host.family-screen .hbh-pager .hbh-btn{min-height:30px;padding:5px 10px;border-radius:6px;font-size:12px}
+.family-detail{margin-top:12px;padding:12px;border-radius:12px}
+.family-summary{direction:ltr;gap:14px;padding-bottom:12px;flex-wrap:nowrap}
+.family-person{direction:rtl;flex-direction:row-reverse;min-width:190px;flex:1}
+.family-person h2{font-size:17px;margin-bottom:5px}
+.family-person small{display:block;font-size:11px;color:#597e93}
+.family-avatar{width:62px;height:62px}
+.family-contact{direction:rtl;padding:9px 14px;font-size:12px}
+.family-summary>.hbh-btn{direction:rtl;font-size:12px;padding:9px;min-height:36px}
+.family-section-heading{border-bottom:1px solid #deedf3;background:linear-gradient(90deg,#fff,#effaff);padding:0 12px;margin:12px -1px}
+.family-section-heading h3{font-size:15px;margin:0;padding:10px 0}
+.family-detail>.hbh-filters{margin:8px 0;max-width:450px}
+.family-detail>.hbh-filters .hbh-field{height:34px}
+.family-detail>.hbh-filters .hbh-btn{min-height:34px;padding:5px 12px;font-size:12px}
+@media(max-width:900px){.family-top{grid-template-columns:1fr}.family-summary{flex-wrap:wrap}.family-tools{min-width:0}.family-person{flex-basis:100%;justify-content:flex-end}.family-contact{flex:1}}
+@media(max-width:640px){.family-top{gap:12px}.family-filterline{flex-wrap:wrap}.family-filterline label{flex:1;min-width:0}.family-tools .hbh-filters{flex-wrap:wrap}.family-tools .hbh-field{flex-basis:100%}.family-summary{direction:rtl}.family-person{flex-direction:row;justify-content:flex-start}.family-detail{padding:10px}.family-contact{flex-basis:100%}}
+:host.family-screen .family-master .hbh-table{min-width:980px}
+:host.family-screen .family-master td{white-space:nowrap}
+.family-summary .family-contact{min-width:0;flex:1}
+.family-summary .family-contact b{overflow-wrap:anywhere}
+@media(max-width:1200px){.family-summary{flex-wrap:wrap}.family-person{flex-basis:100%}.family-contact{flex-basis:25%}}
+
+.room-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.room-card{padding:20px;background:#fff;border:1px solid #dcebef;border-radius:18px}.room-card header{display:flex;align-items:center;gap:10px}.room-card h3{margin:0;flex:1;font-size:18px}.room-card p{color:#587888;font-size:14px;line-height:1.7}.room-card .hbh-btn{margin-top:8px}
+
+
+/* The action under a "nothing matched" empty state. Centred under the
+   message it belongs to rather than left in the toolbar, because it is
+   the answer to what the screen just said. */
+.hbh-empty-action { display: flex; justify-content: center; margin-block-start: 12px; }

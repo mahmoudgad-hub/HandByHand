@@ -1,0 +1,59 @@
+:host { display:block; }
+.hbh-signin { grid-template-columns:38% 28% 34%; background:#fafbf8; color:#173f49; isolation:isolate; }
+.hbh-signin::before { background:radial-gradient(ellipse at 102% 100%,#f8d6c6 0 12%,transparent 12.2%),radial-gradient(ellipse at 36% 105%,#a5d9ba 0 14%,transparent 14.2%),linear-gradient(90deg,#fcfcf9 35%,#f1f3ef 80%); }
+.signin-language { position:absolute; z-index:3; top:22px; right:28px; display:flex; align-items:center; gap:10px; padding:9px 20px; border-radius:30px; background:white; box-shadow:0 4px 18px #173f4910; font-size:13px; font-weight:700; }
+.hbh-signin__main { grid-column:1; grid-row:1; z-index:2; padding:85px 24px 35px 0; }
+.hbh-signin__box { max-width:540px; padding:30px 34px 24px; border:1px solid #fff; border-radius:25px; background:#fffffffa; box-shadow:0 8px 32px #173f4910; }
+.hbh-signin__box > .hbh-signin__brand { display:none; }
+.hbh-signin__t { text-align:center; font-size:30px; margin:0; color:#123e49; }
+.hbh-signin__s { text-align:center; font-size:14px; color:#617981; line-height:1.8; }
+.hbh-signin__form { margin-top:28px; }
+.hbh-fld { margin-bottom:18px; }
+.hbh-fld__l { font-size:13px; }
+.hbh-signin__box .hbh-fld__box { background:#fff; border-color:#e3e8e7; border-radius:14px; min-height:49px; }
+.hbh-fld__box:focus-within { border-color:#65b5bd; box-shadow:0 0 0 2px #65b5bd20; }
+.hbh-fld__box input { min-width:0; font-size:14px; text-align:right; }
+.hbh-btn--primary { min-height:48px; border-radius:15px; background:#329c9a; border-color:#329c9a; gap:12px; font-size:16px; margin-top:22px; }
+.hbh-signin__demo { border-top:0; margin-top:22px; padding-top:0; }
+.hbh-signin__demoT { display:flex; align-items:center; gap:10px; text-align:center; font-size:11px; color:#5f747a; margin-bottom:16px; }
+.hbh-signin__demoT::before,.hbh-signin__demoT::after { content:''; flex:1; height:1px; background:#e5eae8; }
+.hbh-signin__demoRow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+.hbh-signin__demoBtn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:88px; padding:10px 3px; border:1px solid transparent; border-radius:15px; font-size:11px; font-weight:700; background:#fff6df; color:#785d24; }
+.hbh-signin__demoBtn i { display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:50%; background:#ffeab5; }
+.hbh-signin__demoBtn:nth-child(2) { background:#eaf8f1; color:#297e68; }
+.hbh-signin__demoBtn:nth-child(2) i { background:#d2eee1; }
+.hbh-signin__demoBtn:nth-child(3) { background:#eaf6fd; color:#297ca5; }
+.hbh-signin__demoBtn:nth-child(3) i { background:#d8eefb; }
+.hbh-signin__demoBtn:nth-child(4) { background:#fdf0ee; color:#be6860; }
+.hbh-signin__demoBtn:nth-child(4) i { background:#faddd8; }
+.hbh-signin__demoBtn:hover:not(:disabled) { transform:translateY(-2px); border-color:currentColor; }
+.hbh-signin__help { font-size:11px; text-align:center; margin-top:18px; line-height:1.8; }
+.signin-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid #e9edeb; margin-top:20px; padding-top:18px; font-size:10px; line-height:1.8; color:#697d83; }
+.signin-footer span:first-child { display:flex; align-items:center; gap:8px; }
+.signin-footer > hbh-icon { color:#e98276; }
+.hbh-signin__story { padding:40px 25px 32px; text-align:center; align-items:center; width:100%; max-width:none; }
+.hbh-signin__story .hbh-signin__brand { margin:auto; gap:10px; }
+.hbh-signin__story .hbh-signin__logo { width:76px; }
+.hbh-signin__story .hbh-signin__wm { width:210px; }
+.hbh-signin__brandline { max-width:none; border:0; font-size:15px; margin-top:0; }
+.hbh-signin__brandline::after { content:''; display:block; height:2px; width:50px; margin:16px auto 0; background:#cfe8de; }
+.hbh-signin__pitch { max-width:100%; padding:30px 0; }
+.hbh-signin__head { font-size:clamp(32px,3.1vw,47px); line-height:1.55; }
+.hbh-signin__head b { position:relative; color:#52a99a; background:none; padding-bottom:12px; }
+.hbh-signin__head b::after { content:''; position:absolute; bottom:0; left:-10%; width:120%; height:14px; border-top:5px solid #f4cf7c; border-radius:50%; }
+.hbh-signin__blurb { font-size:15px; line-height:1.9; margin:20px auto 0; color:#526d76; }
+.hbh-signin__feats { direction:ltr; gap:10px; margin-top:44px; }
+.hbh-signin__feat { direction:rtl; }
+.hbh-signin__feat i { width:55px; height:55px; }
+.hbh-signin__feat b,.hbh-signin__feat span { font-size:12px; color:#365763; font-weight:600; }
+.hbh-signin__motto { direction:ltr; padding-top:20px; }
+.hbh-signin__mottoAr,.hbh-signin__mottoEn { display:block; }
+.hbh-signin__mottoAr { font-size:20px; }
+.hbh-signin__photo { margin-right:-65px; border-radius:55% 0 0 48% / 48% 0 0 48%; border-left:15px solid #62b8b8; background-image:url('/assets/brand/staff-login-reference.png'); background-position:48% center; background-size:cover; }
+.hbh-signin__bubble { bottom:55px; right:80px; max-width:190px; padding:23px; border-radius:50px 45px 50px 15px; background:#ffffffe6; transform:rotate(-9deg); font-size:19px; text-align:center; }
+@media(min-width:981px) and (max-height:800px) { .hbh-signin__box { padding-top:24px; padding-bottom:18px; } .hbh-signin__form { margin-top:22px; } .hbh-signin__main { padding-top:76px; padding-bottom:24px; } .hbh-signin__demo { margin-top:16px; } .hbh-signin__help { margin-top:12px; } .signin-footer { margin-top:12px; padding-top:12px; } .hbh-signin__story { padding-top:30px; padding-bottom:25px; } .hbh-signin__pitch { padding:20px 0; } .hbh-signin__feats { margin-top:30px; } }
+@media(min-width:1600px) { .hbh-signin__story { padding:55px; } .hbh-signin__main { padding-right:45px; } }
+@media(max-width:1100px) and (min-width:981px) { .hbh-signin { grid-template-columns:43% 24% 33%; } .hbh-signin__box { padding:26px 22px; } .hbh-signin__story { padding-inline:18px; } .hbh-signin__story .hbh-signin__wm { width:160px; } .hbh-signin__story .hbh-signin__logo { width:60px; } .hbh-signin__feats { gap:5px; } }
+@media(max-width:980px) { .hbh-signin { grid-template-columns:minmax(0,1fr); } .hbh-signin__main { padding:78px 20px 30px; } .hbh-signin__box { max-width:490px; } .hbh-signin__box > .hbh-signin__brand { display:flex; margin:0 auto 24px; } .signin-language { top:18px; right:20px; } }
+@media(max-width:480px) { .hbh-signin__main { padding:72px 12px 20px; } .hbh-signin__box { padding:26px 20px 20px; border-radius:22px; } .hbh-signin__t { font-size:26px; } .hbh-signin__s { font-size:13px; } .hbh-signin__demoRow { gap:6px; } .hbh-signin__demoBtn { font-size:10px; } .signin-footer { gap:6px; font-size:9px; } }
+@media(prefers-reduced-motion:reduce) { .hbh-signin__demoBtn:hover:not(:disabled) { transform:none; } }

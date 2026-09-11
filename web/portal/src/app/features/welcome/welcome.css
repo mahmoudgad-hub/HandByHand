@@ -1,0 +1,29 @@
+/* The welcome screen sits outside the shell, so it owns its own gutters.
+   The shell's .pa__body normally supplies them. */
+:host {
+  display: block;
+  padding: 20px 15px 26px;
+}
+
+.wel__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.wel__hero {
+  text-align: center;
+  margin-bottom: 22px;
+}
+:host{display:flow-root;min-height:100dvh;padding:20px 24px 28px;background:radial-gradient(ellipse at 0 0,#fff0eb,transparent 35%),radial-gradient(ellipse at 100% 0,#e8f7f7,transparent 38%),linear-gradient(145deg,#fffefa,#fcfbf6 70%,#eff9f5)}
+.scr{max-width:1000px;margin:0 auto;padding:0}
+.wel__bar{margin-bottom:0}.welcome-brand{display:flex;align-items:center;gap:10px;direction:ltr}.welcome-brand img{object-fit:contain}
+.cbar__sw{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:15px;background:#fffaf5;border:1px solid #e5e8e3;color:#577889}
+.wel__hero{margin:0 0 20px;text-align:center}.wel__hi{color:#00919b;font-size:14px;font-weight:700}.wel__name{font-size:29px;color:#133f52;margin:5px 0}.welcome-intro{font-size:14px;color:#638496;margin-bottom:15px}.wel__date{display:inline-flex;gap:10px;align-items:center;padding:9px 17px;border-radius:24px;border:1px solid #e4eae7;background:#fff;font-size:12px;color:#315a70}
+.sec__head{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-bottom:14px}.sec__t{font-size:22px;color:#17475b}.sec__head .hbh-muted{font-size:12px;color:#6a8797}.stack{gap:12px}
+.kid{position:relative;display:grid;grid-template-columns:2fr 1.4fr 1.2fr .8fr;align-items:center;gap:0;padding:20px 22px;background:#fff;border:1px solid #e7edeb;border-right:6px solid #38b4bd;border-radius:18px;box-shadow:0 5px 18px #264f5810;text-align:right;width:100%;color:#315d71}
+.kid:nth-child(even){border-right-color:#ff858e}.kid__top{display:flex;align-items:center;gap:13px;min-width:0}.kid__ph{width:64px;height:64px;flex:none;background:#e5f6f7;color:#008b9a;border-radius:50%}.kid:nth-child(even) .kid__ph{background:#ffebed;color:#ee6576}.kid__name{font-size:18px;color:#17475d}.kid__meta{font-size:12px;margin-top:5px}.kid__note{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:0;border-right:1px solid #e7eeec;padding:0 15px;margin:0;text-align:center;font-size:12px;line-height:1.7}.kid-attendance{display:flex;flex-direction:column;align-items:center;gap:5px;border-right:1px solid #e7eeec;font-size:11px}.attendance-ring{width:54px;height:54px;border:5px solid #dceee7;border-radius:50%;display:grid;place-items:center;font-size:18px;color:#5c7e88}.kid-attendance small{font-size:10px;color:#728995}.kid__go{display:flex;flex-direction:column;align-items:center;gap:7px;margin:0;color:#388b9d}.kid__go small{font-size:11px}.kid:nth-child(even) .kid__go{color:#e77381}
+.sec{margin-top:21px}.row{position:relative;display:flex;align-items:center;gap:14px;padding:16px 20px;border:1px solid #f1e5cc;background:#fffbf3;border-radius:16px;box-shadow:0 4px 16px #80532206}.row:has(.hbh-t--red){background:#fff4f5;border-color:#f9dfe3}.row::after{content:'‹';margin-right:auto;font-size:27px;color:#d99828}.row:has(.hbh-t--red)::after{color:#f07380}.row__ic{width:52px;height:52px;border-radius:15px}.row__t{font-size:16px;color:#25495d}.row__s{font-size:12px;color:#618092}.priv{display:flex;justify-content:center;align-items:center;color:#6a8797;font-size:12px;line-height:1.8}
+@media(max-width:700px){:host{padding:16px 12px}.welcome-brand img:first-child{width:37px;height:auto}.welcome-brand img:last-child{width:110px;height:auto}.wel__hero{margin-top:24px}.wel__name{font-size:24px}.kid{grid-template-columns:1fr 1fr;gap:18px 10px;padding:17px}.kid__top{grid-column:1/-1}.kid__note{border:0;padding:0;align-items:flex-start;text-align:right}.kid-attendance{grid-column:2;grid-row:2/4}.kid__go{align-items:flex-start}.row__t{font-size:14px}.welcome-intro{font-size:12px}.sec__t{font-size:20px}}

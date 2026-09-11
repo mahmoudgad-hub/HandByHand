@@ -1,0 +1,39 @@
+.week-calendar{display:grid;grid-template-columns:repeat(7,minmax(175px,1fr));gap:10px;overflow-x:auto;padding:4px 0 16px}.week-day{background:#f4fafc;border:1px solid #dcecf0;border-radius:16px;min-height:260px;padding:10px}.week-day--today{border-color:#0098a9}.week-day h3{font-size:14px;margin:4px 0 14px}.week-day h3 small{display:block;font-weight:400;color:#688492;margin-top:5px}.week-appointment{background:white;border:1px solid #dcecf0;border-inline-start:3px solid #0098a9;border-radius:10px;padding:10px;margin-bottom:10px;display:grid;gap:7px;font-size:12px}.week-appointment__name{font-size:14px;font-weight:700}.week-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.week-empty{color:#688492;font-size:13px}.week-appointment .hbh-btn{min-height:36px;padding:5px 8px}@media(max-width:600px){.week-calendar{grid-template-columns:1fr;overflow:visible}.week-day{min-height:80px}}
+.followup-board{display:grid;grid-template-columns:repeat(6,minmax(230px,1fr));gap:12px;overflow-x:auto;padding-bottom:16px}@media(max-width:600px){.followup-board{grid-template-columns:1fr;overflow:visible}}
+
+.invoice-statuses{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:20px}.invoice-status{background:#fff;border:1px solid #dcebef;border-radius:16px;padding:18px;text-align:start;color:inherit;cursor:pointer}.invoice-status strong{display:block;font-size:26px;margin-top:10px}.invoice-status.is-selected{background:#e7f7f8;border-color:#0098a9}@media(max-width:650px){.invoice-statuses{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.appointment-attention{background:white;border:1px solid #dcebef;border-radius:16px;padding:16px;margin-bottom:16px}.appointment-attention h3{font-size:15px}.appointment-attention details{padding:10px;background:#f3fafb;border-radius:10px;margin-top:8px}.appointment-attention summary,.hour-booking summary{cursor:pointer;padding:8px}.appointment-attention article{padding:12px;border-bottom:1px solid #dcebef}.hour-booking div{display:flex;flex-wrap:wrap;gap:6px}.hour-booking p{font-size:12px}.hbh-filters>.hbh-select{font:inherit;min-height:44px;border:1px solid #dcebef;border-radius:10px;padding:8px;max-width:100%;background:white}
+
+/* The chosen day in words, beside the native picker.
+   The picker draws in the browser's locale and can read mm/dd/yyyy inside
+   this Arabic page; a named month cannot be read in the other order. It is
+   confirmation, not a control - hence muted and not focusable. */
+.hbh-daylabel {
+  color: var(--hbh-muted, #5f747a);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.slotpick{display:grid;gap:10px}
+.slotpick__day{width:180px}
+.slotpick__list{display:flex;flex-wrap:wrap;gap:8px;max-height:230px;overflow:auto;padding:2px}
+.slotpick__one{display:grid;gap:2px;padding:8px 12px;border:1px solid #d9e4e6;border-radius:11px;background:#fff;font:inherit;color:#1a5468;cursor:pointer;text-align:center;min-width:104px}
+.slotpick__one:hover{border-color:#329c9a}
+.slotpick__one b{font-size:13px}
+.slotpick__one small{font-size:11px;color:#6a8292}
+.slotpick__one.is-picked{background:#e6f5ef;border-color:#159a86;box-shadow:inset 0 0 0 1px #159a86}
+.childpick{position:relative}
+.childpick__list{position:absolute;z-index:30;top:calc(100% + 4px);inset-inline:0;list-style:none;margin:0;padding:4px;max-height:230px;overflow:auto;background:#fff;border:1px solid #d9e4e6;border-radius:12px;box-shadow:0 10px 28px #16475c20}
+.childpick__note{padding:10px 12px;font-size:13px;color:#6a8292}
+.childpick__one{display:block;width:100%;padding:10px 12px;border:0;border-radius:9px;background:transparent;font:inherit;color:#1a5468;text-align:start;cursor:pointer}
+.childpick__one:hover,.childpick__one.is-active{background:#e6f5ef}
+.hbh-sheet__sec{font-size:13px;font-weight:700;color:#15566b;margin:18px 0 10px;padding-bottom:7px;border-bottom:1px solid #e7eef0}
+.hbh-sheet__sec:first-child{margin-top:0}
+.hbh-sheet__more{margin:4px 0 6px}
+.hbh-fld.is-locked{opacity:.55}
+.hbh-review{margin-top:16px;padding:14px 16px;border:1px solid #cfe6e2;border-radius:13px;background:#f3faf8}
+.hbh-review .hbh-sheet__sec{margin-top:0;border-bottom-color:#cfe6e2}
+.hbh-review dl{margin:0;display:grid;gap:7px}
+.hbh-review dl>div{display:flex;gap:10px;align-items:baseline;font-size:13px}
+.hbh-review dt{color:#5f7c86;min-width:86px}
+.hbh-review dd{margin:0;color:#134e66;font-weight:600;overflow-wrap:anywhere}

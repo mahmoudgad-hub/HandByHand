@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($ssh = \"$env:WINDIR\\\\System32\\\\OpenSSH\\\\ssh.exe\"; if \\(Test-Path $ssh\\) { & $ssh -o BatchMode=yes -o ConnectTimeout=15 gad \"whoami; hostname\" } else { \"native OpenSSH not found\" })"
+    ]
+  }
+}

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>استمارة أسئلة المالك — هاند باي هاند</title>
+<style>
+  @page { size: A4; margin: 14mm 12mm 14mm 12mm; }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body {
+    font-family: "Segoe UI", Tahoma, "Traditional Arabic", Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #16202b;
+    margin: 0;
+  }
+
+  /* ---------- cover ---------- */
+  .cover {
+    border: 2px solid #0f4c81;
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    background: #f4f8fc;
+  }
+  .cover h1 {
+    font-size: 20pt;
+    margin: 0 0 4px;
+    color: #0f4c81;
+    letter-spacing: -.3px;
+  }
+  .cover .sub { font-size: 11pt; color: #45607a; margin: 0 0 10px; }
+  .meta { display: flex; gap: 26px; font-size: 9.5pt; color: #3a5570; flex-wrap: wrap; }
+  .meta b { color: #16202b; }
+
+  /* ---------- typography ---------- */
+  h2 {
+    font-size: 15pt;
+    margin: 22px 0 2px;
+    padding: 7px 12px;
+    border-radius: 4px 4px 0 0;
+    color: #fff;
+    background: #0f4c81;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  h2 .tag {
+    font-size: 8.5pt;
+    font-weight: normal;
+    background: rgba(255,255,255,.22);
+    padding: 3px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex: none;
+  }
+  h2.blocking { background: #a4262c; }
+  h2.blocking .tag { background: rgba(255,255,255,.25); }
+
+  h3 {
+    font-size: 12pt;
+    margin: 18px 0 7px;
+    color: #0f4c81;
+    border-right: 4px solid #0f4c81;
+    padding-right: 9px;
+  }
+
+  p { margin: 7px 0; }
+  .lead { margin: 9px 0 12px; }
+
+  /* ---------- callouts ---------- */
+  .why {
+    background: #fff8e6;
+    border-right: 4px solid #d9a441;
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 9.5pt;
+    line-height: 1.65;
+  }
+  .why b { color: #8a5d00; }
+
+  .quote {
+    background: #f2f5f8;
+    border-right: 4px solid #94a9bd;
+    padding: 9px 13px;
+    margin: 10px 0;
+    font-size: 10pt;
+    color: #2c3e50;
+  }
+
+  .alert {
+    background: #fdf2f2;
+    border: 1px solid #e8b4b6;
+    border-right: 4px solid #a4262c;
+    padding: 9px 13px;
+    margin: 10px 0;
+    font-size: 10pt;
+  }
+  .alert b { color: #a4262c; }
+
+  /* ---------- tables ---------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 12px;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  th {
+    background: #e8eef5;
+    color: #0f4c81;
+    font-weight: 600;
+    text-align: right;
+    padding: 7px 9px;
+    border: 1px solid #b9cbdc;
+    font-size: 9.5pt;
+  }
+  td {
+    border: 1px solid #c8d4e0;
+    padding: 8px 9px;
+    vertical-align: middle;
+  }
+  td.fill { background: #fcfdfe; height: 30px; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  tr:nth-child(even) td.fill { background: #fcfdfe; }
+  .label { font-weight: 600; width: 30%; }
+
+  /* choice blocks */
+  .choice {
+    border: 1px solid #c8d4e0;
+    border-right: 4px solid #7f9bb5;
+    padding: 9px 12px;
+    margin: 8px 0;
+    background: #fcfdfe;
+    page-break-inside: avoid;
+  }
+  .choice .t { font-weight: 600; font-size: 10.5pt; }
+  .choice .d { font-size: 9.5pt; color: #45607a; margin-top: 3px; }
+  .choice .note { font-size: 9pt; color: #6b7f94; font-style: italic; margin-top: 3px; }
+
+  ol, ul { margin: 7px 0; padding-right: 20px; }
+  li { margin: 3px 0; }
+
+  .pagebreak { page-break-before: always; }
+  .keep { page-break-inside: avoid; }
+
+  code {
+    font-family: Consolas, monospace;
+    background: #eef2f6;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5pt;
+    direction: ltr;
+    display: inline-block;
+  }
+
+  .summary th { background: #0f4c81; color: #fff; border-color: #0f4c81; }
+  .final {
+    background: #fff8e6;
+    border: 1.5px solid #d9a441;
+    padding: 11px 14px;
+    margin-top: 12px;
+    font-size: 10.5pt;
+  }
+  .final b { color: #8a5d00; }
+
+  .sig { margin-top: 20px; font-size: 10pt; color: #45607a; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>استمارة أسئلة المالك</h1>
+  <p class="sub">مركز هاند باي هاند للمهارات — نظام إدارة المركز</p>
+  <div class="meta">
+    <span><b>إلى:</b> عمرو — مالك المركز</span>
+    <span><b>من:</b> فريق النظام</span>
+    <span><b>التاريخ:</b> ٧ سبتمبر ٢٠٢٦</span>
+    <span><b>الوقت المتوقّع:</b> ٤٠ دقيقة</span>
+  </div>
+</div>
+
+<h3 style="margin-top:6px">لماذا هذه الورقة</h3>
+
+<p class="lead">النظام جاهز تقنيًّا: قاعدة البيانات والخدمة والشاشتان تعمل، و<b>١٦٧٥ فحصًا تمرّ بلا فشل واحد</b>. ما يمنع تشغيله على أطفال حقيقيّين ليس كودًا ناقصًا — بل <b>ستّ إجابات لا يملكها أحد غيرك</b>.</p>
+
+<div class="alert">
+  <b>أكبرها واحدة:</b> جدول الخدمات فارغ. والمواعيد والخطط والفواتير والباقات وطلبات الالتحاق كلّها تشير إليه. بلا كتالوج خدمات حقيقي <b>لا يُحجز موعد ولا تُفتح فاتورة</b>.
+</div>
+
+<div class="why">
+  <b>لا تحتاج جلوسًا واحدًا</b> — كل قسم مستقلّ، وأجب عمّا تعرفه واترك ما لا تعرفه. <b>إجابة ناقصة أنفع من انتظار الكاملة</b>، وستّ إجابات نصف مكتملة تفتح العمل أكثر من إجابة واحدة كاملة.
+  <br><br>
+  <b>كيف تجيب:</b> اكتب في الجداول مباشرة، أو سجّل رسالة واتساب بالأرقام ونحن نملؤها. لا يهمّ الشكل — تهمّ الأرقام.
+</div>
+
+<h2 class="blocking">القسم أ — كتالوج الخدمات <span class="tag">يعطّل الجدولة والفوترة</span></h2>
+
+<p>النظام يعرف <b>أنواع</b> الخدمات (أضفناها من كلامك في الواتساب):</p>
+
+<div class="quote">تخاطب · علاج وظيفي · تكامل حسّي · علاج بالموسيقى · أكاديمي وصعوبات تعلّم · تقييم · تحليل سلوك تطبيقي (ABA) · مهارات</div>
+
+<p>لكنّه <b>لا يعرف خدمة واحدة فعليّة</b>: لا مدّتها، ولا سعرها، ولا هل لها باقة.</p>
+
+<h3>أ.١ — الخدمات التي يقدّمها المركز اليوم</h3>
+<p>املأ صفًّا لكل خدمة <b>تُحجز فعلًا</b> الآن. اترك الصفّ فارغًا إن لم تكن الخدمة قائمة.</p>
+
+<table>
+<tr>
+  <th style="width:24%">الخدمة</th>
+  <th style="width:15%">تُقدَّم اليوم؟</th>
+  <th style="width:16%">مدّة الجلسة (دقيقة)</th>
+  <th style="width:20%">سعر الجلسة (ج.م)</th>
+  <th style="width:25%">مَن يقدّمها</th>
+</tr>
+<tr><td class="label">تخاطب وتنمية لغة</td><td>☐ نعم &nbsp; ☐ لا</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">العلاج بالموسيقى</td><td>☐ نعم &nbsp; ☐ لا</td><td class="fill"></td><td class="fill"></td><td class="fill">د. نرمين حمدي؟</td></tr>
+<tr><td class="label">التكامل الحسّي</td><td>☐ نعم &nbsp; ☐ لا</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">العلاج الوظيفي</td><td>☐ نعم &nbsp; ☐ لا</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">أكاديمي / صعوبات تعلّم</td><td>☐ نعم &nbsp; ☐ لا</td><td class="fill"></td><td class="fill"></td><td class="fill">أماني؟</td></tr>
+<tr><td class="label">تقييم (الجلسة الأولى)</td><td>☐ نعم &nbsp; ☐ لا</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">العلاج بالرسم<br><span style="font-weight:400;font-size:9pt;color:#6b7f94">قلتَ «ناوي أزوّد قريب»</span></td><td>☐ نضيفه الآن<br>☐ نؤجّله</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td>☐ نعم</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td>☐ نعم</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+</table>
+
+<div class="why">
+  <b>ملاحظة على المدّة:</b> النظام يفترض <b>٤٥ دقيقة</b> لأي خدمة لم تُحدَّد مدّتها، ويقبل من ٥ إلى ٤٨٠ دقيقة. الرقم يُستعمل في <b>رسم الجدول اليومي</b> — لو كان خطأً، ظهرت الفجوات والتداخلات في شاشة الاستقبال كل يوم.
+</div>
+
+<h3>أ.٢ — سؤال محدّد: ABA و«المهارات»</h3>
+<p>هاتان القيمتان موجودتان في النظام منذ أوّل يوم، و<b>لم تذكرهما إطلاقًا</b> في كلامك.</p>
+
+<table>
+<tr><td class="label" style="width:32%">تحليل السلوك التطبيقي (ABA)</td><td>☐ خدمة قائمة &nbsp;&nbsp; ☐ ننوي إضافتها &nbsp;&nbsp; ☐ <b>احذفها — لا علاقة لنا بها</b></td></tr>
+<tr><td class="label">جلسات المهارات</td><td>☐ خدمة قائمة &nbsp;&nbsp; ☐ ننوي إضافتها &nbsp;&nbsp; ☐ <b>احذفها</b> &nbsp;&nbsp; ☐ هي نفسها «الأكاديمي» بتسمية أخرى</td></tr>
+</table>
+
+<div class="why">
+  <b>لماذا نسأل:</b> خدمة معروضة في شاشة الحجز ولا يقدّمها المركز تُنتج مواعيد لا أحد يستطيع تنفيذها. حذفها اليوم سطر واحد؛ وحذفها بعد أن تُحجز عليها مواعيد مسألة أخرى.
+</div>
+
+<div class="pagebreak"></div>
+
+<h3>أ.٣ — الباقات والاشتراكات</h3>
+<p>النظام يدعم <b>باقة = عدد جلسات بسعر إجمالي وصلاحية بالأيام</b>. مثال: «١٢ جلسة تخاطب — ٦٠٠٠ ج.م — صالحة ٩٠ يومًا».</p>
+
+<table>
+<tr><td class="label" style="width:32%">هل يبيع المركز باقات؟</td><td>☐ نعم &nbsp;&nbsp; ☐ لا، الدفع بالجلسة فقط &nbsp;&nbsp; ☐ يبيع اشتراكًا شهريًّا</td></tr>
+</table>
+
+<p>لو نعم — املأ ما هو قائم فعلًا:</p>
+
+<table>
+<tr>
+  <th style="width:24%">اسم الباقة</th>
+  <th style="width:20%">لأي خدمة</th>
+  <th style="width:16%">عدد الجلسات</th>
+  <th style="width:20%">السعر الإجمالي</th>
+  <th style="width:20%">تنتهي بعد كم يومًا</th>
+</tr>
+<tr><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+</table>
+
+<p><b>وثلاثة أسئلة تتبع الباقة، وإجاباتها تُبنى قواعدَ في النظام:</b></p>
+
+<table>
+<tr><th style="width:44%">السؤال</th><th>الخيارات</th></tr>
+<tr><td>طفل غاب بلا إخطار — هل تُخصم الجلسة من باقته؟</td><td>☐ تُخصم &nbsp;&nbsp; ☐ لا تُخصم &nbsp;&nbsp; ☐ تُخصم إن لم يُخطر قبل ٢٤ ساعة</td></tr>
+<tr><td>انتهت صلاحية الباقة وبقيت جلسات — ماذا يحدث؟</td><td>☐ تسقط &nbsp;&nbsp; ☐ تُمدَّد بموافقتك &nbsp;&nbsp; ☐ تُرحَّل تلقائيًّا</td></tr>
+<tr><td>هل هناك خصم للأخ الثاني أو لحالات بعينها؟</td><td>☐ لا &nbsp;&nbsp; ☐ نعم: ____________________________</td></tr>
+</table>
+
+<h3>أ.٤ — أين يعيش سعر الجلسة الواحدة؟</h3>
+<p style="font-size:9.5pt;color:#6b7f94;margin-top:-4px"><i>سؤال منّا لا منك — لكنّه يحتاج قرارك</i></p>
+
+<div class="alert">
+  <b>اكتشاف من مراجعة النظام:</b> الباقة لها سعر مخزَّن، أمّا <b>الجلسة المفردة فلا</b>. النظام اليوم يطلب من موظّف الاستقبال <b>كتابة السعر يدويًّا في كل فاتورة</b>.
+</div>
+
+<p>وهذا يعني ثلاثة أشياء عمليّة:</p>
+<ol>
+  <li>موظّفان يكتبان سعرين مختلفين لنفس الخدمة، ولا شيء في النظام يمنعهما.</li>
+  <li>رفع الأسعار يصير تعليمات شفهية لا تغييرًا في النظام.</li>
+  <li>تقرير «إيراد التخاطب هذا الشهر» يجمع أسعارًا غير متّسقة.</li>
+</ol>
+
+<p><b>قرارك:</b></p>
+
+<div class="choice">
+  <div class="t">☐ ثبّتوا سعرًا لكل خدمة</div>
+  <div class="d">الفاتورة تملأ نفسها، والاستقبال لا يكتب رقمًا.</div>
+  <div class="note">يحتاج عملًا في النظام — نصف يوم</div>
+</div>
+<div class="choice">
+  <div class="t">☐ اتركوه يدويًّا</div>
+  <div class="d">السعر يُتفاوض عليه لكل حالة، والمرونة أهمّ من الاتّساق.</div>
+</div>
+<div class="choice">
+  <div class="t">☐ سعر مثبَّت + صلاحية تعديل لك وحدك</div>
+  <div class="d">الاستقبال يرى السعر ولا يغيّره.</div>
+</div>
+
+<div class="pagebreak"></div>
+
+<h2 class="blocking">القسم ب — الجلسات خارج المركز <span class="tag">يعطّل حجز أي جلسة خارجية</span></h2>
+
+<p>قلتَ نصًّا:</p>
+
+<div class="quote">«مظبّطين مع مكان داخل مول Point 90 اسمه بيلي بييز… مساحتها حوالي ٥٠٠٠ متر… ودي مهمّة في الجلسات التفاعلية في بيئة واسعة مش مقفولة، <b>وأحسن بكتير من الشغل المغلق</b>»</div>
+
+<p>وذكرتَ ثلاثة أماكن: <b>بيلي بييز</b> (Point 90) · <b>مكان فيتنس</b> · <b>مكان سباحة</b>.</p>
+
+<div class="alert">
+  <b>المشكلة بالضبط:</b> النظام يمنع جلستين في <b>نفس المكان</b> في <b>نفس الوقت</b> — وهذه قاعدة صحيحة لغرفة ٤×٤، <b>وخاطئة لصالة ٥٠٠٠ متر</b>. لو سجّلنا بيلي بييز كغرفة، صار يستوعب <b>طفلًا واحدًا في الساعة</b>، وسيرفض النظام حجز أشجان وأماني معًا هناك بلا سبب مفهوم لموظّف الاستقبال.
+</div>
+
+<h3>ب.١ — الأماكن الخارجية</h3>
+
+<table>
+<tr>
+  <th style="width:24%">المكان</th>
+  <th style="width:24%">العنوان</th>
+  <th style="width:22%">كم طفلًا من أطفالنا في نفس الوقت؟</th>
+  <th style="width:30%">التعاقد</th>
+</tr>
+<tr><td class="label">بيلي بييز — Point 90</td><td class="fill"></td><td class="fill"></td><td>☐ شهري ☐ بالزيارة ☐ مجّاني</td></tr>
+<tr><td class="label">مكان الفيتنس</td><td class="fill"></td><td class="fill"></td><td>☐ شهري ☐ بالزيارة ☐ مجّاني</td></tr>
+<tr><td class="label">مكان السباحة</td><td class="fill"></td><td class="fill"></td><td>☐ شهري ☐ بالزيارة ☐ مجّاني</td></tr>
+<tr><td class="fill"></td><td class="fill"></td><td class="fill"></td><td>☐ شهري ☐ بالزيارة ☐ مجّاني</td></tr>
+</table>
+
+<div class="why">
+  <b>ملاحظة:</b> العمود الثالث <b>ليس</b> سعة المكان الحقيقية — بل <b>كم جلسة من جلساتنا نحن</b> تجري هناك بالتوازي. بيلي بييز يسع مئات الأطفال، لكن إن كان أخصائيّانا اثنين فالرقم اثنان.
+</div>
+
+<h3>ب.٢ — القرار الجوهري</h3>
+<p><b>الجلسة الخارجية — ما هي؟</b></p>
+
+<div class="choice">
+  <div class="t">☐ (أ) نفس الخدمة، في مكان آخر</div>
+  <div class="d">«جلسة تخاطب في بيلي بييز» = جلسة تخاطب، والمكان تفصيلة في الموعد.<br>← المكان يُختار عند الحجز، والسعر واحد داخل المركز وخارجه.</div>
+</div>
+<div class="choice">
+  <div class="t">☐ (ب) خدمة مستقلّة لها اسمها وسعرها</div>
+  <div class="d">«جلسة تفاعلية خارجية» صنف قائم بذاته، له مدّة وسعر يختلفان.<br>← تدخل كصفّ في جدول القسم أ.١، ولها فاتورتها.</div>
+</div>
+
+<div class="why">
+  <b>لماذا يهمّ السؤال:</b> الإجابة تحدّد شكل شاشة الحجز، وشكل الفاتورة، وهل يظهر «مكان الجلسة» لوليّ الأمر في البوّابة. تغييرها بعد البناء يعني إعادة بناء الشاشتين.
+</div>
+
+<h3>ب.٣ — أسئلة تشغيلية تتبع</h3>
+
+<table>
+<tr><th style="width:46%">السؤال</th><th>الإجابة</th></tr>
+<tr><td>هل يعرف وليّ الأمر مكان الجلسة مسبقًا، أم يُبلَّغ يوم الموعد؟</td><td>☐ مسبقًا في البوّابة &nbsp; ☐ يوم الموعد &nbsp; ☐ يتّصل به الاستقبال</td></tr>
+<tr><td>مَن ينقل الطفل إلى المكان الخارجي؟</td><td>☐ الأهل &nbsp;&nbsp; ☐ المركز &nbsp;&nbsp; ☐ حسب الحالة</td></tr>
+<tr><td>هل تُصوَّر الجلسة الخارجية للبثّ كما في المركز؟</td><td>☐ نعم &nbsp;&nbsp; ☐ لا — لا كاميرات هناك</td></tr>
+<tr><td>هل تُحتسب الجلسة الخارجية من الباقة نفسها؟</td><td>☐ نعم &nbsp;&nbsp; ☐ لا، تُفوتَر منفصلة</td></tr>
+</table>
+
+<div class="pagebreak"></div>
+
+<h2>القسم ج — استمارة دراسة الحالة <span class="tag">الملفّ لم يصل</span></h2>
+
+<p><code>استمارة دراسة الحالة-1-1.pdf</code> هي <b>نقطة دخول كل طفل</b> عند المركز اليوم، وأُرسل اسمها في المحادثة <b>دون الملفّ نفسه</b>.</p>
+
+<div class="alert">
+  <b>المطلوب: أرسل الملفّ.</b> بلا بنوده لن نعرف أي حقول تظهر في شاشة الاستقبال، وسنخمّنها — والتخمين هنا يُنتج شاشة يُعيد الموظّف كتابة كل شيء بعدها على ورق.
+</div>
+
+<h3>ج.١ — وحتى يصل الملفّ، جواب سريع</h3>
+<p>النظام يحفظ اليوم عن الطفل: <b>الاسم · تاريخ الميلاد · النوع · الرقم القومي · رقم الملفّ</b>. ولا يحفظ:</p>
+
+<table>
+<tr><th style="width:44%">الحقل</th><th style="width:26%">يُدخَل عند التسجيل؟</th><th style="width:30%">مَن يدخله</th></tr>
+<tr><td>الشكوى الرئيسية («بيتأخّر في الكلام»)</td><td>☐ نعم &nbsp;&nbsp; ☐ لا</td><td>☐ استقبال &nbsp; ☐ أخصائي</td></tr>
+<tr><td>التشخيص الطبّي إن وُجد</td><td>☐ نعم &nbsp;&nbsp; ☐ لا</td><td>☐ استقبال &nbsp; ☐ أخصائي</td></tr>
+<tr><td>علاج سابق في مركز آخر</td><td>☐ نعم &nbsp;&nbsp; ☐ لا</td><td>☐ استقبال &nbsp; ☐ أخصائي</td></tr>
+<tr><td>مَن دلّهم على المركز</td><td>☐ نعم &nbsp;&nbsp; ☐ لا</td><td>☐ استقبال</td></tr>
+<tr><td>اسم المدرسة ونوعها (دولية / عربي)</td><td>☐ نعم &nbsp;&nbsp; ☐ لا</td><td>☐ استقبال</td></tr>
+</table>
+
+<div class="why">
+  <b>لماذا آخر صفّ مهمّ:</b> قلتَ إن أطفال المدارس الدولية يذهبون لأماني «لأنها الوحيدة اللي بتتكلّم لغة بطلاقة». لو النظام لا يعرف أن الطفل في مدرسة دولية، فهو لا يستطيع ترشيحها — ويظلّ الترشيح في رأسك أنت وحدك.
+</div>
+
+<h3>ج.٢ — الطريق الشائع للتسجيل</h3>
+<p>النظام يفترض أن الطفل يدخل عبر <b>طلب التحاق</b> يملؤه الأهل في البوّابة. وأنت تصف أن الأهالي يأتون <b>بالهاتف والزيارة</b>.</p>
+
+<p><b>من كل عشرة أطفال جدد — كم يأتي بكل طريق؟</b></p>
+
+<table>
+<tr><th style="width:70%">الطريق</th><th>تقريبًا من ١٠</th></tr>
+<tr><td>اتّصال هاتفي</td><td class="fill"></td></tr>
+<tr><td>زيارة مباشرة للمركز</td><td class="fill"></td></tr>
+<tr><td>فيسبوك / إنستجرام</td><td class="fill"></td></tr>
+<tr><td>ترشيح من أسرة أخرى</td><td class="fill"></td></tr>
+<tr><td>تحويل من طبيب أو مدرسة</td><td class="fill"></td></tr>
+<tr><td style="font-weight:600;background:#e8eef5">المجموع</td><td style="font-weight:700;background:#e8eef5">١٠</td></tr>
+</table>
+
+<div class="why">
+  <b>لماذا نسأل:</b> لو ٨ من ١٠ يأتون بالهاتف، فشاشة <b>الاستقبال</b> هي الشاشة الأهمّ في النظام كلّه، ونموذج البوّابة ثانوي. والعكس صحيح. الترتيب اليوم مبنيّ على افتراض، وهذا الرقم وحده يحسمه.
+</div>
+
+<div class="pagebreak"></div>
+
+<h2>القسم د — الخطط العلاجية <span class="tag">سؤال واحد</span></h2>
+
+<p>وصلتنا <b>أربعة أسماء ملفّات</b> لِما قد يكون شيئًا واحدًا:</p>
+
+<div class="quote">الخطه العلاجيه لمده شهرين · الخطه المستقبليه · الخطه المستهدفه · خطه</div>
+
+<p><b>هل هذه أنواع مختلفة من الخطط، أم أربع تسميات لنفس النموذج كتبها أشخاص مختلفون؟</b></p>
+
+<div class="choice">
+  <div class="t">☐ تسميات فقط</div>
+  <div class="d">نموذج واحد، والأسماء فوضى.</div>
+  <div class="note">← لا يُضاف شيء إلى النظام، والنظام نفسه يوحّد التسمية من الغد</div>
+</div>
+<div class="choice">
+  <div class="t">☐ أنواع مختلفة فعلًا</div>
+  <div class="d">أكمل الجدول التالي.</div>
+</div>
+
+<table>
+<tr><th style="width:26%">النوع</th><th style="width:34%">ما الذي يميّزه</th><th style="width:18%">مدّته</th><th style="width:22%">مَن يكتبه</th></tr>
+<tr><td class="label">خطة علاجية (شهران)</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">خطة مستقبلية</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">خطة مستهدَفة</td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+</table>
+
+<h3>د.١ — دورة الخطة</h3>
+
+<table>
+<tr><th style="width:40%">السؤال</th><th>الإجابة</th></tr>
+<tr><td>كل كم تُراجَع الخطة؟</td><td>☐ شهر &nbsp; ☐ شهران &nbsp; ☐ ٣ أشهر &nbsp; ☐ عند الحاجة</td></tr>
+<tr><td>هل يعتمدها أحد قبل أن تُنفَّذ؟</td><td>☐ لا &nbsp; ☐ أنت &nbsp; ☐ مدير المركز &nbsp; ☐ رئيس القسم</td></tr>
+<tr><td>هل يراها وليّ الأمر في البوّابة؟</td><td>☐ كاملة &nbsp; ☐ ملخّصًا &nbsp; ☐ لا يراها</td></tr>
+<tr><td>كم هدفًا في الخطة الواحدة عادةً؟</td><td class="fill"></td></tr>
+</table>
+
+<h2>القسم هـ — الأخصائيون والسعة <span class="tag">لا يعطّل الإطلاق</span></h2>
+
+<p>قلتَ عن أماني إنها «الوحيدة اللي بتتكلّم لغة بطلاقة»، وعن أشجان «شاطرة بس لسه مش ضامن استمرارها». وهذان وصفان لِـ<b>مخاطر سعة</b>، لا ملاحظتين عابرتين: إن مرضت أماني توقّف طابور المدارس الدولية كلّه.</p>
+
+<table>
+<tr>
+  <th style="width:20%">الأخصائي</th>
+  <th style="width:26%">الخدمات التي يقدّمها</th>
+  <th style="width:16%">إنجليزي بطلاقة؟</th>
+  <th style="width:20%">أيام العمل</th>
+  <th style="width:18%">جلسات في اليوم</th>
+</tr>
+<tr><td class="label">أماني</td><td class="fill"></td><td>☐ نعم</td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">أشجان</td><td class="fill"></td><td>☐ نعم ☐ لا</td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">أمال</td><td class="fill"></td><td>☐ نعم ☐ لا</td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="label">د. نرمين حمدي</td><td class="fill"></td><td>☐ نعم ☐ لا</td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td class="fill"></td><td>☐ نعم ☐ لا</td><td class="fill"></td><td class="fill"></td></tr>
+<tr><td class="fill"></td><td class="fill"></td><td>☐ نعم ☐ لا</td><td class="fill"></td><td class="fill"></td></tr>
+</table>
+
+<p><b>وثلاثة أرقام تكمل الصورة:</b></p>
+
+<table>
+<tr><td class="label" style="width:70%">كم غرفة جلسات في المركز؟</td><td class="fill"></td></tr>
+<tr><td class="label">كم طفلًا نشطًا اليوم (يأتي هذا الشهر)؟</td><td class="fill"></td></tr>
+<tr><td class="label">كم طفلًا على قائمة الانتظار؟</td><td class="fill"></td></tr>
+</table>
+
+<div class="why">
+  <b>ما نفعله بهذه الأرقام:</b> نحسب سعة المركز الحقيقية — كم طفلًا يستوعب فعلًا بالأخصائيين والغرف الحاليّين — ونقارنها بقائمة الانتظار. الفرق بينهما هو <b>الإيراد الذي يضيع أسبوعيًّا</b>، وهو أوّل رقم يستحقّ أن يظهر في لوحتك.
+</div>
+
+<div class="pagebreak"></div>
+
+<h2>القسم و — الأرشيف الورقي <span class="tag">يحدّد خطة الإطلاق</span></h2>
+
+<div class="quote">«في جزء كبير قديم أوّل سنة شغل <b>مش لاقي أغلبه أصلًا</b>، وجزء تاني البت مش لاقياه»</div>
+
+<p><b>النظام مبنيّ ليقبل هذا:</b> طفل بلا رقم قومي مقبول، وبلا خطة مقبول، وبلا تقييم مقبول. لا شيء يجب أن يُخترع لإدخال ملفّ ناقص.</p>
+
+<p>فالأسئلة عن <b>التشغيل</b> لا البنية:</p>
+
+<table>
+<tr><th style="width:44%">السؤال</th><th>الإجابة</th></tr>
+<tr><td>كم ملفّ طفل ورقي موجود تقريبًا؟</td><td class="fill"></td></tr>
+<tr><td>كم منها لأطفال <b>ما زالوا</b> يأتون؟</td><td class="fill"></td></tr>
+<tr><td>مَن سيُدخلها في النظام؟</td><td>☐ «البت» ☐ الاستقبال ☐ الأخصائيون ☐ موظّف مؤقّت</td></tr>
+<tr><td>ما الذي يجب إدخاله للطفل القديم؟</td><td>☐ الاسم والهاتف فقط &nbsp; ☐ + الخطة الأخيرة &nbsp; ☐ + كل شيء</td></tr>
+<tr><td>هل نصوّر الورق كمرفقات بدل إعادة كتابته؟</td><td>☐ نعم &nbsp;&nbsp; ☐ لا &nbsp;&nbsp; ☐ الاثنان</td></tr>
+</table>
+
+<h3>و.١ — قرار يحتاج كلمتك</h3>
+<p>جلسة من ٢٠٢٤ تُدخَل في النظام اليوم — <b>هل تظهر في تقرير «جلسات هذا الشهر»؟</b></p>
+
+<div class="choice">
+  <div class="t">☐ لا</div>
+  <div class="d">التقارير للعمل الجاري، والأرشيف تاريخ يُقرأ ولا يُحتسب.</div>
+  <div class="note">الأصحّ محاسبيًّا</div>
+</div>
+<div class="choice">
+  <div class="t">☐ نعم</div>
+  <div class="d">الرقم رقم أيًّا كان تاريخ إدخاله.</div>
+</div>
+
+<div class="why">
+  النظام يعرف الفارق بين <b>تاريخ الجلسة</b> و<b>تاريخ إدخالها</b>، فالتنفيذ شرط واحد. المطلوب أن يكون <b>قرارك أنت مكتوبًا</b> لا اجتهادًا منّا — لأن التقرير الذي يبتلع ٥٠٠ جلسة قديمة في شهر واحد سيبدو لك خطأً في النظام، وهو ليس خطأً.
+</div>
+
+<h3>ما لا نسأل عنه — وسبب ذلك</h3>
+<p>نصف محادثتك كان عن <b>قناة يوتيوب، وعشرين حلقة قصيرة، وعدّة تصوير، وظهور تلفزيوني، وكورس إعداد أخصائيّي تخاطب، ومَن يصلح واجهة إعلامية</b>.</p>
+<p><b>لا شيء من هذا نظام إدارة مركز</b>، ولن نبنيه ولن نسألك عنه. مذكور هنا مرّة واحدة كي لا يُعاد فتحه في كل جلسة.</p>
+<p>الاستثناء الوحيد: <b>كورس إعداد الأخصائيّين</b>. لو صار منتجًا له متدرّبون وتسجيل ودفع — فهو <b>مشروع آخر بميزانية أخرى</b>، لا وحدة تُضاف إلى هذا.</p>
+
+<div class="pagebreak"></div>
+
+<h2>ملخّص: ما يُطلب منك</h2>
+
+<table class="summary">
+<tr><th style="width:6%">#</th><th style="width:40%">المطلوب</th><th style="width:26%">الشكل</th><th style="width:28%">يفتح</th></tr>
+<tr><td style="text-align:center;font-weight:700">١</td><td><b>جدول أ.١ مملوءًا</b> — مدّة وسعر كل خدمة</td><td>جدول أو رسالة صوتية</td><td><b>الجدولة والفوترة</b></td></tr>
+<tr><td style="text-align:center;font-weight:700">٢</td><td><b>قرار ب.٢</b> — الجلسة الخارجية: خدمة أم مكان؟</td><td>كلمة واحدة</td><td>حجز الجلسات الخارجية</td></tr>
+<tr><td style="text-align:center;font-weight:700">٣</td><td><b>استمارة دراسة الحالة-1-1.pdf</b></td><td>الملفّ نفسه</td><td>شاشة الاستقبال</td></tr>
+<tr><td style="text-align:center;font-weight:700">٤</td><td><b>جواب د</b> — الخطط: أنواع أم تسميات؟</td><td>كلمة واحدة</td><td>شاشة الخطط</td></tr>
+<tr><td style="text-align:center;font-weight:700">٥</td><td><b>جواب أ.٢</b> — ABA و«المهارات»</td><td>علامة ☐</td><td>تنظيف الكتالوج</td></tr>
+<tr><td style="text-align:center;font-weight:700">٦</td><td>تقرير ‹طفل› لي شهر يوليو.pdf + استبيان_ولي_الأمر.docx</td><td>الملفّان</td><td>قالب التقرير المختصر</td></tr>
+</table>
+
+<div class="final">
+  <b>البند ١ يعطّل أكثر من الخمسة الباقية مجتمعة.</b> لو لم يصلنا إلّا هو، فقد فُتح الطريق.
+  <br><br>
+  وإن صعُب جمع الأسعار الآن — <b>أرسل المُدد وحدها</b>، فالجدول يعمل بلا أسعار، والفاتورة لا تعمل بلا مُدد.
+</div>
+
+<div class="sig">
+  <table style="margin-top:16px">
+    <tr><th style="width:30%">تاريخ الردّ</th><th style="width:35%">مَن أجاب</th><th style="width:35%">التوقيع</th></tr>
+    <tr><td class="fill" style="height:38px"></td><td class="fill"></td><td class="fill"></td></tr>
+  </table>
+</div>
+
+</body>
+</html>

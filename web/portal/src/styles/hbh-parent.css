@@ -1,0 +1,533 @@
+/* =====================================================================
+   Hand By Hand — بوابة ولي الأمر (نسخة الويب)
+   File: hbh-parent.css  ->  #APP_FILES#hbh-parent.css
+   يتطلّب hbh-shared.css قبله.
+
+   ملاحظة: هذه النسخة web-responsive. تعمل على الديسكتوب بعمودين،
+   وتنهار إلى عمود واحد + شريط تبويبات سفلي على الموبايل، حتى يبقى
+   نفس الترميز صالحًا لاحقًا كمرجع بصري لتطبيق الموبايل.
+   ===================================================================== */
+
+.hbh-web{
+  min-height:100vh;
+  background:var(--hbh-bg);
+  display:flex; flex-direction:column;
+}
+
+/* ---------------------------------------------------------------
+   1. الشريط العلوي
+   --------------------------------------------------------------- */
+.hbh-webhead{
+  position:sticky; top:0; z-index:30;
+  background:var(--hbh-surface);
+  border-bottom:1px solid var(--hbh-line);
+}
+.hbh-webhead__in{
+  max-width:1180px; margin:0 auto;
+  display:flex; align-items:center; gap:18px;
+  padding:11px 20px;
+}
+.hbh-brand{ display:flex; align-items:center; gap:9px; flex:none; direction:ltr; }
+/* الهيدر أبيض، فالشعار يوضع مباشرة بدون لوحة */
+.hbh-brand__logo{ width:38px; height:auto; flex:none; }
+.hbh-brand__wm  { width:122px; height:auto; flex:none; }
+
+.hbh-webnav{ display:flex; align-items:center; gap:3px; flex:1; min-width:0; overflow-x:auto; }
+.hbh-webnav__item{
+  display:flex; align-items:center; gap:7px;
+  padding:8px 13px; border-radius:10px; white-space:nowrap;
+  font-size:13px; font-weight:600; color:var(--hbh-ink-2);
+  transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.hbh-webnav__item .hbh-i{ width:16px; height:16px; }
+@media (hover:hover){ .hbh-webnav__item:hover{ background:var(--hbh-surface-2); color:var(--hbh-teal-600); } }
+.hbh-webnav__item.is-active{ background:var(--hbh-info-bg); color:var(--hbh-teal-600); }
+
+.hbh-webtools{ display:flex; align-items:center; gap:9px; flex:none; }
+.hbh-webbtn{
+  position:relative; width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-ink-2); border:1px solid var(--hbh-line);
+  background:var(--hbh-surface);
+}
+@media (hover:hover){ .hbh-webbtn:hover{ color:var(--hbh-teal-600); border-color:var(--hbh-teal-400); } }
+.hbh-webbtn i{
+  position:absolute; top:-4px; inset-inline-end:-4px;
+  width:9px; height:9px; border-radius:50%;
+  background:var(--hbh-danger); border:2px solid var(--hbh-surface);
+}
+.hbh-userchip{
+  display:flex; align-items:center; gap:8px;
+  padding:5px 10px 5px 5px; border-radius:999px;
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  font-size:12.5px; font-weight:600;
+}
+.hbh-userchip .hbh-avatar{ width:28px; height:28px; }
+.hbh-userchip small{ display:block; font-size:10.5px; font-weight:500; color:var(--hbh-muted); }
+
+/* زر القائمة يظهر على الموبايل فقط */
+.hbh-webmenu{ display:none; }
+
+/* ---------------------------------------------------------------
+   2. جسم الصفحة
+   --------------------------------------------------------------- */
+.hbh-webmain{
+  width:100%; max-width:1180px; margin:0 auto;
+  padding:20px; flex:1;
+}
+.hbh-pgrid{
+  display:grid; gap:16px; align-items:start;
+  grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);
+}
+.hbh-pcol{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+
+.hbh-sectitle{
+  font-family:var(--hbh-display); font-size:15px; font-weight:700;
+  margin-bottom:11px;
+}
+
+/* ---------------------------------------------------------------
+   3. شريط الطفل
+   --------------------------------------------------------------- */
+.hbh-child{
+  display:flex; align-items:center; gap:14px;
+  padding:15px 16px; border-radius:var(--hbh-radius);
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  box-shadow:var(--hbh-shadow); width:100%; text-align:start;
+}
+.hbh-child .hbh-avatar{ width:58px; height:58px; }
+.hbh-child__body{ flex:1; min-width:0; }
+.hbh-child__name{ font-family:var(--hbh-display); font-size:17px; font-weight:700; }
+.hbh-child__meta{
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+  font-size:12px; color:var(--hbh-muted); margin-top:5px;
+}
+.hbh-child__meta s{ text-decoration:none; opacity:.45; }
+.hbh-child__switch{
+  display:flex; align-items:center; gap:6px; flex:none;
+  padding:8px 12px; border-radius:10px;
+  border:1px solid var(--hbh-line); background:var(--hbh-surface-2);
+  font-size:12.5px; font-weight:600; color:var(--hbh-ink-2);
+}
+@media (hover:hover){ .hbh-child__switch:hover{ border-color:var(--hbh-teal-400); color:var(--hbh-teal-600); } }
+
+/* ---------------------------------------------------------------
+   4. الجلسة القادمة
+   --------------------------------------------------------------- */
+.hbh-next{
+  border-radius:var(--hbh-radius);
+  background:linear-gradient(135deg,var(--hbh-teal-900) 0%,var(--hbh-teal-700) 55%,var(--hbh-teal-600) 100%);
+  color:#fff; padding:17px 18px;
+  box-shadow:var(--hbh-shadow-lg);
+}
+.hbh-next__label{
+  font-size:11px; font-weight:600; letter-spacing:.04em;
+  color:var(--hbh-on-dark-3); margin-bottom:12px;
+}
+.hbh-next__list{
+  display:grid; gap:10px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.hbh-next__row{ display:flex; align-items:center; gap:9px; font-size:13px; min-width:0; }
+.hbh-next__row .hbh-i{ color:var(--hbh-teal-400); width:16px; height:16px; }
+.hbh-next__row b{ font-weight:600; }
+.hbh-next__row span{ color:var(--hbh-on-dark-2); }
+.hbh-next__foot{
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  margin-top:14px; padding-top:13px;
+  border-top:1px solid rgba(255,255,255,.14);
+}
+.hbh-next__foot .hbh-btn--ghost{
+  background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.2); color:#fff;
+}
+@media (hover:hover){ .hbh-next__foot .hbh-btn--ghost:hover{ background:rgba(255,255,255,.22); color:#fff; } }
+
+/* ---------------------------------------------------------------
+   5. البث المباشر
+   --------------------------------------------------------------- */
+.hbh-live{
+  border-radius:var(--hbh-radius);
+  background:var(--hbh-surface);
+  border:1px solid var(--hbh-success-line);
+  box-shadow:var(--hbh-shadow);
+  padding:16px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.hbh-live__body{ flex:1; min-width:210px; }
+.hbh-live__flag{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:5px 12px; border-radius:999px;
+  background:var(--hbh-success-ink); color:#fff;
+  font-size:11px; font-weight:700; letter-spacing:.05em;
+}
+.hbh-live__state{ font-size:13.5px; font-weight:600; margin:10px 0 6px; }
+.hbh-live__note{ font-size:11.5px; color:var(--hbh-muted); line-height:1.7; }
+.hbh-live .hbh-btn{ padding:12px 20px; font-size:13.5px; border-radius:12px; flex:none; }
+
+/* خارج وقت الجلسة: الزر معطّل ظاهريًا — والمنع الحقيقي على الخادم */
+.hbh-live--off{ border-color:var(--hbh-line); }
+.hbh-live--off .hbh-live__flag{ background:var(--hbh-neutral-100); color:var(--hbh-muted); }
+.hbh-live--off .hbh-btn--primary{ background:var(--hbh-neutral-200); cursor:not-allowed; }
+
+/* ---------------------------------------------------------------
+   6. الروابط السريعة
+   --------------------------------------------------------------- */
+.hbh-quick{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.hbh-quick__item{
+  display:flex; align-items:center; gap:10px;
+  padding:15px 14px; border-radius:var(--hbh-radius);
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  box-shadow:var(--hbh-shadow);
+  font-size:13px; font-weight:600; text-align:start;
+  transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+@media (hover:hover){ .hbh-quick__item:hover{ border-color:var(--hbh-teal-400); transform:translateY(-1px); } }
+.hbh-quick__item .hbh-i{ color:var(--hbh-teal-600); width:19px; height:19px; }
+.hbh-quick__item .hbh-badge{ margin-inline-start:auto; }
+
+/* ---------------------------------------------------------------
+   7. عناصر العمود الجانبي
+   --------------------------------------------------------------- */
+.hbh-mini{
+  display:flex; align-items:center; gap:11px;
+  padding:11px 0; border-top:1px solid var(--hbh-line);
+  font-size:12.5px; text-align:start;
+}
+.hbh-mini:first-child{ border-top:0; padding-top:0; }
+.hbh-mini__date{
+  width:44px; flex:none; text-align:center;
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  border-radius:10px; padding:5px 0;
+}
+.hbh-mini__date b{ display:block; font-size:15px; font-weight:700; line-height:1; }
+.hbh-mini__date small{ display:block; font-size:9.5px; color:var(--hbh-muted); margin-top:2px; }
+.hbh-mini__body{ flex:1; min-width:0; }
+.hbh-mini__title{ font-weight:600; }
+.hbh-mini__sub{ font-size:11.5px; color:var(--hbh-muted); margin-top:3px; }
+.hbh-mini__time{ font-size:11.5px; color:var(--hbh-muted); direction:ltr; flex:none; }
+
+.hbh-due{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; padding:12px 13px; border-radius:12px;
+  background:var(--hbh-progress-bg); border:1px solid var(--hbh-progress-line);
+}
+.hbh-due__amt{
+  font-family:var(--hbh-display); font-size:18px; font-weight:700;
+  direction:ltr; color:var(--hbh-progress-ink);
+}
+
+/* ---------------------------------------------------------------
+   8. شريط التبويبات السفلي (موبايل فقط)
+   --------------------------------------------------------------- */
+/* The column count follows the tabs the shell declares. repeat(4,1fr) was
+   a fixed count in a design definition: a fifth tab does not error, it
+   silently wraps onto a second row under the fold. */
+.hbh-tabs{
+  display:none;
+  position:fixed; bottom:0; inset-inline:0; z-index:40;
+  grid-auto-flow:column; grid-auto-columns:1fr;
+  background:var(--hbh-surface);
+  border-top:1px solid var(--hbh-line);
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+.hbh-tabs__item{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:5px 0; font-size:10.5px; font-weight:600; color:var(--hbh-muted);
+}
+.hbh-tabs__item .hbh-i{ width:20px; height:20px; }
+.hbh-tabs__item.is-active{ color:var(--hbh-teal-600); }
+
+/* ---------------------------------------------------------------
+   9. الاستجابة
+   --------------------------------------------------------------- */
+@media (max-width:1040px){
+  .hbh-pgrid{ grid-template-columns:1fr; }
+}
+@media (max-width:900px){
+  .hbh-webnav{ display:none; }
+  .hbh-webmenu{ display:flex; }
+  .hbh-tabs{ display:grid; }
+  .hbh-web{ padding-bottom:76px; }
+  .hbh-webhead__in{ padding:10px 14px; gap:10px; }
+  .hbh-userchip div{ display:none; }
+  .hbh-userchip{ padding:4px; }
+  .hbh-webmain{ padding:14px; }
+  .hbh-quick{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hbh-next__list{ grid-template-columns:1fr; }
+}
+@media (max-width:560px){
+  .hbh-child{ flex-wrap:wrap; }
+  .hbh-child__switch{ width:100%; justify-content:center; }
+  .hbh-live{ flex-direction:column; align-items:stretch; text-align:center; }
+  .hbh-live .hbh-btn{ width:100%; }
+}
+
+/* ---------------------------------------------------------------
+   10. شاشة الترحيب — أول شاشة يراها ولي الأمر بعد تسجيل الدخول
+       صفحة مستقلة قبل البوابة: تحيّة باسمه، اختيار الطفل، وأهم
+       ثلاث مستجدّات. لا شريط تنقّل ولا تبويبات — مخرجها الوحيد
+       هو بطاقة طفل أو رابط في التذييل.
+   --------------------------------------------------------------- */
+.hbh-wel{
+  /* في المعاينة المستقلّة الشاشة كلها لنا فالطرح صفر.
+     داخل APEX يوجد شريط تنقّل فوق الـ Region، فتُضبط قيمة المتغيّر على
+     ارتفاعه في «Region ▸ Advanced ▸ CSS Classes» أو في نمط الصفحة:
+       .hbh-wel{ --hbh-wel-chrome:56px }
+     وإلا زادت الصفحة عن الشاشة بمقدار الشريط وظهر شريط تمرير بلا سبب. */
+  --hbh-wel-chrome:0px;
+  min-height:calc(100vh - var(--hbh-wel-chrome));
+  display:flex; flex-direction:column;
+  /* هالات ناعمة بألوان الشعار الثلاثة على الخلفية الكريمية */
+  background:
+    radial-gradient(62% 52% at 100% 0%,  var(--hbh-teal-100)  0%, transparent 62%),
+    radial-gradient(52% 46% at 0% 6%,    var(--hbh-coral-100) 0%, transparent 58%),
+    radial-gradient(78% 46% at 50% 100%, var(--hbh-green-100) 0%, transparent 64%),
+    var(--hbh-bg);
+}
+.hbh-wel__in{
+  width:100%; max-width:880px; margin:0 auto; flex:1;
+  padding:18px 20px 26px;
+  display:flex; flex-direction:column; gap:18px;
+}
+/* الجسم يأخذ ما تبقّى ويتوسّط رأسيًا: على شاشة طويلة لا تظهر فجوة
+   بين المستجدّات والتذييل، وعلى شاشة قصيرة يفيض الجسم فتظهر
+   الصفحة قابلة للتمرير بشكل طبيعي دون قصّ. */
+.hbh-wel__body{
+  flex:1; display:flex; flex-direction:column; justify-content:center;
+  gap:24px; padding:8px 0;
+}
+
+/* --- شريط علوي مبسّط: الشعار + خروج فقط --- */
+.hbh-wel__bar{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.hbh-wel__out{
+  display:flex; align-items:center; gap:7px;
+  padding:8px 13px; border-radius:999px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  font-size:12.5px; font-weight:600; color:var(--hbh-ink-2);
+}
+@media (hover:hover){ .hbh-wel__out:hover{ border-color:var(--hbh-teal-400); color:var(--hbh-teal-600); } }
+.hbh-wel__out .hbh-i{ width:15px; height:15px; }
+
+/* --- التحيّة --- */
+.hbh-wel__hero{ text-align:center; padding:6px 0 2px; }
+.hbh-wel__mark{ width:74px; margin:0 auto 14px; }
+.hbh-wel__hi{ font-size:13px; font-weight:600; color:var(--hbh-teal-600); }
+.hbh-wel__name{
+  font-family:var(--hbh-display); font-size:26px; font-weight:700;
+  line-height:1.5; margin-top:4px;
+}
+.hbh-wel__date{
+  display:inline-flex; align-items:center; gap:7px; margin-top:11px;
+  padding:6px 14px; border-radius:999px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  font-size:12px; color:var(--hbh-ink-2);
+}
+.hbh-wel__date .hbh-i{ width:14px; height:14px; color:var(--hbh-teal-600); }
+
+/* --- عنوان قسم صغير --- */
+.hbh-wel__label{
+  display:flex; align-items:baseline; gap:9px; margin-bottom:12px;
+  font-family:var(--hbh-display); font-size:14px; font-weight:700;
+}
+.hbh-wel__label small{ font-size:11.5px; font-weight:400; color:var(--hbh-muted); }
+
+/* --- بطاقات الأطفال: مدخل الصفحة الحقيقي --- */
+.hbh-kids{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.hbh-kid{
+  display:block; padding:16px; text-align:start;
+  border-radius:var(--hbh-radius-lg);
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  box-shadow:var(--hbh-shadow); transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+@media (hover:hover){
+  .hbh-kid:hover{
+    border-color:var(--hbh-teal-400); transform:translateY(-2px);
+    box-shadow:var(--hbh-shadow-lg);
+  }
+}
+.hbh-kid--live{ border-color:var(--hbh-success-line); }
+.hbh-kid__top{ display:flex; align-items:center; gap:12px; }
+.hbh-kid .hbh-avatar{ width:56px; height:56px; }
+/* صورة الطفل غير متاحة (رفع الملفات مؤجَّل) — رمز بدل الصورة.
+   عنصر span وليس img، فيحتاج التوسيط بنفسه. */
+.hbh-kid__ph{
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-teal-600); background:var(--hbh-teal-100);
+}
+.hbh-kid__ph .hbh-i{ width:26px; height:26px; }
+.hbh-kid__id{ flex:1; min-width:0; }
+.hbh-kid__name{ font-family:var(--hbh-display); font-size:16.5px; font-weight:700; }
+.hbh-kid__meta{
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  font-size:11.5px; color:var(--hbh-muted); margin-top:5px;
+}
+.hbh-kid__meta s{ text-decoration:none; opacity:.45; }
+.hbh-kid__note{
+  display:flex; align-items:center; gap:8px;
+  margin-top:14px; padding-top:12px; border-top:1px solid var(--hbh-line);
+  font-size:12.5px; color:var(--hbh-ink-2);
+}
+.hbh-kid__note .hbh-i{ width:15px; height:15px; color:var(--hbh-teal-600); }
+.hbh-kid__note b{ font-weight:600; }
+.hbh-kid__go{
+  display:inline-flex; align-items:center; gap:5px;
+  margin-inline-start:auto; flex:none;
+  font-size:12.5px; font-weight:600; color:var(--hbh-teal-600);
+}
+.hbh-kid__go .hbh-i{ width:14px; height:14px; }
+
+/* --- شريط المستجدّات --- */
+.hbh-wel__news{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.hbh-news{
+  display:flex; align-items:center; gap:11px;
+  padding:13px 14px; border-radius:var(--hbh-radius); text-align:start;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  box-shadow:var(--hbh-shadow); transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+@media (hover:hover){ .hbh-news:hover{ border-color:var(--hbh-teal-400); } }
+.hbh-news .hbh-iconbox{ width:38px; height:38px; border-radius:11px; }
+.hbh-news .hbh-iconbox .hbh-i{ width:18px; height:18px; }
+.hbh-news__body{ flex:1; min-width:0; }
+.hbh-news__t{ font-size:12.5px; font-weight:600; }
+.hbh-news__s{ font-size:11px; color:var(--hbh-muted); margin-top:3px; }
+
+/* --- تذييل: مساعدة + تطمين الخصوصية --- */
+.hbh-wel__foot{
+  padding-top:6px;
+  display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;
+}
+.hbh-wel__help{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.hbh-wel__priv{
+  display:flex; align-items:center; gap:7px; justify-content:center;
+  font-size:11.5px; color:var(--hbh-muted); line-height:1.8;
+}
+.hbh-wel__priv .hbh-i{ width:14px; height:14px; flex:none; }
+
+/* --- الاستجابة --- */
+@media (max-width:700px){
+  .hbh-wel__in{ padding:14px 14px 26px; gap:20px; }
+  .hbh-kids{ grid-template-columns:1fr; }
+  .hbh-wel__news{ grid-template-columns:1fr; }
+  .hbh-wel__name{ font-size:22px; }
+  .hbh-wel__mark{ width:64px; }
+}
+
+/* ---------------------------------------------------------------
+   11. ملفّ الأخصائي — ما يقرأه وليّ الأمر قبل أن يحجز
+       يجيب سؤالًا واحدًا: هل أترك ابني مع هذا الشخص؟ فالمؤهّل
+       واللغة والخبرة هي المحتوى، ولا تقييم بنجوم — خدمة علاجية
+       للأطفال بمتوسّط حسابي تصير سوقًا، ويصير الأخصائي مدفوعًا
+       لإرضاء الأسرة بدل قول ما رآه.
+   --------------------------------------------------------------- */
+.hbh-tp__hero{
+  display:flex; gap:20px; padding:20px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); box-shadow:var(--hbh-shadow);
+}
+/* صورة بنسبة 3:4 — الوجه هو سبب وجود الصفحة. ولا صورة تعني شكلًا
+   رمزيًّا بألوان العلامة، لا مربّعًا مكسورًا ولا حرفًا أوّل مخترَعًا. */
+.hbh-tp__photo{
+  width:132px; height:auto; aspect-ratio:3/4; flex:none;
+  border-radius:var(--hbh-radius); overflow:hidden;
+  background:linear-gradient(160deg,var(--hbh-teal-100),var(--hbh-green-100));
+  border:1px solid var(--hbh-info-line);
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.hbh-tp__photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+.hbh-tp__photo .hbh-i{ width:64px; height:64px; color:var(--hbh-teal-400); margin-bottom:14px; }
+.hbh-tp__b{ flex:1; min-width:0; }
+.hbh-tp__row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.hbh-tp__name{ font-family:var(--hbh-display); font-size:24px; font-weight:700; line-height:1.4; }
+.hbh-tp__title{ font-size:14px; color:var(--hbh-teal-600); font-weight:600; margin-top:2px; }
+.hbh-tp__bio{ font-size:14px; color:var(--hbh-ink-2); line-height:1.95; margin-top:12px; max-width:52ch; }
+
+.hbh-tp__facts{
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1px; margin-top:16px; background:var(--hbh-line);
+  border:1px solid var(--hbh-line); border-radius:var(--hbh-radius-sm); overflow:hidden;
+}
+.hbh-tpfact{ background:var(--hbh-surface); padding:11px 13px; }
+.hbh-tpfact__k{ font-size:11px; color:var(--hbh-muted); font-weight:600; }
+.hbh-tpfact__v{ font-family:var(--hbh-display); font-size:16px; font-weight:700; margin-top:3px; }
+.hbh-tpfact__v small{ font-size:12px; font-weight:500; color:var(--hbh-ink-2); }
+
+/* اللغة معيار مطابقة سريري في مركز تخاطب، لا وسام: بطاقة مستقلّة،
+   واللغة الأمّ مميّزة عن «بطلاقة». */
+.hbh-tplangs{ display:flex; flex-direction:column; gap:10px; }
+.hbh-tplang{
+  display:flex; align-items:center; gap:11px;
+  padding:11px 13px; border-radius:var(--hbh-radius-sm);
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+}
+.hbh-tplang .hbh-i{ color:var(--hbh-teal-600); }
+.hbh-tplang__n{ font-size:14px; font-weight:600; flex:1; min-width:0; }
+.hbh-tplang__lvl{ font-size:12px; color:var(--hbh-muted); }
+.hbh-tplang--native{ background:var(--hbh-green-100); border-color:var(--hbh-green-500); }
+.hbh-tplang--native .hbh-i{ color:var(--hbh-green-600); }
+.hbh-tplang--native .hbh-tplang__lvl{ color:var(--hbh-green-600); font-weight:600; }
+
+/* المؤهّلات تسلسل زمني حقيقي، فالمحور يحمل معلومة ولا يزيّن. */
+.hbh-tpquals{ display:flex; flex-direction:column; }
+.hbh-tpqual{ display:grid; grid-template-columns:64px 1fr; gap:14px; padding-bottom:18px; position:relative; }
+.hbh-tpqual:last-child{ padding-bottom:0; }
+.hbh-tpqual::before{
+  content:""; position:absolute; top:22px; bottom:0;
+  inset-inline-start:31px; width:1px; background:var(--hbh-line);
+}
+.hbh-tpqual:last-child::before{ display:none; }
+.hbh-tpqual__y{
+  font-family:var(--hbh-font); font-size:12px; color:var(--hbh-teal-600);
+  text-align:center; position:relative; z-index:1;
+}
+.hbh-tpqual__y span{ display:block; padding:3px 0; border-radius:999px; background:var(--hbh-info-bg); }
+.hbh-tpqual__t{ font-size:14.5px; font-weight:600; line-height:1.7; }
+.hbh-tpqual__s{ font-size:12.5px; color:var(--hbh-muted); margin-top:3px; }
+
+/* شهادة بصورة وشهادة بنصّ، وكلتاهما شكل مكتمل: كثير من الشهادات
+   المصرية لا تُصوَّر بجودة تُقرأ، فالنصّية ليست حالة نقص. */
+.hbh-tpcerts{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.hbh-tpcert{
+  border:1px solid var(--hbh-line); border-radius:var(--hbh-radius-sm);
+  overflow:hidden; background:var(--hbh-surface-2); margin:0;
+}
+.hbh-tpcert__img{
+  height:112px; border-bottom:1px solid var(--hbh-line);
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  background:var(--hbh-neutral-100); color:var(--hbh-muted); font-size:11.5px;
+}
+.hbh-tpcert__img img{ width:100%; height:100%; object-fit:cover; display:block; }
+.hbh-tpcert__b{ padding:11px 13px; }
+.hbh-tpcert__t{ font-size:13.5px; font-weight:600; line-height:1.65; }
+.hbh-tpcert__s{ font-size:11.5px; color:var(--hbh-muted); margin-top:4px; }
+.hbh-tpcert--text .hbh-tpcert__img{
+  height:52px; background:var(--hbh-info-bg);
+  border-bottom-color:var(--hbh-info-line); color:var(--hbh-teal-600);
+}
+
+/* الحجز طلب لا تأكيد: الاستقبال هو مَن يحرّك آلة حالة الموعد. */
+.hbh-tpbook{
+  background:linear-gradient(155deg,var(--hbh-teal-900),var(--hbh-teal-600));
+  color:var(--hbh-on-dark); border-radius:var(--hbh-radius);
+  padding:20px; box-shadow:var(--hbh-shadow-lg);
+}
+.hbh-tpbook__k{ font-size:12px; font-weight:600; }
+.hbh-tpbook__v{ font-family:var(--hbh-display); font-size:19px; font-weight:700; margin-top:5px; }
+.hbh-tpbook__slots{ display:flex; flex-direction:column; gap:8px; margin:15px 0; }
+.hbh-tpbook__slot{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 13px; border-radius:var(--hbh-radius-sm);
+  background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.2);
+  font-size:13.5px; color:var(--hbh-on-dark);
+}
+.hbh-tpbook__slot span{ direction:ltr; font-weight:600; }
+.hbh-tpbook .hbh-btn--light{ background:#fff; color:var(--hbh-teal-700); }
+.hbh-tpbook__note{ font-size:12px; margin-top:12px; line-height:1.85; color:var(--hbh-on-dark); }
+
+@media (max-width:900px){
+  .hbh-tp__facts{ grid-template-columns:1fr; }
+  .hbh-tpcerts{ grid-template-columns:1fr; }
+}
+@media (max-width:560px){
+  .hbh-tp__hero{ flex-direction:column; }
+  .hbh-tp__photo{ width:120px; }
+}

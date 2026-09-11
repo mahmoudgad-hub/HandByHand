@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>العملاء المحتملون — Hand By Hand</title>
+<link rel="icon" href="hbh-logo-mark.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="hbh-shared.css">
+<link rel="stylesheet" href="hbh-admin.css">
+<link rel="stylesheet" href="hbh-screens.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body data-page-perm="GUARDIAN.MANAGE">
+
+<div class="hbh-app">
+  <!--ICONS-->
+
+  <div class="hbh-shell">
+    <!--SIDEBAR:leads-->
+
+    <main class="hbh-main">
+      <!--REGION-START-->
+
+      <div class="hbh-pagehead">
+        <div class="hbh-pagehead__left">
+          <div>
+            <h1 class="hbh-pagehead__title">العملاء المحتملون</h1>
+            <p class="hbh-pagehead__sub">23 عميلاً محتملاً هذا الشهر · معدّل التحويل 39%</p>
+          </div>
+        </div>
+        <div class="hbh-pagehead__actions">
+          <div class="hbh-segmented">
+            <a class="hbh-segmented__item is-active" href="#" aria-current="page">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grid"/></svg>
+              لوحة
+            </a>
+            <a class="hbh-segmented__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-list"/></svg>
+              قائمة
+            </a>
+          </div>
+          <button class="hbh-btn hbh-btn--primary" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-plus"/></svg>
+            عميل محتمل
+          </button>
+        </div>
+      </div>
+
+      <section class="hbh-strip" style="margin-bottom:16px">
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--purple"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-plus"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">جدد هذا الشهر</div>
+            <div class="hbh-stat__value">23</div>
+            <span class="hbh-delta hbh-delta--up">
+              <svg class="hbh-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-up"/></svg> 15% عن الشهر الماضي
+            </span>
+          </div>
+        </article>
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--green"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check-circle"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">تحوّلوا إلى حالات</div>
+            <div class="hbh-stat__value">9</div>
+            <span class="hbh-muted">معدّل التحويل 39%</span>
+          </div>
+        </article>
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--amber"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clock"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">بانتظار متابعة</div>
+            <div class="hbh-stat__value">6</div>
+            <span class="hbh-muted">اثنان تجاوزا 3 أيام</span>
+          </div>
+        </article>
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--blue"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-target"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">أعلى مصدر</div>
+            <div class="hbh-stat__value" style="font-size:16px">إنستجرام</div>
+            <span class="hbh-muted">11 من 23</span>
+          </div>
+        </article>
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--navy"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-activity"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">متوسط زمن الرد</div>
+            <div class="hbh-stat__value">4 <u>ساعات</u></div>
+            <span class="hbh-muted">الهدف أقل من 6</span>
+          </div>
+        </article>
+      </section>
+
+      <div class="hbh-filters">
+        <label class="hbh-field hbh-field--sel">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-target"/></svg>
+          <select aria-label="المصدر">
+            <option>كل المصادر</option>
+            <option>إنستجرام</option><option>فيسبوك</option>
+            <option>ترشيح صديق</option><option>اتصال مباشر</option><option>الموقع</option>
+          </select>
+        </label>
+        <label class="hbh-field hbh-field--sel">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+          <select aria-label="الفترة">
+            <option>أغسطس 2026</option><option>يوليو 2026</option><option>آخر 90 يومًا</option>
+          </select>
+        </label>
+        <label class="hbh-field hbh-field--grow">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-search"/></svg>
+          <input type="search" placeholder="ابحث بالاسم أو رقم الهاتف…" aria-label="بحث">
+        </label>
+      </div>
+
+      <!-- في APEX: كل عمود Cards Region على HBH_VW_LEADS مُفلترة بالحالة.
+           نقل البطاقة بين الأعمدة يستدعي HBH_PKG_CRM وليس UPDATE مباشرًا. -->
+      <div class="hbh-kanban">
+
+        <div class="hbh-kcol">
+          <div class="hbh-kcol__head">
+            <span class="hbh-kcol__title">جديد</span>
+            <span class="hbh-badge hbh-badge--muted">4</span>
+          </div>
+          <div class="hbh-kcol__list">
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والدة تالين محمد</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-phone"/></svg>
+                <span style="direction:ltr">01002233445</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--info">إنستجرام</span>
+                <span class="hbh-muted">اليوم</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والد سليم أشرف</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-phone"/></svg>
+                <span style="direction:ltr">01115566778</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--muted">ترشيح صديق</span>
+                <span class="hbh-muted">اليوم</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والدة رقية عماد</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-phone"/></svg>
+                <span style="direction:ltr">01223344556</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--info">فيسبوك</span>
+                <span class="hbh-muted">أمس</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والد كريم وائل</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-phone"/></svg>
+                <span style="direction:ltr">01098877665</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--muted">الموقع</span>
+                <span class="hbh-muted">أمس</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="hbh-kcol">
+          <div class="hbh-kcol__head">
+            <span class="hbh-kcol__title">تم التواصل</span>
+            <span class="hbh-badge hbh-badge--muted">6</span>
+          </div>
+          <div class="hbh-kcol__list">
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والدة نور هاني</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+                <span>م. محمد جاد</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--info">إنستجرام</span>
+                <span class="hbh-muted">28/08</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والد مازن سعيد</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+                <span>م. محمد جاد</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--danger">متابعة متأخرة</span>
+                <span class="hbh-muted">25/08</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والدة لينا طارق</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+                <span>م. محمد جاد</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--muted">اتصال مباشر</span>
+                <span class="hbh-muted">27/08</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="hbh-kcol">
+          <div class="hbh-kcol__head">
+            <span class="hbh-kcol__title">تقييم مبدئي محجوز</span>
+            <span class="hbh-badge hbh-badge--muted">4</span>
+          </div>
+          <div class="hbh-kcol__list">
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والدة ملك سامي</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+                <span>01 سبتمبر · 03:00 م</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--progress">أ. مي إبراهيم</span>
+                <span class="hbh-muted">غرفة 6</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والد حمزة إيهاب</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+                <span>03 سبتمبر · 04:00 م</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--progress">أ. سارة أحمد</span>
+                <span class="hbh-muted">غرفة 1</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="hbh-kcol">
+          <div class="hbh-kcol__head">
+            <span class="hbh-kcol__title">تحوَّل إلى حالة</span>
+            <span class="hbh-badge hbh-badge--success">9</span>
+          </div>
+          <div class="hbh-kcol__list">
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">جنى محمود</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-users"/></svg>
+                <span>CH-244</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--success">نشط</span>
+                <span class="hbh-muted">22/08</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">آدم شريف</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-users"/></svg>
+                <span>CH-241</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--success">نشط</span>
+                <span class="hbh-muted">18/08</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="hbh-kcol">
+          <div class="hbh-kcol__head">
+            <span class="hbh-kcol__title">مغلق</span>
+            <span class="hbh-badge hbh-badge--muted">4</span>
+          </div>
+          <div class="hbh-kcol__list">
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والد يحيى ماجد</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x-circle"/></svg>
+                <span>المسافة بعيدة</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--muted">مغلق</span>
+                <span class="hbh-muted">20/08</span>
+              </div>
+            </button>
+            <button class="hbh-lead" type="button">
+              <div class="hbh-lead__name">والدة سما وليد</div>
+              <div class="hbh-lead__meta">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x-circle"/></svg>
+                <span>لا يرد</span>
+              </div>
+              <div class="hbh-lead__foot">
+                <span class="hbh-badge hbh-badge--muted">مغلق</span>
+                <span class="hbh-muted">15/08</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hbh-notice" style="margin-top:14px">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-info"/></svg>
+        <span>
+          مراحل العميل المحتمل آلة حالات محكومة بـ CHECK مع جدول تاريخ، تمامًا مثل حالة الجلسة.
+          عند التحويل إلى حالة يُنشَأ الطفل وولي الأمر بمعاملة واحدة، ويحتفظ السجل بمصدر العميل للتقارير.
+        </span>
+      </div>
+
+      <!--REGION-END-->
+    </main>
+  </div>
+</div>
+
+<script src="hbh-ops.js"></script>
+</body>
+</html>

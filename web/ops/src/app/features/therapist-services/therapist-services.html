@@ -1,0 +1,68 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'therapistServices.title' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'therapistServices.sub' | t }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Said before the grid, because the consequence is not guessable from a
+     screen full of checkboxes: an empty row here means that therapist cannot
+     be booked for anything at all. -->
+<div class="hbh-notice">
+  <hbh-icon name="ic-info" />
+  <div>
+    <b>{{ 'therapistServices.why' | t }}</b>
+    <p>{{ 'therapistServices.whyNote' | t }}</p>
+  </div>
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="5" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (therapists().length === 0 || services().length === 0) {
+  <hbh-empty-state icon="ic-list" [title]="'therapistServices.empty' | t"
+                   [note]="'therapistServices.emptyNote' | t" />
+} @else {
+  <div class="hbh-tablewrap" style="margin-top:16px">
+    <table class="hbh-table hbh-matrix">
+      <thead>
+        <tr>
+          <th>{{ 'field.therapist' | t }}</th>
+          @for (service of services(); track serviceId(service)) {
+            <th class="hbh-matrix__h">{{ nameOf(service) }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (therapist of therapists(); track therapistId(therapist)) {
+          <tr>
+            <td><b>{{ nameOf(therapist) }}</b></td>
+            @for (service of services(); track serviceId(service)) {
+              <td class="hbh-matrix__c">
+                <!-- A button, not a checkbox: the state lives on the server
+                     and only changes when the server says so, and a checkbox
+                     that ticks itself before the answer arrives is the lie
+                     this screen must not tell. -->
+                <button class="hbh-tick" type="button"
+                        [class.is-on]="isLinked(therapistId(therapist), serviceId(service))"
+                        [class.is-busy]="isBusy(therapistId(therapist), serviceId(service))"
+                        [disabled]="!canWrite() || isBusy(therapistId(therapist), serviceId(service))"
+                        [attr.aria-pressed]="isLinked(therapistId(therapist), serviceId(service))"
+                        [attr.aria-label]="nameOf(therapist) + ' — ' + nameOf(service)"
+                        (click)="toggle(therapistId(therapist), serviceId(service))">
+                  @if (isLinked(therapistId(therapist), serviceId(service))) {
+                    <hbh-icon name="ic-check" />
+                  }
+                </button>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

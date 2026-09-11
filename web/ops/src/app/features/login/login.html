@@ -1,0 +1,218 @@
+<!-- The form comes first in the DOM on purpose: in an RTL page the first
+     grid column lands on the right, so this is both the reading start and
+     the tab order. The panel is second because nobody signing into their
+     own workplace console needs to read the pitch first. -->
+<div class="hbh-signin">
+  <span class="hbh-signin__lang"><hbh-icon name="ic-globe" />{{ 'login.language' | t }}</span>
+
+  <main class="hbh-signin__main">
+    <form class="hbh-signin__box" (submit)="submit($event)">
+
+      <span class="hbh-signin__brand">
+        <img class="hbh-logo hbh-signin__logo" src="assets/brand/hbh-logo-mark.png"
+             width="44" height="45" alt="">
+        <img class="hbh-logo hbh-signin__wm" src="assets/brand/hbh-logo-wordmark.png"
+             width="126" height="49" [attr.alt]="'app.name' | t">
+      </span>
+
+      <h1 class="hbh-signin__t">{{ 'login.title' | t }}</h1>
+      <p class="hbh-signin__s">{{ 'login.intro' | t }}</p>
+
+      <div class="hbh-signin__form">
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="f-user">{{ 'login.username' | t }}</label>
+          <div class="hbh-fld__box">
+            <hbh-icon name="ic-user" />
+            <input id="f-user" type="text" autocomplete="username" spellcheck="false"
+                   [attr.placeholder]="'login.usernamePlaceholder' | t"
+                   enterkeyhint="next" autofocus
+                   [formControl]="username">
+          </div>
+        </div>
+
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="f-pass">{{ 'login.password' | t }}</label>
+          <div class="hbh-fld__box">
+            <hbh-icon name="ic-lock" />
+            <input id="f-pass" [type]="shown() ? 'text' : 'password'"
+                   [attr.placeholder]="'login.passwordPlaceholder' | t"
+                   autocomplete="current-password" [formControl]="password"
+                   enterkeyhint="go">
+            <!-- Typing blind on a shared desk gets it wrong; a toggle is safer
+                 than retyping into the username box by mistake. -->
+            <button class="hbh-signin__peek" type="button"
+                    [attr.aria-pressed]="shown()"
+                    [attr.aria-label]="(shown() ? 'login.hidePassword' : 'login.showPassword') | t"
+                    (click)="togglePeek()">
+              <hbh-icon name="ic-eye" />
+            </button>
+          </div>
+        </div>
+
+        @if (errorKey()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" />
+            <span>{{ errorKey() | t }}</span>
+          </p>
+        }
+
+
+        <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="submit"
+                [class.is-busy]="busy()" [disabled]="busy()">
+          <hbh-icon name="ic-door" />
+          {{ (busy() ? 'login.signingIn' : 'login.signIn') | t }}
+        </button>
+      </div>
+
+      <!-- Development shortcuts. Rendered only when the config lists accounts
+           AND the page is on a local address, so a build that kept the list
+           still cannot show working credentials from a public host.
+           The dashed border and the label say what they are. -->
+      @if (devAccounts().length) {
+        <div class="hbh-signin__demo">
+          <p class="hbh-signin__demoT">{{ 'login.devAccounts' | t }}</p>
+          <!-- Tracked by role, not by username: two buttons point at the same
+               account, because "admin" and "centre manager" are one role
+               here, and a repeated track key is a runtime error. -->
+          <div class="hbh-signin__demoRow">
+            @for (account of devAccounts(); track account.roleKey) {
+              <button class="hbh-signin__demoBtn" type="button"
+                      [class.is-on]="picked() === account.roleKey"
+                      [disabled]="!!account.unavailableKey || busy()"
+                      [attr.title]="account.unavailableKey
+                                    ? (account.unavailableKey | t) : account.username"
+                      (click)="useDevAccount(account)">
+                <i><hbh-icon [name]="account.roleKey === 'role.CENTER_ADMIN' ? 'ic-settings' : account.roleKey === 'role.RECEPTION' ? 'ic-users' : account.roleKey === 'role.THERAPIST' ? 'ic-user-check' : 'ic-shield'" /></i>
+                {{ account.roleKey | t }}
+              </button>
+            }
+          </div>
+          <!-- Said once, plainly. Two of these buttons open the same console
+               with the same nineteen permissions, and someone comparing them
+               would otherwise spend the afternoon looking for a difference
+               the system does not have. -->
+          @if (devSharesAccount()) {
+            <p class="hbh-fld__hint">{{ 'login.devSameRole' | t }}</p>
+          }
+        </div>
+      }
+
+      <p class="hbh-signin__help">{{ 'login.forgot' | t }}</p>
+
+      <!-- Where a new member of staff sets their first password.
+           They cannot sign in yet, so this cannot be behind a sign-in:
+           the setup code from their administrator is the authorisation,
+           which is why it works once and expires. -->
+      <p class="hbh-signin__help">
+        <button class="hbh-link hbh-acc__docLink" type="button"
+                (click)="toggleSetup()">
+          {{ (setupOpen() ? 'login.setupClose' : 'login.setupOpen') | t }}
+        </button>
+      </p>
+      @if (setupOpen()) {
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="setup-code">{{ 'login.setupCode' | t }}</label>
+          <div class="hbh-fld__box">
+            <input id="setup-code" type="text" dir="ltr" [formControl]="setupCode">
+          </div>
+          <p class="hbh-fld__hint">{{ 'login.setupHint' | t }}</p>
+        </div>
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="setup-new">{{ 'login.setupNew' | t }}</label>
+          <div class="hbh-fld__box">
+            <input id="setup-new" type="password" [formControl]="setupPassword">
+          </div>
+        </div>
+        @if (setupError()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" /><span>{{ setupError() | t }}</span>
+          </p>
+        }
+        @if (setupDone()) {
+          <p class="hbh-signin__help">{{ 'login.setupDone' | t }}</p>
+        }
+        <button class="hbh-btn hbh-btn--primary" type="button"
+                [disabled]="setupBusy()" (click)="redeemSetup()">
+          {{ (setupBusy() ? 'action.saving' : 'login.setupSubmit') | t }}
+        </button>
+      }
+      <footer class="hbh-signin__foot">
+        <span><hbh-icon name="ic-lock" />{{ 'login.dataSafe' | t }}</span>
+        <span>{{ 'app.name' | t }}<br>{{ 'login.rights' | t }}</span>
+        <hbh-icon name="ic-heart" />
+      </footer>
+    </form>
+  </main>
+
+  <!-- The story. Third grid column, so on an RTL page it lands at the far
+       edge and the card keeps the reading start. -->
+  <aside class="hbh-signin__story">
+
+    <div>
+      <span class="hbh-signin__brand">
+        <img class="hbh-logo hbh-signin__logo" src="assets/brand/hbh-logo-mark.png"
+             width="52" height="53" alt="">
+        <img class="hbh-logo hbh-signin__wm" src="assets/brand/hbh-logo-wordmark.png"
+             width="150" height="58" [attr.alt]="'app.name' | t">
+      </span>
+      <p class="hbh-signin__brandline">{{ 'login.brandTagline' | t }}</p>
+    </div>
+
+    <div class="hbh-signin__pitch">
+      <!-- Two halves, and the second carries the accent and the swash under
+           it. Split into two keys rather than one with markup inside: a
+           translator moving the emphasis is changing wording, not HTML. -->
+      <h2 class="hbh-signin__head">
+        {{ 'login.headlineA' | t }}<br>
+        <b>{{ 'login.headlineB' | t }}</b>
+      </h2>
+      <p class="hbh-signin__blurb">{{ 'login.blurb' | t }}</p>
+
+      <div class="hbh-signin__feats">
+        <div class="hbh-signin__feat hbh-signin__feat--coral">
+          <i><hbh-icon name="ic-heart" /></i>
+          <b>{{ 'login.featSessionsT' | t }}</b>
+          <span>{{ 'login.featSessionsS' | t }}</span>
+        </div>
+        <div class="hbh-signin__feat hbh-signin__feat--teal">
+          <i><hbh-icon name="ic-users" /></i>
+          <b>{{ 'login.featProgressT' | t }}</b>
+          <span>{{ 'login.featProgressS' | t }}</span>
+        </div>
+        <div class="hbh-signin__feat hbh-signin__feat--green">
+          <i><hbh-icon name="ic-chart" /></i>
+          <b>{{ 'login.featReportsT' | t }}</b>
+          <span>{{ 'login.featReportsS' | t }}</span>
+        </div>
+        <div class="hbh-signin__feat hbh-signin__feat--amber">
+          <i><hbh-icon name="ic-shield" /></i>
+          <b>{{ 'login.featSafeT' | t }}</b>
+          <span>{{ 'login.featSafeS' | t }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- The centre's line in both languages. The English half is the one
+         already printed on the wordmark; the Arabic is what staff say. -->
+    <div class="hbh-signin__motto">
+      <hbh-icon name="ic-heart" />
+      <span>
+        <span class="hbh-signin__mottoAr">{{ 'login.motto' | t }}</span>
+        <span class="hbh-signin__mottoEn">{{ 'brand.motto' | t }}</span>
+      </span>
+    </div>
+
+  </aside>
+
+  <!-- The photograph. A slot: set --hbh-signin-photo on .hbh-signin and it
+       fills, leave it unset and the shape keeps its own gradient. Nothing
+       here depends on the image existing, so the screen cannot arrive
+       half-drawn while somebody is still choosing one.
+
+       aria-hidden: it carries no information the story does not already
+       say, and the callout inside it is a slogan, not an instruction. -->
+  <div class="hbh-signin__photo" aria-hidden="true">
+    <p class="hbh-signin__bubble">{{ 'login.photoNote' | t }}</p>
+  </div>
+
+</div>

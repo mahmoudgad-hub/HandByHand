@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>الإعدادات — Hand By Hand</title>
+<link rel="icon" href="hbh-logo-mark.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="hbh-shared.css">
+<link rel="stylesheet" href="hbh-admin.css">
+<link rel="stylesheet" href="hbh-screens.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body data-page-perm="CATALOG.MANAGE">
+
+<div class="hbh-app">
+  <!--ICONS-->
+
+  <div class="hbh-shell">
+    <!--SIDEBAR:settings-->
+
+    <main class="hbh-main">
+      <!--REGION-START-->
+
+      <div class="hbh-pagehead">
+        <div class="hbh-pagehead__left">
+          <div>
+            <h1 class="hbh-pagehead__title">الإعدادات</h1>
+            <p class="hbh-pagehead__sub">القيم تُقرأ وتُكتب في <code>HBH_SYS_PARAMS</code> و<code>HBH_CENTERS</code></p>
+          </div>
+        </div>
+        <div class="hbh-pagehead__actions">
+          <button class="hbh-btn hbh-btn--ghost" type="button">إلغاء</button>
+          <button class="hbh-btn hbh-btn--primary" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg>
+            حفظ التغييرات
+          </button>
+        </div>
+      </div>
+
+      <div class="hbh-split">
+
+        <!-- ============ أقسام الإعدادات ============ -->
+        <div class="hbh-card">
+          <nav class="hbh-setnav" aria-label="أقسام الإعدادات">
+            <a class="hbh-setnav__item is-active" href="#" aria-current="page">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-pin"/></svg>
+              بيانات المركز
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-users"/></svg>
+              المستخدمون والصلاحيات
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+              الجلسات والمواعيد
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-card"/></svg>
+              الفواتير والضرائب
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+              الكاميرات والبث
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-list"/></svg>
+              القوائم والقيم
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-db"/></svg>
+              التخزين والمرفقات
+            </a>
+            <a class="hbh-setnav__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-shield"/></svg>
+              التدقيق والنسخ
+            </a>
+          </nav>
+        </div>
+
+        <!-- ============ اللوحة ============ -->
+        <div class="hbh-stack">
+
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">بيانات المركز والتوطين</h2>
+              <span class="hbh-badge hbh-badge--info">HBH_CENTERS</span>
+            </div>
+            <div class="hbh-card-body">
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">اسم المركز</div>
+                  <div class="hbh-param__code">CENTER_NAME_AR / CENTER_NAME_EN</div>
+                </div>
+                <div class="hbh-param__val" style="min-width:240px">
+                  <label class="hbh-field"><input type="text" value="مركز هاند باي هاند للمهارات" aria-label="اسم المركز"></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">الدولة</div>
+                  <div class="hbh-param__code">COUNTRY_CODE</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field hbh-field--sel"><select aria-label="الدولة"><option>مصر (EG)</option></select></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">العملة</div>
+                  <div class="hbh-param__code">CURRENCY_CODE</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field hbh-field--sel"><select aria-label="العملة"><option>الجنيه المصري (EGP)</option></select></label>
+                </div>
+                <p class="hbh-param__hint">كل مبلغ في النظام يُعرض بهذه العملة. لا تُكتب في الصفحات.</p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">المنطقة الزمنية</div>
+                  <div class="hbh-param__code">TIMEZONE</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field hbh-field--sel"><select aria-label="المنطقة الزمنية"><option>Africa/Cairo</option></select></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">عطلة نهاية الأسبوع</div>
+                  <div class="hbh-param__code">WEEKEND_DAYS</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field hbh-field--sel"><select aria-label="عطلة نهاية الأسبوع"><option>الجمعة والسبت</option></select></label>
+                </div>
+                <p class="hbh-param__hint">التقويم والجداول تقرأ منها مباشرة — تغييرها يغيّر أعمدة العطلة في كل الشاشات.</p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">التقويم</div>
+                  <div class="hbh-param__code">CALENDAR_TYPE</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field hbh-field--sel"><select aria-label="التقويم"><option>ميلادي</option></select></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">صيغة الرقم القومي</div>
+                  <div class="hbh-param__code">NATIONAL_ID_FORMAT</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="14 رقمًا" aria-label="صيغة الرقم القومي" style="min-width:160px"></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">صيغة رقم الموبايل</div>
+                  <div class="hbh-param__code">MOBILE_FORMAT</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="01XXXXXXXXX" aria-label="صيغة رقم الموبايل" style="min-width:160px;direction:ltr"></label>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">الجلسات والبث</h2>
+              <span class="hbh-badge hbh-badge--info">HBH_SYS_PARAMS</span>
+            </div>
+            <div class="hbh-card-body">
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">مدة الجلسة الافتراضية</div>
+                  <div class="hbh-param__code">DEFAULT_SESSION_MIN</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="45 دقيقة" aria-label="مدة الجلسة" style="min-width:120px"></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">صلاحية رابط البث</div>
+                  <div class="hbh-param__code">STREAM_TOKEN_TTL_MIN</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="15 دقيقة" aria-label="صلاحية رابط البث" style="min-width:120px"></label>
+                </div>
+                <p class="hbh-param__hint">الحد الأقصى 15 دقيقة. التوكن معتِم ومخزَّن مُجزَّأً بـ SHA-256، ومربوط بالجلسة والكاميرا والمستخدم.</p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">تسجيل جلسات الفيديو</div>
+                  <div class="hbh-param__code">—</div>
+                </div>
+                <div class="hbh-param__val">
+                  <span class="hbh-switch is-locked" role="img" aria-label="معطّل دائمًا"></span>
+                </div>
+                <p class="hbh-param__hint" style="color:var(--hbh-danger)">
+                  قرار معماري مُقفل: بث مباشر فقط، بدون أي تسجيل. لا يوجد مفتاح لتفعيله ولا جدول لحفظ المقاطع.
+                </p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">عدد الأطفال في الجلسة</div>
+                  <div class="hbh-param__code">—</div>
+                </div>
+                <div class="hbh-param__val"><span class="hbh-badge hbh-badge--muted">طفل واحد</span></div>
+                <p class="hbh-param__hint">
+                  ثابت في نموذج البيانات: <code>CHILD_ID</code> عمود مباشر على الجلسة والموعد، ولا توجد جداول مشاركين.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">التخزين والتدقيق</h2>
+              <span class="hbh-badge hbh-badge--progress">مساحة محدودة</span>
+            </div>
+            <div class="hbh-card-body">
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">حد مساحة السكيما</div>
+                  <div class="hbh-param__code">STORAGE_LIMIT_MB</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="100 MB" aria-label="حد المساحة" style="min-width:120px"></label>
+                </div>
+                <p class="hbh-param__hint">مستخدم حاليًا نحو 45 ميجابايت. ارفع القيمة يوم ترقية الباقة.</p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">أقصى حجم مرفق</div>
+                  <div class="hbh-param__code">MAX_ATTACHMENT_MB</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="2 MB" aria-label="أقصى حجم مرفق" style="min-width:120px"></label>
+                </div>
+                <p class="hbh-param__hint">
+                  المرفقات <code>BLOB</code> داخل قاعدة البيانات — لا يوجد نظام ملفات ولا <code>CREATE DIRECTORY</code>.
+                  ممنوع رفع فيديو نهائيًا، وهذه القاعدة دائمة ولا علاقة لها بالمساحة.
+                </p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">أرشفة سجلّ التدقيق بعد</div>
+                  <div class="hbh-param__code">AUDIT_ARCHIVE_AFTER_DAYS</div>
+                </div>
+                <div class="hbh-param__val">
+                  <label class="hbh-field"><input type="text" value="30 يومًا" aria-label="أرشفة التدقيق" style="min-width:120px"></label>
+                </div>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">تسجيل عمليات القراءة الحسّاسة</div>
+                  <div class="hbh-param__code">AUDIT_READS_FLG</div>
+                </div>
+                <div class="hbh-param__val"><span class="hbh-switch is-on is-locked" role="img" aria-label="مفعّل دائمًا"></span></div>
+                <p class="hbh-param__hint">
+                  فتح ملف طفل أو تقرير أو بث يُسجَّل صراحةً. المشغّلات لا تلتقط القراءة، فالاستدعاء من واجهة القراءة نفسها.
+                </p>
+              </div>
+
+              <div class="hbh-param">
+                <div class="hbh-param__key">
+                  <div class="hbh-param__name">المهام الدورية</div>
+                  <div class="hbh-param__code">—</div>
+                </div>
+                <div class="hbh-param__val"><span class="hbh-badge hbh-badge--info">APEX Automations</span></div>
+                <p class="hbh-param__hint">
+                  المزوّد لا يمنح <code>CREATE JOB</code>، فلا يوجد <code>DBMS_SCHEDULER</code>.
+                  ولا يُوضع أي ضمان أمني في مهمة دورية — الضمانات تُفرض وقت الطلب.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="hbh-notice">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+            <span>
+              المفاتيح المعطَّلة أعلاه ليست تعطيلاً في الواجهة — لا يوجد مسار في قاعدة البيانات لتفعيلها أصلاً.
+              إخفاء زر أو تعطيله ليس وسيلة تحكّم؛ كل صلاحية مفروضة في الخادم.
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <!--REGION-END-->
+    </main>
+  </div>
+</div>
+
+<script src="hbh-ops.js"></script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+/* =====================================================================
+   Hand By Hand - Ops (Admin) Dashboard layout
+   File: hbh-admin.css   ->  #APP_FILES#hbh-admin.css
+   Requires hbh-shared.css to be loaded first.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------
+   1. SHELL : sidebar + content
+   --------------------------------------------------------------- */
+.hbh-shell{
+  display:grid;
+  grid-template-columns:246px minmax(0,1fr);
+  min-height:100vh;
+  background:var(--hbh-bg);
+}
+
+/* ---- sidebar ---- */
+.hbh-side{
+  background:var(--hbh-teal-900);
+  color:#fff;
+  display:flex; flex-direction:column;
+  padding:18px 14px;
+  position:sticky; top:0; align-self:start; height:100vh;
+}
+/* لوحة الشعار: الـ wordmark فيه نص رمادي غامق ("skills center") لا يُقرأ
+   فوق الفيروزي الغامق، فيوضع الشعار كاملاً على لوحة فاتحة. */
+.hbh-side__brand{
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  direction:ltr;   /* القفل البصري للشعار يحتفظ بترتيبه الأصلي */
+  background:var(--hbh-surface);
+  border-radius:var(--hbh-radius);
+  padding:10px 8px;
+  margin-bottom:18px;
+}
+.hbh-side__logo{ width:46px; height:auto; flex:none; }
+.hbh-side__wm  { width:130px; height:auto; flex:none; }
+
+.hbh-nav{ display:flex; flex-direction:column; gap:2px; flex:1; overflow-y:auto; }
+.hbh-nav__item{
+  display:flex; align-items:center; gap:11px;
+  padding:10px 12px; border-radius:10px;
+  font-size:13.5px; font-weight:500; color:var(--hbh-on-dark-2);
+  transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+@media (hover:hover){ .hbh-nav__item:hover{ background:rgba(255,255,255,.07); color:#fff; } }
+.hbh-nav__item.is-active{
+  background:var(--hbh-teal-600); color:#fff; font-weight:600;
+  box-shadow:0 6px 16px rgba(34,119,140,.35);
+}
+.hbh-nav__item .hbh-i{ width:17px; height:17px; }
+
+.hbh-side__user{
+  display:flex; align-items:center; gap:10px;
+  margin-top:12px; padding:10px;
+  background:rgba(255,255,255,.07); border-radius:12px;
+}
+.hbh-side__user .hbh-avatar{ width:34px; height:34px; }
+.hbh-side__user b{ display:block; font-size:13px; font-weight:600; }
+.hbh-side__user small{ display:block; font-size:11px; color:var(--hbh-on-dark-3); }
+.hbh-side__status{
+  display:flex; align-items:center; gap:4px;
+  font-size:10px; color:var(--hbh-online); margin-top:2px;
+}
+.hbh-side__status i{ width:6px; height:6px; border-radius:50%; background:var(--hbh-online); }
+
+/* ---- content column ---- */
+.hbh-main{ padding:22px 24px 34px; min-width:0; }
+
+/* ---------------------------------------------------------------
+   2. TOP BAR
+   --------------------------------------------------------------- */
+.hbh-top{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:16px; flex-wrap:wrap; margin-bottom:20px;
+}
+.hbh-top__title{ font-family:var(--hbh-display); font-size:21px; font-weight:700; }
+.hbh-top__sub{ font-size:13px; color:var(--hbh-muted); margin-top:4px; }
+.hbh-top__tools{ display:flex; align-items:center; gap:10px; }
+.hbh-datepill{
+  display:flex; align-items:center; gap:8px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius-sm); padding:9px 13px;
+  font-size:12.5px; font-weight:500; color:var(--hbh-ink-2);
+  box-shadow:var(--hbh-shadow);
+}
+.hbh-iconbtn{
+  position:relative; width:38px; height:38px; border-radius:11px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-ink-2); box-shadow:var(--hbh-shadow);
+}
+@media (hover:hover){ .hbh-iconbtn:hover{ color:var(--hbh-teal-600); border-color:var(--hbh-teal-400); } }
+.hbh-iconbtn__dot{
+  position:absolute; top:-5px; inset-inline-end:-5px;
+  min-width:17px; height:17px; padding:0 4px; border-radius:999px;
+  background:var(--hbh-danger); color:#fff;
+  font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--hbh-bg);
+}
+
+/* ---------------------------------------------------------------
+   3. KPI CARDS
+   --------------------------------------------------------------- */
+.hbh-kpis{
+  display:grid; gap:14px; margin-bottom:16px;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.hbh-kpi{
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); box-shadow:var(--hbh-shadow);
+  padding:15px;
+}
+.hbh-kpi__top{ display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+.hbh-kpi__label{ font-size:12px; color:var(--hbh-muted); font-weight:500; line-height:1.35; }
+/* الأرقام تُقرأ من اليسار لليمين حتى داخل صفحة RTL،
+   مع بقاء المحاذاة إلى بداية السطر (اليمين) */
+.hbh-kpi__value{
+  font-family:var(--hbh-display); font-size:26px; font-weight:700; line-height:1;
+  direction:ltr; text-align:right;
+}
+.hbh-kpi__foot{ margin-top:9px; font-size:11px; color:var(--hbh-muted); }
+
+/* icon tints moved to hbh-shared.css — the parent portal needs them too */
+
+/* ---------------------------------------------------------------
+   4. MIDDLE ROW : donut / rooms / alerts
+   --------------------------------------------------------------- */
+.hbh-row3{
+  display:grid; gap:14px; margin-bottom:16px;
+  grid-template-columns:1.05fr 1.15fr .95fr;
+  align-items:start;
+}
+
+/* donut */
+.hbh-donut{ display:flex; align-items:center; gap:18px; }
+.hbh-donut__chart{ position:relative; width:132px; height:132px; flex:none; }
+.hbh-donut__chart svg{ width:100%; height:100%; transform:rotate(-90deg); }
+.hbh-donut__hole{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.hbh-donut__hole b{ font-family:var(--hbh-display); font-size:24px; font-weight:700; line-height:1; }
+.hbh-donut__hole small{ font-size:11px; color:var(--hbh-muted); margin-top:3px; }
+.hbh-legend{ display:flex; flex-direction:column; gap:11px; flex:1; min-width:0; }
+.hbh-legend__row{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
+.hbh-legend__dot{ width:9px; height:9px; border-radius:3px; flex:none; }
+.hbh-legend__name{ flex:1; color:var(--hbh-ink-2); }
+.hbh-legend__val{ font-weight:600; }
+.hbh-legend__cnt{ color:var(--hbh-muted); font-size:11.5px; }
+
+/* rooms */
+.hbh-rooms{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; }
+.hbh-room{
+  background:var(--hbh-surface-2); border:1px solid var(--hbh-line);
+  border-radius:12px; padding:11px 12px;
+}
+.hbh-room__top{ display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
+.hbh-room__name{ font-size:12.5px; font-weight:600; }
+.hbh-room__type{ font-size:10.5px; color:var(--hbh-muted); margin-top:2px; }
+.hbh-room .hbh-badge{ margin-top:10px; }
+.hbh-room__flag{ width:15px; height:15px; }
+.hbh-room--busy{ border-color:var(--hbh-success-line); background:var(--hbh-success-bg); }
+.hbh-room--free{ border-color:var(--hbh-info-line); background:var(--hbh-info-bg); }
+
+/* alerts */
+.hbh-alerts{ display:flex; flex-direction:column; gap:10px; }
+.hbh-alert{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 12px; border-radius:12px; border:1px solid transparent;
+}
+.hbh-alert__txt{ flex:1; font-size:12.5px; line-height:1.5; }
+.hbh-alert--danger  { background:var(--hbh-danger-bg);   border-color:var(--hbh-danger-line); }
+.hbh-alert--progress{ background:var(--hbh-progress-bg); border-color:var(--hbh-progress-line); }
+.hbh-alert--info    { background:var(--hbh-info-bg);     border-color:var(--hbh-info-line); }
+.hbh-alert__btn{
+  padding:5px 12px; border-radius:8px; background:var(--hbh-surface);
+  border:1px solid var(--hbh-line); font-size:11.5px; font-weight:600;
+  color:var(--hbh-ink-2); flex:none;
+}
+@media (hover:hover){ .hbh-alert__btn:hover{ color:var(--hbh-teal-600); border-color:var(--hbh-teal-400); } }
+
+/* ---------------------------------------------------------------
+   5. BOTTOM STAT STRIP
+   --------------------------------------------------------------- */
+.hbh-strip{
+  display:grid; gap:14px;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.hbh-stat{
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius); box-shadow:var(--hbh-shadow);
+  padding:14px; display:flex; align-items:flex-start; gap:11px;
+}
+.hbh-stat__body{ min-width:0; }
+.hbh-stat__label{ font-size:12px; color:var(--hbh-muted); }
+.hbh-stat__value{
+  font-family:var(--hbh-display); font-size:20px; font-weight:700;
+  line-height:1.15; margin:5px 0;
+  direction:ltr; text-align:right;
+}
+.hbh-stat__value u{ font-size:12px; font-weight:600; text-decoration:none; color:var(--hbh-muted); }
+
+/* ---------------------------------------------------------------
+   6. RESPONSIVE
+   --------------------------------------------------------------- */
+@media (max-width:1279px){
+  .hbh-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .hbh-strip{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:1180px){
+  .hbh-row3{ grid-template-columns:1fr; }
+}
+@media (max-width:900px){
+  /* Two auto rows in a grid that is min-height:100dvh: `align-content`
+     defaults to stretch, and stretch shares the leftover height BETWEEN
+     the auto tracks. So on a short screen the menu bar's row grew by the
+     half of the slack it was given - 144px of empty teal above the page
+     title on a phone - while the bar itself stayed 100px tall. Naming the
+     second row 1fr gives the slack to the content, where it belongs. */
+  .hbh-shell{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
+  .hbh-side{
+    position:static; height:auto; flex-direction:row; align-items:center;
+    gap:14px; overflow-x:auto; padding:12px;
+  }
+  .hbh-side__brand{ padding:0; }
+  .hbh-nav{ flex-direction:row; flex:1; }
+  .hbh-nav__item span{ display:none; }
+  .hbh-side__user{ margin:0; }
+  .hbh-side__user > div{ display:none; }
+  .hbh-main{ padding:16px; }
+}
+@media (max-width:640px){
+  .hbh-kpis,.hbh-strip{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hbh-rooms{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hbh-donut{ flex-direction:column; align-items:stretch; }
+}
+
+/* ---------------------------------------------------------------
+   9. SIGN IN : the one ops screen with no shell around it
+   ---------------------------------------------------------------
+   Split in two. The teal panel is not decoration - it is how a member
+   of staff knows at a glance that this is the centre's own console and
+   not the parent portal, which is cream and centred. Below 860px the
+   panel is dropped rather than stacked: on a phone it would push the
+   form under the fold for no gain.
+
+   The code step is the same one-time code the parent portal uses.
+   hbh.request_otp matches on the mobile and the account being active,
+   and does not care whether the account belongs to a guardian or to
+   staff - so this screen adds no authentication of its own.
+   --------------------------------------------------------------- */
+/* The form column comes FIRST, so in an RTL page it lands on the right -
+   where the eye starts. A split-screen puts the pitch first because it is
+   persuading a stranger; nobody signing into their own workplace console
+   every morning needs persuading, and crossing the page to reach the
+   username field is a cost paid on every shift.
+
+   And it is a band, not a share: at 1.05fr the form column was ~970px of
+   cream holding a 380px box, which is why the screen read as empty. A
+   capped band reads as a placed column and leaves the panel the room its
+   content actually uses. */
+/* The sign-in layout - .hbh-signin and everything under it - moved to
+   hbh-shared.css. Both apps sign people in, both draw the same three
+   bands, and the parent portal does not load this file. What stays here
+   is what only the console has: the password peek, the failure line, the
+   development accounts, the remember-device row. */
+
+
+/* Remember this device.
+
+   Built because the design asks for it, and left UNCHECKED and unwired
+   because it contradicts two things this console already decided: the
+   panel used to promise "a shared machine signs out when the shift ends -
+   closing the tab is not enough", and the session lives in sessionStorage
+   for exactly that reason. A reception tablet is the normal case here, not
+   the exception. Wiring it is an owner decision, not a styling one. */
+.hbh-signin__remember{
+  display:flex; align-items:center; gap:9px;
+  margin:14px 0 4px;
+  font-size:12.5px; color:var(--hbh-ink-2);
+}
+.hbh-signin__remember input{
+  width:18px; height:18px; flex:none; margin:0;
+  accent-color:var(--hbh-teal-600);
+  cursor:pointer;
+}
+
+/* the field, matching the parent portal's so both apps read as one system */
+.hbh-fld{ margin-bottom:15px; }
+.hbh-fld__l{ display:block; font-size:12px; font-weight:600; margin-bottom:7px; }
+.hbh-fld__box{
+  display:flex; align-items:center; gap:9px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  border-radius:12px; padding:0 13px; transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.hbh-fld__box:focus-within{ border-color:var(--hbh-teal-400); box-shadow:0 0 0 3px var(--hbh-info-bg); }
+.hbh-fld__box .hbh-i{ color:var(--hbh-muted); }
+.hbh-fld__box input{
+  flex:1; min-width:0; border:0; background:none; outline:none;
+  font:inherit; font-size:15px; font-weight:600; color:var(--hbh-ink);
+  padding:13px 0; direction:ltr; text-align:start;
+}
+.hbh-fld__box input::placeholder{ font-weight:400; color:var(--hbh-muted); }
+.hbh-fld__cc{
+  font-size:13px; font-weight:600; color:var(--hbh-muted);
+  padding-inline-end:9px; border-inline-end:1px solid var(--hbh-line); direction:ltr;
+}
+.hbh-fld__hint{ font-size:11px; color:var(--hbh-muted); margin-top:7px; line-height:1.85; }
+
+/* A yes/no field. The checkbox needs its own rules because the one above
+   gives every input inside a field box flex:1 and 13px of vertical padding
+   - which stretches a checkbox across the whole row and leaves the word
+   beside it floating. */
+.hbh-fld__switch{
+  display:flex; align-items:center; gap:9px;
+  flex:1; padding:13px 0; cursor:pointer;
+  font-size:15px; font-weight:600; color:var(--hbh-ink);
+}
+.hbh-fld__switch input[type="checkbox"]{
+  flex:0 0 auto; width:18px; height:18px; padding:0; margin:0;
+  accent-color:var(--hbh-teal-400); cursor:pointer;
+}
+/* A field that is shown so the row can be identified and is not the
+   person's to change. It must not read as an empty box waiting for input. */
+.hbh-fld__box input[readonly]{ color:var(--hbh-muted); cursor:default; }
+
+.hbh-signin__meta{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-top:15px; font-size:11.5px; color:var(--hbh-muted);
+}
+.hbh-signin__help{
+  margin-top:26px; padding-top:18px; border-top:1px solid var(--hbh-line);
+  font-size:11.5px; color:var(--hbh-muted); line-height:1.95;
+}
+.hbh-signin__help b{ color:var(--hbh-ink-2); font-weight:600; }
+
+/* ---- narrow: the brand returns into the card ----
+   The 980px cut above removes the story and the photograph; this is the
+   one thing that has to come back, because the brand lived out there. */
+@media (max-width:980px){
+  /* The brand has to come back, since the panel that carried it is gone.
+     And the plate goes with the panel: on the cream ground the bitmap logo
+     is on the surface it was drawn for, so the white plate and its ring
+     would be a white box on a white box. */
+  .hbh-signin__box .hbh-signin__brand{
+    background:none; padding:0; margin-bottom:24px;
+    box-shadow:none;
+    /* fit-content, not justify-content. The element carries direction:ltr
+       so its wordmark reads correctly, and that made flex-start mean LEFT
+       while every other line in this RTL box started on the right - the
+       logo sat at the opposite edge from the heading under it. A block
+       that hugs its content takes the parent.s inline start instead, and
+       the parent is the one that is RTL. */
+    width:fit-content;
+  }
+}
+
+/* the six code boxes. Declared here as well as in hbh-app.css because the
+   two apps never load each other's stylesheet - the ops console must not
+   depend on the parent portal's CSS to render its own sign-in. */
+.hbh-signin .otp{ display:grid; grid-template-columns:repeat(6,1fr); gap:8px; direction:ltr; }
+.hbh-signin .otp input{
+  width:100%; aspect-ratio:1/1.16; text-align:center;
+  border:1px solid var(--hbh-line); border-radius:12px;
+  background:var(--hbh-surface); outline:none;
+  font:inherit; font-size:20px; font-weight:700; color:var(--hbh-ink);
+  transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.hbh-signin .otp input:focus{ border-color:var(--hbh-teal-400); box-shadow:0 0 0 3px var(--hbh-info-bg); }
+.hbh-signin .otp input.is-set{ border-color:var(--hbh-teal-500); background:var(--hbh-info-bg); }
+
+/* ---- sign-in: password field, refusal, demo accounts ---- */
+/* 40x40, not 30x30. The console is used on a tablet at reception, and a
+   30px target is under every touch guideline. The glyph stays 17px - the
+   box grows, the icon does not, and negative inline margin keeps the
+   field height unchanged so the two fields still line up. */
+.hbh-signin__peek{
+  width:40px; height:40px; border-radius:10px; flex:none;
+  margin-inline-end:-7px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-muted);
+}
+@media (hover:hover){ .hbh-signin__peek:hover{ color:var(--hbh-teal-600); background:var(--hbh-surface-2); } }
+.hbh-signin__peek[aria-pressed="true"]{ color:var(--hbh-teal-600); }
+
+/* One message for every refusal the server does not distinguish between.
+   A separate "no such user" would turn this box into a staff directory. */
+.hbh-signin__err{
+  display:flex; align-items:flex-start; gap:8px;
+  padding:11px 12px; border-radius:var(--hbh-radius-sm);
+  background:var(--hbh-danger-bg); border:1px solid var(--hbh-danger-line);
+  color:var(--hbh-danger-ink); font-size:11.5px; line-height:1.85;
+  margin-bottom:14px;
+}
+
+/* Development only - it never renders outside a local address. It still
+   sits between the primary button and the way out, so it stays quiet:
+   no fill, one hairline, and the label small. A scaffold that shouts
+   louder than the button it sits under trains the eye wrong. */
+.hbh-signin__demo{
+  margin-top:20px; padding:12px 0 0;
+  background:none; border:0; border-top:1px dashed var(--hbh-neutral-200);
+}
+.hbh-signin__demoT{ font-size:12px; color:var(--hbh-muted); margin-bottom:9px; }
+.hbh-signin__demoRow{ display:flex; gap:7px; flex-wrap:wrap; }
+.hbh-signin__demoBtn{
+  padding:6px 11px; border-radius:999px;
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+  font-size:12px; font-weight:600; color:var(--hbh-ink-2);
+}
+@media (hover:hover){ .hbh-signin__demoBtn:hover{ border-color:var(--hbh-teal-400); color:var(--hbh-teal-600); } }
+.hbh-signin__demoBtn.is-on{
+  background:var(--hbh-teal-600); border-color:var(--hbh-teal-600); color:var(--hbh-on-dark);
+}
+
+/* ---- sidebar: sign out ---- */
+.hbh-side__out{
+  width:32px; height:32px; border-radius:9px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--hbh-on-dark-3); background:rgba(255,255,255,.07);
+}
+@media (hover:hover){ .hbh-side__out:hover{ color:#fff; background:rgba(255,255,255,.16); } }
+
+/* ---- a screen this role may not open ----
+   Drawn instead of the page, not on top of it. The server would refuse to
+   fill it anyway; this only says so before the request is made. */
+.hbh-denied{
+  display:flex; flex-direction:column; align-items:center; gap:11px;
+  padding:60px 24px; text-align:center;
+}
+.hbh-denied .hbh-i{ width:34px; height:34px; color:var(--hbh-neutral-200); }
+.hbh-denied__t{ font-family:var(--hbh-display); font-size:16px; font-weight:700; }
+.hbh-denied__s{ font-size:12.5px; color:var(--hbh-muted); line-height:1.9; max-width:40ch; }
+.hbh-denied .hbh-btn{ margin-top:6px; }
+
+/* ---------------------------------------------------------------
+   10. SHEET : the editor that create and edit share
+   ---------------------------------------------------------------
+   One panel for both, because the only difference between adding a
+   child and correcting one is whether the service is asked to POST or
+   PATCH. Two panels would be two places to forget a field.
+
+   It is a dialog: the page behind it is dimmed and inert, so nobody
+   edits a row while a half-finished edit of another is still open.
+   --------------------------------------------------------------- */
+/* A real <dialog>, opened with showModal(). It was a div wearing
+   role="dialog" until the promise in the comment above was measured and
+   found empty - see the note on ModalDialog in the shared library.
+
+   The user-agent sheet gives a dialog a border, a padding, a fitted size
+   and auto margins, and none of that suits a full-viewport scrim, so each
+   is put back. `display` is the one that must stay conditional: this rule
+   is more specific than the UA's `dialog:not([open]){display:none}`, so
+   without the guard a closed dialog would paint over the screen. */
+.hbh-sheet{
+  position:fixed; inset:0; z-index:80;
+  width:auto; height:auto; max-width:none; max-height:none;
+  margin:0; border:0; padding:20px;
+  display:none;
+  align-items:center; justify-content:center;
+  color:inherit;
+  background:rgba(var(--hbh-video-scrim),.38);
+}
+.hbh-sheet[open]{ display:flex; }
+/* The scrim is painted by the dialog itself, edge to edge. A second one
+   underneath it from the UA would darken the page twice. */
+.hbh-sheet::backdrop{ background:transparent; }
+.hbh-sheet__box{
+  width:100%; max-width:440px; max-height:100%;
+  display:flex; flex-direction:column;
+  background:var(--hbh-surface);
+  border:1px solid var(--hbh-line);
+  border-radius:var(--hbh-radius-lg);
+  box-shadow:var(--hbh-shadow-lg);
+  overflow:hidden;
+}
+.hbh-sheet__head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:15px 18px; border-bottom:1px solid var(--hbh-line);
+}
+.hbh-sheet__body{ padding:16px 18px; overflow-y:auto; }
+.hbh-sheet__foot{
+  display:flex; gap:9px; padding:13px 18px;
+  border-top:1px solid var(--hbh-line); background:var(--hbh-surface-2);
+}
+.hbh-sheet__foot .hbh-btn{ flex:1; }
+
+/* a select sits in the same box as the inputs */
+.hbh-fld__box select{
+  flex:1; min-width:0; border:0; background:none; outline:none;
+  font:inherit; font-size:14px; font-weight:600; color:var(--hbh-ink);
+  padding:12px 0;
+}
+/* a field the server refused, named by fields.field in the error body */
+.hbh-fld__box.is-bad{ border-color:var(--hbh-danger-line); }
+.hbh-fld__box.is-bad:focus-within{ box-shadow:0 0 0 3px var(--hbh-danger-bg); }
+
+/* ---- an archived row still shows, faded, so restoring it is possible ---- */
+.hbh-table tr.is-archived{ opacity:.55; }
+.hbh-table tr.is-archived td{ text-decoration:line-through solid var(--hbh-neutral-200); }
+
+/* ---- the sidebar avatar is a glyph: photo upload is deferred ---- */
+.hbh-side__ph{
+  width:34px; height:34px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.14); color:var(--hbh-on-dark-2);
+}
+.hbh-side__ph .hbh-i{ width:17px; height:17px; }
+
+/* ---- signing out, written ----
+   The icon-only control in the user block is for the narrow strip, where a
+   label has no room. On a desktop this row is the way out: a bare padlock in
+   a corner is not something anyone finds, and on a shared desk signing out is
+   the last thing done on every shift. */
+.hbh-side__signout{
+  display:flex; align-items:center; gap:11px;
+  margin-top:8px; padding:10px 12px; width:100%;
+  border-radius:10px;
+  font-size:13.5px; font-weight:600;
+  color:var(--hbh-on-dark-2);
+  background:rgba(255,255,255,.07);
+  transition:.15s ease;
+}
+.hbh-side__signout:hover{ background:rgba(255,255,255,.16); color:#fff; }
+.hbh-side__signout .hbh-i{ width:17px; height:17px; }
+
+/* ---- row actions on the operational screens ----
+   A day row carries verbs, not an edit pencil: confirm, check in, close,
+   publish, add a payment. They sit inside a table cell, so they are the
+   button at a size that does not push the row taller than its text. */
+.hbh-btn--sm{ padding:6px 11px; font-size:12px; border-radius:9px; gap:6px; }
+.hbh-btn--sm .hbh-i{ width:14px; height:14px; }
+
+/* a note is prose, not a line: the box grows with it */
+.hbh-fld__box:has(textarea){ align-items:stretch; }
+.hbh-fld__box textarea{
+  flex:1; min-width:0; border:0; background:none; outline:none;
+  font:inherit; font-size:14px; font-weight:500; color:var(--hbh-ink);
+  padding:12px 0; resize:vertical; line-height:1.9;
+}
+
+/* ---- the answer to "is this slot free?" ----
+   Green, and NOT in the red error line. A refused slot arrives as HTTP 200
+   with ok:false - a question was asked and answered, and nothing failed.
+   Painting it as an error would tell the receptionist the screen is broken
+   when the only thing that happened is that the therapist is busy. */
+.hbh-signin__err.is-ok{
+  background:var(--hbh-success-bg); color:var(--hbh-success-ink);
+  border-color:var(--hbh-success-ink);
+}
+
+/* ---- dashboard tiles are links ----
+   A count on an operations screen is something somebody acts on, so every
+   tile opens the screen behind it already filtered the same way the number
+   was counted. Making them anchors is what earns the pointer and the focus
+   ring; the hover lift only exists where hovering is real. */
+a.hbh-kpi{ display:block; color:inherit; }
+@media (hover:hover){
+  a.hbh-kpi:hover{ border-color:var(--hbh-teal-400); transform:translateY(-2px); }
+}
+a.hbh-kpi:active{ transform:translateY(0); }
+
+/* Something is waiting for a person. Border and a tinted value, not a red
+   badge: these are ordinary queues, not failures. */
+.hbh-kpi.is-action{ border-color:var(--hbh-progress-line); background:var(--hbh-progress-bg); }
+.hbh-kpi.is-action .hbh-kpi__value{ color:var(--hbh-progress-ink); }
+
+/* A number that has not arrived. Sized like the digits it replaces so the
+   grid does not jump when six of them resolve at different moments. */
+.skel--num{ width:52px; height:26px; border-radius:8px; }
+
+/* The permission codes, as chips. Latin identifiers inside an Arabic page,
+   so each one carries its own direction. */
+.hbh-chiprow{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.hbh-chip{
+  font-size:11px; font-weight:600; padding:4px 9px; border-radius:7px;
+  background:var(--hbh-neutral-100); color:var(--hbh-ink-2);
+}
+
+/* ---- live view ----
+   Picture on the left, the things a person does while watching on the right.
+   One column below a laptop: a video squeezed beside a form is neither. */
+.hbh-live{ display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:16px; }
+@media (max-width:900px){ .hbh-live{ grid-template-columns:1fr; } }
+.hbh-live__video{
+  width:100%; aspect-ratio:16/9; border-radius:var(--hbh-radius);
+  background:var(--hbh-teal-900); object-fit:contain;
+}
+.hbh-live__side{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+.hbh-live__mark{
+  padding:14px; border-radius:var(--hbh-radius);
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+}
+.hbh-live__mark .hbh-btn{ margin-top:11px; }
+.hbh-live__marks{
+  padding:14px; border-radius:var(--hbh-radius);
+  background:var(--hbh-surface); border:1px solid var(--hbh-line);
+}
+.hbh-live__markrow{
+  display:flex; gap:10px; align-items:baseline;
+  padding:9px 0; border-top:1px solid var(--hbh-line); font-size:12.5px; line-height:1.85;
+}
+.hbh-live__markrow:first-of-type{ border-top:0; }
+/* The offset reads left to right and stays on one line: it is a clock. */
+.hbh-live__at{
+  flex:none; font-size:11.5px; font-weight:700; white-space:nowrap;
+  color:var(--hbh-teal-700); background:var(--hbh-info-bg);
+  padding:3px 7px; border-radius:6px;
+}
+
+/* ---- the therapist-by-service grid ----
+   A matrix, because the question is "which of these have I forgotten" and
+   that is answered by seeing an empty row, not by paging a list. */
+.hbh-matrix__h{
+  font-size:11.5px; font-weight:600; text-align:center;
+  vertical-align:bottom; max-width:120px; line-height:1.6;
+}
+.hbh-matrix__c{ text-align:center; }
+.hbh-tick{
+  width:26px; height:26px; border-radius:8px;
+  border:1px solid var(--hbh-line); background:var(--hbh-surface);
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:background .15s ease, border-color .15s ease, color .15s ease;
+}
+.hbh-tick .hbh-i{ width:15px; height:15px; }
+.hbh-tick.is-on{
+  background:var(--hbh-teal-600); border-color:var(--hbh-teal-600); color:var(--hbh-on-dark);
+}
+@media (hover:hover){
+  .hbh-tick:not(:disabled):hover{ border-color:var(--hbh-teal-400); }
+}
+.hbh-tick:disabled{ opacity:.5; }
+.hbh-tick.is-busy{ opacity:.6; }
+
+/* A route with failures in it. Tinted, not alarmed: an error percentage
+   above zero is worth a look, not a siren. */
+.hbh-table tr.is-hot td{ background:var(--hbh-progress-bg); }

@@ -1,0 +1,586 @@
+/* =====================================================================
+ * Hand By Hand - public site
+ *
+ * Layout is written with LOGICAL properties throughout (inline-start,
+ * margin-inline, padding-inline) rather than left/right. The page ships
+ * RTL and the language toggle flips it to LTR in place, so a rule
+ * written as `left` is a rule that is wrong in one of the two languages
+ * and nobody notices until an English visitor arrives.
+ *
+ * Palette is the one fixed in docs/07-website-prompt.md. It is not a
+ * suggestion: the portal and the console use the same teal, and a
+ * marketing page in a different teal reads as a different centre.
+ *
+ * LIGHT ONLY, BY DECISION. The site does not follow the visitor's
+ * system theme. `color-scheme: light` below is what says so, and it is
+ * the whole mechanism - there is no dark palette to fall back to, so a
+ * visitor whose machine is set to dark still gets these colours.
+ *
+ * This page is a brochure for a children's centre, and its warm sand
+ * ground and teal are the centre's identity in the way a printed leaflet
+ * is; a dark repaint of it is a second identity to keep in step, and it
+ * was drifting from this one within a day of existing. If dark comes
+ * back, it comes back here as a token block and in reference.css as a
+ * matching one, never in only one of the two - that mismatch is exactly
+ * what made dark render half-broken before.
+ * ===================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --teal-900:#1E5D64; --teal-700:#256B73; --teal-600:#2A7680;
+  --teal-500:#338A93; --teal-400:#4FA3AC; --teal-300:#7FC5CE; --teal-100:#DEEEF0;
+  --coral-600:#C4543F; --coral-500:#EB7866; --coral-300:#F5A392; --coral-100:#FBE6E1;
+  --green-600:#5F7A45; --green-500:#7E9C60; --green-300:#ADC793; --green-100:#EDF1E5;
+
+  --bg:#FAF6EE; --surface:#FFFFFF; --surface-2:#FBF7F0;
+  --ink:#22333A; --ink-2:#4A5F68; --muted:#4C6069; --line:#E8E1D4;
+
+  --shadow-sm:0 4px 14px rgba(30,93,100,.06);
+  --shadow-md:0 10px 28px rgba(30,93,100,.10);
+  --radius:16px;
+  --header-h:84px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 12px); }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.7;
+  font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+h1, h2, h3 { line-height: 1.25; margin: 0 0 .5em; }
+p { margin: 0 0 1em; }
+
+/* A visible focus ring, everywhere. Removing it makes the page
+   unusable by keyboard and saves nothing. */
+:focus-visible {
+  outline: 3px solid var(--coral-500);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute; inset-block-start: -100px; inset-inline-start: 16px;
+  z-index: 2000; background: var(--teal-600); color: #fff;
+  padding: 10px 18px; border-radius: 0 0 12px 12px; font-weight: 700;
+}
+.skip-link:focus { inset-block-start: 0; }
+
+.container { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+
+.lede { font-size: 1.1rem; color: var(--ink-2); }
+.fine { font-size: .82rem; color: var(--muted); margin: 0; }
+
+/* ------------------------------ buttons ---------------------------- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  min-height: 50px; padding: 10px 22px;
+  border: 1.5px solid transparent; border-radius: 14px;
+  font-weight: 800; font-size: .95rem; text-align: center;
+  cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.btn svg {
+  width: 20px; height: 20px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.btn.primary { background: var(--teal-600); color: #fff; box-shadow: var(--shadow-sm); }
+.btn.primary:hover { background: var(--teal-700); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.btn.outline { background: var(--surface); border-color: var(--teal-400); color: var(--teal-900); }
+.btn.outline:hover { background: var(--teal-100); transform: translateY(-2px); }
+.btn.small { min-height: 44px; padding: 8px 16px; font-size: .85rem; border-radius: 12px; }
+.btn.big { min-height: 58px; padding: 12px 34px; font-size: 1.05rem; }
+
+/* ------------------------------ header ----------------------------- */
+
+.site-header {
+  position: sticky; inset-block-start: 0; z-index: 1000;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  border-block-end: 1px solid var(--line);
+}
+.nav-wrap { min-height: var(--header-h); display: flex; align-items: center; gap: 18px; }
+
+.brand { flex: none; width: 210px; }
+.brand img { width: 100%; height: auto; }
+
+.nav { display: flex; gap: 18px; align-items: center; margin-inline: auto; }
+.nav a {
+  position: relative; padding-block: 28px;
+  font-weight: 700; font-size: .85rem; white-space: nowrap; color: var(--ink-2);
+}
+.nav a::after {
+  content: ""; position: absolute; inset-block-end: 18px; inset-inline-start: 50%;
+  width: 0; height: 3px; border-radius: 3px; background: var(--coral-500);
+  transition: width .2s ease, inset-inline-start .2s ease;
+}
+.nav a:hover, .nav a[aria-current="true"] { color: var(--ink); }
+.nav a:hover::after, .nav a[aria-current="true"]::after { inset-inline-start: 15%; width: 70%; }
+
+.nav-side { display: flex; align-items: center; gap: 10px; }
+.phone { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 700; white-space: nowrap; }
+.phone svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+.lang-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 6px 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  font-weight: 800; font-size: .8rem; cursor: pointer;
+}
+.lang-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.lang-toggle:hover { border-color: var(--teal-400); }
+
+.menu-btn {
+  display: none; place-items: center;
+  width: 44px; height: 44px; flex: none;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
+}
+.menu-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* ------------------------------- hero ------------------------------ */
+
+.hero { position: relative; overflow: hidden; padding-block: 34px 20px; }
+.hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+.hero-copy { position: relative; z-index: 1; }
+.hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.9rem); letter-spacing: -.02em; margin-block-end: 14px; }
+.hero h1 .accent { color: var(--coral-600); }
+.hero h1 em { font-style: normal; color: var(--green-600); }
+
+.mini-benefits { display: flex; gap: 28px; list-style: none; margin: 24px 0; padding: 0; }
+.mini-benefits li { text-align: center; }
+/* Held to a narrow measure so each label wraps onto two lines on its
+   own. A <br> in the markup would be lost the moment the language
+   toggle replaces the text. */
+.mini-benefits b { display: block; max-width: 9ch; margin-inline: auto; font-size: .92rem; line-height: 1.4; font-weight: 700; }
+.circle { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 8px; }
+.circle svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.circle.coral { background: var(--coral-100); color: var(--coral-600); }
+.circle.green { background: var(--green-100); color: var(--green-600); }
+.circle.teal  { background: var(--teal-100);  color: var(--teal-700); }
+
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; max-width: 560px; }
+.hero-actions .btn { flex: 1 1 220px; }
+
+.portal-note {
+  margin-block-start: 18px; max-width: 560px;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--coral-100); color: var(--ink);
+  border-inline-start: 4px solid var(--coral-500);
+  font-size: .88rem;
+}
+
+.hero-image { position: relative; min-height: 340px; }
+.hero-photo {
+  position: absolute; inset: 0; overflow: hidden;
+  border-radius: 46% 8% 40% 34% / 42% 10% 42% 26%;
+  box-shadow: var(--shadow-md);
+}
+.hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.leaf { position: absolute; width: 26px; height: 48px; background: var(--green-300); border-radius: 100% 0 100% 0; }
+.leaf-a { inset-inline-end: -8px; inset-block-start: 60px; transform: rotate(30deg); }
+.leaf-b { inset-inline-end: 18px; inset-block-end: 10px; transform: rotate(-35deg); }
+
+.blob { position: absolute; border-radius: 50%; pointer-events: none; opacity: .55; }
+.blob-1 { width: 170px; height: 170px; inset-inline-start: -90px; inset-block-start: 40px; background: var(--green-100); }
+.blob-2 { width: 150px; height: 150px; inset-inline-end: -80px; inset-block-start: 10px; background: var(--coral-100); }
+.blob-3 { width: 180px; height: 180px; inset-inline-end: 42%; inset-block-start: -100px; background: var(--teal-100); }
+
+/* ----------------------------- sections ---------------------------- */
+
+.section { padding-block: 56px; }
+.section-title { text-align: center; max-width: 700px; margin: 0 auto 32px; }
+.section-title h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); }
+.section-title p { color: var(--muted); margin: 0; }
+
+/* services */
+.services { background: var(--surface); }
+.services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.services-grid article {
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 20px 16px; text-align: center;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.services-grid article:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.services-grid h3 { font-size: .98rem; margin: 12px 0 6px; }
+.services-grid p { font-size: .84rem; color: var(--muted); margin: 0; }
+.service-icon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; margin-inline: auto; }
+.service-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.i1, .i5 { background: var(--coral-100); color: var(--coral-600); }
+.i2, .i6 { background: var(--green-100); color: var(--green-600); }
+.i3, .i7 { background: var(--teal-100); color: var(--teal-700); }
+.i4, .i8 { background: var(--surface); color: var(--teal-900); border: 1px solid var(--line); }
+
+/* how to start */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; list-style: none; padding: 0; margin: 0; }
+.steps li {
+  position: relative; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 26px 20px 20px;
+}
+.step-no {
+  position: absolute; inset-block-start: -16px; inset-inline-start: 20px;
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--teal-600); color: #fff; font-weight: 800;
+}
+.steps h3 { font-size: 1rem; margin-block-start: 6px; }
+.steps p { font-size: .87rem; color: var(--muted); margin: 0; }
+.how-cta { text-align: center; margin-block-start: 32px; }
+
+/* why us */
+.why { background: var(--surface); }
+.why-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.why-grid article {
+  display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 22px;
+}
+.why-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--teal-100); color: var(--teal-700); }
+.why-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.why-grid h3 { font-size: 1.02rem; grid-column: 2; margin-block-end: 4px; }
+.why-grid p { font-size: .89rem; color: var(--muted); grid-column: 2; margin: 0; }
+
+/* live, not recorded */
+.live { background: var(--teal-900); color: #fff; }
+.live .container { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; }
+.live h2 { font-size: clamp(1.35rem, 2.6vw, 1.9rem); }
+.live p { color: rgba(255,255,255,.88); max-width: 62ch; }
+.live-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.live-list li { position: relative; padding-inline-start: 26px; font-size: .9rem; color: rgba(255,255,255,.9); }
+.live-list li::before {
+  content: ""; position: absolute; inset-inline-start: 0; inset-block-start: .55em;
+  width: 9px; height: 9px; border-radius: 50%; background: var(--coral-300);
+}
+.live-mark { text-align: center; color: var(--coral-300); }
+.live-mark svg { width: 78px; height: 78px; margin-inline: auto; fill: none; stroke: currentColor; stroke-width: 1.4; }
+.live-mark b { display: block; margin-block-start: 8px; letter-spacing: .12em; font-size: .8rem; }
+
+/* parent portal */
+.portal { background: var(--surface); }
+.portal-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; }
+.portal h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); }
+.portal-list { list-style: none; padding: 0; margin: 0 0 24px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 18px; }
+.portal-list li { position: relative; padding-inline-start: 26px; font-size: .92rem; }
+/* The tick is drawn from two PHYSICAL borders, not logical ones. A
+   check mark is a symbol, not a layout: logical borders flip it with
+   the text direction, and in RTL the two that survive rotate into a
+   ">" - which is what shipped and what this fixes. Its POSITION stays
+   logical, because where it sits beside the text does follow direction. */
+.portal-list li::before {
+  content: ""; position: absolute; inset-inline-start: 2px; inset-block-start: .45em;
+  width: 12px; height: 7px; border: 2px solid var(--green-600);
+  border-top: 0; border-right: 0; transform: rotate(-45deg);
+}
+.portal-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-block-end: 14px; }
+
+/* An abstract stand-in for the portal screen. Deliberately not a
+   screenshot: a screenshot of this app is a screenshot of a real
+   child's file unless somebody remembers to fake every value in it. */
+.portal-card {
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 22px; padding: 24px; box-shadow: var(--shadow-md);
+  display: grid; gap: 14px;
+}
+.pc-row { display: flex; align-items: center; gap: 10px; }
+.pc-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.pc-dot.teal { background: var(--teal-400); }
+.pc-dot.coral { background: var(--coral-300); }
+.pc-dot.green { background: var(--green-300); }
+.pc-bar { height: 10px; border-radius: 6px; background: var(--line); }
+.w70 { width: 70%; } .w60 { width: 60%; } .w50 { width: 50%; } .w40 { width: 40%; }
+.pc-chart { display: flex; align-items: flex-end; gap: 8px; height: 110px; padding-block-start: 6px; }
+.pc-chart i { flex: 1; border-radius: 6px 6px 0 0; background: var(--teal-400); opacity: .75; }
+
+/* team */
+.team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.trainer {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px dashed var(--line);
+  border-radius: var(--radius); padding: 16px;
+}
+.avatar { width: 62px; height: 62px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--teal-100); color: var(--teal-700); }
+.avatar svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.trainer h3 { font-size: .92rem; margin: 0 0 2px; color: var(--muted); font-weight: 700; }
+.trainer p { font-size: .8rem; color: var(--muted); margin: 0; }
+
+/* reviews */
+.reviews { background: var(--surface); }
+.review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.review-card {
+  position: relative; background: var(--surface-2);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 28px 22px 18px;
+}
+.quote { position: absolute; inset-block-start: 2px; inset-inline-start: 18px; font-size: 3rem; color: var(--line); line-height: 1; }
+.review-card p { color: var(--muted); margin: 0 0 10px; min-height: 3.4em; }
+.review-card small { color: var(--ink-2); font-weight: 700; }
+
+/* cta band */
+.cta-band { background: linear-gradient(90deg, var(--coral-100), var(--teal-100)); padding-block: 40px; }
+.cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.cta-inner h2 { font-size: 1.6rem; margin-block-end: 4px; }
+.cta-inner p { color: var(--ink-2); margin: 0; }
+
+/* contact */
+.contact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.contact-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 20px;
+  display: grid; gap: 4px; align-content: start;
+}
+.contact-card.wide { grid-column: span 2; }
+.contact-card b { font-size: .85rem; color: var(--muted); font-weight: 700; }
+.contact-value { font-size: 1.02rem; font-weight: 700; color: var(--teal-900); }
+a.contact-value:hover { color: var(--coral-600); }
+.map-link { margin-block-start: 6px; font-size: .85rem; font-weight: 700; color: var(--teal-600); text-decoration: underline; }
+
+/* faq */
+.faq { background: var(--surface); }
+.faq-list { max-width: 820px; margin-inline: auto; display: grid; gap: 10px; }
+.faq-list details { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 0 18px; }
+.faq-list summary { padding-block: 16px; font-weight: 800; cursor: pointer; }
+.faq-list summary::marker { color: var(--teal-600); }
+.faq-list p { color: var(--muted); margin: 0 0 16px; }
+
+/* team carousel
+   The grid became a scrolling track because the number of members is
+   now whatever the console holds, not the four the page was authored
+   with. A grid of four columns turns a fifth member into a second row
+   with one card and three gaps; a track shows as many as fit and keeps
+   the rest one arrow away.
+
+   scroll-snap so a half-cut card never comes to rest, and the scrollbar
+   is hidden because the arrows are the control - the track still
+   responds to a trackpad swipe and to the keyboard. */
+.team-stage { position: relative; }
+
+/* SELECTOR NOTE, and it cost an hour: reference.css styles this element
+   through its id - `#teamGrid`, specificity 1,0,0 - and already turns it
+   into a scroll track below 850px with grid-auto-flow: column. A
+   `.team-grid` rule here (0,1,0) loses to that no matter where it sits,
+   and the symptom is a block where SOME declarations apply and one does
+   not: overflow-x and scroll-snap landed, `display` did not, and the
+   track stayed a four-column grid.
+   So this extends their pattern at their weight rather than competing
+   with it - `#team #teamGrid` (2,0,0) wins over `#teamGrid` in a later
+   media query without editing their file. */
+/* COLUMN WIDTH IS DELIBERATELY NOT SET HERE ANY MORE, and leaving it
+   here is what broke the carousel outright.
+
+   This rule used to carry `grid-auto-columns: minmax(230px, calc((100%
+   - 3 * 22px) / 4))` - four across, always. reference.css has since
+   grown the right version of that, one rule per column count:
+
+       #teamGrid.team-cols-2 { grid-auto-columns: calc((100% - 20px)/2) }
+
+   and app.js's updateTeamArrows puts the matching class on the element.
+   But `#teamGrid.team-cols-2` is (1,1,0) and `#team #teamGrid` is
+   (2,0,0), so THIS rule won and the class became decoration: at a
+   900px viewport app.js had decided on two columns and the page drew
+   three and a sliver.
+
+   THE VISIBLE DAMAGE WAS WORSE THAN A WRONG WIDTH. The floor pinned
+   each card at 230px, so the track overflowed by 143px while one step
+   is a whole card - 250px. With `scroll-snap-type: x mandatory` the
+   browser must land ON a snap point, the only one past the first sat
+   at 250px, and 250 is outside a 143px range: every scroll snapped
+   straight back to the start. The arrows appeared, because there IS
+   overflow, and moved nothing at all. Measured, not guessed - setting
+   scrollLeft to -50, -143, -250 and -400 all came back -4.
+
+   So the column count belongs to whoever knows how many cards there
+   are, which is app.js, through the class. What stays below is only
+   what reference.css does not say. */
+#team #teamGrid {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding-block-end: 4px;      /* room for the cards' shadow */
+}
+#team #teamGrid::-webkit-scrollbar { display: none; }
+
+.team-arrow {
+  position: absolute; inset-block-start: 46%; z-index: 2;
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 1px solid var(--line); border-radius: 50%;
+  background: var(--surface); color: var(--ink-2);
+  cursor: pointer; box-shadow: var(--shadow-sm);
+  transition: color .15s ease, border-color .15s ease;
+}
+.team-arrow svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.team-arrow:hover { color: var(--teal-700); border-color: var(--teal-400); }
+.team-arrow[hidden] { display: none; }
+/* Logical insets: the two arrows swap sides with the language. */
+.team-prev { inset-inline-start: -8px; }
+.team-next { inset-inline-end: -8px; }
+
+@media (max-width: 560px) {
+  .team-grid > .member-card { flex-basis: 82%; }
+  .team-arrow { inset-inline-start: auto; inset-inline-end: auto; }
+  .team-prev { inset-inline-start: 0; }
+  .team-next { inset-inline-end: 0; }
+}
+
+/* Scroll lock while a modal dialog is open.
+   A class, because the site is served with style-src 'self' and an
+   inline `body.style.overflow = 'hidden'` is refused - silently, apart
+   from one console line. Anything that needs to change a style at
+   runtime on this site sets a class. */
+body.hbh-scroll-locked { overflow: hidden; }
+
+/* certificates on a team card
+   A strip of small thumbnails; the scan itself opens in a dialog. Small
+   on purpose - a certificate at card size is unreadable anyway, and the
+   card is about the person, not their paperwork. */
+.member-certs {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 12px 18px 0;
+}
+.member-certs-label {
+  width: 100%; font-size: .74rem; font-weight: 700;
+  color: var(--muted); letter-spacing: .02em;
+}
+.member-cert {
+  width: 46px; height: 46px; padding: 0; flex: none;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); overflow: hidden; cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.member-cert img { width: 100%; height: 100%; object-fit: cover; }
+.member-cert:hover { transform: translateY(-2px); border-color: var(--teal-400); }
+
+/* The member's introduction video. Deliberately looks like a button on
+   a person's card, not like a media player: the page promises elsewhere
+   that sessions are never recorded, and a play surface that reads as
+   "watch a session" undermines that sentence. */
+.member-video {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 12px 18px 0; padding: 8px 14px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--ink-2);
+  font-size: .8rem; font-weight: 700; cursor: pointer;
+  transition: border-color .15s ease, color .15s ease;
+}
+.member-video svg {
+  width: 18px; height: 18px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.6;
+}
+.member-video:hover { border-color: var(--teal-400); color: var(--teal-900); }
+
+.cert-video {
+  display: block; width: 100%; max-height: 76vh;
+  border-radius: 10px; background: #000;
+}
+
+/* The dialog. `::backdrop` dims the page; the image is shown at its own
+   size within the viewport rather than scaled up, so nothing becomes
+   readable that was not readable in the original. */
+.cert-dialog {
+  border: 0; border-radius: 16px; padding: 16px;
+  background: var(--surface); color: var(--ink);
+  max-width: min(920px, 94vw); max-height: 92vh;
+}
+.cert-dialog::backdrop { background: rgba(6, 61, 86, .62); }
+.cert-image {
+  display: block; max-width: 100%; max-height: 76vh;
+  margin-inline: auto; border-radius: 10px; object-fit: contain;
+}
+.cert-caption {
+  margin: 12px 0 0; text-align: center;
+  font-size: .9rem; font-weight: 700; color: var(--ink-2);
+}
+.cert-close {
+  position: absolute; inset-block-start: 8px; inset-inline-end: 12px;
+  width: 36px; height: 36px; line-height: 1;
+  border: 1px solid var(--line); border-radius: 50%;
+  background: var(--surface); color: var(--ink);
+  font-size: 1.5rem; cursor: pointer;
+}
+.cert-close:hover { border-color: var(--coral-500); color: var(--coral-600); }
+
+@media (max-width: 560px) {
+  .member-cert { width: 40px; height: 40px; }
+}
+
+/* legal pages (privacy) */
+.legal { background: var(--surface); }
+.legal-body { max-width: 760px; }
+.legal-body h1 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); }
+.legal-body h2 { font-size: 1.15rem; margin-block-start: 1.8em; color: var(--teal-900); }
+.legal-body ul { padding-inline-start: 1.2em; margin: 0 0 1em; }
+.legal-body li { margin-block-end: .5em; color: var(--ink-2); }
+.legal-body p { color: var(--ink-2); }
+.legal-body strong { color: var(--ink); }
+
+/* footer */
+.site-footer { background: var(--surface-2); border-block-start: 1px solid var(--line); padding-block: 28px; }
+.footer-row { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; }
+.footer-brand img { width: 180px; height: auto; }
+.footer-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font-size: .85rem; font-weight: 700; }
+.footer-nav a:hover { color: var(--coral-600); }
+.copy { text-align: end; }
+
+/* ----------------------------- responsive -------------------------- */
+
+@media (max-width: 1080px) {
+  .nav, .nav-side { display: none; }
+  .menu-btn { display: grid; margin-inline-start: auto; }
+  .nav.is-open {
+    position: absolute; inset-block-start: var(--header-h);
+    inset-inline: 16px; display: grid; gap: 2px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow-md);
+  }
+  .nav.is-open a { padding-block: 10px; }
+  .nav.is-open a::after { display: none; }
+  .services-grid, .steps, .team-grid { grid-template-columns: repeat(2, 1fr); }
+  .contact-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 880px) {
+  .hero-grid, .portal-grid { grid-template-columns: 1fr; }
+  .hero-image { min-height: 300px; order: -1; }
+  .why-grid, .review-grid { grid-template-columns: 1fr; }
+  .live .container { grid-template-columns: 1fr; }
+  .live-mark { justify-self: start; }
+  .footer-row { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+  .copy { text-align: center; }
+}
+
+@media (max-width: 560px) {
+  .brand { width: 170px; }
+  .services-grid, .steps, .team-grid, .contact-grid { grid-template-columns: 1fr; }
+  .contact-card.wide { grid-column: auto; }
+  .portal-list { grid-template-columns: 1fr; }
+  .mini-benefits { gap: 14px; }
+  .hero-actions .btn { flex: 1 1 100%; }
+  .btn.big { width: 100%; }
+}
+
+/* Someone who asked their system to stop moving things means it. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .btn:hover, .services-grid article:hover { transform: none; }
+}

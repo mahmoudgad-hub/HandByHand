@@ -1,0 +1,144 @@
+<!-- LANDMARKS, because this screen is outside the shell.
+
+     Every other page in the portal gets <header>, <nav>, <main> and a skip
+     link from layout/shell. This one is drawn on its own - it is the first
+     thing a family sees after signing in - and it had none of them: no way to
+     skip past the bar, and nothing for a screen reader to move between. The
+     screen it leads to has all four.
+
+     Still no <nav>: there is genuinely no navigation here, one way forward
+     and one way out. A landmark for two buttons would be noise. -->
+<a class="hbh-skip" href="#welBody">{{ 'a11y.skipToContent' | t }}</a>
+
+<section class="scr">
+
+  <header class="wel__bar">
+    <span class="welcome-brand"><img src="assets/brand/hbh-logo-mark.png" width="48" height="49" alt=""><img src="assets/brand/hbh-logo-wordmark.png" width="140" height="54" [attr.alt]="'app.name' | t"></span>
+    <button class="cbar__sw" type="button" (click)="signOut()">
+      <hbh-icon name="ic-door" />
+      {{ 'action.signOut' | t }}
+    </button>
+  </header>
+
+  <main class="wel__body" id="welBody" tabindex="-1">
+
+  <div class="wel__hero">
+    <p class="wel__hi">{{ greetingKey() | t }}</p>
+    <!-- Never an empty heading. Until the summary arrives, fullName is
+         absent and this rendered as <h1></h1> - which a screen reader
+         announces as a heading with no text, on the first screen after
+         signing in. The fallback is the greeting the page is already
+         making, so the heading always says something true. -->
+    <h1 class="wel__name">{{ data()?.guardian?.fullName || ('welcome.you' | t) }}</h1>
+    <p class="welcome-intro">{{ 'welcome.intro' | t }}</p><span class="wel__date">
+      <hbh-icon name="ic-calendar" />
+      {{ format.fullDate(today) }}
+    </span>
+  </div>
+
+  @if (loading()) {
+    <hbh-skeleton [count]="2" shape="card" />
+  } @else if (failed()) {
+    <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                    (retry)="load()" />
+  } @else if (data(); as summary) {
+
+    <div class="sec__head">
+      <h2 class="sec__t">{{ 'welcome.children' | t }}</h2>
+      <span class="hbh-muted">{{ 'welcome.childrenHint' | t }}</span>
+    </div>
+
+    @if (summary.children.length === 0) {
+      <hbh-empty-state icon="ic-user" [title]="'welcome.noChildren' | t"
+                       [note]="'welcome.noChildrenNote' | t" />
+    } @else {
+      <div class="stack">
+        @for (child of summary.children; track child.id) {
+          <button class="kid" type="button"
+                  [class.kid--live]="child.liveSessionId !== null"
+                  (click)="open(child)">
+            <span class="kid__top">
+              <span class="kid__ph" [class.kid__ph--g]="child.liveSessionId !== null">
+                <hbh-icon name="ic-user" />
+              </span>
+              <span class="kid__id">
+                <span class="kid__name">{{ child.fullName }}</span>
+                <span class="kid__meta">
+                  {{ child.birthDate | hbhAge }}
+                  <s>&middot;</s> {{ child.childNo }}
+                  @if (child.services.length) {
+                    <s>&middot;</s> {{ serviceList(child) }}
+                  }
+                </span>
+              </span>
+              @if (child.liveSessionId) {
+                <span class="hbh-badge hbh-badge--success">
+                  <span class="hbh-live-dot"></span> {{ 'live.now' | t }}
+                </span>
+              }
+            </span>
+
+            <span class="kid__note">
+              @if (child.liveSessionId) {
+                <hbh-icon name="ic-video" />
+                <span>{{ 'welcome.sessionRunning' | t }}</span>
+              } @else if (child.nextAppointment) {
+                <hbh-icon name="ic-calendar" />
+                <!-- One string, not three elements in a row: Angular drops a
+                     whitespace-only text node between two tags, so "7 September"
+                     and "11:00" ran together with no space. -->
+                <span>{{ nextSessionLabel(child) }}</span>
+              } @else if (child.scheduleUnavailable) {
+                <!-- The diary did not answer. Saying "no session booked"
+                     here is how a family misses one. -->
+                <hbh-icon name="ic-info" />
+                <span>{{ 'welcome.scheduleUnavailable' | t }}</span>
+              } @else {
+                <hbh-icon name="ic-calendar" />
+                <span>{{ 'welcome.noNextSession' | t }}</span>
+              }
+              </span><span class="kid-attendance"><span>{{ 'welcome.attendance' | t }}</span><span class="attendance-ring">—</span><small>{{ 'welcome.attendanceUnavailable' | t }}</small></span><span class="kid__go">
+                <hbh-icon name="ic-arrow" /><small>{{ 'welcome.details' | t }}</small>
+              </span>
+          </button>
+        }
+      </div>
+    }
+
+    @if (summary.attention.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'welcome.attention' | t }}</h2>
+        </div>
+        <div class="stack">
+          @for (item of summary.attention; track item.kind + item.childName) {
+            <button class="row" type="button" (click)="openAttention(item)">
+              <span class="row__ic" [class]="attentionTint(item)">
+                <hbh-icon [name]="attentionIcon(item)" />
+              </span>
+              <span class="row__b">
+                <span class="row__t">{{ item.titleKey | t }}</span>
+                <span class="row__s">
+                  @if (item.childName) {
+                    {{ item.childName }} <s>&middot;</s>
+                  }
+                  <!-- Worded and formatted here, where the app's one money
+                       formatter and its translations live. -->
+                  {{ attentionDetail(item) }}
+                </span></span></button>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <p class="priv" style="margin-top:24px">
+    <hbh-icon name="ic-shield" />
+    <span>{{ 'welcome.privacy' | t }}</span>
+  </p>
+  </main>
+</section>
+
+
+
+

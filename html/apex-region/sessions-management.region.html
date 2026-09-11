@@ -1,0 +1,260 @@
+
+      <!-- ---------- رأس الصفحة ---------- -->
+      <div class="hbh-pagehead">
+        <div class="hbh-pagehead__left">
+          <div>
+            <h1 class="hbh-pagehead__title">إدارة الجلسات</h1>
+            <p class="hbh-pagehead__sub">28 جلسة اليوم — 15 مكتملة، 3 جارية، 8 قادمة، 2 ملغاة</p>
+          </div>
+        </div>
+        <div class="hbh-pagehead__actions">
+          <div class="hbh-datepill">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+            <span>الأحد، 30 أغسطس 2026</span>
+          </div>
+          <button class="hbh-btn hbh-btn--primary" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-plus"/></svg>
+            جلسة جديدة
+          </button>
+        </div>
+      </div>
+
+      <!-- ---------- طرق العرض ---------- -->
+      <nav class="hbh-tabbar" aria-label="طريقة العرض">
+        <a class="hbh-tabbar__item is-active" href="#" aria-current="page">اليوم</a>
+        <a class="hbh-tabbar__item" href="#">الأسبوع</a>
+        <a class="hbh-tabbar__item" href="#">حسب الأخصائي</a>
+        <a class="hbh-tabbar__item" href="#">حسب الغرفة</a>
+      </nav>
+
+      <!-- ---------- الفلاتر ---------- -->
+      <!-- في APEX: Faceted Search أو Interactive Report مع Filters -->
+      <div class="hbh-filters">
+        <label class="hbh-field hbh-field--sel">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+          <select aria-label="الأخصائي">
+            <option>كل الأخصائيين</option>
+            <option>أ. أحمد حسن</option>
+            <option>أ. سارة أحمد</option>
+            <option>أ. نهى مصطفى</option>
+            <option>أ. مي إبراهيم</option>
+          </select>
+        </label>
+        <label class="hbh-field hbh-field--sel">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+          <select aria-label="الغرفة">
+            <option>كل الغرف</option>
+            <option>غرفة 1</option><option>غرفة 2</option><option>غرفة 3</option>
+            <option>غرفة 4</option><option>غرفة 5</option><option>غرفة 6</option>
+          </select>
+        </label>
+        <label class="hbh-field hbh-field--sel">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-filter"/></svg>
+          <select aria-label="الحالة">
+            <option>كل الحالات</option>
+            <option>مكتملة</option><option>جارية</option>
+            <option>قادمة</option><option>ملغاة</option>
+          </select>
+        </label>
+        <label class="hbh-field hbh-field--grow">
+          <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-search"/></svg>
+          <input type="search" placeholder="ابحث باسم الطفل أو كود الحالة…" aria-label="بحث">
+        </label>
+      </div>
+
+      <!-- ---------- الجدول ---------- -->
+      <div class="hbh-card">
+        <div class="hbh-tablewrap">
+          <table class="hbh-table">
+            <thead>
+              <tr>
+                <th>الوقت</th><th>الطفل</th><th>الأخصائي</th>
+                <th>الغرفة</th><th>النوع</th><th>الحالة</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <tr>
+                <td class="hbh-table__num">03:30 م — 04:15 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    زياد هشام
+                  </div>
+                </td>
+                <td>أ. سارة أحمد</td><td>غرفة 1</td><td>تخاطب</td>
+                <td><span class="hbh-badge hbh-badge--danger">ملغاة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">04:00 م — 04:45 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    عمر خالد
+                  </div>
+                </td>
+                <td>أ. سارة أحمد</td><td>غرفة 1</td><td>تخاطب</td>
+                <td><span class="hbh-badge hbh-badge--success">مكتملة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">04:15 م — 05:00 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    ليان أحمد
+                  </div>
+                </td>
+                <td>أ. نهى مصطفى</td><td>غرفة 3</td><td>علاج وظيفي</td>
+                <td><span class="hbh-badge hbh-badge--success">مكتملة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">05:00 م — 05:45 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%234FA3AC%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%23FFFFFF%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E" alt="">
+                    محمد علي
+                  </div>
+                </td>
+                <td>أ. أحمد حسن</td><td>غرفة 2</td><td>تخاطب</td>
+                <td><span class="hbh-badge hbh-badge--progress">جارية</span></td>
+                <td class="hbh-table__actions">
+                  <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg></a>
+                  <a class="hbh-rowbtn" href="child-profile.html" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></a>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">05:00 م — 05:45 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    يوسف طارق
+                  </div>
+                </td>
+                <td>أ. مي إبراهيم</td><td>غرفة 5</td><td>تنمية مهارات</td>
+                <td><span class="hbh-badge hbh-badge--progress">جارية</span></td>
+                <td class="hbh-table__actions">
+                  <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg></a>
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">05:15 م — 06:00 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    ليان أحمد
+                  </div>
+                </td>
+                <td>أ. نهى مصطفى</td><td>غرفة 3</td><td>علاج وظيفي</td>
+                <td><span class="hbh-badge hbh-badge--progress">جارية</span></td>
+                <td class="hbh-table__actions">
+                  <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg></a>
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">05:30 م — 06:15 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    جنى محمود
+                  </div>
+                </td>
+                <td>أ. سارة أحمد</td><td>غرفة 1</td><td>تعديل سلوك ABA</td>
+                <td><span class="hbh-badge hbh-badge--info">قادمة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="تعديل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-edit"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">06:00 م — 06:45 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    لمار وليد
+                  </div>
+                </td>
+                <td>أ. نهى مصطفى</td><td>غرفة 3</td><td>علاج وظيفي</td>
+                <td><span class="hbh-badge hbh-badge--info">قادمة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="تعديل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-edit"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">06:30 م — 07:15 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    آدم شريف
+                  </div>
+                </td>
+                <td>أ. أحمد حسن</td><td>غرفة 2</td><td>تخاطب</td>
+                <td><span class="hbh-badge hbh-badge--info">قادمة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="تعديل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-edit"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="hbh-table__num">07:00 م — 07:45 م</td>
+                <td>
+                  <div class="hbh-table__who">
+                    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23DEEEF0%27/%3E%3Ccircle cx=%2720%27 cy=%2715%27 r=%277%27 fill=%27%232A7680%27/%3E%3Cpath d=%27M6 38a14 14 0 0 1 28 0z%27 fill=%27%232A7680%27/%3E%3C/svg%3E" alt="">
+                    ملك سامي
+                  </div>
+                </td>
+                <td>أ. مي إبراهيم</td><td>غرفة 6</td><td>تقييم</td>
+                <td><span class="hbh-badge hbh-badge--info">قادمة</span></td>
+                <td class="hbh-table__actions">
+                  <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="تعديل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-edit"/></svg></button>
+                  <button class="hbh-rowbtn" type="button" aria-label="خيارات"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-dots"/></svg></button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+        <div class="hbh-card-foot">
+          <a class="hbh-link" href="#">عرض الجدول الكامل (28 جلسة) <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+        </div>
+      </div>
+
+      <!-- تنبيه: تغيير الحالة يمرّ بآلة حالات وليس UPDATE مباشر -->
+      <div class="hbh-notice" style="margin-top:14px">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-info"/></svg>
+        <span>
+          تغيير حالة الجلسة يتم عبر <code>HBH_PKG_SCHED</code> فقط — آلة حالات محكومة بـ CHECK
+          مع جدول تاريخ للحالات. لا يوجد تعديل مباشر على عمود <code>STATUS</code> من الصفحة.
+        </span>
+      </div>
+

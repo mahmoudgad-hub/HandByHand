@@ -1,0 +1,63 @@
+# Declared exceptions to the contrast rule in w1_contrast_verify.sh.
+#
+# This file exists for the same reason hbh.convention_exemptions does: a rule
+# whose exceptions live inside its own test file is a rule that every batch
+# quietly edits. An exception here is a written debt with a named reason, and
+# deleting a line is a deliberate act that the suite then enforces.
+#
+# The floor on an exempt pair is TODAY'S measured ratio, not the standard.
+# That makes it a ratchet, not a pass: the pair cannot get worse without the
+# suite failing, and the moment the decision below is taken the line is
+# deleted and the pair is held to 4.5:1 like every other.
+#
+# Columns, tab-separated:
+#   foreground-token   background-token   min-ratio   reason
+#
+# ===========================================================================
+# ONE open decision, three pairs.
+#
+# The brand panel and the ops sidebar sit on a gradient that runs
+# teal-900 (#1E5D64) -> teal-700 -> teal-600 (#2A7680). The on-dark text
+# scale clears 4.5:1 against the dark end and fails against the light end:
+#
+#     on-dark-2 on teal-900  5.26:1  ok        on teal-600  3.69:1  fails
+#     on-dark-3 on teal-900  3.94:1  fails     on teal-600  2.77:1  fails
+#
+# on-dark-3 is text in all eight of its declarations - 11px and 11.5px:
+# the sidebar user's subtitle, the sign-in panel footer, the live player
+# caption, and the "next session" label. At 2.77:1 that is the worst pair
+# in the system, and it is the one to fix first.
+#
+# Two fixes, both design decisions and neither the test's to make:
+#
+#   a) Lighten the on-dark scale. Reaching 4.5:1 against teal-600 needs
+#      roughly #E4F1F4, which collapses the gap to --hbh-on-dark (#FFFFFF)
+#      and leaves the on-dark scale with one tier instead of three, in both
+#      apps.
+#
+#   b) Darken the ground under the text. End the gradient at teal-700, or
+#      keep teal-600 only where no small text lands on it. This preserves
+#      the scale but changes a signature surface - the staff sign-in panel
+#      and the ops sidebar.
+#
+# (b) is the better direction: the scale is used in four places and the
+# gradient in two. But it is a visual call on the sign-in screen, so it
+# waits for a person.
+#
+# Owner: design decision, OPEN.
+hbh-on-dark-2	hbh-teal-600	3.65	gradient light end; open decision in this file's header
+hbh-on-dark-3	hbh-teal-600	2.75	worst pair in the system; fix first - see header
+hbh-on-dark-3	hbh-teal-900	3.90	same scale, dark end; resolved by the same decision
+#
+# ---------------------------------------------------------------------------
+# Not debt - a threshold correction.
+#
+# teal-300 is 3.84:1 on teal-900, and the token's own comment calls it
+# "legible on the dark sidebar". It is legible: all three of its uses are
+# non-text, or text above the large-text size, and the WCAG floor for those
+# is 3:1, not 4.5:1 -
+#     hbh-admin.css:286  a 17px icon in the sign-in panel   (graphic, 3:1)
+#     hbh-app.css:434    the chart bar fill                 (graphic, 3:1)
+#     hbh-shared.css:232 .hbh-wm--on-dark - the wordmark    (display lockup)
+# If it is ever used for running text, delete this line first.
+hbh-teal-300	hbh-teal-900	3.0	graphic and display lockup only; 3:1 is the correct floor

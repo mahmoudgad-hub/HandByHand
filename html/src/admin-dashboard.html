@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة تحكم المركز — Hand By Hand</title>
+<link rel="icon" href="hbh-logo-mark.png">
+
+<!-- ===================================================================
+     APEX:  في التطبيق ارفع الملفين كـ Static Application Files ثم ضعهما
+            في  Shared Components > User Interface Attributes > CSS File URLs
+              #APP_FILES#hbh-shared.css
+              #APP_FILES#hbh-admin.css
+            وانسخ كل ما بداخل <body> إلى Static Content Region واحدة.
+     =================================================================== -->
+<link rel="stylesheet" href="hbh-shared.css">
+<link rel="stylesheet" href="hbh-admin.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body data-page-perm="PORTAL.VIEW">
+
+<div class="hbh-app">
+
+  <!--ICONS-->
+
+  <div class="hbh-shell">
+
+    <!-- ==========================================================
+         الشريط الجانبي
+         ========================================================== -->
+    <!--SIDEBAR:dashboard-->
+
+    <!-- ==========================================================
+         المحتوى
+         ========================================================== -->
+    <main class="hbh-main">
+      <!--REGION-START-->
+
+      <!-- ---------- شريط علوي ---------- -->
+      <header class="hbh-top">
+        <div>
+          <!-- لا رمز تعبيري في كود يُشحن: يكسر الترجمة، وقد سبق أن جعل حزمة
+               غير قابلة للترجمة برسالة خطأ تشير إلى مكان آخر تمامًا. -->
+          <h1 class="hbh-top__title">أهلاً بعودتك، محمد</h1>
+          <p class="hbh-top__sub">هذه نظرة سريعة على ما يجري في المركز اليوم.</p>
+        </div>
+        <div class="hbh-top__tools">
+          <div class="hbh-datepill">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+            <!-- APEX: &P1_TODAY_LABEL. -->
+            <span>الأحد، 30 أغسطس 2026</span>
+          </div>
+          <button class="hbh-iconbtn" type="button" aria-label="التنبيهات">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-bell"/></svg>
+            <span class="hbh-iconbtn__dot">3</span>
+          </button>
+          <button class="hbh-iconbtn" type="button" aria-label="المساعدة">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-help"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- ---------- بطاقات المؤشرات ---------- -->
+      <!-- APEX: Cards region على HBH_VW_DASH_KPI بدلاً من الترميز الثابت -->
+      <section class="hbh-kpis" aria-label="مؤشرات اليوم">
+
+        <article class="hbh-kpi">
+          <div class="hbh-kpi__top">
+            <span class="hbh-iconbox hbh-t--blue"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg></span>
+            <span class="hbh-kpi__label">جلسات اليوم</span>
+          </div>
+          <div class="hbh-kpi__value">28</div>
+          <div class="hbh-kpi__foot"><span class="hbh-delta hbh-delta--up"><svg class="hbh-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-up"/></svg> 12%</span> عن أمس</div>
+        </article>
+
+        <article class="hbh-kpi">
+          <div class="hbh-kpi__top">
+            <span class="hbh-iconbox hbh-t--green"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check-circle"/></svg></span>
+            <span class="hbh-kpi__label">مكتملة</span>
+          </div>
+          <div class="hbh-kpi__value">15</div>
+          <div class="hbh-kpi__foot">53% من جلسات اليوم</div>
+        </article>
+
+        <article class="hbh-kpi">
+          <div class="hbh-kpi__top">
+            <span class="hbh-iconbox hbh-t--amber"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clock"/></svg></span>
+            <span class="hbh-kpi__label">جارية الآن</span>
+          </div>
+          <div class="hbh-kpi__value">3</div>
+          <div class="hbh-kpi__foot">11% من جلسات اليوم</div>
+        </article>
+
+        <article class="hbh-kpi">
+          <div class="hbh-kpi__top">
+            <span class="hbh-iconbox hbh-t--purple"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-cal-plus"/></svg></span>
+            <span class="hbh-kpi__label">قادمة</span>
+          </div>
+          <div class="hbh-kpi__value">8</div>
+          <div class="hbh-kpi__foot">29% من جلسات اليوم</div>
+        </article>
+
+        <article class="hbh-kpi">
+          <div class="hbh-kpi__top">
+            <span class="hbh-iconbox hbh-t--navy"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-users"/></svg></span>
+            <span class="hbh-kpi__label">الأطفال</span>
+          </div>
+          <div class="hbh-kpi__value">156</div>
+          <div class="hbh-kpi__foot">حالة نشطة</div>
+        </article>
+
+        <article class="hbh-kpi">
+          <div class="hbh-kpi__top">
+            <span class="hbh-iconbox hbh-t--blue"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-money"/></svg></span>
+            <span class="hbh-kpi__label">إيراد الشهر</span>
+          </div>
+          <!-- العملة من HBH_CENTERS.CURRENCY_CODE — لا تكتبها ثابتة في الإنتاج -->
+          <div class="hbh-kpi__value">48,750 <u style="font-size:13px;font-weight:600;text-decoration:none;color:var(--hbh-muted)">ج.م</u></div>
+          <div class="hbh-kpi__foot"><span class="hbh-delta hbh-delta--up"><svg class="hbh-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-up"/></svg> 8%</span> عن الشهر الماضي</div>
+        </article>
+
+      </section>
+
+      <!-- ---------- الصف الأوسط ---------- -->
+      <section class="hbh-row3">
+
+        <!-- نظرة على جدول اليوم -->
+        <!-- APEX: استبدل الـ SVG بـ Chart Region نوع Donut (Oracle JET) -->
+        <div class="hbh-card">
+          <div class="hbh-card-head"><h2 class="hbh-card-title">نظرة على جدول اليوم</h2></div>
+          <div class="hbh-card-body">
+            <div class="hbh-donut">
+              <div class="hbh-donut__chart">
+                <svg viewBox="0 0 120 120" role="img" aria-label="توزيع جلسات اليوم: مكتملة 15، جارية 3، قادمة 8، ملغاة 2">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--hbh-neutral-200)" stroke-width="14"/>
+                  <!-- المحيط = 326.7 ؛ كل قوس = (العدد / 28) × 326.7 -->
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--hbh-success)" stroke-width="14" stroke-dasharray="175.0 151.7" stroke-dashoffset="0"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--hbh-progress)" stroke-width="14" stroke-dasharray="35.0 291.7" stroke-dashoffset="-175.0"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--hbh-info)" stroke-width="14" stroke-dasharray="93.3 233.4" stroke-dashoffset="-210.0"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--hbh-danger)" stroke-width="14" stroke-dasharray="23.3 303.4" stroke-dashoffset="-303.3"/>
+                </svg>
+                <div class="hbh-donut__hole"><b>28</b><small>الإجمالي</small></div>
+              </div>
+              <ul class="hbh-legend">
+                <li class="hbh-legend__row"><span class="hbh-legend__dot" style="background:var(--hbh-success)"></span><span class="hbh-legend__name">مكتملة</span><span class="hbh-legend__val">53%</span><span class="hbh-legend__cnt">(15)</span></li>
+                <li class="hbh-legend__row"><span class="hbh-legend__dot" style="background:var(--hbh-progress)"></span><span class="hbh-legend__name">جارية</span><span class="hbh-legend__val">11%</span><span class="hbh-legend__cnt">(3)</span></li>
+                <li class="hbh-legend__row"><span class="hbh-legend__dot" style="background:var(--hbh-info)"></span><span class="hbh-legend__name">قادمة</span><span class="hbh-legend__val">29%</span><span class="hbh-legend__cnt">(8)</span></li>
+                <li class="hbh-legend__row"><span class="hbh-legend__dot" style="background:var(--hbh-danger)"></span><span class="hbh-legend__name">ملغاة</span><span class="hbh-legend__val">7%</span><span class="hbh-legend__cnt">(2)</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="hbh-card-foot">
+            <a class="hbh-link" href="#">عرض الجدول الكامل <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+          </div>
+        </div>
+
+        <!-- حالة الغرف -->
+        <div class="hbh-card">
+          <div class="hbh-card-head"><h2 class="hbh-card-title">حالة الغرف</h2></div>
+          <div class="hbh-card-body">
+            <div class="hbh-rooms">
+
+              <div class="hbh-room hbh-room--busy">
+                <div class="hbh-room__top">
+                  <div><div class="hbh-room__name">غرفة 1</div><div class="hbh-room__type">غرفة تخاطب</div></div>
+                  <svg class="hbh-room__flag" style="color:var(--hbh-success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+                </div>
+                <span class="hbh-badge hbh-badge--success">في جلسة</span>
+              </div>
+
+              <div class="hbh-room hbh-room--busy">
+                <div class="hbh-room__top">
+                  <div><div class="hbh-room__name">غرفة 2</div><div class="hbh-room__type">علاج وظيفي</div></div>
+                  <svg class="hbh-room__flag" style="color:var(--hbh-success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+                </div>
+                <span class="hbh-badge hbh-badge--success">في جلسة</span>
+              </div>
+
+              <div class="hbh-room hbh-room--busy">
+                <div class="hbh-room__top">
+                  <div><div class="hbh-room__name">غرفة 3</div><div class="hbh-room__type">تعديل سلوك ABA</div></div>
+                  <svg class="hbh-room__flag" style="color:var(--hbh-success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+                </div>
+                <span class="hbh-badge hbh-badge--success">في جلسة</span>
+              </div>
+
+              <div class="hbh-room hbh-room--free">
+                <div class="hbh-room__top">
+                  <div><div class="hbh-room__name">غرفة 4</div><div class="hbh-room__type">جلسة فردية</div></div>
+                  <svg class="hbh-room__flag" style="color:var(--hbh-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+                </div>
+                <span class="hbh-badge hbh-badge--muted">متاحة</span>
+              </div>
+
+              <div class="hbh-room hbh-room--busy">
+                <div class="hbh-room__top">
+                  <div><div class="hbh-room__name">غرفة 5</div><div class="hbh-room__type">تنمية مهارات</div></div>
+                  <svg class="hbh-room__flag" style="color:var(--hbh-success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+                </div>
+                <span class="hbh-badge hbh-badge--success">في جلسة</span>
+              </div>
+
+              <div class="hbh-room hbh-room--free">
+                <div class="hbh-room__top">
+                  <div><div class="hbh-room__name">غرفة 6</div><div class="hbh-room__type">تقييم</div></div>
+                  <svg class="hbh-room__flag" style="color:var(--hbh-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-door"/></svg>
+                </div>
+                <span class="hbh-badge hbh-badge--muted">متاحة</span>
+              </div>
+
+            </div>
+          </div>
+          <div class="hbh-card-foot">
+            <a class="hbh-link" href="#">عرض كل الغرف <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+          </div>
+        </div>
+
+        <!-- التنبيهات -->
+        <div class="hbh-card">
+          <div class="hbh-card-head"><h2 class="hbh-card-title">التنبيهات والإشعارات</h2></div>
+          <div class="hbh-card-body">
+            <ul class="hbh-alerts">
+              <li class="hbh-alert hbh-alert--danger">
+                <svg class="hbh-i" style="color:var(--hbh-danger)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-warn"/></svg>
+                <span class="hbh-alert__txt">3 مواعيد بانتظار التأكيد</span>
+                <button class="hbh-alert__btn" type="button">عرض</button>
+              </li>
+              <li class="hbh-alert hbh-alert--progress">
+                <svg class="hbh-i" style="color:var(--hbh-progress)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+                <span class="hbh-alert__txt">الأخصائية سارة أحمد غير متاحة غدًا</span>
+                <button class="hbh-alert__btn" type="button">عرض</button>
+              </li>
+              <li class="hbh-alert hbh-alert--info">
+                <svg class="hbh-i" style="color:var(--hbh-info)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-info"/></svg>
+                <span class="hbh-alert__txt">جلستان بدون غرفة مُسنَدة</span>
+                <button class="hbh-alert__btn" type="button">عرض</button>
+              </li>
+            </ul>
+          </div>
+          <div class="hbh-card-foot">
+            <a class="hbh-link" href="#">عرض كل التنبيهات <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ---------- شريط الإحصاءات السفلي ---------- -->
+      <section class="hbh-strip" aria-label="مؤشرات الأداء">
+
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--green"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check-circle"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">نسبة الحضور</div>
+            <div class="hbh-stat__value">92 <u>%</u></div>
+            <span class="hbh-delta hbh-delta--up"><svg class="hbh-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-up"/></svg> 5% عن الشهر الماضي</span>
+          </div>
+        </article>
+
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--red"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x-circle"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">نسبة عدم الحضور</div>
+            <div class="hbh-stat__value">6 <u>%</u></div>
+            <span class="hbh-delta hbh-delta--up"><svg class="hbh-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-down"/></svg> 2% عن الشهر الماضي</span>
+          </div>
+        </article>
+
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--amber"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-star"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">رضا أولياء الأمور</div>
+            <div class="hbh-stat__value">4.6 <u>/ 5</u></div>
+            <span class="hbh-muted">من 38 تقييمًا</span>
+          </div>
+        </article>
+
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--purple"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-plus"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">عملاء محتملون (هذا الشهر)</div>
+            <div class="hbh-stat__value">23</div>
+            <span class="hbh-delta hbh-delta--up"><svg class="hbh-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-up"/></svg> 15% عن الشهر الماضي</span>
+          </div>
+        </article>
+
+        <article class="hbh-stat">
+          <span class="hbh-iconbox hbh-t--blue"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-receipt"/></svg></span>
+          <div class="hbh-stat__body">
+            <div class="hbh-stat__label">مدفوعات معلّقة</div>
+            <div class="hbh-stat__value">12,450 <u>ج.م</u></div>
+            <span class="hbh-muted">12 فاتورة</span>
+          </div>
+        </article>
+
+      </section>
+
+      <!--REGION-END-->
+    </main>
+  </div>
+</div>
+
+<script src="hbh-ops.js"></script>
+</body>
+</html>

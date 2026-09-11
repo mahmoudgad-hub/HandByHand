@@ -1,0 +1,107 @@
+<div class="hbh-pagehead report-head">
+  <div>
+    <button type="button" class="hbh-btn hbh-btn--ghost" (click)="back()">
+      <hbh-icon name="ic-back" /> رجوع لملفّ الطفل
+    </button>
+    <div class="hbh-pagehead__title">
+      {{ reportId() ? 'تعديل التقرير' : 'تقرير تقدّم جديد' }}
+    </div>
+    <div class="hbh-pagehead__sub report-context">
+      <span><hbh-icon name="ic-user" /> {{ childName() || '—' }}</span>
+      @if (reportNo()) { <span dir="ltr" class="mono">{{ reportNo() }}</span> }
+      <span class="hbh-badge" [class.hbh-badge--success]="published()"
+            [class.hbh-badge--info]="!published()">
+        {{ published() ? 'منشور' : 'مسودّة' }}
+      </span>
+    </div>
+  </div>
+
+  @if (!loading() && !failed()) {
+    <div class="report-actions">
+      <button type="button" class="hbh-btn hbh-btn--ghost" (click)="togglePreview()">
+        <hbh-icon name="ic-eye" /> {{ preview() ? 'عودة للتحرير' : 'معاينة' }}
+      </button>
+      @if (!published()) {
+        <button type="button" class="hbh-btn" [disabled]="saving()" (click)="save()">
+          <hbh-icon name="ic-check" /> {{ saving() ? 'جارٍ الحفظ…' : 'حفظ كمسودّة' }}
+        </button>
+        @if (reportId() && auth.can('REPORT.PUBLISH')) {
+          <button type="button" class="hbh-btn hbh-btn--primary"
+                  [disabled]="publishing() || dirty()" (click)="publish()">
+            <hbh-icon name="ic-check-circle" /> {{ publishing() ? 'جارٍ النشر…' : 'نشر لوليّ الأمر' }}
+          </button>
+        }
+      }
+    </div>
+  }
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="4" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="reload()" />
+} @else {
+
+  @if (errorKey()) {
+    <div class="report-error" role="alert">
+      <hbh-icon name="ic-warn" /> {{ errorKey() | t }}
+    </div>
+  }
+
+  @if (dirty()) {
+    <p class="report-dirty" role="status">تعديلات لم تُحفَظ بعد.</p>
+  }
+
+  @if (published()) {
+    <p class="report-locked">
+      <hbh-icon name="ic-lock" />
+      هذا التقرير منشور ووليّ الأمر قد قرأه، فلا يقبل التعديل. لو كان فيه خطأ، اكتب تقريرًا جديدًا يصحّحه.
+    </p>
+  }
+
+  @if (preview()) {
+    <!-- WHAT THE FAMILY READS. The same fields, without the boxes, so the
+         therapist checks the words rather than the form. A draft says so
+         plainly: a preview that looked published would be a promise the
+         family has not been given yet. -->
+    <article class="report-preview">
+      @if (!published()) { <p class="report-preview__flag">مسودّة — لم تُنشر بعد ولا يراها وليّ الأمر</p> }
+      <h1>{{ title.value || 'بلا عنوان' }}</h1>
+      <p class="report-preview__meta">
+        {{ childName() }} · من {{ from.value }} إلى {{ to.value }}
+      </p>
+      <div class="report-preview__body">{{ summary.value || 'لا يوجد نص بعد.' }}</div>
+    </article>
+  } @else {
+    <form class="report-form" (ngSubmit)="save()">
+      <label class="hbh-field-block">
+        <span>عنوان التقرير <b aria-hidden="true">*</b></span>
+        <input type="text" [formControl]="title" [attr.aria-required]="true"
+               [readOnly]="published()" placeholder="مثال: تقرير التقدّم — أغسطس ٢٠٢٦">
+      </label>
+
+      <div class="report-period">
+        <label class="hbh-field-block">
+          <span>من <b aria-hidden="true">*</b></span>
+          <input type="date" [formControl]="from" [readOnly]="published()">
+        </label>
+        <label class="hbh-field-block">
+          <span>إلى <b aria-hidden="true">*</b></span>
+          <input type="date" [formControl]="to" [readOnly]="published()">
+        </label>
+      </div>
+
+      <label class="hbh-field-block">
+        <span>ملخّص التقدّم</span>
+        <!-- dir="rtl" and start-aligned: a paragraph of clinical Arabic is
+             read, not displayed, and centring long-form text makes every
+             line start somewhere different. -->
+        <textarea [formControl]="summary" rows="14" dir="rtl"
+                  [readOnly]="published()"
+                  placeholder="اكتب ما تغيّر خلال الفترة، وما يوصى به في البيت. هذا هو النص الذي يقرأه وليّ الأمر."></textarea>
+        <small>يُحفظ كمسودّة بأي قدر من النص. الملخّص مطلوب عند النشر فقط.</small>
+      </label>
+    </form>
+  }
+}

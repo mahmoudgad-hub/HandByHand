@@ -1,0 +1,40 @@
+<!-- =====================================================================
+     الشريط الجانبي لتطبيق العمليات — مصدر واحد لكل صفحات الأدمن.
+     يُحقن عند علامة SIDEBAR:key ويضع build.sh الكلاس is-active
+     على العنصر صاحب data-nav المطابق للـ key.
+     في APEX: هذا الشريط = Navigation Menu / Region مشتركة في Page Template،
+     لا يُكرَّر داخل كل صفحة.
+     ===================================================================== -->
+<aside class="hbh-side">
+  <!-- في APEX: src="#APP_FILES#hbh-logo-mark.png" و #APP_FILES#hbh-logo-wordmark.png -->
+  <a class="hbh-side__brand" href="admin-dashboard.html">
+    <img class="hbh-logo hbh-side__logo" src="hbh-logo-mark.png" width="46" height="47" alt="">
+    <img class="hbh-logo hbh-side__wm" src="hbh-logo-wordmark.png" width="140" height="55" alt="Hand by Hand Skills Center">
+  </a>
+
+  <nav class="hbh-nav" aria-label="القائمة الرئيسية">
+    <a class="hbh-nav__item" data-nav="dashboard" data-perm="PORTAL.VIEW" href="admin-dashboard.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grid"/></svg><span>لوحة التحكم</span></a>
+    <a class="hbh-nav__item" data-nav="children" data-perm="CHILD.VIEW_ALL" href="child-profile.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-users"/></svg><span>الأطفال</span></a>
+    <a class="hbh-nav__item" data-nav="appointments" data-perm="APPOINTMENT.BOOK" href="appointments.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg><span>المواعيد</span></a>
+    <a class="hbh-nav__item" data-nav="sessions" data-perm="SESSION.START" href="sessions-management.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-activity"/></svg><span>الجلسات</span></a>
+    <a class="hbh-nav__item" data-nav="therapists" data-perm="STAFF.MANAGE" href="therapists.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg><span>الأخصائيون</span></a>
+    <a class="hbh-nav__item" data-nav="rooms" data-perm="CATALOG.MANAGE" href="rooms-cameras.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg><span>الغرف والكاميرات</span></a>
+    <a class="hbh-nav__item" data-nav="reports" data-perm="REPORT.VIEW" href="reports.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg><span>التقارير</span></a>
+    <a class="hbh-nav__item" data-nav="billing" data-perm="BILLING.VIEW" href="billing.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-card"/></svg><span>الفواتير والمدفوعات</span></a>
+    <a class="hbh-nav__item" data-nav="comms" data-perm="REQUEST.MANAGE" href="communications.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-chat"/></svg><span>التواصل</span></a>
+    <a class="hbh-nav__item" data-nav="leads" data-perm="GUARDIAN.MANAGE" href="leads.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-plus"/></svg><span>العملاء المحتملون</span></a>
+    <a class="hbh-nav__item" data-nav="settings" data-perm="CATALOG.MANAGE" href="settings.html"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg><span>الإعدادات</span></a>
+  </nav>
+
+  <div class="hbh-side__user">
+    <img class="hbh-avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%232A7680'/%3E%3Ccircle cx='32' cy='25' r='11' fill='%23DEEEF0'/%3E%3Cpath d='M10 60a22 22 0 0 1 44 0z' fill='%23DEEEF0'/%3E%3C/svg%3E" alt="">
+    <div>
+      <b>م. محمد جاد</b>
+      <small>مدير المركز</small>
+      <span class="hbh-side__status"><i></i> متصل</span>
+    </div>
+    <a class="hbh-side__out" href="staff-login.html" data-signout aria-label="تسجيل الخروج">
+      <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+    </a>
+  </div>
+</aside>

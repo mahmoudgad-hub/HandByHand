@@ -1,0 +1,106 @@
+<dialog #dialog class="otp-modal" aria-labelledby="otp-title" aria-describedby="otp-description" (cancel)="cancel($event)">
+  <button class="otp-close" type="button" [disabled]="busy()" [attr.aria-label]="'action.close' | t" (click)="restart()"><hbh-icon name="ic-x" /></button>
+  <div class="auth">
+    <img class="auth__mark" src="assets/brand/hbh-logo-mark.png" width="76" height="78" alt="">
+    <h1 class="auth__t" id="otp-title">{{ 'otp.title' | t }}</h1>
+    <p class="auth__s" id="otp-description">
+      {{ 'otp.sentTo' | t }}<br>
+      <!-- Masked on this device. The service echoes nothing back, so the
+           digits never travel a second time.
+
+           No country code in front of it: the number is shown the way it was
+           typed and the way Egyptians write their own, and "+20 010" would
+           be neither - the national zero is dropped after a country code. -->
+      <b dir="ltr">{{ maskedMobile() }}</b>
+    </p>
+
+    <div class="auth__form">
+
+      @if (locked()) {
+        <!-- No boxes. Another guess cannot change this answer. -->
+        <div class="err" role="alert">
+          <hbh-icon name="ic-lock" />
+          <span>{{ failureKey() | t }}</span>
+        </div>
+        <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button"
+                style="margin-top:14px" (click)="restart()">
+          {{ 'otp.startOver' | t }}
+        </button>
+      } @else {
+        <!-- autocomplete="one-time-code" goes on the FIRST box only.
+             iOS offers the code from the SMS against a single field: with
+             the attribute on all six, tapping the suggestion fills box one
+             and drops the other five digits, and the parent is left staring
+             at a code they can see in their notifications and cannot enter.
+             The paste handler below covers a pasted code, but an autofill
+             tap is not a paste event and never reaches it.
+
+             onInput spreads a multi-character value across the boxes, so
+             the single filled field still completes the code. -->
+        <div class="otp" (paste)="onPaste($event)">
+          @for (slot of slots; track slot) {
+            <input #box type="text" inputmode="numeric"
+                   [attr.maxlength]="slot === 0 ? null : 1"
+                   [attr.autocomplete]="slot === 0 ? 'one-time-code' : 'off'"
+                   [attr.autofocus]="slot === 0 ? '' : null"
+                   [attr.enterkeyhint]="slot === otpLength - 1 ? 'go' : 'next'"
+                   [class.is-set]="digits()[slot] !== ''"
+                   [class.is-bad]="failure() !== null"
+                   [attr.aria-label]="'otp.digit' | t: { index: slot + 1 }"
+                   (input)="onInput(slot, box.value)"
+                   (keydown)="onKeydown(slot, $event)">
+          }
+        </div>
+
+        @if (failureKey()) {
+          <p class="fld__err" role="alert">
+            {{ failureKey() | t }}
+            @if (attemptsLeft() !== null) {
+              {{ attemptsLeft() | hbhPlural: 'otp.attemptsLeft' }}
+            }
+          </p>
+        }
+
+        @if (devCode()) {
+          <!-- Development only: there is no SMS gateway, so the service hands
+               the code back in the response and this is where it becomes
+               reachable. Rendered only from a local address, so a build that
+               kept the switch on cannot show a working code from a public
+               host. -->
+          <button class="otp__dev" type="button" (click)="useDevCode()">
+            <span>{{ 'otp.devCode' | t }}</span>
+            <b dir="ltr">{{ devCode() }}</b>
+          </button>
+        }
+
+        <div class="otp__foot">
+          <button class="hbh-link" type="button" (click)="restart()">
+            {{ 'otp.changeNumber' | t }}
+          </button>
+          @if (secondsLeft() > 0) {
+            <span>
+              {{ 'otp.resendIn' | t }}
+              <span class="otp__timer" dir="ltr">{{ countdown }}</span>
+            </span>
+          } @else {
+            <button class="hbh-link" type="button" (click)="restart()">
+              {{ 'otp.resend' | t }}
+            </button>
+          }
+        </div>
+
+        <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="button"
+                style="margin-top:18px"
+                [class.is-busy]="busy()" [disabled]="busy() || !complete()"
+                (click)="submit()">
+          {{ (busy() ? 'otp.verifying' : 'otp.verify') | t }}
+        </button>
+      }
+    </div>
+
+    <p class="priv">
+      <hbh-icon name="ic-clock" />
+      <span>{{ 'otp.policy' | t }}</span>
+    </p>
+  </div>
+</dialog>

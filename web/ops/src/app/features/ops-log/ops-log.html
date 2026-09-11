@@ -1,0 +1,62 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'nav.opslog' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'opslog.sub' | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+<div class="hbh-tabbar" role="tablist">
+  @for (item of views; track item.key; let i = $index) {
+    <button class="hbh-tabbar__item" type="button" role="tab"
+            [class.is-active]="index() === i"
+            [attr.aria-selected]="index() === i"
+            (click)="select(i)">
+      {{ item.labelKey | t }}
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else if (rows().length === 0) {
+  <hbh-empty-state icon="ic-db" [title]="'opslog.empty' | t"
+                   [note]="'opslog.emptyNote' | t" />
+} @else {
+  <div class="hbh-tablewrap">
+    <table class="hbh-table">
+      <thead>
+        <tr>
+          @for (column of view().columns; track column.key) {
+            <th>{{ column.labelKey | t }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track rowKey(row, $index)) {
+          <tr [class.is-hot]="isHot(row)">
+            @for (column of view().columns; track column.key) {
+              <!-- Routes, codes, identifiers and durations are Latin text and
+                   read left to right even on an Arabic page. -->
+              <td [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Three properties of this log that change how it should be read, said
+       once rather than left for somebody to work out from a blank column. -->
+  <p class="hbh-pagehead__sub" style="margin-top:14px">{{ 'opslog.note' | t }}</p>
+}

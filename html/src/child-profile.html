@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ملف الطفل — Hand By Hand</title>
+<link rel="icon" href="hbh-logo-mark.png">
+<link rel="stylesheet" href="hbh-shared.css">
+<link rel="stylesheet" href="hbh-admin.css">
+<link rel="stylesheet" href="hbh-screens.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body data-page-perm="CHILD.VIEW_ALL">
+
+<div class="hbh-app">
+  <!--ICONS-->
+
+  <div class="hbh-shell">
+    <!--SIDEBAR:children-->
+
+    <main class="hbh-main">
+      <!--REGION-START-->
+
+      <!-- ---------- رأس الصفحة ---------- -->
+      <div class="hbh-pagehead">
+        <div class="hbh-pagehead__left">
+          <a class="hbh-backbtn" href="admin-dashboard.html" aria-label="رجوع">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-back"/></svg>
+          </a>
+          <div>
+            <h1 class="hbh-pagehead__title">ملف الطفل</h1>
+            <p class="hbh-pagehead__sub">محمد علي — كود الحالة CH-221</p>
+          </div>
+        </div>
+        <div class="hbh-pagehead__actions">
+          <button class="hbh-btn hbh-btn--ghost" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-edit"/></svg>
+            تعديل البيانات
+          </button>
+          <button class="hbh-btn hbh-btn--ghost" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-file"/></svg>
+            تقرير جديد
+          </button>
+          <button class="hbh-btn hbh-btn--primary" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-cal-plus"/></svg>
+            حجز موعد
+          </button>
+        </div>
+      </div>
+
+      <!-- ---------- تبويبات الملف ---------- -->
+      <nav class="hbh-tabbar" aria-label="أقسام ملف الطفل">
+        <a class="hbh-tabbar__item is-active" href="#" aria-current="page">نظرة عامة</a>
+        <a class="hbh-tabbar__item" href="#">الخطة العلاجية</a>
+        <a class="hbh-tabbar__item" href="#">الجلسات</a>
+        <a class="hbh-tabbar__item" href="#">التقدّم</a>
+        <a class="hbh-tabbar__item" href="#">التقارير</a>
+        <a class="hbh-tabbar__item" href="#">المرفقات</a>
+        <a class="hbh-tabbar__item" href="#">ملاحظات</a>
+      </nav>
+
+      <div class="hbh-split">
+
+        <!-- ============ بطاقة الهوية ============ -->
+        <div class="hbh-stack">
+
+          <div class="hbh-card">
+            <div class="hbh-idcard">
+              <img class="hbh-avatar hbh-avatar--ring" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%234FA3AC'/%3E%3Ccircle cx='32' cy='24' r='11' fill='%23FFFFFF'/%3E%3Cpath d='M9 60a23 23 0 0 1 46 0z' fill='%23FFFFFF'/%3E%3C/svg%3E" alt="صورة محمد علي">
+              <div class="hbh-idcard__name">محمد علي</div>
+              <div class="hbh-idcard__meta">
+                <span>6 سنوات</span><s>•</s><span>ذكر</span><s>•</s><span>CH-221</span>
+              </div>
+              <div class="hbh-idcard__badges">
+                <span class="hbh-badge hbh-badge--success">نشط</span>
+                <span class="hbh-badge hbh-badge--info">تخاطب</span>
+              </div>
+
+              <div class="hbh-deflist">
+                <div class="hbh-deflist__row">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+                  <span class="hbh-deflist__k">ولي الأمر</span>
+                  <span class="hbh-deflist__v">أ. محمد علي</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-phone"/></svg>
+                  <span class="hbh-deflist__k">الهاتف</span>
+                  <span class="hbh-deflist__v hbh-deflist__v--ltr">01001234567</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-clipboard"/></svg>
+                  <span class="hbh-deflist__k">التشخيص</span>
+                  <span class="hbh-deflist__v">تأخّر لغوي</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-calendar"/></svg>
+                  <span class="hbh-deflist__k">تاريخ البدء</span>
+                  <span class="hbh-deflist__v">12 يناير 2026</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user-check"/></svg>
+                  <span class="hbh-deflist__k">الأخصائي الأساسي</span>
+                  <span class="hbh-deflist__v">أ. أحمد حسن</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-pin"/></svg>
+                  <span class="hbh-deflist__k">الفرع</span>
+                  <span class="hbh-deflist__v">الفرع الرئيسي</span>
+                </div>
+              </div>
+            </div>
+            <div class="hbh-card-foot">
+              <a class="hbh-link" href="#">فتح ملف ولي الأمر <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+            </div>
+          </div>
+
+          <!-- مؤشرات مختصرة -->
+          <div class="hbh-card">
+            <div class="hbh-card-head"><h2 class="hbh-card-title">مؤشرات سريعة</h2></div>
+            <div class="hbh-card-body">
+              <div class="hbh-deflist" style="margin-top:0">
+                <div class="hbh-deflist__row" style="border-top:0;padding-top:0">
+                  <span class="hbh-deflist__k">الجلسات المكتملة</span>
+                  <span class="hbh-deflist__v hbh-deflist__v--ltr">24</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <span class="hbh-deflist__k">نسبة الحضور</span>
+                  <span class="hbh-deflist__v hbh-deflist__v--ltr">94%</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <span class="hbh-deflist__k">التقارير الصادرة</span>
+                  <span class="hbh-deflist__v hbh-deflist__v--ltr">5</span>
+                </div>
+                <div class="hbh-deflist__row">
+                  <span class="hbh-deflist__k">رصيد الجلسات</span>
+                  <span class="hbh-deflist__v hbh-deflist__v--ltr">4</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============ المحتوى ============ -->
+        <div class="hbh-stack">
+
+          <!-- الأهداف + التقدّم -->
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">الأهداف الحالية</h2>
+              <a class="hbh-link" href="#">الخطة الكاملة <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+            </div>
+            <div class="hbh-card-body">
+              <div class="hbh-goalsrow">
+                <ul class="hbh-goals">
+                  <li class="hbh-goal">
+                    <span class="hbh-goal__tick"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg></span>
+                    تحسين وضوح النطق ومخارج الحروف
+                  </li>
+                  <li class="hbh-goal">
+                    <span class="hbh-goal__tick"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg></span>
+                    زيادة الحصيلة اللغوية
+                  </li>
+                  <li class="hbh-goal">
+                    <span class="hbh-goal__tick"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg></span>
+                    استخدام جُمل من 3 إلى 4 كلمات
+                  </li>
+                  <li class="hbh-goal hbh-goal--todo">
+                    <span class="hbh-goal__tick"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg></span>
+                    تحسين مهارات التواصل الاجتماعي
+                  </li>
+                </ul>
+
+                <!-- في APEX: استبدلها بـ Chart Region نوع Donut أو Radial Bar من Oracle JET -->
+                <div class="hbh-ring">
+                  <svg viewBox="0 0 120 120" role="img" aria-label="نسبة إنجاز الخطة 75%">
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="var(--hbh-neutral-200)" stroke-width="12"/>
+                    <circle cx="60" cy="60" r="48" fill="none" stroke="var(--hbh-info)" stroke-width="12"
+                            stroke-linecap="round" stroke-dasharray="226.2 75.4"/>
+                  </svg>
+                  <div class="hbh-ring__hole"><b>75%</b><small>إنجاز الخطة</small></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ملخّص آخر تقدّم -->
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">ملخّص آخر تقدّم</h2>
+              <span class="hbh-badge hbh-badge--info">أغسطس 2026</span>
+            </div>
+            <div class="hbh-card-body">
+              <div class="hbh-quote">
+                تحسّن ملحوظ في الحصيلة اللغوية وتكوين الجُمل، ويبدأ الحوار من تلقاء نفسه في أغلب الجلسات.
+                نواصل العمل على نطق حرفَي «س» و«ش»، مع تمارين منزلية يومية لا تتجاوز عشر دقائق.
+                <div class="hbh-quote__by">
+                  <span>بواسطة: أ. أحمد حسن</span>
+                  <span>28 أغسطس 2026</span>
+                </div>
+              </div>
+            </div>
+            <div class="hbh-card-foot">
+              <a class="hbh-link" href="#">عرض التقرير الكامل <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+            </div>
+          </div>
+
+          <!-- آخر الجلسات -->
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <h2 class="hbh-card-title">آخر الجلسات</h2>
+              <a class="hbh-link" href="sessions-management.html">كل الجلسات <svg class="hbh-i hbh-i--next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></a>
+            </div>
+            <div class="hbh-tablewrap">
+              <table class="hbh-table">
+                <thead>
+                  <tr>
+                    <th>التاريخ</th><th>الوقت</th><th>النوع</th>
+                    <th>الأخصائي</th><th>الغرفة</th><th>الحالة</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>20 أغسطس 2026</td>
+                    <td class="hbh-table__num">05:00 م — 05:45 م</td>
+                    <td>تخاطب</td><td>أ. أحمد حسن</td><td>غرفة 2</td>
+                    <td><span class="hbh-badge hbh-badge--success">مكتملة</span></td>
+                    <td class="hbh-table__actions">
+                      <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>18 أغسطس 2026</td>
+                    <td class="hbh-table__num">04:15 م — 05:00 م</td>
+                    <td>علاج وظيفي</td><td>أ. نهى مصطفى</td><td>غرفة 3</td>
+                    <td><span class="hbh-badge hbh-badge--success">مكتملة</span></td>
+                    <td class="hbh-table__actions">
+                      <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>16 أغسطس 2026</td>
+                    <td class="hbh-table__num">05:00 م — 05:45 م</td>
+                    <td>تخاطب</td><td>أ. أحمد حسن</td><td>غرفة 2</td>
+                    <td><span class="hbh-badge hbh-badge--success">مكتملة</span></td>
+                    <td class="hbh-table__actions">
+                      <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>13 أغسطس 2026</td>
+                    <td class="hbh-table__num">05:30 م — 06:15 م</td>
+                    <td>تنمية مهارات</td><td>أ. سارة أحمد</td><td>غرفة 5</td>
+                    <td><span class="hbh-badge hbh-badge--danger">ملغاة</span></td>
+                    <td class="hbh-table__actions">
+                      <button class="hbh-rowbtn" type="button" aria-label="تفاصيل"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- تنبيه أمني: كل قراءة لملف طفل تُسجَّل صراحةً -->
+          <div class="hbh-notice">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-shield"/></svg>
+            <span>
+              كل فتح لهذا الملف أو تنزيل لتقرير يُسجَّل في سجلّ التدقيق باسم المستخدم والوقت.
+              المشغّلات لا تلتقط عمليات القراءة، لذلك يُستدعى التسجيل صراحةً من واجهة القراءة.
+            </span>
+          </div>
+
+        </div>
+      </div>
+      <!--REGION-END-->
+    </main>
+  </div>
+</div>
+
+<script src="hbh-ops.js"></script>
+</body>
+</html>

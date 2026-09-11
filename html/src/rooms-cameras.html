@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الغرف والكاميرات — Hand By Hand</title>
+<link rel="icon" href="hbh-logo-mark.png">
+<link rel="stylesheet" href="hbh-shared.css">
+<link rel="stylesheet" href="hbh-admin.css">
+<link rel="stylesheet" href="hbh-screens.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body data-page-perm="CATALOG.MANAGE">
+
+<div class="hbh-app">
+  <!--ICONS-->
+
+  <div class="hbh-shell">
+    <!--SIDEBAR:rooms-->
+
+    <main class="hbh-main">
+      <!--REGION-START-->
+
+      <!-- ---------- رأس الصفحة ---------- -->
+      <div class="hbh-pagehead">
+        <div class="hbh-pagehead__left">
+          <div>
+            <h1 class="hbh-pagehead__title">الغرف والكاميرات</h1>
+            <p class="hbh-pagehead__sub">6 غرف — 4 في جلسة، كاميرا واحدة غير متصلة</p>
+          </div>
+        </div>
+        <div class="hbh-pagehead__actions">
+          <div class="hbh-segmented">
+            <a class="hbh-segmented__item is-active" href="#" aria-current="page">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-grid"/></svg>
+              شبكة
+            </a>
+            <a class="hbh-segmented__item" href="#">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-list"/></svg>
+              قائمة
+            </a>
+          </div>
+          <button class="hbh-btn hbh-btn--ghost" type="button">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-refresh"/></svg>
+            تحديث الحالة
+          </button>
+        </div>
+      </div>
+
+      <!-- تنبيه معماري: لا بيانات اعتماد كاميرات في المتصفح -->
+      <div class="hbh-notice" style="margin-bottom:14px">
+        <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-shield"/></svg>
+        <span>
+          الصفحة لا تعرف عناوين RTSP ولا عناوين IP ولا كلمات مرور الكاميرات.
+          قاعدة البيانات تخزّن مسار البوابة ومرجع بيانات الاعتماد فقط، والوسيط (MediaMTX)
+          يعمل داخل المركز ويتصل بـ ORDS صادرًا فقط عبر Cloudflare Tunnel.
+        </span>
+      </div>
+
+      <div class="hbh-roomgrid">
+
+        <!-- غرفة 1 -->
+        <article class="hbh-roomcard">
+          <div class="hbh-roomcard__head">
+            <div>
+              <div class="hbh-roomcard__name">غرفة 1</div>
+              <div class="hbh-roomcard__type">غرفة تخاطب — كاميرا CAM-01</div>
+            </div>
+            <span class="hbh-badge hbh-badge--success">في جلسة</span>
+          </div>
+          <div class="hbh-roomcard__thumb">
+            <span class="hbh-camtag hbh-camtag--live"><i class="hbh-live-dot"></i> مباشر</span>
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+          </div>
+          <div class="hbh-roomcard__foot">
+            <span class="hbh-muted">عمر خالد · أ. سارة أحمد</span>
+            <div class="hbh-camset">
+              <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-play"/></svg></a>
+              <button class="hbh-rowbtn" type="button" aria-label="إعدادات الكاميرا"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg></button>
+            </div>
+          </div>
+        </article>
+
+        <!-- غرفة 2 -->
+        <article class="hbh-roomcard">
+          <div class="hbh-roomcard__head">
+            <div>
+              <div class="hbh-roomcard__name">غرفة 2</div>
+              <div class="hbh-roomcard__type">غرفة تخاطب — كاميرا CAM-02</div>
+            </div>
+            <span class="hbh-badge hbh-badge--success">في جلسة</span>
+          </div>
+          <div class="hbh-roomcard__thumb">
+            <span class="hbh-camtag hbh-camtag--live"><i class="hbh-live-dot"></i> مباشر</span>
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+          </div>
+          <div class="hbh-roomcard__foot">
+            <span class="hbh-muted">محمد علي · أ. أحمد حسن</span>
+            <div class="hbh-camset">
+              <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-play"/></svg></a>
+              <button class="hbh-rowbtn" type="button" aria-label="إعدادات الكاميرا"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg></button>
+            </div>
+          </div>
+        </article>
+
+        <!-- غرفة 3 -->
+        <article class="hbh-roomcard">
+          <div class="hbh-roomcard__head">
+            <div>
+              <div class="hbh-roomcard__name">غرفة 3</div>
+              <div class="hbh-roomcard__type">علاج وظيفي — كاميرا CAM-03</div>
+            </div>
+            <span class="hbh-badge hbh-badge--success">في جلسة</span>
+          </div>
+          <div class="hbh-roomcard__thumb">
+            <span class="hbh-camtag hbh-camtag--live"><i class="hbh-live-dot"></i> مباشر</span>
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+          </div>
+          <div class="hbh-roomcard__foot">
+            <span class="hbh-muted">ليان أحمد · أ. نهى مصطفى</span>
+            <div class="hbh-camset">
+              <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-play"/></svg></a>
+              <button class="hbh-rowbtn" type="button" aria-label="إعدادات الكاميرا"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg></button>
+            </div>
+          </div>
+        </article>
+
+        <!-- غرفة 4 -->
+        <article class="hbh-roomcard">
+          <div class="hbh-roomcard__head">
+            <div>
+              <div class="hbh-roomcard__name">غرفة 4</div>
+              <div class="hbh-roomcard__type">جلسة فردية — كاميرا CAM-04</div>
+            </div>
+            <span class="hbh-badge hbh-badge--muted">متاحة</span>
+          </div>
+          <div class="hbh-roomcard__thumb">
+            <span class="hbh-camtag hbh-camtag--idle">خاملة</span>
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+          </div>
+          <div class="hbh-roomcard__foot">
+            <span class="hbh-muted">لا توجد جلسة الآن</span>
+            <div class="hbh-camset">
+              <button class="hbh-rowbtn" type="button" aria-label="إعدادات الكاميرا"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg></button>
+            </div>
+          </div>
+        </article>
+
+        <!-- غرفة 5 -->
+        <article class="hbh-roomcard">
+          <div class="hbh-roomcard__head">
+            <div>
+              <div class="hbh-roomcard__name">غرفة 5</div>
+              <div class="hbh-roomcard__type">تنمية مهارات — كاميرا CAM-05</div>
+            </div>
+            <span class="hbh-badge hbh-badge--success">في جلسة</span>
+          </div>
+          <div class="hbh-roomcard__thumb">
+            <span class="hbh-camtag hbh-camtag--live"><i class="hbh-live-dot"></i> مباشر</span>
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-video"/></svg>
+          </div>
+          <div class="hbh-roomcard__foot">
+            <span class="hbh-muted">يوسف طارق · أ. مي إبراهيم</span>
+            <div class="hbh-camset">
+              <a class="hbh-rowbtn hbh-rowbtn--live" href="live-view.html" aria-label="عرض مباشر"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-play"/></svg></a>
+              <button class="hbh-rowbtn" type="button" aria-label="إعدادات الكاميرا"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg></button>
+            </div>
+          </div>
+        </article>
+
+        <!-- غرفة 6 -->
+        <article class="hbh-roomcard">
+          <div class="hbh-roomcard__head">
+            <div>
+              <div class="hbh-roomcard__name">غرفة 6</div>
+              <div class="hbh-roomcard__type">غرفة تقييم — كاميرا CAM-06</div>
+            </div>
+            <span class="hbh-badge hbh-badge--danger">كاميرا غير متصلة</span>
+          </div>
+          <div class="hbh-roomcard__thumb">
+            <span class="hbh-camtag hbh-camtag--off">غير متصلة</span>
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-x-circle"/></svg>
+          </div>
+          <div class="hbh-roomcard__foot">
+            <span class="hbh-muted">آخر اتصال: 09:12 ص</span>
+            <div class="hbh-camset">
+              <button class="hbh-rowbtn" type="button" aria-label="إعادة المحاولة"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-refresh"/></svg></button>
+              <button class="hbh-rowbtn" type="button" aria-label="إعدادات الكاميرا"><svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-settings"/></svg></button>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!--REGION-END-->
+    </main>
+  </div>
+</div>
+
+<script src="hbh-ops.js"></script>
+</body>
+</html>

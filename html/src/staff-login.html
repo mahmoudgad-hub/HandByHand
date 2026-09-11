@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دخول الموظفين — Hand By Hand</title>
+<link rel="icon" href="hbh-logo-mark.png">
+
+<!-- ===================================================================
+     APEX:  ارفع الملفات كـ Static Application Files ثم ضعها في
+              Shared Components > User Interface Attributes > CSS File URLs
+                #APP_FILES#hbh-shared.css
+                #APP_FILES#hbh-admin.css
+            وانسخ ما بين علامتَي REGION إلى Static Content Region.
+
+     الدخول باسم مستخدم وكلمة مرور، بلا رمز تحقّق.
+     ما يسنده فعلًا: hbh.verify_password(p_username, p_password) في هجرة
+     0011، وترجع (ok, reason, user_id, attempts_left). الشاشة تعرض
+     ما ترجعه ولا تقرّر شيئًا:
+
+       BAD_CREDENTIALS     اسم غير موجود **أو** كلمة مرور خاطئة — ردٌّ واحد،
+                           فلا تصير الشاشة أداة لمعرفة من يعمل هنا
+       TEMPORARILY_LOCKED  استُنفدت المحاولات — LOGIN_LOCK_MINUTES
+       USER_LOCKED         الحساب موقوف، ولا يفتحه إلا إنسان
+       NOT_PASSWORD_USER   حساب بلا كلمة مرور (وليّ أمر) — يدخل من البوابة
+
+     والعدّاد ينقص ويبقى ناقصًا: verify_password ترجع ولا ترفع استثناءً،
+     لأن الاستثناء كان سيلغي الزيادة ويجعل التخمين مجانيًا.
+     =================================================================== -->
+<link rel="stylesheet" href="hbh-shared.css">
+<link rel="stylesheet" href="hbh-admin.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body>
+
+<div class="hbh-app">
+
+  <!--ICONS-->
+
+  <!--REGION-START-->
+  <div class="hbh-signin">
+
+    <!-- ==========================================================
+         اللوحة الفيروزية — بها يعرف الموظف أنه في كونسول المركز
+         لا في بوابة ولي الأمر. تختفي تحت 860px.
+         ========================================================== -->
+    <aside class="hbh-signin__aside">
+      <span class="hbh-signin__brand">
+        <img class="hbh-logo hbh-signin__logo" src="hbh-logo-mark.png" width="44" height="45" alt="">
+        <img class="hbh-logo hbh-signin__wm" src="hbh-logo-wordmark.png" width="126" height="49" alt="Hand by Hand Skills Center">
+      </span>
+
+      <div class="hbh-signin__pitch">
+        <h2>كونسول المركز</h2>
+        <p>
+          المواعيد والجلسات وخطط العلاج والتقارير والفواتير — في مكان واحد،
+          ولكل موظف ما تسمح به صلاحيته وحدها.
+        </p>
+
+        <div class="hbh-signin__points">
+          <span class="hbh-signin__point">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-shield"/></svg>
+            <span><b>القائمة تتبع صلاحيتك.</b> وإخفاء عنصر منها ليس ضابطًا — المنع في الخادم.</span>
+          </span>
+          <span class="hbh-signin__point">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+            <span><b>كل قراءة لملف طفل تُسجَّل</b> باسمك ووقتها.</span>
+          </span>
+          <span class="hbh-signin__point">
+            <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+            <span><b>الجهاز المشترك يخرج بانتهاء النوبة.</b> إغلاق التبويب لا يكفي.</span>
+          </span>
+        </div>
+      </div>
+
+      <p class="hbh-signin__foot">
+        الحسابات تُفتح وتُقفل من الإدارة — لا تُنشأ من هذه الشاشة.
+      </p>
+    </aside>
+
+    <!-- ==========================================================
+         النموذج
+         ========================================================== -->
+    <main class="hbh-signin__main">
+      <form class="hbh-signin__box" id="signinForm" autocomplete="on">
+
+        <!-- تظهر على الشاشات الضيّقة فقط، حيث تختفي اللوحة -->
+        <span class="hbh-signin__brand">
+          <img class="hbh-logo hbh-signin__logo" src="hbh-logo-mark.png" width="44" height="45" alt="">
+          <img class="hbh-logo hbh-signin__wm" src="hbh-logo-wordmark.png" width="126" height="49" alt="Hand by Hand Skills Center">
+        </span>
+
+        <h1 class="hbh-signin__t">دخول الموظفين</h1>
+        <p class="hbh-signin__s">
+          ادخل باسم المستخدم وكلمة المرور المسجَّلين لك في المركز.
+        </p>
+
+        <div class="hbh-signin__form">
+
+          <div class="hbh-fld">
+            <label class="hbh-fld__l" for="f-user">اسم المستخدم</label>
+            <div class="hbh-fld__box">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-user"/></svg>
+              <input id="f-user" name="username" type="text" autocomplete="username"
+                     spellcheck="false">
+            </div>
+          </div>
+
+          <div class="hbh-fld">
+            <label class="hbh-fld__l" for="f-pass">كلمة المرور</label>
+            <div class="hbh-fld__box">
+              <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-lock"/></svg>
+              <input id="f-pass" name="password" type="password" autocomplete="current-password">
+              <!-- إظهار كلمة المرور: على جهاز مشترك الكتابة العمياء تُخطئ،
+                   والتبديل أأمن من كتابتها في خانة الاسم بالغلط -->
+              <button class="hbh-signin__peek" id="peek" type="button"
+                      aria-pressed="false" aria-label="إظهار كلمة المرور">
+                <svg class="hbh-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-eye"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- رسالة الرفض — واحدة لكل الأسباب التي لا يجوز التمييز بينها -->
+          <p class="hbh-signin__err" id="err" role="alert" hidden></p>
+
+          <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="submit">
+            دخول
+          </button>
+        </div>
+
+        <!-- ======================================================
+             حسابات العرض — ديكور نموذج، ليست جزءًا من التطبيق.
+             تُحذف قبل الشحن. موجودة ليرى العميل كيف تتغيّر القائمة
+             بتغيّر الصلاحية، والأدوار الثلاثة هي أدوار 0002_rbac.sql
+             نفسها لا أدوار مخترعة.
+             ====================================================== -->
+        <div class="hbh-signin__demo">
+          <p class="hbh-signin__demoT">حسابات للعرض — اضغط أيًّا منها</p>
+          <div class="hbh-signin__demoRow">
+            <button class="hbh-signin__demoBtn" type="button" data-role="CENTER_ADMIN">مدير المركز</button>
+            <button class="hbh-signin__demoBtn" type="button" data-role="RECEPTION">استقبال</button>
+            <button class="hbh-signin__demoBtn" type="button" data-role="THERAPIST">أخصائي</button>
+          </div>
+        </div>
+
+        <p class="hbh-signin__help">
+          <b>نسيت كلمة المرور؟</b> تُعاد من الإدارة، لا من هذه الشاشة —
+          إعادة التعيين بالبريد أو الرسائل لم تُبنَ بعد.
+        </p>
+
+      </form>
+    </main>
+
+  </div>
+  <!--REGION-END-->
+
+</div>
+
+<script src="hbh-ops.js"></script>
+</body>
+</html>

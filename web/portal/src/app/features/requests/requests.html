@@ -1,0 +1,70 @@
+<section class="scr requests-page">
+<a class="hbh-btn hbh-btn--primary" href="/communications">المحادثات مع المركز</a>
+  <header class="requests-heading"><h1>{{ 'requests.manage' | t }}</h1><p>{{ 'requests.intro' | t }}</p></header>
+  <div class="request-options">
+    @for (option of kinds; track option.kind) {
+      <article class="request-option" [class.is-open]="drafting() === option.kind" [class.is-cancel]="option.kind === 'CANCEL'">
+        <button class="request-toggle" type="button" [disabled]="sending()"
+          [id]="'toggle-' + option.kind" [attr.aria-expanded]="drafting() === option.kind"
+          [attr.aria-controls]="'panel-' + option.kind" (click)="startDraft(option.kind)">
+          <span class="request-icon"><hbh-icon [name]="option.icon" /></span>
+          <span>{{ 'requests.kind.' + option.kind | t }}</span>
+          <svg class="request-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="request-panel" [id]="'panel-' + option.kind" [hidden]="drafting() !== option.kind" role="region" [attr.aria-labelledby]="'toggle-' + option.kind">
+          @if (drafting() === option.kind) {
+            <label class="fld__l" [attr.for]="'note-' + option.kind">{{ 'requests.noteLabel' | t }}</label>
+            <textarea [id]="'note-' + option.kind" class="req__note" rows="3" maxlength="500" [formControl]="note"
+              [attr.aria-describedby]="'hint-' + option.kind" [attr.placeholder]="'requests.notePlaceholder' | t"></textarea>
+            <div class="request-help"><p class="fld__hint" [id]="'hint-' + option.kind">{{ 'requests.noteHint' | t }}</p><span class="request-count" dir="ltr">{{ note.value.length }}/500</span></div>
+            <div class="req__actions"><button class="hbh-btn hbh-btn--primary" type="button" [class.is-busy]="sending()" [disabled]="sending() || note.invalid" (click)="submit()"><hbh-icon name="ic-send" />{{ (sending() ? 'requests.sending' : 'requests.send') | t }}</button><button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="sending()" (click)="cancelDraft()">{{ 'action.cancel' | t }}</button></div>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <div class="sec">
+    <div class="sec__head"><h2 class="sec__t">{{ 'requests.previous' | t }}</h2></div>
+
+    @if (loading()) {
+      <hbh-skeleton [count]="2" shape="row" />
+    } @else if (failed()) {
+      <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()" [retryLabel]="'action.retry' | t"
+                      (retry)="load()" />
+    } @else if (items().length === 0) {
+      <hbh-empty-state icon="ic-send" [title]="'requests.empty' | t"
+                       [note]="'requests.emptyNote' | t" />
+    } @else {
+      <div class="stack">
+        @for (request of items(); track request.id) {
+          <div class="row">
+            <span class="row__ic" [class]="tint(request)">
+              <hbh-icon [name]="icon(request)" />
+            </span>
+            <span class="row__b">
+              <span class="row__t">{{ request.subject }}</span>
+              <span class="row__s">
+                @if (request.outcome) {
+                  {{ request.outcome }} <s>&middot;</s>
+                }
+                {{ format.shortDate(request.submittedAt) }}
+                <span dir="ltr">{{ format.time(request.submittedAt) }}</span>
+              </span>
+            </span>
+            <span class="row__e">
+              <hbh-status-badge [status]="request.status" />
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="sec">
+    <div class="note note--info">
+      <hbh-icon name="ic-info" />
+      <span>{{ 'requests.receptionDecides' | t }}</span>
+    </div>
+  </div>
+</section>

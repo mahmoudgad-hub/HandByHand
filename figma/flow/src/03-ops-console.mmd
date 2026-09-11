@@ -1,0 +1,65 @@
+%% تطبيق المركز (ops) — خريطة الملاحة والصلاحيات
+%% المصدر: web/ops/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% كل شاشة تعلن الصلاحية التي تحتاجها. الحارس يمنع رسم شاشة سيرفضها الخادم —
+%% وليس هو الرفض نفسه، فالرفض في سياسة RLS تحت الاستعلام.
+%% الشاشات تنقسم إلى نوعين مدفوعين بوصفين: ResourceScreen للموارد التي تُنشأ وتُعدَّل،
+%% وDayScreen للقراءات المفهرسة بالمركز — صفوف تتحرّك عبر آلات الحالة لا بتعديل عمود.
+%% LR لا TB: بـTB يتفرّع الهيكل إلى اثنتي عشرة شاشة جنبًا إلى جنب،
+%% فيصير المخطّط ٣٧٩٥px عرضًا و٦٢٠px ارتفاعًا — لا يُقرأ على أي شاشة.
+flowchart LR
+  classDef res  fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
+  classDef day  fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
+  classDef one  fill:#EDF1E5,stroke:#ADC793,color:#22333A
+  classDef sys  fill:#F1ECE1,stroke:#E3DCCD,color:#4A5F68
+
+  LOGIN["/login<br/>opsGuestGuard"]:::one
+  SHELL["الهيكل — القائمة الجانبية<br/>opsAuthGuard"]:::one
+  DASH["/dashboard<br/>PORTAL.VIEW"]:::one
+
+  LOGIN --> SHELL --> DASH
+
+  subgraph R["ResourceScreen — ثمانية وعشرون موردًا CRUD في ست شاشات"]
+    direction TB
+    CH["/children<br/>CHILD.VIEW_ALL<br/>أولياء الأمور + الأطفال"]:::res
+    TH["/therapists<br/>STAFF.MANAGE<br/>الأخصائيون + ساعات العمل + caseload"]:::res
+    RM["/rooms<br/>CATALOG.MANAGE<br/>الغرف + الكاميرات"]:::res
+    PL["/plans<br/>PLAN.MANAGE<br/>خطط + أهداف + قياسات + أنشطة الطفل"]:::res
+    CT["/catalog<br/>CATALOG.MANAGE<br/>خدمات + باقات + مكتبة أنشطة + استبيانات"]:::res
+    ST["/site<br/>SITE.EDIT<br/>كلمات الموقع — خمسة تبويبات"]:::res
+  end
+
+  subgraph D["DayScreen — القراءات المفهرسة بالمركز"]
+    direction TB
+    AP["/appointments<br/>APPOINTMENT.BOOK"]:::day
+    SE["/sessions<br/>SESSION.START"]:::day
+    RP["/reports<br/>REPORT.VIEW"]:::day
+    BL["/billing<br/>BILLING.VIEW"]:::day
+    RQ["/requests<br/>REQUEST.MANAGE"]:::day
+    EN["/enrolments<br/>ENROLMENT.MANAGE<br/>ما كانت تسمّيه التصاميم leads"]:::day
+  end
+
+  SHELL --> CH & TH & RM & PL & CT & ST
+  SHELL --> AP & SE & RP & BL & RQ & EN
+
+  CHILD["/children/:childId<br/>ملفّ الطفل — المعرّف في المسار"]:::one
+  CARD["/children/:childId/card<br/>بطاقة تُطبع — بلا رقم قومي ولا عنوان"]:::one
+  TPROF["/therapists/:therapistId/profile<br/>بلا حارس صلاحية عمدًا:<br/>السؤال عن الصفّ لا عن الشخص"]:::one
+  TSVC["/therapist-services<br/>STAFF.MANAGE<br/>بدونها لا يُحجز موعد — THERAPIST_SERVICE_MISMATCH"]:::one
+  TEAM["/site/team<br/>SITE.EDIT — رئيس وتفصيل"]:::one
+  LIVEV["/sessions/:sessionId/live<br/>LIVE.VIEW — بثّ فقط، لا تسجيل"]:::one
+
+  CH --> CHILD --> CARD
+  TH --> TPROF
+  TH --> TSVC
+  ST --> TEAM
+  SE --> LIVEV
+
+  ACC["/access<br/>PORTAL.VIEW<br/>أي شاشة تحتاج أي صلاحية — ليست إدارة مستخدمين"]:::sys
+  NPS["/satisfaction<br/>CATALOG.MANAGE"]:::sys
+  LOG["/ops-log<br/>OPS.VIEW"]:::sys
+  SET["/settings<br/>CATALOG.MANAGE<br/>قابلة للتحرير — guard_center_settings"]:::sys
+  COMM["/communications<br/>محادثة الأسرة — نفس مكوّن البوّابة"]:::sys
+  DEN["/denied"]:::sys
+
+  SHELL --> ACC & NPS & LOG & SET & COMM
+  SHELL -.->|"الحارس يرفض"| DEN

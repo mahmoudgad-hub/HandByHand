@@ -1,0 +1,155 @@
+<section class="scr">
+
+  @if (loading()) {
+    <hbh-skeleton [count]="1" shape="card" />
+    <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
+  } @else if (failed()) {
+    <hbh-error-note [message]="failureKey() | t" [traceId]="traceId()"
+                    [retryLabel]="'action.retry' | t" (retry)="load()" />
+  } @else if (therapist(); as person) {
+
+    <button class="hbh-crumb" type="button" (click)="back()">
+      <hbh-icon name="ic-back" />
+      {{ 'action.back' | t }}
+    </button>
+
+    <div class="prof">
+      <!-- The brand glyph, not a letter invented from the name and not a
+           broken image box. The centre stores no photograph. -->
+      <span class="prof__ph"><hbh-icon name="ic-user-check" /></span>
+      <span class="prof__b">
+        <span class="prof__n">{{ person.fullName }}</span>
+        @if (person.title) {
+          <span class="prof__m">{{ person.title }}</span>
+        }
+      </span>
+    </div>
+
+    @if (person.published && person.bio) {
+      <p class="tp__bio">{{ person.bio }}</p>
+    }
+
+    @if (person.published && facts().length) {
+      <div class="tp__facts">
+        @for (fact of facts(); track fact.labelKey) {
+          <span class="tp__fact">
+            <span class="tp__fact-k">{{ fact.labelKey | t }}</span>
+            <span class="tp__fact-v">{{ fact.value }}</span>
+          </span>
+        }
+      </div>
+    }
+
+    @if (person.services.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'therapist.services' | t }}</h2>
+        </div>
+        <div class="stack">
+          @for (service of person.services; track service) {
+            <div class="opt">
+              <hbh-icon name="ic-puzzle" />
+              <span class="opt__b">{{ service }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="note note--info" style="margin-top:14px">
+        {{ 'therapist.noServices' | t }}
+      </div>
+    }
+
+    <!-- Languages are a clinical matching criterion in a speech centre, not
+         a badge: the language the therapist will actually SPEAK to the child
+         is what a parent is reading for. So "runs sessions in it" is stated
+         separately from "reads it". -->
+    @if (person.languages.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'therapist.languages' | t }}</h2>
+        </div>
+        <div class="stack">
+          @for (lang of person.languages; track lang.code) {
+            <div class="opt">
+              <hbh-icon name="ic-globe" />
+              <span class="opt__b">
+                {{ 'lang.' + lang.code | t }}
+                <span class="opt__s">
+                  @if (lang.isNative) {
+                    {{ 'therapist.native' | t }}
+                  } @else if (lang.runsSessions) {
+                    {{ 'therapist.runsSessions' | t }}
+                  } @else {
+                    {{ 'therapist.understands' | t }}
+                  }
+                </span>
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (person.qualifications.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'therapist.qualifications' | t }}</h2>
+        </div>
+        <div class="stack">
+          @for (q of person.qualifications; track q.id) {
+            <div class="opt">
+              <span class="tp__year" dir="ltr">{{ q.year }}</span>
+              <span class="opt__b">
+                {{ q.title }}
+                @if (q.issuer) {
+                  <span class="opt__s">{{ q.issuer }}</span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (person.certificates.length) {
+      <div class="sec">
+        <div class="sec__head">
+          <h2 class="sec__t">{{ 'therapist.certificates' | t }}</h2>
+        </div>
+        <div class="stack">
+          @for (c of person.certificates; track c.id) {
+            <div class="opt">
+              <hbh-icon name="ic-star" />
+              <span class="opt__b">
+                {{ c.title }}
+                <span class="opt__s">
+                  @if (c.issuer) { {{ c.issuer }} }
+                  @if (c.year) { <s>&middot;</s> <span dir="ltr">{{ c.year }}</span> }
+                </span>
+                <!-- A certificate whose scan exists but is not published says
+                     so. The alternative - showing nothing - leaves a family
+                     unable to tell "there is no scan" from "the scan is not
+                     for me", and they ring the centre asking for what they
+                     will not be given. -->
+                @if (c.hasImage && !c.attachmentId) {
+                  <span class="opt__s">{{ 'therapist.imageNotShared' | t }}</span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (!person.published) {
+      <!-- Nothing beyond the name and the services is shown, because the
+           therapist has not agreed to publish it. Said plainly rather than
+           left as a short page a family reads as the centre hiding
+           something about the person treating their child. -->
+      <div class="note note--info" style="margin-top:16px">
+        {{ 'therapist.notPublished' | t }}
+      </div>
+    }
+  }
+</section>

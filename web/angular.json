@@ -1,0 +1,244 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": ".",
+  "cli": {
+    "packageManager": "npm"
+  },
+  "projects": {
+    "portal": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "css",
+          "changeDetection": "OnPush"
+        }
+      },
+      "root": "portal",
+      "sourceRoot": "portal/src",
+      "prefix": "hbh",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/portal",
+            "index": "portal/src/index.html",
+            "browser": "portal/src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "portal/tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "portal/src/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [
+              "portal/src/styles/hbh-shared.css",
+              "portal/src/styles/hbh-app.css",
+              "portal/src/styles/hbh-parent.css",
+              "portal/src/styles/portal.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "8kB",
+                  "maximumError": "16kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "portal:build:production"
+            },
+            "development": {
+              "buildTarget": "portal:build:development"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "port": 4200,
+            "proxyConfig": "proxy.conf.json"
+          }
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "karmaConfig": "karma.conf.cjs",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "portal/tsconfig.spec.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "portal/src/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [
+              "portal/src/styles/hbh-shared.css",
+              "portal/src/styles/hbh-app.css",
+              "portal/src/styles/hbh-parent.css",
+              "portal/src/styles/portal.css"
+            ]
+          }
+        }
+      }
+    },
+    "ops": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "css",
+          "changeDetection": "OnPush"
+        }
+      },
+      "root": "ops",
+      "sourceRoot": "ops/src",
+      "prefix": "hbh",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/ops",
+            "index": "ops/src/index.html",
+            "browser": "ops/src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "ops/tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "ops/src/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [
+              "ops/src/styles/hbh-shared.css",
+              "ops/src/styles/hbh-admin.css",
+              "ops/src/styles/hbh-screens.css",
+              "ops/src/styles/ops.css",
+              "ops/src/styles/ops-reference.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "ops/src/app/dev-accounts.ts",
+                  "with": "ops/src/app/dev-accounts.prod.ts"
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "700kB",
+                  "maximumError": "1.5MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "8kB",
+                  "maximumError": "16kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "ops:build:production"
+            },
+            "development": {
+              "buildTarget": "ops:build:development"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "port": 4300,
+            "proxyConfig": "proxy.conf.json"
+          }
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "karmaConfig": "karma.conf.cjs",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "ops/tsconfig.spec.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "ops/src/assets",
+                "output": "assets"
+              }
+            ],
+            "styles": [
+              "ops/src/styles/hbh-shared.css",
+              "ops/src/styles/hbh-admin.css",
+              "ops/src/styles/hbh-screens.css",
+              "ops/src/styles/ops.css",
+              "ops/src/styles/ops-reference.css"
+            ]
+          }
+        }
+      }
+    },
+    "shared": {
+      "projectType": "library",
+      "root": "shared",
+      "sourceRoot": "shared/src",
+      "prefix": "hbh",
+      "architect": {
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "karmaConfig": "karma.conf.cjs",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "shared/tsconfig.spec.json",
+            "styles": [
+              "portal/src/styles/hbh-shared.css"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

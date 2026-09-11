@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة المتابعة — Hand By Hand</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --ink:#1b2733; --muted:#6b7785; --line:#dfe3e8;
+    --accent:#2f6f8f; --warn:#b4531f; --danger:#a03030; --ok:#2e7d63;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161b; --panel:#1a1f26; --ink:#e6ebf0; --muted:#93a1af; --line:#2a323b;
+      --accent:#6fb0cf; --warn:#e08a52; --danger:#e07070; --ok:#5fbf9c;
+      --shadow:0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161b; --panel:#1a1f26; --ink:#e6ebf0; --muted:#93a1af; --line:#2a323b;
+    --accent:#6fb0cf; --warn:#e08a52; --danger:#e07070; --ok:#5fbf9c;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.6 "Segoe UI","Noto Naskh Arabic",Tahoma,system-ui,sans-serif;
+  }
+  header{
+    background:var(--panel);border-bottom:1px solid var(--line);
+    padding:14px 18px;position:sticky;top:0;z-index:20;box-shadow:var(--shadow);
+  }
+  .top{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  h1{font-size:17px;margin:0 0 4px}
+  .goal{color:var(--muted);font-size:13px;max-width:70ch}
+  .goal b{color:var(--ink);font-weight:600}
+  .spacer{flex:1}
+  .stats{display:flex;gap:8px;flex-wrap:wrap}
+  .stat{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:74px;text-align:center}
+  .stat .n{font-size:18px;font-weight:700;line-height:1.2}
+  .stat .l{font-size:11px;color:var(--muted)}
+  .bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px;width:100%}
+  .bar i{display:block;height:100%;background:var(--ok)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  select,input[type=search],button{
+    font:inherit;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:8px;padding:6px 10px;
+  }
+  input[type=search]{min-width:190px}
+  button{cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .draft{display:none;background:#fff6e5;border:1px solid #e6c88a;color:#6b4a10;
+    border-radius:8px;padding:6px 10px;font-size:12.5px}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .draft{background:#2a2418;border-color:#5c4a20;color:#e8cf9a}
+  }
+  :root[data-theme="dark"] .draft{background:#2a2418;border-color:#5c4a20;color:#e8cf9a}
+  .draft.on{display:block}
+
+  main{padding:14px 18px 40px}
+  .board{display:grid;grid-template-columns:repeat(6,minmax(230px,1fr));gap:12px;align-items:start}
+  @media (max-width:1400px){.board{grid-template-columns:repeat(3,minmax(230px,1fr))}}
+  @media (max-width:820px){.board{grid-template-columns:1fr}}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);min-height:120px;display:flex;flex-direction:column}
+  .col > h2{
+    font-size:13px;margin:0;padding:10px 12px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--panel);
+    border-radius:var(--radius) var(--radius) 0 0;
+  }
+  .col h2 .c{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--muted)}
+  .col h2 small{color:var(--muted);font-weight:400;font-size:11px}
+  .drop{padding:8px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .drop.over{background:rgba(47,111,143,.08);outline:2px dashed var(--accent);outline-offset:-6px;border-radius:8px}
+
+  .card{
+    background:var(--bg);border:1px solid var(--line);border-inline-start:4px solid var(--accent);
+    border-radius:8px;padding:9px 10px;cursor:grab;box-shadow:var(--shadow);
+  }
+  .card:active{cursor:grabbing}
+  .card.dragging{opacity:.45}
+  .card .id{font:600 11px/1 ui-monospace,Consolas,monospace;color:var(--muted);letter-spacing:.02em}
+  .card .t{font-weight:600;margin:4px 0 6px;font-size:13.5px}
+  .card .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .tag{font-size:11px;border-radius:99px;padding:1px 8px;border:1px solid var(--line);color:var(--muted);background:var(--panel)}
+  .tag.role{color:#fff;border:0}
+  .tag.ext{color:var(--danger);border-color:var(--danger)}
+  .tag.dep{color:var(--warn);border-color:var(--warn)}
+  .empty{color:var(--muted);font-size:12px;text-align:center;padding:14px 6px}
+
+  dialog{
+    border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);
+    max-width:680px;width:calc(100% - 32px);padding:0;box-shadow:0 12px 40px rgba(0,0,0,.25);
+  }
+  dialog::backdrop{background:rgba(10,14,18,.5)}
+  .dlg-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+  .dlg-b{padding:14px 16px;max-height:60vh;overflow:auto}
+  .dlg-f{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .dlg-b h4{margin:14px 0 6px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  .dlg-b h4:first-child{margin-top:0}
+  .dlg-b p{margin:0}
+  .ac{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+  .ac li{display:flex;gap:8px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+  .ac input{margin-top:4px;accent-color:var(--ok)}
+  .ac li.done span{color:var(--muted);text-decoration:line-through}
+  code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:0 4px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace;direction:ltr;display:inline-block}
+  .note{color:var(--muted);font-size:12px}
+  textarea{width:100%;height:220px;font:12px/1.5 ui-monospace,Consolas,monospace;direction:ltr;
+    border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:8px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <div>
+      <h1 id="ttl">لوحة المتابعة</h1>
+      <div class="goal" id="goal"></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="bar"><i id="progbar" style="width:0"></i></div>
+  <div class="controls">
+    <select id="fRole"></select>
+    <select id="fEpic"></select>
+    <select id="fSprint">
+      <option value="all">كل البطاقات</option>
+      <option value="1" selected>سبرنت ١ فقط</option>
+      <option value="none">الباكلوج فقط</option>
+    </select>
+    <input type="search" id="fText" placeholder="بحث… (رقم أو عنوان)">
+    <button id="bReset">مسح المرشِّحات</button>
+    <span class="spacer"></span>
+    <button id="bTheme" title="تبديل الوضع">◐</button>
+    <button id="bExport" class="primary">تصدير التغييرات</button>
+    <button id="bRevert">إرجاع إلى الملفّ</button>
+  </div>
+  <div class="draft" id="draft"></div>
+</header>
+
+<main><div class="board" id="board"></div></main>
+
+<dialog id="dlg">
+  <div class="dlg-h">
+    <div style="flex:1">
+      <div class="id" id="d-id"></div>
+      <div style="font-weight:700;font-size:15px;margin-top:3px" id="d-title"></div>
+      <div class="meta" style="margin-top:7px" id="d-meta"></div>
+    </div>
+    <button onclick="document.getElementById('dlg').close()">إغلاق</button>
+  </div>
+  <div class="dlg-b" id="d-body"></div>
+  <div class="dlg-f">
+    <label>الحالة:</label>
+    <select id="d-status"></select>
+    <span class="spacer" style="flex:1"></span>
+    <span class="note" id="d-src"></span>
+  </div>
+</dialog>
+
+<dialog id="dlgX">
+  <div class="dlg-h"><div style="flex:1;font-weight:700">تصدير — الصق هذا محلّ مصفوفة <code>cards</code></div>
+    <button onclick="document.getElementById('dlgX').close()">إغلاق</button></div>
+  <div class="dlg-b">
+    <p class="note">اللوحة تحفظ تغييراتك في المتصفّح فقط. مصدر الحقيقة هو <code>pm/board.data.js</code> —
+      انسخ الناتج وحدّث الملفّ، أو قل للـ PM «حدّث اللوحة» ويكتبها.</p>
+    <textarea id="xOut" readonly></textarea>
+  </div>
+  <div class="dlg-f"><button class="primary" id="bCopy">نسخ</button><button id="bDl">تنزيل board.data.js</button></div>
+</dialog>
+
+<script src="board.data.js"></script>
+<script>
+(function(){
+  "use strict";
+  const B = window.HBH_BOARD;
+  const KEY = "hbh.board.draft.v1";
+  const $ = s => document.querySelector(s);
+
+  /* ---------- الحالة: الملفّ + مسوّدة المتصفّح ---------- */
+  let draft = {};
+  try { draft = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e){ draft = {}; }
+
+  const base = new Map(B.cards.map(c => [c.id, c]));
+  function view(c){
+    const d = draft[c.id] || {};
+    return Object.assign({}, c, d, { ac: c.ac, _acDone: d.acDone || [] });
+  }
+  function setDraft(id, patch){
+    draft[id] = Object.assign({}, draft[id] || {}, patch);
+    const b = base.get(id);
+    // لو رجعت لقيمة الملفّ، اشطب المسوّدة بدل أن تتراكم
+    if (draft[id].status === b.status && !(draft[id].acDone||[]).length) delete draft[id];
+    localStorage.setItem(KEY, JSON.stringify(draft));
+    render();
+  }
+  const dirty = () => Object.keys(draft).length;
+
+  /* ---------- الرأس ---------- */
+  $("#ttl").textContent = "لوحة المتابعة — " + B.meta.project;
+  $("#goal").innerHTML = "<b>هدف السبرنت " + B.meta.sprint.no + ":</b> " + B.meta.sprint.goal +
+    " <span class='note'>(" + B.meta.sprint.from + " → " + B.meta.sprint.to + ")</span>";
+
+  /* ---------- المرشِّحات ---------- */
+  const fRole = $("#fRole"), fEpic = $("#fEpic");
+  fRole.innerHTML = "<option value=''>كل الأدوار</option>" +
+    Object.entries(B.roles).map(([k,r]) => `<option value="${k}">${r.label} — ${r.tab}</option>`).join("");
+  fEpic.innerHTML = "<option value=''>كل المحاور</option>" +
+    Object.entries(B.epics).map(([k,e]) => `<option value="${k}">${k} · ${e.label}</option>`).join("");
+
+  ["#fRole","#fEpic","#fSprint","#fText"].forEach(s => $(s).addEventListener("input", render));
+  $("#bReset").onclick = () => { fRole.value=""; fEpic.value=""; $("#fSprint").value="all"; $("#fText").value=""; render(); };
+  $("#bTheme").onclick = () => {
+    const r = document.documentElement;
+    const cur = r.getAttribute("data-theme");
+    r.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  };
+  $("#bRevert").onclick = () => {
+    if (!dirty() || confirm("سيُلغى كل تغيير لم يُصدَّر إلى board.data.js. متأكّد؟")) {
+      draft = {}; localStorage.removeItem(KEY); render();
+    }
+  };
+
+  function passes(c){
+    if (fRole.value && c.owner !== fRole.value) return false;
+    if (fEpic.value && c.epic !== fEpic.value) return false;
+    const sp = $("#fSprint").value;
+    if (sp === "1" && c.sprint !== 1) return false;
+    if (sp === "none" && c.sprint !== null) return false;
+    const q = $("#fText").value.trim().toLowerCase();
+    if (q && !(c.id + " " + c.title).toLowerCase().includes(q)) return false;
+    return true;
+  }
+
+  /* ---------- الرسم ---------- */
+  function tag(txt, cls, style){ return `<span class="tag ${cls||''}" ${style?`style="${style}"`:''}>${txt}</span>`; }
+
+  function cardHTML(c){
+    const r = B.roles[c.owner];
+    const openDeps = (c.deps||[]).filter(id => (view(base.get(id))||{}).status !== "done");
+    return `<div class="card" draggable="true" data-id="${c.id}" style="border-inline-start-color:${r.color}">
+      <div class="id">${c.id} · ${c.epic}</div>
+      <div class="t">${c.title}</div>
+      <div class="meta">
+        ${tag(r.label,"role",`background:${r.color}`)}
+        ${tag(c.size + " ي")}
+        ${openDeps.length ? tag("يعتمد على " + openDeps.join("، "), "dep") : ""}
+        ${c.ext ? tag("خارجي", "ext") : ""}
+      </div>
+    </div>`;
+  }
+
+  function render(){
+    const cards = B.cards.map(view);
+    const shown = cards.filter(passes);
+
+    // الإحصاء على السبرنت الحالي دائمًا، لا على المرشَّح
+    const sp = cards.filter(c => c.sprint === 1);
+    const done = sp.filter(c => c.status === "done");
+    const dpts = done.reduce((a,c)=>a+c.size,0), tpts = sp.reduce((a,c)=>a+c.size,0);
+    const blocked = cards.filter(c => c.status === "blocked");
+    $("#stats").innerHTML = [
+      ["بطاقات السبرنت", sp.length],
+      ["منتهية", done.length],
+      ["أيام متبقّية", (tpts-dpts).toFixed(1)],
+      ["محجوبة", blocked.length],
+      ["الباكلوج", cards.filter(c=>c.sprint===null).length]
+    ].map(([l,n]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+    $("#progbar").style.width = (tpts ? (dpts/tpts*100) : 0) + "%";
+
+    const dr = $("#draft");
+    dr.className = "draft" + (dirty() ? " on" : "");
+    dr.textContent = dirty()
+      ? `مسوّدة غير محفوظة: ${dirty()} بطاقة تختلف عن board.data.js — «تصدير التغييرات» ينتج النصّ الذي يُحدَّث به الملفّ.`
+      : "";
+
+    $("#board").innerHTML = B.columns.map(col => {
+      const list = shown.filter(c => c.status === col.key);
+      return `<section class="col">
+        <h2>${col.label} <span class="c">${list.length}</span> <small>${col.hint}</small></h2>
+        <div class="drop" data-col="${col.key}">
+          ${list.length ? list.map(cardHTML).join("") : `<div class="empty">—</div>`}
+        </div>
+      </section>`;
+    }).join("");
+
+    wire();
+  }
+
+  /* ---------- السحب والإفلات ---------- */
+  function wire(){
+    document.querySelectorAll(".card").forEach(el => {
+      el.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", el.dataset.id);
+        e.dataTransfer.effectAllowed = "move";
+        el.classList.add("dragging");
+      });
+      el.addEventListener("dragend", () => el.classList.remove("dragging"));
+      el.addEventListener("click", () => openCard(el.dataset.id));
+    });
+    document.querySelectorAll(".drop").forEach(z => {
+      z.addEventListener("dragover", e => { e.preventDefault(); z.classList.add("over"); });
+      z.addEventListener("dragleave", () => z.classList.remove("over"));
+      z.addEventListener("drop", e => {
+        e.preventDefault(); z.classList.remove("over");
+        const id = e.dataTransfer.getData("text/plain");
+        const to = z.dataset.col;
+        const c = view(base.get(id));
+        if (!c || c.status === to) return;
+        const open = (c.deps||[]).filter(d => view(base.get(d)).status !== "done");
+        if (to !== "backlog" && to !== "blocked" && open.length &&
+            !confirm(`${id} تعتمد على ${open.join("، ")} ولم تنتهِ بعد. تنقلها على أي حال؟`)) return;
+        setDraft(id, { status: to });
+      });
+    });
+  }
+
+  /* ---------- التفاصيل ---------- */
+  const dlg = $("#dlg");
+  $("#d-status").innerHTML = B.columns.map(c=>`<option value="${c.key}">${c.label}</option>`).join("");
+
+  function openCard(id){
+    const c = view(base.get(id));
+    const r = B.roles[c.owner];
+    $("#d-id").textContent = c.id + " · " + c.epic + " — " + B.epics[c.epic].label;
+    $("#d-title").textContent = c.title;
+    $("#d-meta").innerHTML = tag(r.label + " — " + r.tab, "role", `background:${r.color}`) +
+      tag(c.size + " يوم") + (c.sprint ? tag("سبرنت " + c.sprint) : tag("باكلوج")) +
+      ((c.deps||[]).length ? tag("يعتمد على: " + c.deps.join("، "), "dep") : "");
+
+    const doneSet = new Set(c._acDone);
+    $("#d-body").innerHTML =
+      `<h4>لماذا</h4><p>${c.why}</p>` +
+      (c.ext ? `<h4>الاعتماد الخارجي</h4><p style="color:var(--danger)">${c.ext}</p>` : "") +
+      `<h4>معايير القبول — بند لم يتحقّق يعني أنّها ليست منتهية</h4>
+       <ul class="ac">${c.ac.map((a,i)=>
+          `<li class="${doneSet.has(i)?'done':''}"><input type="checkbox" data-i="${i}" ${doneSet.has(i)?'checked':''}><span>${a}</span></li>`
+        ).join("")}</ul>`;
+    $("#d-src").textContent = "المصدر: " + c.src;
+    $("#d-status").value = c.status;
+    $("#d-status").onchange = () => { setDraft(id, { status: $("#d-status").value }); openCard(id); };
+    $("#d-body").querySelectorAll("input[type=checkbox]").forEach(cb => {
+      cb.onchange = () => {
+        const s = new Set(view(base.get(id))._acDone);
+        cb.checked ? s.add(+cb.dataset.i) : s.delete(+cb.dataset.i);
+        setDraft(id, { status: view(base.get(id)).status, acDone: [...s].sort((a,b)=>a-b) });
+        openCard(id);
+      };
+    });
+    if (!dlg.open) dlg.showModal();
+  }
+
+  /* ---------- التصدير ---------- */
+  function exportText(){
+    const out = B.cards.map(c => {
+      const v = view(c);
+      const o = Object.assign({}, c);
+      o.status = v.status;
+      if (v._acDone.length) o.acDone = v._acDone; else delete o.acDone;
+      return o;
+    });
+    return "  cards: " + JSON.stringify(out, null, 2).split("\n").map((l,i)=> i?"  "+l:l).join("\n");
+  }
+  $("#bExport").onclick = () => { $("#xOut").value = exportText(); $("#dlgX").showModal(); };
+  $("#bCopy").onclick = () => { $("#xOut").select(); document.execCommand("copy"); $("#bCopy").textContent = "تمّ النسخ ✓"; };
+  $("#bDl").onclick = () => {
+    const blob = new Blob([exportText()], {type:"text/javascript;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "board.cards.js"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+-- =====================================================================
+-- 0078 - the column goes, and this time the readers went first
+--
+-- The owner decided: remove hbh.children.photo_url and put the
+-- photograph on the attachment path built in 0074 and 0076.
+--
+-- THE ORDER IS THE POINT OF THIS FILE. 0074 dropped the same column
+-- while api/internal/store/portal.go still read it, in the column list
+-- shared by the child list and the single child read - so every child
+-- read returned 500, in the console and in the parent portal, and
+-- forty-two API checks failed across five suites with one cause. 0077
+-- put it back.
+--
+-- So this time, in order, and each step verified before the next:
+--
+--   1. The new path was built and proved end to end - upload refused
+--      without a recorded PHOTO_USE consent (409), accepted with one,
+--      the bytes served back byte-identical, a PDF refused (415), the
+--      second portrait archiving the first, and an unauthenticated
+--      request answered 401, which is what an <img src> would get.
+--   2. The console was moved onto it: the card fetches the blob through
+--      the HTTP client and the form field that held an address is gone.
+--   3. Every reader of the column was removed - domain.go, portal.go,
+--      crud.go, resource-spec.ts, child-card.ts - and the service was
+--      rebuilt, restarted and checked: /children, /children/{id} and
+--      /children/{id}/photo all 200, and no photo_url in any payload.
+--   4. Only then this.
+--
+-- The rule, which was already written in this project in the other
+-- direction (0053, 0058, 0059: the API ships before the schema tightens
+-- so it knows the new SQLSTATE): THE SCHEMA AND THE CODE DO NOT MOVE IN
+-- THE SAME STEP, AND WHICHEVER WAITS IS THE ONE THAT BREAKS IF IT MOVES
+-- FIRST. A column something still reads comes out in two steps, the
+-- reader first - or it does not come out.
+--
+-- WHAT REPLACES IT, and why a column could not do this:
+--
+--   · The bytes are in hbh.attachments, so a photograph is protected by
+--     the row policies on the child's own record. An address in a column
+--     was not: row level security protects the ROW, and a URL keeps
+--     working wherever it is pasted, for whoever holds it, with no
+--     identity and no expiry.
+--   · A portrait cannot exist without a recorded PHOTO_USE consent from
+--     a guardian linked to the child. A trigger, not a screen check.
+--   · The read is written to the audit trail before the bytes go out,
+--     naming the attachment - which is the question somebody asks after
+--     a consent is withdrawn. Triggers do not fire on reads.
+--   · One active portrait per child, by partial unique index, and the
+--     replaced one is archived rather than deleted: which picture the
+--     centre held, and when, stays answerable.
+--
+-- AND THE p00 CONVENTION CHECK GOES GREEN with this - not because it
+-- was exempted. children.photo_url was the only column in the schema
+-- that NO_PERSONAL_LINK named, and there is now no row in
+-- hbh.convention_exemptions for it, because none was ever needed. The
+-- open question closed the way an open question should.
+-- =====================================================================
+
+\set ON_ERROR_STOP on
+
+ALTER TABLE hbh.children DROP COLUMN IF EXISTS photo_url;
+
+INSERT INTO hbh.schema_migrations (version) VALUES ('0078');

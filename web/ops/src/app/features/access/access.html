@@ -1,0 +1,642 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">{{ 'access.title' | t }}</div>
+      <div class="hbh-pagehead__sub">{{ 'access.sub' | t }}</div>
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    @if (canManage()) {
+      <button class="hbh-btn hbh-btn--primary" type="button" (click)="startAddUser()">
+        <hbh-icon name="ic-user-plus" />
+        {{ 'access.addUser' | t }}
+      </button>
+    }
+    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+<div class="hbh-tabbar" role="tablist">
+  <button class="hbh-tabbar__item" type="button" role="tab"
+          [class.is-active]="tab() === 'people'"
+          [attr.aria-selected]="tab() === 'people'" (click)="showTab('people')">
+    <hbh-icon name="ic-users" /> {{ 'access.tabPeople' | t }}
+  </button>
+  <button class="hbh-tabbar__item" type="button" role="tab"
+          [class.is-active]="tab() === 'roles'"
+          [attr.aria-selected]="tab() === 'roles'" (click)="showTab('roles')">
+    <hbh-icon name="ic-shield" /> {{ 'access.tabRoles' | t }}
+  </button>
+  <button class="hbh-tabbar__item" type="button" role="tab"
+          [class.is-active]="tab() === 'screens'"
+          [attr.aria-selected]="tab() === 'screens'" (click)="showTab('screens')">
+    <hbh-icon name="ic-grid" /> {{ 'access.tabScreens' | t }}
+  </button>
+</div>
+
+@if (loading()) {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (failed()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                  (retry)="load()" />
+} @else {
+
+  <!-- ================= people: who holds what ================= -->
+  @if (tab() === 'people') {
+    <div class="hbh-md">
+      <aside class="hbh-md__list">
+        <div class="hbh-field hbh-field--grow hbh-acc__search">
+          <hbh-icon name="ic-search" />
+          <input type="search" [formControl]="search"
+                 [attr.placeholder]="'access.searchPlaceholder' | t">
+        </div>
+        <!-- An archived account is not in the default list, so without
+             this the restore button sits on a row nobody can reach. -->
+        <button class="hbh-btn hbh-btn--ghost hbh-acc__search" type="button"
+                [attr.aria-pressed]="showArchived()" (click)="toggleArchived()">
+          <hbh-icon name="ic-filter" />
+          {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
+        </button>
+        <!-- "Who is suspended?" in one press. It filters what is ALREADY
+             loaded, so it can only narrow the list this account may see -
+             it is not a second way to ask the service for accounts. -->
+        <button class="hbh-btn hbh-btn--ghost hbh-acc__search" type="button"
+                [attr.aria-pressed]="onlyInactive()" (click)="toggleOnlyInactive()">
+          <hbh-icon name="ic-filter" />
+          {{ (onlyInactive() ? 'access.showAll' : 'access.onlyInactive') | t }}
+        </button>
+        @for (user of shownUsers(); track user.user_id) {
+          <button class="hbh-md__item" type="button"
+                  [class.is-active]="user.user_id === selectedUserId()"
+                  [class.is-archived]="!user.active_flg"
+                  (click)="selectUser(user)">
+            <span class="hbh-md__face hbh-md__face--none"><hbh-icon name="ic-user" /></span>
+            <span class="hbh-md__who">
+              <span class="hbh-md__name">{{ user.full_name_ar }}</span>
+              <span class="hbh-md__role">{{ roleNames(user) }}</span>
+            </span>
+            <!-- THE STANDING, ON THE ROW.
+                 It was only in the detail pane, so a suspended account and
+                 an active one were the same line of text and the only way
+                 to answer "who is suspended?" was to click every member of
+                 staff in turn. ACTIVE carries no badge on purpose: a mark
+                 on every row marks nothing. -->
+            @if (!isPlainActive(user)) {
+              <span class="hbh-badge hbh-badge--muted">{{ standingKey(user) | t }}</span>
+            }
+          </button>
+        }
+        @if (shownUsers().length === 0) {
+          <p class="hbh-muted">{{ 'access.noMatch' | t }}</p>
+        }
+      </aside>
+
+      @if (selectedUser(); as user) {
+        <section class="hbh-md__detail">
+          <div class="hbh-md__head">
+            <div>
+              <div class="hbh-card-title">{{ user.full_name_ar }}</div>
+              <span class="hbh-muted" dir="ltr">{{ user.username }}</span>
+            </div>
+            @if (canManage() && dirty()) {
+              <div class="hbh-pagehead__actions">
+                <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelRoles()">
+                  <hbh-icon name="ic-x" /> {{ 'action.cancel' | t }}
+                </button>
+                <button class="hbh-btn hbh-btn--primary" type="button"
+                        [disabled]="saving()" (click)="saveRoles()">
+                  <hbh-icon name="ic-check" />
+                  {{ (saving() ? 'action.saving' : 'action.save') | t }}
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (canManage()) {
+            <div class="hbh-card">
+              <div class="hbh-card-head">
+                <div class="hbh-card-title">{{ 'access.standing' | t }}</div>
+                <span class="hbh-badge"
+                      [class]="user.active_flg && user.status === 'ACTIVE'
+                               ? 'hbh-badge--success' : 'hbh-badge--muted'">
+                  {{ (!user.active_flg ? 'status.archived'
+                      : 'access.status.' + user.status) | t }}
+                </span>
+              </div>
+              <div class="hbh-card-body">
+                <p class="hbh-md__note">{{ 'access.standingNote' | t }}</p>
+
+                <!-- The first password.
+                     There is no field to type one into, and that is the
+                     design: this issues a single-use code, the person
+                     redeems it and chooses their own, and nobody else ever
+                     learns it. -->
+                <div class="hbh-acc__label">{{ 'access.passwordTitle' | t }}</div>
+                <p class="hbh-md__note">{{ 'access.passwordNote' | t }}</p>
+                @if (setupCode(); as code) {
+                  <div class="hbh-notice hbh-notice--warn">
+                    <hbh-icon name="ic-warn" />
+                    <div>
+                      <strong>{{ 'access.codeOnce' | t }}</strong>
+                      <p class="hbh-acc__code" dir="ltr">{{ code }}</p>
+                      <p>{{ 'access.codeHow' | t }}</p>
+                      <button class="hbh-btn hbh-btn--ghost" type="button"
+                              (click)="dismissSetupCode()">
+                        {{ 'access.codeHide' | t }}
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="hbh-pagehead__actions">
+                    <button class="hbh-btn hbh-btn--ghost" type="button"
+                            [disabled]="issuing()" (click)="issueSetupCode()">
+                      <hbh-icon name="ic-lock" />
+                      {{ (issuing() ? 'action.saving' : 'access.issueCode') | t }}
+                    </button>
+                  </div>
+                }
+                <div class="hbh-pagehead__actions">
+                  @if (!user.active_flg) {
+                    <button class="hbh-btn hbh-btn--ghost" type="button"
+                            (click)="archiveUser(user, true)">
+                      <hbh-icon name="ic-refresh" /> {{ 'action.restore' | t }}
+                    </button>
+                  } @else {
+                    @if (user.status === 'ACTIVE') {
+                      <button class="hbh-btn hbh-btn--ghost" type="button"
+                              (click)="setStatus(user, 'SUSPENDED')">
+                        <hbh-icon name="ic-lock" /> {{ 'access.suspend' | t }}
+                      </button>
+                    } @else {
+                      <button class="hbh-btn hbh-btn--ghost" type="button"
+                              (click)="setStatus(user, 'ACTIVE')">
+                        <hbh-icon name="ic-check-circle" /> {{ 'access.reactivate' | t }}
+                      </button>
+                    }
+                    <!-- Archive, never delete. The account and every audit
+                         row that names it stay exactly where they are. -->
+                    <button class="hbh-btn hbh-btn--ghost" type="button"
+                            (click)="archiveUser(user, false)">
+                      <hbh-icon name="ic-trash" /> {{ 'action.archive' | t }}
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Changing your own password. On your OWN record only,
+               because that is the only account the service will let this
+               reach - it takes no user id at all. -->
+          @if (isMe()) {
+            <div class="hbh-card">
+              <div class="hbh-card-head">
+                <div class="hbh-card-title">{{ 'access.myPassword' | t }}</div>
+                <button class="hbh-btn hbh-btn--ghost hbh-md__add" type="button"
+                        (click)="togglePasswordForm()">
+                  {{ (pwOpen() ? 'action.cancel' : 'access.changeMyPassword') | t }}
+                </button>
+              </div>
+              @if (pwOpen()) {
+                <div class="hbh-card-body">
+                  <p class="hbh-md__note">{{ 'access.myPasswordNote' | t }}</p>
+                  <div class="hbh-fld">
+                    <label class="hbh-fld__l" for="pw-cur">{{ 'access.currentPassword' | t }}</label>
+                    <div class="hbh-fld__box">
+                      <input id="pw-cur" type="password" [formControl]="pwCurrent">
+                    </div>
+                  </div>
+                  <div class="hbh-fld">
+                    <label class="hbh-fld__l" for="pw-new">{{ 'access.newPassword' | t }}</label>
+                    <div class="hbh-fld__box">
+                      <input id="pw-new" type="password" [formControl]="pwNext">
+                    </div>
+                  </div>
+                  @if (pwError()) {
+                    <p class="hbh-signin__err" role="alert">
+                      <hbh-icon name="ic-warn" /><span>{{ pwError() | t }}</span>
+                    </p>
+                  }
+                  @if (pwDone()) {
+                    <p class="hbh-md__note">{{ 'access.passwordChanged' | t }}</p>
+                  }
+                  <button class="hbh-btn hbh-btn--primary" type="button"
+                          [disabled]="pwBusy()" (click)="changePassword()">
+                    {{ (pwBusy() ? 'action.saving' : 'action.save') | t }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ---------------- the personal record ----------------
+               Drawn only for somebody who may see it: STAFF.PII, or it is
+               their own. The policy decides in any case - a caller who
+               got past this would be handed no rows rather than somebody
+               else's identity number - so this only avoids drawing a card
+               that would always be empty. -->
+          @if (canSeePii()) {
+            <div class="hbh-card">
+              <div class="hbh-card-head">
+                <div class="hbh-card-title">{{ 'access.personal' | t }}</div>
+                @if (piiDirty()) {
+                  <span class="hbh-pagehead__actions">
+                    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelPii()">
+                      {{ 'action.cancel' | t }}
+                    </button>
+                    <button class="hbh-btn hbh-btn--primary" type="button"
+                            [disabled]="saving()" (click)="savePii()">
+                      {{ (saving() ? 'action.saving' : 'action.save') | t }}
+                    </button>
+                  </span>
+                }
+              </div>
+              <div class="hbh-card-body">
+                <p class="hbh-md__note">{{ 'access.personalNote' | t }}</p>
+
+                <!-- The photograph. Fetched through the HTTP client and
+                     rendered from a blob, not linked: this route needs the
+                     session token and an <img src> sends no headers. -->
+                <div class="hbh-md__portrait">
+                  @if (photoUrl()) {
+                    <img class="hbh-md__avatar" alt="" [src]="photoUrl()">
+                  } @else {
+                    <span class="hbh-md__avatar hbh-md__avatar--none">
+                      <hbh-icon name="ic-user" />
+                    </span>
+                  }
+                  <label class="hbh-md__camera" [attr.title]="'access.changePhoto' | t">
+                    <hbh-icon name="ic-camera" />
+                    <span class="hbh-sr">{{ 'access.changePhoto' | t }}</span>
+                    <input type="file" accept="image/*" class="hbh-sr"
+                           [disabled]="loadingPhoto()"
+                           (change)="onPickStaffPhoto($event)">
+                  </label>
+                </div>
+                <p class="hbh-md__note hbh-md__center">
+                  {{ (loadingPhoto() ? 'team.uploading' : 'access.photoNote') | t }}
+                </p>
+                @if (photoUrl()) {
+                  <p class="hbh-md__center">
+                    <button class="hbh-btn hbh-btn--ghost" type="button"
+                            (click)="removeStaffPhoto()">
+                      {{ 'team.removePhoto' | t }}
+                    </button>
+                  </p>
+                }
+
+                <div class="hbh-fld">
+                  <label class="hbh-fld__l" for="pii-nid">{{ 'field.nationalId' | t }}</label>
+                  <div class="hbh-fld__box">
+                    <input id="pii-nid" type="text" dir="ltr" inputmode="numeric"
+                           [formControl]="pii()['national_id']">
+                  </div>
+                </div>
+                <div class="hbh-fld">
+                  <label class="hbh-fld__l" for="pii-dob">{{ 'field.birthDate' | t }}</label>
+                  <!-- Three named parts, not a native date box: that control
+                       takes its format from the browser, so an English Chrome
+                       drew mm/dd/yyyy inside this Arabic form and 7 March was
+                       stored as 3 July with nothing to catch it. A stored
+                       birth date, so it gets the same treatment as a child's. -->
+                  <hbh-date-parts fieldId="pii-dob"
+                                  [value]="pii()['birth_date'].value"
+                                  (valueChange)="pii()['birth_date'].setValue($event)" />
+                </div>
+                <div class="hbh-fld">
+                  <label class="hbh-fld__l" for="pii-addr">{{ 'access.address' | t }}</label>
+                  <div class="hbh-fld__box">
+                    <textarea id="pii-addr" rows="2"
+                              [formControl]="pii()['address_ar']"></textarea>
+                  </div>
+                </div>
+
+                <div class="hbh-acc__label">{{ 'access.documents' | t }}</div>
+                @if (userDocuments().length === 0) {
+                  <p class="hbh-muted">{{ 'access.noDocuments' | t }}</p>
+                } @else {
+                  <ul class="hbh-acc__docs">
+                    @for (doc of userDocuments(); track doc['document_id']) {
+                      <li>
+                        <hbh-icon name="ic-file" />
+                        <!-- A button and not a link, because a link cannot
+                             work: the route needs the session token and a
+                             navigation sends no headers. It is fetched and
+                             opened from a blob. Opening one is an audited
+                             read - the service records who looked and when. -->
+                        <button class="hbh-link hbh-acc__docLink" type="button"
+                                (click)="openDocument(doc)">
+                          {{ cell(doc, 'title_ar') || (docKind(doc) | t) }}
+                        </button>
+                        <span class="hbh-muted">{{ docKind(doc) | t }}</span>
+                        <button class="hbh-iconbtn" type="button"
+                                [attr.aria-label]="'action.archive' | t"
+                                (click)="archiveDocument(doc)">
+                          <hbh-icon name="ic-trash" />
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+
+                <div class="hbh-md__slotA">
+                  @for (k of ['ID', 'QUALIFICATION', 'CONTRACT', 'OTHER']; track k) {
+                    <label class="hbh-btn hbh-btn--ghost">
+                      <hbh-icon name="ic-upload" />
+                      {{ ('access.doc.' + k) | t }}
+                      <input type="file" accept="image/*,application/pdf" class="hbh-sr"
+                             [disabled]="uploadingDoc()"
+                             (change)="onPickDocument($event, k)">
+                    </label>
+                  }
+                </div>
+                @if (uploadingDoc()) {
+                  <p class="hbh-md__note">{{ 'team.uploading' | t }}</p>
+                }
+                <p class="hbh-md__note">{{ 'access.docNote' | t }}</p>
+              </div>
+            </div>
+          }
+
+          <!-- Said before the save, not discovered after it. -->
+          @if (selfLockout()) {
+            <div class="hbh-notice hbh-notice--warn">
+              <hbh-icon name="ic-warn" />
+              <div>{{ 'access.selfLockout' | t }}</div>
+            </div>
+          }
+
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <div class="hbh-card-title">{{ 'access.rolesOf' | t }}</div>
+            </div>
+            <div class="hbh-card-body">
+              <p class="hbh-md__note">{{ 'access.roleIsGroup' | t }}</p>
+              @for (role of roles(); track role.code) {
+                <label class="hbh-acc__role">
+                  <input type="checkbox" [disabled]="!canManage()"
+                         [checked]="hasRole(role.code)"
+                         (change)="toggleRole(role.code)">
+                  <span class="hbh-acc__roleName">{{ role.name_ar }}</span>
+                  <span class="hbh-muted" dir="ltr">{{ role.code }}</span>
+                  <span class="hbh-muted">
+                    {{ 'access.opensN' | t: { n: count(roleScreens(role).length) } }}
+                  </span>
+                </label>
+              }
+              @if (!canManage()) {
+                <p class="hbh-md__note">{{ 'access.readOnly' | t }}</p>
+              }
+            </div>
+          </div>
+
+          <!-- What the ticked boxes add up to, before they are saved. -->
+          <div class="hbh-card">
+            <div class="hbh-card-head">
+              <div class="hbh-card-title">{{ 'access.resultingScreens' | t }}</div>
+              <span class="hbh-muted">{{ count(draftScreens().length) }}</span>
+            </div>
+            <div class="hbh-card-body">
+              @if (draftScreens().length === 0) {
+                <p class="hbh-muted">{{ 'access.opensNothing' | t }}</p>
+              } @else {
+                <div class="hbh-md__chips">
+                  @for (screen of draftScreens(); track screen.key) {
+                    <span class="hbh-md__chip">{{ screen.labelKey | t }}</span>
+                  }
+                </div>
+              }
+              <p class="hbh-md__note">
+                {{ 'access.permCount' | t: { n: count(draftPermissions().length) } }}
+              </p>
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  <!-- ================= roles: what each group contains ================= -->
+  @if (tab() === 'roles') {
+    <div class="hbh-notice">
+      <hbh-icon name="ic-info" />
+      <div>{{ 'access.rolesNote' | t }}</div>
+    </div>
+    @for (role of roles(); track role.code) {
+      <div class="hbh-card hbh-acc__card">
+        <div class="hbh-card-head">
+          <div class="hbh-card-title">{{ role.name_ar }}</div>
+          <span class="hbh-muted" dir="ltr">{{ role.code }}</span>
+          @if (canManage() && editingRole() !== role.code) {
+            <button class="hbh-btn hbh-btn--ghost hbh-md__add" type="button"
+                    (click)="startEditRole(role)">
+              <hbh-icon name="ic-edit" /> {{ 'access.editRole' | t }}
+            </button>
+          }
+        </div>
+
+        @if (editingRole() === role.code) {
+          <div class="hbh-card-body">
+            <!-- Who this touches, before it is touched. Editing a role
+                 changes it for everybody holding it at once, and the
+                 number is the thing a person needs in front of them. -->
+            <div class="hbh-notice hbh-notice--warn">
+              <hbh-icon name="ic-warn" />
+              <div>{{ 'access.affects' | t: { n: count(affected()) } }}</div>
+            </div>
+
+            @if (wouldLockOut()) {
+              <div class="hbh-notice hbh-notice--warn">
+                <hbh-icon name="ic-warn" />
+                <div>{{ 'access.lastAdmin' | t }}</div>
+              </div>
+            }
+
+            <div class="hbh-acc__label">{{ 'access.opensScreens' | t }}</div>
+            @for (perm of screenPermissions(); track perm.code) {
+              <label class="hbh-acc__role">
+                <input type="checkbox" [checked]="hasPerm(perm.code)"
+                       (change)="togglePerm(perm.code)">
+                <span class="hbh-acc__roleName">{{ perm.labelKey | t }}</span>
+                <span class="hbh-muted" dir="ltr">{{ perm.code }}</span>
+              </label>
+            }
+
+            <div class="hbh-acc__label">{{ 'access.alsoActions' | t }}</div>
+            @for (code of actionPermissions(); track code) {
+              <label class="hbh-acc__role">
+                <input type="checkbox" [checked]="hasPerm(code)"
+                       (change)="togglePerm(code)">
+                <span class="hbh-acc__roleName" dir="ltr">{{ code }}</span>
+              </label>
+            }
+
+            <div class="hbh-pagehead__actions hbh-acc__foot">
+              <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelEditRole()">
+                <hbh-icon name="ic-x" /> {{ 'action.cancel' | t }}
+              </button>
+              <button class="hbh-btn hbh-btn--primary" type="button"
+                      [disabled]="saving() || !roleDirty()" (click)="saveRolePerms()">
+                <hbh-icon name="ic-check" />
+                {{ (saving() ? 'action.saving' : 'action.save') | t }}
+              </button>
+            </div>
+          </div>
+        } @else {
+        <div class="hbh-card-body">
+          <div class="hbh-acc__label">{{ 'access.opensScreens' | t }}</div>
+          @if (roleScreens(role).length === 0) {
+            <p class="hbh-muted">{{ 'access.opensNothing' | t }}</p>
+          } @else {
+            <div class="hbh-md__chips">
+              @for (screen of roleScreens(role); track screen.key) {
+                <span class="hbh-md__chip">{{ screen.labelKey | t }}</span>
+              }
+            </div>
+          }
+          @if (roleActions(role).length) {
+            <!-- Not spare permissions: they unlock actions inside screens
+                 whose entry permission is something else. Listed so nobody
+                 reads them as dead weight and takes them away. -->
+            <div class="hbh-acc__label">{{ 'access.alsoActions' | t }}</div>
+            <div class="hbh-md__chips">
+              @for (code of roleActions(role); track code) {
+                <span class="hbh-md__chip hbh-acc__chipCode" dir="ltr">{{ code }}</span>
+              }
+            </div>
+          }
+        </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ================= screens: what I can open ================= -->
+  @if (tab() === 'screens') {
+    <div class="hbh-notice">
+      <hbh-icon name="ic-info" />
+      <div>{{ 'access.mineNote' | t: { held: heldCount(), total: totalCount() } }}</div>
+    </div>
+    <div class="hbh-tablewrap">
+      <table class="hbh-table">
+        <thead>
+          <tr>
+            <th>{{ 'access.screen' | t }}</th>
+            <th>{{ 'access.needs' | t }}</th>
+            <th>{{ 'access.held' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of screens(); track row.key) {
+            <tr>
+              <td>
+                @if (row.held) {
+                  <a class="hbh-link" [routerLink]="row.path">{{ row.labelKey | t }}</a>
+                } @else {
+                  {{ row.labelKey | t }}
+                }
+              </td>
+              <td dir="ltr"><code>{{ row.permission }}</code></td>
+              <td>
+                <span class="hbh-badge"
+                      [class]="row.held ? 'hbh-badge--success' : 'hbh-badge--muted'">
+                  {{ (row.held ? 'access.yes' : 'access.no') | t }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (actionOnly().length) {
+      <div class="hbh-card hbh-acc__card">
+        <div class="hbh-card-head">
+          <div class="hbh-card-title">{{ 'access.actionOnly' | t }}</div>
+        </div>
+        <div class="hbh-card-body">
+          <p class="hbh-md__note">{{ 'access.actionOnlyNote' | t }}</p>
+          <div class="hbh-md__chips">
+            @for (code of actionOnly(); track code) {
+              <span class="hbh-md__chip hbh-acc__chipCode" dir="ltr">{{ code }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+}
+
+<!-- Opening an account.
+     No password field: there is no endpoint that accepts one for
+     somebody else, on any path, and that is the service's decision. A
+     password typed here is a password said out loud. -->
+@if (addingUser()) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelAddUser()"
+          aria-labelledby="addUserTitle">
+    <form class="hbh-sheet__box hbh-sheet__box--editor" (submit)="saveUser($event)">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="addUserTitle">{{ 'access.addUser' | t }}</h2>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.cancel' | t"
+                (click)="cancelAddUser()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+      <div class="hbh-sheet__body">
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="u-username">{{ 'access.username' | t }} *</label>
+          <div class="hbh-fld__box">
+            <input id="u-username" type="text" dir="ltr"
+                   [formControl]="newUser()['username']">
+          </div>
+          <p class="hbh-md__note">{{ 'access.usernameNote' | t }}</p>
+        </div>
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="u-name">{{ 'access.fullName' | t }} *</label>
+          <div class="hbh-fld__box">
+            <input id="u-name" type="text" [formControl]="newUser()['full_name_ar']">
+          </div>
+        </div>
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="u-type">{{ 'access.userType' | t }}</label>
+          <div class="hbh-fld__box">
+            <select id="u-type" [formControl]="newUser()['user_type']">
+              <option value="STAFF">{{ 'access.type.STAFF' | t }}</option>
+              <option value="THERAPIST">{{ 'access.type.THERAPIST' | t }}</option>
+              <option value="GUARDIAN">{{ 'access.type.GUARDIAN' | t }}</option>
+            </select>
+          </div>
+          <p class="hbh-md__note">{{ 'access.userTypeNote' | t }}</p>
+        </div>
+        <div class="hbh-fld">
+          <label class="hbh-fld__l" for="u-mobile">{{ 'field.mobile' | t }}</label>
+          <div class="hbh-fld__box">
+            <input id="u-mobile" type="text" dir="ltr" [formControl]="newUser()['mobile']">
+          </div>
+        </div>
+
+        <div class="hbh-notice">
+          <hbh-icon name="ic-info" />
+          <div>{{ 'access.noPasswordNote' | t }}</div>
+        </div>
+
+        @if (formError()) {
+          <p class="hbh-signin__err" role="alert">
+            <hbh-icon name="ic-warn" /><span>{{ formError() | t }}</span>
+          </p>
+        }
+      </div>
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelAddUser()">
+          {{ 'action.cancel' | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
+          {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+}

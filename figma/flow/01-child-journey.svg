@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1130" viewBox="0 0 1440 1130" font-family="'IBM Plex Sans Arabic','Noto Kufi Arabic','Segoe UI',sans-serif">
+  <title>Hand By Hand — رحلة الطفل من طلب الالتحاق إلى التقرير والفاتورة</title>
+  <desc>مستخرَج من الكود: db/migrations · api/internal/http/server.go · docs/architect/02-new-child-flow.md</desc>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2A7680"/>
+    </marker>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#134E5C" flood-opacity="0.05"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#134E5C" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <style>
+    .h    { font-family:'Noto Kufi Arabic','IBM Plex Sans Arabic','Segoe UI',sans-serif; font-weight:700; }
+    .t    { font-size:14.5px; font-weight:700; fill:#22333A; }
+    .n    { font-size:11px;   font-weight:500; fill:#4C6069; }
+    .c    { font-size:9.5px;  font-weight:500; fill:#2A7680;
+            font-family:ui-monospace,'Cascadia Mono','Consolas',monospace; }
+    .cbad { fill:#C4543F; }
+    .band { font-size:15px; fill:#1E5D64; }
+    .lg   { font-size:11.5px; fill:#4C6069; }
+  </style>
+
+  <rect width="1440" height="1130" fill="#FAF6EE"/>
+
+  <!-- ============ العنوان ============ -->
+  <text class="h" x="1392" y="66" text-anchor="end" font-size="27" fill="#22333A">Hand By Hand — رحلة الطفل</text>
+  <text x="1392" y="96" text-anchor="end" font-size="13" fill="#4C6069">من طلب الالتحاق إلى التقرير والفاتورة — خمس مراحل، والوصل بينها مقطوع في ثلاث خطوات</text>
+
+  <!-- ============ ١ — الالتحاق ============ -->
+  <rect x="32" y="132" width="1376" height="146" rx="20" fill="#FBF7F0" stroke="#E8E1D4"/>
+  <text class="h band" x="1392" y="158" text-anchor="end">١ — الالتحاق</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1092" y="172" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1372" y="188" width="4" height="60" rx="2" fill="#7E9C60"/>
+    <rect x="744" y="172" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1024" y="188" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="396" y="172" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="676" y="188" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="48" y="172" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="328" y="188" width="4" height="60" rx="2" fill="#338A93"/>
+  </g>
+  <text class="t" x="1360" y="200" text-anchor="end">طلب التحاق</text>
+  <text class="n" x="1360" y="220" text-anchor="end">بابٌ واحد لكل المصادر: ويب وهاتف وحضور</text>
+  <text class="c" x="1360" y="240" text-anchor="end">POST /enrolments  ·  بلا مصادقة  ·  NEW</text>
+
+  <text class="t" x="1012" y="200" text-anchor="end">تواصل الاستقبال</text>
+  <text class="n" x="1012" y="220" text-anchor="end">لا يُسجَّل طفل قبل أن يكلّم أحدٌ أهله</text>
+  <text class="c" x="1012" y="240" text-anchor="end">PATCH /enrolments/{id}  ·  CONTACTED</text>
+
+  <text class="t" x="664" y="200" text-anchor="end">حجز تقييم — اختياري</text>
+  <text class="n" x="664" y="220" text-anchor="end">والطريق المختصر مسموح: تواصل ← تحويل</text>
+  <text class="c" x="664" y="240" text-anchor="end">ASSESSMENT_BOOKED</text>
+
+  <text class="t" x="316" y="200" text-anchor="end">التحويل</text>
+  <text class="n" x="316" y="220" text-anchor="end">النقطة الوحيدة التي يُولد فيها طفل</text>
+  <text class="c" x="316" y="240" text-anchor="end">POST /enrolments/{id}/convert  ·  ENROLLED</text>
+
+  <path d="M1084 218 L1052 218" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M736 218 L704 218"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M388 218 L356 218"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <path d="M720 284 L720 310" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <!-- ============ ٢ — التأسيس ============ -->
+  <rect x="32" y="318" width="1376" height="146" rx="20" fill="#FBF7F0" stroke="#E8E1D4"/>
+  <text class="h band" x="1392" y="344" text-anchor="end">٢ — التأسيس</text>
+  <text class="n" x="1140" y="344" text-anchor="end" fill="#C4543F">ثلاث حلقات مقطوعة: القاعدة مبنيّة ومختبَرة، والمسار الذي يصلها بالشاشة غير موجود</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1092" y="358" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1372" y="374" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="744" y="358" width="300" height="92" rx="14" fill="#FBE6E1" stroke="#F2CFC9"/>
+    <rect x="1024" y="374" width="4" height="60" rx="2" fill="#EB7866"/>
+    <rect x="396" y="358" width="300" height="92" rx="14" fill="#FBE6E1" stroke="#F2CFC9"/>
+    <rect x="676" y="374" width="4" height="60" rx="2" fill="#EB7866"/>
+    <rect x="48" y="358" width="300" height="92" rx="14" fill="#FBE6E1" stroke="#F2CFC9"/>
+    <rect x="328" y="374" width="4" height="60" rx="2" fill="#EB7866"/>
+  </g>
+  <text class="t" x="1360" y="386" text-anchor="end">ملفّ طفل + وليّ أمر</text>
+  <text class="n" x="1360" y="406" text-anchor="end">يُبحث عن الأب بجوّاله أوّلًا — لا نسخة ثانية</text>
+  <text class="c" x="1360" y="426" text-anchor="end">hbh.convert_enrolment  ·  next_number</text>
+
+  <text class="t" x="1012" y="386" text-anchor="end">حساب دخول للأسرة</text>
+  <text class="n" x="1012" y="406" text-anchor="end">الحلقة الأولى — عيبٌ صامت لا تُظهره الشاشة</text>
+  <text class="c cbad" x="1012" y="426" text-anchor="end">guardians.user_id = NULL</text>
+
+  <text class="t" x="664" y="386" text-anchor="end">إسناد لأخصائي</text>
+  <text class="n" x="664" y="406" text-anchor="end">الحلقة الثانية — وبدونها تُرفض أوّل جلسة</text>
+  <text class="c cbad" x="664" y="426" text-anchor="end">caseload  ·  HB023</text>
+
+  <text class="t" x="316" y="386" text-anchor="end">خطة وأهداف</text>
+  <text class="n" x="316" y="406" text-anchor="end">الحلقة الثالثة — سياسات جاهزة ومسار مفقود</text>
+  <text class="c cbad" x="316" y="426" text-anchor="end">GET /children/{id}/plans  ·  قراءة فقط</text>
+
+  <path d="M1084 404 L1052 404" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M736 404 L704 404"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M388 404 L356 404"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <path d="M720 470 L720 496" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <!-- ============ ٣ — التشغيل اليومي ============ -->
+  <rect x="32" y="504" width="1376" height="146" rx="20" fill="#FBF7F0" stroke="#E8E1D4"/>
+  <text class="h band" x="1392" y="530" text-anchor="end">٣ — التشغيل اليومي</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1092" y="544" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1372" y="560" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="744" y="544" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1024" y="560" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="396" y="544" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="676" y="560" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="48" y="544" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="328" y="560" width="4" height="60" rx="2" fill="#338A93"/>
+  </g>
+  <text class="t" x="1360" y="572" text-anchor="end">فحص الفتحة ثم الحجز</text>
+  <text class="n" x="1360" y="592" text-anchor="end">تعارض غرفة أو أخصائي أو خدمة يُردّ من القاعدة</text>
+  <text class="c" x="1360" y="612" text-anchor="end">POST /appointments  ·  BOOKED</text>
+
+  <text class="t" x="1012" y="572" text-anchor="end">تأكيد ثم حضور</text>
+  <text class="n" x="1012" y="592" text-anchor="end">آلة حالة — لا تحديث حرّ لعمود الحالة</text>
+  <text class="c" x="1012" y="612" text-anchor="end">PATCH /appointments/{id}/status  ·  HB020</text>
+
+  <text class="t" x="664" y="572" text-anchor="end">بدء الجلسة</text>
+  <text class="n" x="664" y="592" text-anchor="end">تُرفض ما لم يكن الطفل مُسنَدًا إلى الأخصائي</text>
+  <text class="c" x="664" y="612" text-anchor="end">POST …/{id}/session  ·  IN_PROGRESS</text>
+
+  <text class="t" x="316" y="572" text-anchor="end">بثّ مباشر</text>
+  <text class="n" x="316" y="592" text-anchor="end">بموافقة مسجَّلة — واستمارة الالتحاق ليست موافقة</text>
+  <text class="c" x="316" y="612" text-anchor="end">POST /sessions/{id}/stream  ·  LIVE_VIEW</text>
+
+  <path d="M1084 590 L1052 590" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M736 590 L704 590"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M388 590 L356 590"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <path d="M720 656 L720 682" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <!-- ============ ٤ — التوثيق ============ -->
+  <rect x="32" y="690" width="1376" height="146" rx="20" fill="#FBF7F0" stroke="#E8E1D4"/>
+  <text class="h band" x="1392" y="716" text-anchor="end">٤ — التوثيق</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1092" y="730" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1372" y="746" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="744" y="730" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1024" y="746" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="396" y="730" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="676" y="746" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="48" y="730" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="328" y="746" width="4" height="60" rx="2" fill="#338A93"/>
+  </g>
+  <text class="t" x="1360" y="758" text-anchor="end">إغلاق الجلسة</text>
+  <text class="n" x="1360" y="778" text-anchor="end">شروط الإغلاق تُفحص في القاعدة لا في الشاشة</text>
+  <text class="c" x="1360" y="798" text-anchor="end">PATCH /sessions/{id}/close  ·  COMPLETED</text>
+
+  <text class="t" x="1012" y="758" text-anchor="end">ملاحظة الجلسة ونشرها</text>
+  <text class="n" x="1012" y="778" text-anchor="end">تُكتب داخليًّا ثم تُنشر — الأسرة لا ترى مسوّدة</text>
+  <text class="c" x="1012" y="798" text-anchor="end">PUT /sessions/{id}/note → …/publish</text>
+
+  <text class="t" x="664" y="758" text-anchor="end">قياس التقدّم</text>
+  <text class="n" x="664" y="778" text-anchor="end">قياس على هدف مفتوح، يُغلق بتحقّق أو إسقاط</text>
+  <text class="c" x="664" y="798" text-anchor="end">measurements  ·  goals  ·  OPEN → MET</text>
+
+  <text class="t" x="316" y="758" text-anchor="end">التقرير ونشره</text>
+  <text class="n" x="316" y="778" text-anchor="end">لقطة مجمَّدة لا استعلامًا حيًّا — القرار D-16</text>
+  <text class="c" x="316" y="798" text-anchor="end">POST /reports/{id}/publish  ·  jsonb</text>
+
+  <path d="M1084 776 L1052 776" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M736 776 L704 776"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M388 776 L356 776"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <path d="M720 842 L720 868" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <!-- ============ ٥ — المال والرضا ============ -->
+  <rect x="32" y="876" width="1376" height="146" rx="20" fill="#FBF7F0" stroke="#E8E1D4"/>
+  <text class="h band" x="1392" y="902" text-anchor="end">٥ — المال والرضا</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1092" y="916" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1372" y="932" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="744" y="916" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="1024" y="932" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="396" y="916" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="676" y="932" width="4" height="60" rx="2" fill="#338A93"/>
+    <rect x="48" y="916" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
+    <rect x="328" y="932" width="4" height="60" rx="2" fill="#338A93"/>
+  </g>
+  <text class="t" x="1360" y="944" text-anchor="end">بيع باقة</text>
+  <text class="n" x="1360" y="964" text-anchor="end">رصيد جلسات ينقص مع كل حضور</text>
+  <text class="c" x="1360" y="984" text-anchor="end">POST /children/{id}/packages  ·  ACTIVE</text>
+
+  <text class="t" x="1012" y="944" text-anchor="end">الفاتورة</text>
+  <text class="n" x="1012" y="964" text-anchor="end">ثلاث خطوات: إنشاء، ثم بنود، ثم إصدار</text>
+  <text class="c" x="1012" y="984" text-anchor="end">create_invoice → add_line → issue  ·  HB050</text>
+
+  <text class="t" x="664" y="944" text-anchor="end">الدفعة</text>
+  <text class="n" x="664" y="964" text-anchor="end">الدفعة الجزئية حالة قائمة بذاتها لا نسبة</text>
+  <text class="c" x="664" y="984" text-anchor="end">ISSUED → PARTIALLY_PAID → PAID</text>
+
+  <text class="t" x="316" y="944" text-anchor="end">استبيان الرضا</text>
+  <text class="n" x="316" y="964" text-anchor="end">المركز يسأل، ويقرأ الجواب على شاشة الرضا</text>
+  <text class="c" x="316" y="984" text-anchor="end">GET /nps/due  ·  POST /nps/{id}/response</text>
+
+  <path d="M1084 962 L1052 962" stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M736 962 L704 962"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+  <path d="M388 962 L356 962"   stroke="#2A7680" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+
+  <!-- ============ المفتاح ============ -->
+  <rect x="1096" y="1052" width="12" height="12" rx="3" fill="#7E9C60"/>
+  <text class="lg" x="1086" y="1062" text-anchor="end">باب بلا مصادقة</text>
+
+  <rect x="932" y="1052" width="12" height="12" rx="3" fill="#338A93"/>
+  <text class="lg" x="922" y="1062" text-anchor="end">مبنيّ ومختبَر</text>
+
+  <rect x="784" y="1052" width="12" height="12" rx="3" fill="#EB7866"/>
+  <text class="lg" x="774" y="1062" text-anchor="end">حلقة مقطوعة — القاعدة جاهزة والمسار غير موجود</text>
+
+  <text x="1392" y="1096" text-anchor="end" font-size="10.5" fill="#4C6069"
+        font-family="ui-monospace,'Cascadia Mono','Consolas',monospace">
+    db/migrations  ·  api/internal/http/server.go  ·  docs/architect/02-new-child-flow.md
+  </text>
+</svg>
