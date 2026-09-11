@@ -1,0 +1,35 @@
+# Line endings are pinned here, not left to whoever clones.
+#
+# core.autocrlf is `true` on this machine. The committed blobs are clean LF
+# today - checked, all 321 of them - but that is a property of the current
+# setting, not of the repository. A clone onto a machine configured
+# differently gets CRLF in every .sh, and on the server that is
+# `/bin/bash^M: bad interpreter` or `$'\r': command not found` - a failure
+# that names the shell and never the line ending. The whole point of a
+# remote is that this tree gets cloned somewhere else.
+
+* text=auto
+
+# Anything an interpreter reads by its first line, or a Linux host executes.
+*.sh    text eol=lf
+*.mjs   text eol=lf
+*.sql   text eol=lf
+*.conf  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+Dockerfile text eol=lf
+
+# PowerShell is read by Windows; leave it as Windows writes it.
+*.ps1   text eol=crlf
+
+# Never touched.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.pdf   binary
+*.mp4   binary
+*.woff  binary
+*.woff2 binary
+*.dump  binary
