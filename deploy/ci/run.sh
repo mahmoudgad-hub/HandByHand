@@ -176,6 +176,19 @@ stage_db() {
     return 1
   fi
 
+  # Migrating is opt-in, not a side effect of typing the gate's name. The
+  # database is shared with a running API, and "migrate only, never reset"
+  # is not safe on its own: 0151 dropped a function the live API still
+  # called, so a migrate ahead of the API build turns every report-draft
+  # save into 42883. Schema and code do not move in one step, and a CI run
+  # is not the place that decides which one moves first.
+  if [ "${HBH_CI_MIGRATE:-0}" != "1" ]; then
+    bad "db stage refused: it would run db.sh migrate on the shared database."
+    bad "set HBH_CI_MIGRATE=1 only when a migrate is announced as safe."
+    record db "FAIL-GATED" "migrate not authorised"
+    return 1
+  fi
+
   info "bash scripts/db.sh migrate"
   bash scripts/db.sh migrate >"$log" 2>&1; rc=$?
   if [ "$rc" != 0 ]; then

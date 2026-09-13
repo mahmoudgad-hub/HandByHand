@@ -34,7 +34,7 @@ A green first run proves nothing. Three refusals were demonstrated:
 
 ## Three things it will not do
 
-1. **Never `db.sh reset` or `nuke`.** The database is shared between
+1. **Never `db.sh reset` or `nuke` — and `migrate` only when told.** The `db` stage refuses unless `HBH_CI_MIGRATE=1`: a migrate ahead of the API build dropped a function the live API still called (`0151`). The database is shared between
    concurrent sessions; a reset once pulled the schema out from under another
    process mid-migration. `migrate` only.
 2. **Never `npm test` or `ng test`.** `scripts/web.sh test` counts spec files
