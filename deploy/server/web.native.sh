@@ -22,7 +22,16 @@ API_PORT="${API_PORT:-8090}"
 # The fifth field says whether unknown paths belong to a client-side
 # router. The site has real pages and must answer 404 for what is not
 # there, or a missing asset comes back as the homepage with status 200.
-apps="portal:8091:8443:web/dist/portal/browser:spa ops:8092:8444:web/dist/ops/browser:spa site:8093:8445:site:static"
+#
+# apply is the origin behind apply.hbhskills.com: the portal bundle with
+# ONE API call allowed (see ALLOWED in web.native.mjs). Both tunnel
+# scripts routed to 8094 and add-portal-hosts.sh refuses to write its
+# ingress until 8094 answers - but nothing here started it, so that
+# script stopped every time and the mode existed with no launcher.
+# Its https port is 0 on purpose: it is reached through the tunnel only,
+# and an origin that carries the enrolment write has no reason to be
+# published directly.
+apps="portal:8091:8443:web/dist/portal/browser:spa ops:8092:8444:web/dist/ops/browser:spa site:8093:8445:site:static apply:8094:0:web/dist/portal/browser:apply"
 TLS_DIR="${HBH_TLS_DIR:-$HOME/tls}"
 
 # Publishing is opt-in per start, never a stored setting: the variable
@@ -49,11 +58,26 @@ start() {
     if running "$name"; then echo "$name already running"; continue; fi
     local dist="$ROOT/$docroot"
     [ -d "$dist" ] || { echo "$name: nothing at $dist"; continue; }
-    if [ "$PUBLIC" = 1 ] && [ ! -r "$TLS_DIR/cert.pem" ]; then
+    # An origin with no https port is tunnel-only, and that has to hold in
+    # the code, not in the comment above `apps`. HBH_PUBLIC_HTTP applies to
+    # every app in this loop, so publishing the portal in the clear used to
+    # bind apply to 0.0.0.0 as well - bypassing the tunnel and carrying a
+    # parent's mobile and a child's name in plain text - while the line
+    # below still printed 127.0.0.1.
+    #
+    # It runs BEFORE the certificate check: an origin that never publishes
+    # does not need a certificate, and refusing it there left 8094 down, so
+    # add-portal-hosts.sh stopped on it again - the symptom this began with.
+    local pub="$PUBLIC" pubhttp="$PUBLIC_HTTP"
+    if [ "$tls" = 0 ] && { [ "$pub" = 1 ] || [ "$pubhttp" = 1 ]; }; then
+      echo "$name: tunnel-only origin - HBH_PUBLIC/HBH_PUBLIC_HTTP ignored, kept on 127.0.0.1"
+      pub=0; pubhttp=0
+    fi
+    if [ "$pub" = 1 ] && [ ! -r "$TLS_DIR/cert.pem" ]; then
       echo "$name: HBH_PUBLIC=1 but no certificate in $TLS_DIR - refusing to publish in the clear"
       continue
     fi
-    HBH_PUBLIC="$PUBLIC" HBH_PUBLIC_HTTP="$PUBLIC_HTTP" \
+    HBH_PUBLIC="$pub" HBH_PUBLIC_HTTP="$pubhttp" \
       nohup node "$SRV" "$dist" "$port" "$API_PORT" "$tls" "$TLS_DIR" "$mode" >>"$LOG/$name.log" 2>&1 &
     echo $! > "$(pidf "$name")"
     sleep 1
@@ -89,8 +113,11 @@ case "${1:-status}" in
         printf '%-7s running   http %s -> %s' "$name" "${bind:-?}" "$code"
         # -k because the certificate is self-signed; this asks whether
         # the listener answers, not whether a browser would trust it.
-        tcode=$(curl -sk -o /dev/null -w '%{http_code}' "https://127.0.0.1:$tls/" 2>/dev/null)
-        if [ -n "$tcode" ] && [ "$tcode" != 000 ]; then
+        tcode=""
+        [ "$tls" != 0 ] && tcode=$(curl -sk -o /dev/null -w '%{http_code}' "https://127.0.0.1:$tls/" 2>/dev/null)
+        if [ "$tls" = 0 ]; then
+          printf '   https none (tunnel only)\n'
+        elif [ -n "$tcode" ] && [ "$tcode" != 000 ]; then
           printf '   https :%s -> %s  PUBLIC\n' "$tls" "$tcode"
         else
           printf '   https :%s not listening\n' "$tls"
@@ -102,7 +129,7 @@ case "${1:-status}" in
     echo
     # Single quotes: $4 belongs to awk, and in double quotes the shell
     # would have eaten it and printed every column instead.
-    ss -tlnH | awk '{print $4}' | grep -E ':(8091|8092|8093|8443|8444|8445)$' | sort || echo "(nothing listening)"
+    ss -tlnH | awk '{print $4}' | grep -E ':(8091|8092|8093|8094|8443|8444|8445)$' | sort || echo "(nothing listening)"
     ;;
   logs) tail -n "${3:-40}" "$LOG/${2:-portal}.log" ;;
   *) echo "usage: $0 start|stop|restart|status|logs [portal|ops]"; exit 1 ;;
