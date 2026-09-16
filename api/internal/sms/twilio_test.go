@@ -74,7 +74,7 @@ func TestTwilioRefusesAnUnmappedTemplateAsConfig(t *testing.T) {
 	s := newTestTwilio(t, map[string]string{"OTP": "HX0000000000000000000000000000000"})
 
 	_, err := s.Send(context.Background(), Message{
-		To: "01012345678", TemplateCode: "APPOINTMENT_CONFIRMED",
+		To: "+201012345678", TemplateCode: "APPOINTMENT_CONFIRMED",
 	})
 	if err == nil {
 		t.Fatal("an unmapped template must not be sent")
@@ -110,7 +110,7 @@ func TestTwilioFreeformFallbackOnlyWhenAllowedAndOnlyWithABody(t *testing.T) {
 		return s
 	}
 
-	unmapped := Message{To: "01012345678", TemplateCode: "APPOINTMENT_BOOKED", Body: "رسالة"}
+	unmapped := Message{To: "+201012345678", TemplateCode: "APPOINTMENT_BOOKED", Body: "رسالة"}
 
 	// Off: refused, and refused as CONFIG so it is not retried.
 	if _, err := build(false).Send(context.Background(), unmapped); err == nil {
@@ -141,7 +141,7 @@ func TestTwilioFreeformFallbackOnlyWhenAllowedAndOnlyWithABody(t *testing.T) {
 	// A MAPPED template is never affected by the affordance: it still goes as
 	// a template, so turning this on cannot silently downgrade a message that
 	// had an approval.
-	mapped := Message{To: "01012345678", TemplateCode: "OTP", Vars: []string{"123456"}, Body: "fallback"}
+	mapped := Message{To: "+201012345678", TemplateCode: "OTP", Vars: []string{"123456"}, Body: "fallback"}
 	if _, err := build(true).Send(context.Background(), mapped); err != nil {
 		if _, detail := ClassOf(err); strings.Contains(detail, "OTP") &&
 			strings.Contains(detail, "no approved") {
@@ -158,7 +158,7 @@ func TestTwilioRefusesAnEmptyMessage(t *testing.T) {
 	// open 24-hour window. What must not happen is a silent template-less
 	// send of a message whose template_code was never mapped, which the test
 	// above covers. This one pins the empty message instead.
-	if _, err := s.Send(context.Background(), Message{To: "01012345678"}); err == nil {
+	if _, err := s.Send(context.Background(), Message{To: "+201012345678"}); err == nil {
 		t.Fatal("a message with neither template nor body must be refused")
 	} else if class, _ := ClassOf(err); class != ClassPermanent {
 		t.Fatalf("got %s, want PERMANENT - an empty message is empty on every retry", class)

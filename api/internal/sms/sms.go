@@ -177,13 +177,14 @@ type Sender interface {
 // wire's own last look at the value, in the one place that can still classify
 // a bad one as PERMANENT rather than retrying it forever.
 //
-// THE 01XXXXXXXXX BRANCH IS TRANSITIONAL AND HAS A DEFINED END.
-// The API is deployed BEFORE 0112 (the migration says so in its header,
-// because it raises HB173 and pgerr.go has to know the code first), which
-// means this build runs for a while against a database whose columns still
-// hold the national form. It goes when the handler starts sending the
-// mobile_e164 that request_otp now returns; until then, removing it would
-// break every Egyptian login for the length of a deploy.
+// THERE WAS A TRANSITIONAL 01XXXXXXXXX BRANCH HERE, AND IT HAS REACHED THE
+// END IT WAS WRITTEN WITH. It converted the national form to +20 so the login
+// handler could pass on what a person typed while columns still held that
+// form. The handler now sends request_otp's mobile_e164, and every destination
+// in hbh.sms_outbox is canonicalised on write (0114) - checked before this was
+// removed: no row of any status held anything but +. So the only thing the
+// branch still did was hide the next caller that forgets to canonicalise, and
+// hide it for Egyptian numbers only, which is the worst subset to hide it for.
 func E164(mobile string) (string, error) {
 	m := stripSeparators(mobile)
 
@@ -192,11 +193,6 @@ func E164(mobile string) (string, error) {
 			return "", Fail(ClassPermanent, "destination is not a valid international number", nil)
 		}
 		return m, nil
-	}
-
-	// Transitional; see above.
-	if len(m) == 11 && strings.HasPrefix(m, "01") && allDigits(m) {
-		return "+20" + m[1:], nil
 	}
 
 	return "", Fail(ClassPermanent, "destination is not in international form", nil)

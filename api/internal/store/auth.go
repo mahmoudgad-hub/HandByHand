@@ -43,6 +43,16 @@ type OTPRequest struct {
 	// everything else, so its presence cannot be used to tell "locked" from
 	// "unknown".
 	CenterID *int
+
+	// MobileE164 is the number as hbh.canonical_mobile read it, and it is
+	// the ONLY form that may be handed to a provider. What the person typed
+	// is not: "00201225283838" and "0122 528 3838" both find the account,
+	// because request_otp canonicalises its own argument, and neither is
+	// something a sender can dial. Passing the typed value on marked every
+	// login code typed with 00 as DEAD while the screen said SENT.
+	//
+	// Present only when OK, for CenterID's reason.
+	MobileE164 *string
 }
 
 // Reasons returned by hbh.request_otp and hbh.verify_otp. They are compared,
@@ -74,18 +84,27 @@ const (
 // same failure CLAUDE.md opens by describing - so this half now points at the
 // half that decides instead of contradicting it.
 //
-// The caller may send the mobile in either the national or the international
-// form: hbh.request_otp canonicalises its own argument (0112). It also returns
-// mobile_e164, the canonical number, which this function does not yet select -
-// doing so would make the API require 0112 and lose the freedom to deploy
-// ahead of it, and the delivery path does not need it while sms.E164 accepts
-// what a person types.
+// The caller may send the mobile in any form a person types: hbh.request_otp
+// canonicalises its own argument (0112) and returns the result as mobile_e164,
+// which is selected here and is what delivery uses.
+//
+// THIS USED TO LEAVE mobile_e164 UNREAD, on the reasoning that the delivery
+// path did not need it "while sms.E164 accepts what a person types". It did
+// not accept it. E164 took +... and the national 01XXXXXXXXX and nothing
+// else, so a number typed as 00201225283838 found its account, issued a code,
+// answered SENT, and was refused at the wire as PERMANENT - no retry, and no
+// sign anywhere but a DEAD row in hbh.sms_outbox. The premise was checked
+// against one spelling of a number and stated for all of them.
+//
+// Selecting the sixth column makes this build require 0112. It is applied
+// wherever this runs, and the alternative is the bug above.
 func (d *DB) RequestOTP(ctx context.Context, mobile string) (OTPRequest, error) {
 	var r OTPRequest
 	err := d.InTx(ctx, "", func(ctx context.Context, tx pgx.Tx) error {
 		return tx.QueryRow(ctx,
-			`SELECT ok, reason, code, expires_at, center_id FROM hbh.request_otp($1)`, mobile).
-			Scan(&r.OK, &r.Reason, &r.Code, &r.ExpiresAt, &r.CenterID)
+			`SELECT ok, reason, code, expires_at, center_id, mobile_e164
+			   FROM hbh.request_otp($1)`, mobile).
+			Scan(&r.OK, &r.Reason, &r.Code, &r.ExpiresAt, &r.CenterID, &r.MobileE164)
 	})
 	if err != nil {
 		return OTPRequest{}, fmt.Errorf("request_otp: %w", err)

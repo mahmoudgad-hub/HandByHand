@@ -61,9 +61,9 @@ func quiet() *slog.Logger {
 func TestWorkerSendsAClaimedBatchAndRecordsEachOne(t *testing.T) {
 	q := &fakeQueue{pending: []Claimed{
 		{ID: 1, Purpose: "NOTIFICATION", TemplateCode: "REPORT_PUBLISHED",
-			Destination: "01500000093", Body: "x"},
+			Destination: "+201500000093", Body: "x"},
 		{ID: 2, Purpose: "NOTIFICATION", TemplateCode: "APPOINTMENT_BOOKED",
-			Destination: "01500000094", Body: "y"},
+			Destination: "+201500000094", Body: "y"},
 	}}
 	d := &DevSender{Env: "development"}
 	NewWorker(q, d, quiet(), 0, 0).drain(context.Background())
@@ -89,7 +89,7 @@ func TestWorkerPassesTheClassificationThrough(t *testing.T) {
 		{ClassPermanent, "PERMANENT"},
 		{ClassConfig, "CONFIG"},
 	} {
-		q := &fakeQueue{pending: []Claimed{{ID: 7, Destination: "01500000093", Body: "x"}}}
+		q := &fakeQueue{pending: []Claimed{{ID: 7, Destination: "+201500000093", Body: "x"}}}
 		NewWorker(q, &FailingSender{Class: c.class, Detail: "simulated"}, quiet(), 0, 0).
 			drain(context.Background())
 		if len(q.failed) != 1 || q.failed[0] != c.as {
@@ -135,7 +135,7 @@ func TestWorkerSurvivesAClaimFailure(t *testing.T) {
 func TestWorkerDoesNotResendWhenTheResultCannotBeRecorded(t *testing.T) {
 	d := &DevSender{Env: "development"}
 	q := &fakeQueue{
-		pending: []Claimed{{ID: 11, Destination: "01500000093", Body: "x"}},
+		pending: []Claimed{{ID: 11, Destination: "+201500000093", Body: "x"}},
 		sentEr:  errors.New("commit failed"),
 	}
 	NewWorker(q, d, quiet(), 0, 0).drain(context.Background())
@@ -154,7 +154,7 @@ func TestWorkerStopsOnCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	d := &DevSender{Env: "development"}
-	q := &fakeQueue{pending: []Claimed{{ID: 1, Destination: "01500000093", Body: "x"}}}
+	q := &fakeQueue{pending: []Claimed{{ID: 1, Destination: "+201500000093", Body: "x"}}}
 	NewWorker(q, d, quiet(), 0, 0).drain(ctx)
 	if len(d.Sent()) != 0 {
 		t.Fatal("nothing should have been sent after cancellation")

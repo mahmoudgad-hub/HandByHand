@@ -164,8 +164,14 @@ func (s *Server) handleRequestOTP(w http.ResponseWriter, r *http.Request) {
 	// adding "the gateway is down" to the list would tell an outsider
 	// something about this deployment and tell the parent nothing they can
 	// act on. It is recorded, it is logged, and the screen says what it says.
-	if res.OK && res.Code != nil && res.CenterID != nil {
-		s.deliverOTP(r, mobile, *res.Code, *res.CenterID, ttlMinutes)
+	// THE NUMBER DELIVERED TO IS THE ONE THE DATABASE READ, NOT THE ONE THAT
+	// WAS TYPED. They find the same account and are not the same string:
+	// 00201225283838 was issued a code, answered SENT, and went to the
+	// provider as typed, where it was refused as PERMANENT. The typed form is
+	// still what the audit line above and the echo warning below mask, because
+	// those describe the request; delivery describes where the code went.
+	if res.OK && res.Code != nil && res.CenterID != nil && res.MobileE164 != nil {
+		s.deliverOTP(r, *res.MobileE164, *res.Code, *res.CenterID, ttlMinutes)
 	}
 
 	if s.cfg.OTPEcho && res.Code != nil {
@@ -395,7 +401,14 @@ func (s *Server) deliverOTP(r *http.Request, mobile, code string, centerID, ttlM
 		// ttlMinutes therefore still reaches the family - through Body, on
 		// the SMS path, from SMS_TEMPLATE_OTP - and reaches a WhatsApp reader
 		// through the approved template's own expiry line.
-		TemplateCode: "OTP",
+		// OTP_LOGIN, WHICH IS WHAT THE OUTBOX ALREADY CALLS IT. This said
+		// "OTP" until a real send was watched end to end: hbh.record_otp_delivery
+		// writes template_code = 'OTP_LOGIN', so that is the name on the
+		// operations screen and the only name an operator has to go on when
+		// filling TWILIO_CONTENT_SIDS. Mapping OTP_LOGIN there - the sensible
+		// reading - left the code looking for "OTP" and refusing every login
+		// code with a CONFIG error naming a template nobody had heard of.
+		TemplateCode: "OTP_LOGIN",
 		Vars:         []string{code},
 		// The reference is per code, not per request: a resend issues a new
 		// code and gets a new row, which is what makes the outbox a history

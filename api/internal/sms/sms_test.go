@@ -30,18 +30,21 @@ func TestE164AcceptsAnyInternationalNumber(t *testing.T) {
 	}
 }
 
-// THE SHAPE A GULF NUMBER IS ACTUALLY WRITTEN IN. MOBILE_PATTERN accepts
-// separators on purpose - a person types them - and the login handler passes
-// the raw field straight here. Refuse these and the number passes the edge
-// check, is stored correctly, and then never receives anything.
+// SEPARATORS IN AN INTERNATIONAL NUMBER ARE STILL DROPPED. The login handler
+// no longer passes what was typed - it sends request_otp's mobile_e164 - so
+// what reaches here is normally clean already. This stays because E164 is the
+// wire's last look, and a +-form number with a space in it is still a number.
+//
+// Two cases that were here are gone with the transitional branch: "0150 000
+// 0093" and its Arabic-Indic spelling. They were never separator cases; they
+// passed only because the national form was being converted, and they are now
+// refused below, which is the point.
 func TestE164DropsTheSeparatorsAPersonTypes(t *testing.T) {
 	for _, c := range []struct{ in, want string }{
 		{"+966 50 123 4567", "+966501234567"},
 		{"+966-50-123-4567", "+966501234567"},
 		{"(+966) 50 123 4567", "+966501234567"},
 		{" +201500000093 ", "+201500000093"},
-		{"0150 000 0093", "+201500000093"},
-		{"٠١٥٠٠٠٠٠٠٩٣", "+201500000093"},
 	} {
 		got, err := E164(c.in)
 		if err != nil {
@@ -65,26 +68,22 @@ func TestE164DoesNotSilentlyDropALetter(t *testing.T) {
 	}
 }
 
-// TRANSITIONAL, and it is a test so that removing the branch is a deliberate
-// act rather than a silent one. The API ships before 0112, so for one deploy
-// this build reads columns that still hold the national form. When the handler
-// starts sending request_otp's mobile_e164, this test and that branch go
-// together.
-func TestE164StillConvertsTheNationalFormWhileTheColumnHoldsIt(t *testing.T) {
-	got, err := E164(" 01500000093  ")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if got != "+201500000093" {
-		t.Fatalf("want +201500000093, got %q", got)
-	}
-}
-
 // A destination the provider would reject must be refused HERE, and refused as
 // PERMANENT - so hbh.record_sms_failed marks it DEAD instead of retrying an
 // invalid number five times and billing for none of them.
+//
+// THE FIRST THREE ARE THE TRANSITIONAL BRANCH'S REMOVAL, ASSERTED. The national
+// form and the 00 prefix are how a person types a number and are what
+// hbh.canonical_mobile exists to read. None of them may reach a sender: a
+// caller that passes one has skipped canonicalisation, and refusing it loudly
+// is how that caller gets found. The branch that converted 01XXXXXXXXX was
+// removed when the login handler began sending mobile_e164; if it comes back,
+// the first line fails.
 func TestE164RefusesAnythingElseAsPermanent(t *testing.T) {
 	for _, in := range []string{
+		"01500000093",    // national form: canonicalise first
+		"00201500000093", // 00 prefix: the spelling that went DEAD
+		"٠١٥٠٠٠٠٠٠٩٣",    // national form in Arabic-Indic digits
 		"",
 		"0150000009",        // ten digits, and no country code to save it
 		"015000000931",      // twelve
@@ -151,7 +150,7 @@ func TestDevSenderIsRefusedOutsideDevelopment(t *testing.T) {
 func TestDevSenderRecordsTheAttemptAndNotTheBody(t *testing.T) {
 	d := &DevSender{Env: "development"}
 	res, err := d.Send(context.Background(), Message{
-		To:   "01500000093",
+		To:   "+201500000093",
 		Body: "code 123456 inside",
 		Ref:  "otp:1",
 	})
@@ -241,7 +240,7 @@ func TestHTTPSenderRefusesIncompleteOrPlainHTTPConfiguration(t *testing.T) {
 func TestFailingSenderProducesEachClass(t *testing.T) {
 	for _, class := range []Class{ClassTransient, ClassPermanent, ClassConfig} {
 		f := &FailingSender{Class: class, Detail: "simulated"}
-		_, err := f.Send(context.Background(), Message{To: "01500000093", Body: "x"})
+		_, err := f.Send(context.Background(), Message{To: "+201500000093", Body: "x"})
 		if err == nil {
 			t.Fatalf("%s: expected a failure", class)
 		}

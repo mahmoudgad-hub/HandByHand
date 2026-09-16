@@ -324,9 +324,9 @@ func loadFrom(getenv func(string) string) (Config, error) {
 			// door, so its template is required rather than discovered at the
 			// first attempt. Every other template fails one message; this one
 			// fails every sign-in.
-			if _, ok := cfg.TwilioContentSIDs["OTP"]; !ok {
+			if _, ok := cfg.TwilioContentSIDs["OTP_LOGIN"]; !ok {
 				errs = append(errs, errors.New(
-					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_CONTENT_SIDS to map OTP - "+
+					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_CONTENT_SIDS to map OTP_LOGIN - "+
 						"without it no parent can receive a login code"))
 			}
 		default:

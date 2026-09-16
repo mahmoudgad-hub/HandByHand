@@ -180,7 +180,7 @@ func TestProductionRefusesTwilioWithoutAnOTPTemplate(t *testing.T) {
 		"TWILIO_ACCOUNT_SID":   "AC00000000000000000000000000000000",
 		"TWILIO_AUTH_TOKEN":    "secret",
 		"TWILIO_WHATSAPP_FROM": "+201000000000",
-		"TWILIO_CONTENT_SIDS":  "OTP=HX1",
+		"TWILIO_CONTENT_SIDS":  "OTP_LOGIN=HX1",
 	}
 	if _, err := loadFrom(env(base)); err != nil {
 		t.Fatalf("a complete twilio configuration should load: %v", err)
@@ -236,7 +236,7 @@ func TestFreeformFallbackIsRefusedOutsideDevelopment(t *testing.T) {
 		"TWILIO_ACCOUNT_SID":    "AC00000000000000000000000000000000",
 		"TWILIO_AUTH_TOKEN":     "secret",
 		"TWILIO_WHATSAPP_FROM":  "+201000000000",
-		"TWILIO_CONTENT_SIDS":   "OTP=HX1",
+		"TWILIO_CONTENT_SIDS":   "OTP_LOGIN=HX1",
 	}
 
 	dev := make(map[string]string, len(base))
