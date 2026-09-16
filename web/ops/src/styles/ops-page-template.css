@@ -1,0 +1,211 @@
+/* Shared staff screen contract. Keep record actions local to their record. */
+.hbh-shell .hbh-main {
+  --ops-page-gap: 20px;
+  --ops-control-height: 42px;
+}
+.hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin: 0 0 var(--ops-page-gap);
+  padding: 18px 20px;
+  background: #eaf5f5;
+  border: 1px solid #d4e8e9;
+  border-radius: 18px;
+}
+.hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header) > :is(.hbh-pagehead__left, .ops-page-identity) {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.hbh-shell .hbh-main :is(.hbh-pagehead__title, .ops-page-title) {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.hbh-shell .hbh-main .hbh-pagehead__sub {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #526d7a;
+}
+.hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header) > :is(.hbh-pagehead__actions, .ops-page-actions) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+.hbh-shell .hbh-main .ops-page-breadcrumb { flex-basis: 100%; }
+.hbh-shell .hbh-main .ops-report-identity { display: block; }
+.hbh-shell .hbh-main .ops-report-identity > .hbh-btn { margin-block-end: 10px; }
+.hbh-shell .hbh-main .ops-family-template { display: block; }
+.hbh-shell .hbh-main .ops-family-template .family-tools .hbh-btn { min-height: 42px; font-size: 14px; }
+.hbh-shell .hbh-main .ops-family-template .family-tools .hbh-field { height: 42px; }
+.hbh-shell .hbh-main :is(.hbh-filters, .ops-filterbar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-block: 0 var(--ops-page-gap);
+  padding: 14px 16px;
+  background: var(--hbh-surface, #fff);
+  border: 1px solid var(--hbh-line, #d4e8e9);
+  border-radius: 16px;
+  min-width: 0;
+}
+.hbh-shell .hbh-main .hbh-tabbar { margin-block: 0 var(--ops-page-gap); }
+.hbh-shell :is(.ops-form-actions, .hbh-sheet__foot) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #f0f7f7;
+  border-block-start: 1px solid #d4e8e9;
+}
+.hbh-shell .ops-form-actions { margin-block-start: 20px; border-radius: 14px; }
+.hbh-shell :is(.ops-form-actions, .hbh-sheet__foot) .hbh-btn {
+  min-width: 100px;
+  min-height: var(--ops-control-height, 42px);
+}
+.hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header, .ops-filterbar) .hbh-btn {
+  min-height: var(--ops-control-height);
+}
+@media (max-width: 700px) {
+  .hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header) { padding: 16px; gap: 12px; }
+  .hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header) > :is(.hbh-pagehead__left, .ops-page-identity) { flex-basis: 100%; }
+  .hbh-shell .hbh-main :is(.hbh-pagehead, .ops-page-header) > :is(.hbh-pagehead__actions, .ops-page-actions) { width: 100%; }
+  .hbh-shell .hbh-main :is(.hbh-pagehead__title, .ops-page-title) { font-size: 21px; }
+  .hbh-shell :is(.ops-form-actions, .hbh-sheet__foot) { padding: 12px; }
+  .hbh-shell :is(.ops-form-actions, .hbh-sheet__foot) .hbh-btn { flex: 1 1 100px; }
+}
+@media print {
+  .hbh-shell :is(.ops-form-actions, .ops-page-actions) { display: none; }
+}
+
+/* One table contract across staff lists, details and record drawers.
+   Important declarations intentionally supersede legacy per-screen table skins. */
+.hbh-shell .hbh-tablewrap,
+.hbh-shell .hbh-table-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid #dcebef;
+  border-radius: 16px;
+  background: #fff;
+  padding: 0;
+}
+.hbh-shell .hbh-table-scroll > .hbh-tablewrap { border: 0; border-radius: 0; }
+.hbh-shell .hbh-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: #164e65;
+  background: #fff;
+}
+.hbh-shell .hbh-table :is(th,td) {
+  padding: 12px 16px !important;
+  text-align: right !important;
+  vertical-align: middle;
+  line-height: 1.7;
+  border-bottom: 1px solid #e5eef1;
+  font-size: 14px !important;
+}
+/* Shared by every system table, including dialogs and record panels. */
+.hbh-table thead th {
+  background: #126b78 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hbh-shell .hbh-table tbody tr:nth-child(even):not(.is-hot,.is-archived,.family-selected,.is-focus) { background: #f7fbfd !important; }
+.hbh-shell .hbh-table tbody tr.family-selected { background: #dff3fc !important; }
+.hbh-shell .hbh-table tbody tr:hover td { background: #eaf6f9; }
+/* A linked record gets one continuous tint and one marker at the row edge.
+   Use the row's direction: identifier cells can independently be LTR. */
+.hbh-shell .hbh-table tbody tr.is-focus > td {
+  background: #edf8f8;
+}
+.hbh-shell .hbh-table tbody tr.is-focus:hover > td {
+  background: #e1f2f3;
+}
+.hbh-shell .hbh-table tbody tr.is-focus > td:first-child {
+  box-shadow: inset -3px 0 0 #008b9b;
+  color: #006575;
+  font-weight: 700;
+}
+.hbh-shell .hbh-table tbody tr.is-focus:dir(ltr) > td:first-child {
+  box-shadow: inset 3px 0 0 #008b9b;
+}
+.hbh-shell .hbh-table tr:last-child td { border-bottom: 0; }
+.hbh-shell .hbh-table td :is(.hbh-pagehead__actions,.hbh-table__actions,.family-row-actions) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+.hbh-shell .hbh-table td > :is(button,a) + :is(button,a) { margin-inline-start: 12px; }
+.hbh-shell .hbh-table td :is(button,.hbh-btn) { min-height: 38px; flex-shrink: 0; white-space: nowrap; }
+.hbh-shell .hbh-table td .hbh-iconbtn { min-width: 38px; }
+.hbh-shell .hbh-matrix :is(th,td):not(:first-child) { text-align: center !important; }
+.hbh-shell :is(.hbh-table-toolbar,.hbh-table-pagination) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+.hbh-shell .hbh-table-toolbar { background: #f0f7f8; border: 1px solid #dcebef; border-radius: 14px; margin-bottom: 12px; }
+.hbh-shell .hbh-table-pagination { justify-content: flex-end; }
+.hbh-shell .ops-page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-inline-start: auto;
+  background: #fff;
+  border: 1px solid #dcebef;
+  border-radius: 10px;
+  padding: 6px 12px;
+  min-height: 42px;
+  flex: 0 0 auto;
+  color: #315c78;
+}
+.hbh-shell .ops-page-size span { white-space: nowrap; font-size: 13px; }
+.hbh-shell .ops-page-size select { width: 64px; min-width: 64px; min-height: 28px; border: 0; background: transparent; padding: 0 4px; color: inherit; font: inherit; }
+.hbh-shell .ops-page-size select:focus-visible { outline: 2px solid #008c9d; outline-offset: 3px; }
+@media(max-width:640px) {
+  .hbh-shell .ops-page-size { margin-inline-start: 0; }
+  .hbh-shell .hbh-table :is(th,td) { padding: 10px 12px !important; }
+}
+@media print {
+  .hbh-shell :is(.hbh-table-toolbar,.hbh-table-pagination,.ops-page-size) { display: none; }
+}
+
+/* Date controls within user records share the same size as text fields. */
+hbh-access .hbh-dateparts select { box-sizing:border-box;min-width:0;width:100%;height:46px;padding:8px 10px;border:1px solid #cfdee4;border-radius:12px;background:#fff;color:#164e65;font:inherit;font-size:14px;cursor:pointer; }
+hbh-access .hbh-dateparts select:focus-visible { outline:2px solid #008b9b;outline-offset:2px; }
+@media(max-width:600px){hbh-access .hbh-dateparts select{font-size:16px;padding-inline:6px;}}
+
+/* TOUCH TARGETS ON PHONES (#20). Measured at 375px on 2026-09-16: the day
+   filters were 42px boxes with 20px controls inside, icon buttons 42, ghost
+   buttons 42, the favourite toggle 40, the page-size select 28, row links
+   and tel: links a line of text, and the child file's back button squeezed to
+   20px wide by its flex row. 44px is the size a thumb hits without aiming.
+   Desktop is untouched: a mouse does not need it, and the bar has no room. */
+@media (max-width:900px){
+  .hbh-shell .hbh-main{ --ops-control-height:44px; }
+  .hbh-shell .hbh-field{ min-height:44px; }
+  .hbh-shell .hbh-rowbtn, .hbh-shell .hbh-iconbtn{ width:44px; height:44px; min-width:44px; flex:none; }
+  .hbh-shell .hbh-btn{ min-height:44px; }
+  .hbh-shell .ops-favorite-toggle{ flex-basis:44px; width:44px; height:44px; }
+  .hbh-shell .ops-topbar .ops-mobile-trigger{ min-width:44px; width:44px; }
+  .hbh-shell .ops-page-size select{ min-height:44px; }
+  .hbh-shell .hbh-table .hbh-link, .hbh-shell a[href^="tel:"]{ display:inline-flex; align-items:center; min-height:44px; min-width:44px; }
+}

@@ -373,3 +373,102 @@ FROM   hbh.roles r
 JOIN   hbh.permissions p ON p.code = 'SETTINGS.MANAGE'
 WHERE  r.code = 'CENTER_ADMIN'
 ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+-- ---------------------------------------------------------------------
+-- RB-D1 · six capabilities for the unified customer journey (OD-19)
+--
+-- PERMISSIONS, NOT ROLES. The owner named ten capabilities; four of
+-- them are already covered by CATALOG.MANAGE and SETTINGS.MANAGE, and
+-- these are the six that are not. Each is its own code because each is
+-- its own right, and one gate serving two rights silently decides which
+-- of them it ignores - the lesson from SESSION.COMPLETE and
+-- SESSION.NOTES.EDIT.
+--
+-- Two pairs are deliberately split, and the split is the point:
+--
+--   BILLING.PRICE_EDIT vs BILLING.PRICE_OVERRIDE
+--     Editing the price list changes what EVERY future invoice charges.
+--     Overriding a price changes ONE line, with a reason. A person
+--     trusted to discount one family is not thereby trusted to reprice
+--     the catalogue, and the reverse is true too.
+--
+--   BILLING.RECEIPT_REVIEW vs BILLING.HOLD_EXTEND
+--     Approving a receipt says money arrived. Extending a hold keeps a
+--     slot reserved before it has. OD-05 grants them separately, so a
+--     reviewer who rejects a receipt cannot also quietly keep the slot.
+--
+-- All six to CENTER_ADMIN, as RB-D1 specifies. Handing any of them to
+-- reception is a decision for the owner, taken in the console, not a
+-- default written here.
+-- ---------------------------------------------------------------------
+INSERT INTO hbh.permissions (code, name_ar, name_en) VALUES
+  ('CATALOG.PUBLISH',          'نشر عناصر الكتالوج',                 'Publish catalogue items'),
+  ('BILLING.PRICE_EDIT',       'تعديل قائمة الأسعار',                'Edit the price list'),
+  ('BILLING.PRICE_OVERRIDE',   'تجاوز سعر سطر فاتورة بسبب',          'Override one invoice line price with a reason'),
+  ('BILLING.RECEIPT_REVIEW',   'مراجعة إيصالات الدفع',               'Review payment receipts'),
+  ('BILLING.HOLD_EXTEND',      'تمديد مهلة السداد',                  'Extend a payment hold'),
+  ('PACKAGE.MAKEUP_OVERRIDE',  'تجاوز حدّ التعويض لحالة بسبب',       'Override the make-up limit for one case with a reason')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO hbh.role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM   hbh.roles r
+JOIN   hbh.permissions p ON p.code IN ('CATALOG.PUBLISH', 'BILLING.PRICE_EDIT',
+                                       'BILLING.PRICE_OVERRIDE', 'BILLING.RECEIPT_REVIEW',
+                                       'BILLING.HOLD_EXTEND', 'PACKAGE.MAKEUP_OVERRIDE')
+WHERE  r.code = 'CENTER_ADMIN'
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+-- ---------------------------------------------------------------------
+-- EN-D4 · default completeness rules, one set per centre (OD-11)
+--
+-- In the seed file and not the migration, because they read
+-- hbh.centers - and migrations run before seeds, when centers is empty
+-- on a rebuilt database. An INSERT ... SELECT from an empty table
+-- inserts nothing and reports success.
+--
+-- The five the owner named: name · mobile · birth date · gender ·
+-- relationship. The administrator changes them in the console; these
+-- are a starting point, not a definition.
+--
+-- Inserting them recomputes every guardian's record_completeness for
+-- that centre, through trg_pfr_completeness. That is the backfill, and
+-- it is why 0133 needs no separate one.
+-- ---------------------------------------------------------------------
+INSERT INTO hbh.profile_field_rules (center_id, entity, field_name, required_flg, display_order)
+SELECT c.center_id, r.entity, r.field_name, true, r.ord
+FROM   hbh.centers c
+CROSS  JOIN (VALUES
+  ('GUARDIAN',    'full_name_ar',      10),
+  ('GUARDIAN',    'mobile',            20),
+  ('BENEFICIARY', 'full_name_ar',      30),
+  ('BENEFICIARY', 'birth_date',        40),
+  ('BENEFICIARY', 'gender',            50),
+  ('BENEFICIARY', 'relationship_code', 60)
+) AS r(entity, field_name, ord)
+WHERE  c.active_flg
+  AND  NOT EXISTS (SELECT 1 FROM hbh.profile_field_rules p
+                   WHERE p.center_id = c.center_id AND p.entity = r.entity
+                     AND p.field_name = r.field_name AND p.active_flg);
+
+-- ---------------------------------------------------------------------
+-- PP-D5 · BILLING.SCHEDULE_OVERRIDE (OD-33, 11-FEAT §15 and §17.4)
+--
+-- Its own code, not BILLING.MANAGE: issuing an invoice on the plan the
+-- family agreed to and REWRITING that agreement afterwards are different
+-- trusts. Checked by hbh.override_installment_schedule (0142), and
+-- seeded with it - a permission nothing checks is a promise the console
+-- would show and the database would not keep.
+--
+-- To CENTER_ADMIN only. Reception is a decision for the owner.
+-- ---------------------------------------------------------------------
+INSERT INTO hbh.permissions (code, name_ar, name_en) VALUES
+  ('BILLING.SCHEDULE_OVERRIDE', 'تجاوز جدول أقساط فاتورة بسبب', 'Override an invoice payment schedule with a reason')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO hbh.role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM   hbh.roles r
+JOIN   hbh.permissions p ON p.code = 'BILLING.SCHEDULE_OVERRIDE'
+WHERE  r.code = 'CENTER_ADMIN'
+ON CONFLICT DO NOTHING;

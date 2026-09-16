@@ -27,8 +27,8 @@
   <hbh-empty-state icon="ic-list" [title]="'therapistServices.empty' | t"
                    [note]="'therapistServices.emptyNote' | t" />
 } @else {
-  <div class="hbh-tablewrap" style="margin-top:16px">
-    <table class="hbh-table hbh-matrix">
+  <hbh-table-pages #tablePage1 [rows]="therapists()" style="margin-top:16px">
+    <div class="hbh-tablewrap"><table class="hbh-table hbh-matrix">
       <thead>
         <tr>
           <th>{{ 'field.therapist' | t }}</th>
@@ -38,7 +38,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (therapist of therapists(); track therapistId(therapist)) {
+        @for (therapist of tablePage1.visible(); track therapistId(therapist)) {
           <tr>
             <td><b>{{ nameOf(therapist) }}</b></td>
             @for (service of services(); track serviceId(service)) {
@@ -63,6 +63,6 @@
           </tr>
         }
       </tbody>
-    </table>
-  </div>
+    </table></div>
+  </hbh-table-pages>
 }

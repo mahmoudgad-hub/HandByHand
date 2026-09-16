@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/handbyhand/hbh/api/internal/domain"
 	"github.com/jackc/pgx/v5"
@@ -128,7 +129,7 @@ const enrolmentCols = `
 	e.main_concern_ar, e.previous_therapy_ar,
 	e.source_code, e.submitted_at,
 	e.contacted_at, e.contact_note_ar, e.decided_at, e.decision_note_ar,
-	e.converted_guardian_id, e.converted_child_id, e.active_flg,
+	e.converted_guardian_id, e.converted_child_id, e.active_flg, e.assessment_at,
 	s.service_id, s.name_ar, s.kind_code, s.color_hex,
 	(SELECT count(*) FROM hbh.enrolment_applications sib
 	  WHERE sib.parent_mobile = e.parent_mobile
@@ -233,7 +234,7 @@ func scanEnrolment(row scanRow) (domain.Enrolment, error) {
 		&concern, &previous,
 		&e.SourceCode, &e.SubmittedAt,
 		&e.ContactedAt, &cnote, &e.DecidedAt, &dnote,
-		&e.ConvertedGuardianID, &e.ConvertedChildID, &e.ActiveFlg,
+		&e.ConvertedGuardianID, &e.ConvertedChildID, &e.ActiveFlg, &e.AssessmentAt,
 		&svcID, &svcName, &svcKind, &svcColor,
 		&e.SiblingApplications, &e.FamilyAlreadyHere)
 	if err != nil {
@@ -253,12 +254,14 @@ func scanEnrolment(row scanRow) (domain.Enrolment, error) {
 
 // EnrolmentUpdate is a move along the queue.
 //
-// Status is the only field that matters and the notes hang off it: a note
+// Status selects the transition and the notes hang off it: a note
 // about a phone call belongs to CONTACTED, a note about a refusal belongs to
-// REJECTED. Which note is written is decided by the trigger, not here.
+// REJECTED. AssessmentAt carries the agreed time for ASSESSMENT_BOOKED;
+// the database constraint and state machine remain authoritative.
 type EnrolmentUpdate struct {
-	Status string `json:"status"`
-	NoteAr string `json:"note_ar"`
+	Status       string     `json:"status"`
+	NoteAr       string     `json:"note_ar"`
+	AssessmentAt *time.Time `json:"assessment_at,omitempty"`
 }
 
 // SetEnrolmentStatus moves an application along its state machine.
@@ -277,12 +280,14 @@ func (d *DB) SetEnrolmentStatus(ctx context.Context, ident string, id int, in En
 		tag, err := tx.Exec(ctx, `
 			UPDATE hbh.enrolment_applications
 			SET    status = $2,
+			       assessment_at = CASE WHEN $2 = 'ASSESSMENT_BOOKED'
+			                            THEN $4::timestamptz ELSE assessment_at END,
 			       contact_note_ar = CASE WHEN $2 = 'CONTACTED' AND nullif($3, '') IS NOT NULL
 			                              THEN $3 ELSE contact_note_ar END,
 			       decision_note_ar = CASE WHEN $2 IN ('REJECTED', 'DUPLICATE') AND nullif($3, '') IS NOT NULL
 			                               THEN $3 ELSE decision_note_ar END
 			WHERE  application_id = $1
-			AND    active_flg`, id, in.Status, in.NoteAr)
+			AND    active_flg`, id, in.Status, in.NoteAr, in.AssessmentAt)
 		if err != nil {
 			return err
 		}

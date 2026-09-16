@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 
 import { opsAuthGuard, opsGuestGuard, permissionGuard } from './core/auth/ops-auth.guard';
 import {
@@ -16,7 +17,22 @@ import {
 } from './core/ops/day-spec';
 import { DayScreen } from './features/day/day-screen';
 import { ResourceScreen } from './features/resource/resource-screen';
+import { Satisfaction } from './features/satisfaction/satisfaction';
+import { SiteEditor } from './features/site-editor/site-editor';
 import { TeamScreen } from './features/team/team-screen';
+import { TherapistServices } from './features/therapist-services/therapist-services';
+
+/**
+ * Where a retired route sends its visitors.
+ *
+ * The old addresses stay alive because links to them exist outside this
+ * build: in notifications already written, in messages, in bookmarks on a
+ * reception desk. Each one lands on the screen that absorbed it, on the
+ * right tab or view (docs/UX-CURRENT-TO-TARGET.md section 3).
+ */
+function movedTo(path: string, query: Record<string, string>) {
+  return () => inject(Router).createUrlTree([path], { queryParams: query });
+}
 
 /**
  * Every screen declares the permission it needs. The guard keeps one from
@@ -47,14 +63,35 @@ export const routes: Routes = [
     canActivate: [opsAuthGuard],
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
-      {path: 'communications',canActivate:[permissionGuard],data:{navKey:'communications',titleKey:'nav.communications',permission:'REQUEST.MANAGE'},loadComponent:()=>import('@hbh/shared/ui/family-messages').then(m=>m.FamilyMessages)},
       {
-        path: 'inbox',
+        path: 'profile',
+        // No navKey: opened from the account menu in the top bar, not the
+        // side menu. No permissionGuard: every signed-in account has one.
+        data: { titleKey: 'profile.title' },
+        loadComponent: () => import('./features/profile/account-dialog').then(m => m.AccountRoute),
+      },
+      { path: 'favorites', canActivate: [permissionGuard], data: { navKey: 'favorites', titleKey: 'nav.favorites', permission: 'PORTAL.VIEW' }, loadComponent: () => import('./features/favorites/favorites').then(m => m.Favorites) },
+      {path: 'communications',canActivate:[permissionGuard],data:{navKey:'communications',titleKey:'nav.communications',permission:'PORTAL.VIEW'},loadComponent:()=>import('@hbh/shared/ui/family-messages').then(m=>m.FamilyMessages)},
+      {
+        // What needs doing. Derived from the state of rows the other screens
+        // already list - no table, no write; see core/tasks.
+        path: 'tasks',
         canActivate: [permissionGuard],
-        data: { navKey: 'inbox', titleKey: 'nav.inbox', permission: 'PORTAL.VIEW' },
+        data: { navKey: 'tasks', titleKey: 'nav.tasks', permission: 'PORTAL.VIEW' },
+        loadComponent: () =>
+          import('./features/tasks/tasks').then((m) => m.Tasks),
+      },
+      {
+        // What happened, addressed to this person. This screen was called
+        // "inbox", which promised a to-do list it never was; the log kept
+        // its behaviour and lost the name.
+        path: 'notifications',
+        canActivate: [permissionGuard],
+        data: { navKey: 'notifications', titleKey: 'nav.notifications', permission: 'PORTAL.VIEW' },
         loadComponent: () =>
           import('./features/inbox/inbox').then((m) => m.Inbox),
       },
+      { path: 'inbox', redirectTo: 'notifications', pathMatch: 'full' },
       {
         path: 'dashboard',
         canActivate: [permissionGuard],
@@ -65,13 +102,35 @@ export const routes: Routes = [
 
       // ---- built on the CRUD resources ----
       {
+        // Guardians have their own screen now (UX-3): the list here, and a
+        // page per guardian below. The children screen lists children only.
+        path: 'guardians',
+        canActivate: [permissionGuard],
+        component: ResourceScreen,
+        data: {
+          navKey: 'guardians', titleKey: 'nav.guardians',
+          permission: 'GUARDIAN.MANAGE',
+          specs: [GUARDIANS_SPEC],
+        },
+      },
+      {
+        // One guardian: the family behind the children, their applications,
+        // their appointments, their money, their messages
+        // (docs/UX-DETAIL-PAGES.md section 2).
+        path: 'guardians/:guardianId',
+        canActivate: [permissionGuard],
+        data: { navKey: 'guardians', titleKey: 'guardian.title', permission: 'GUARDIAN.MANAGE' },
+        loadComponent: () =>
+          import('./features/guardian/guardian-detail').then((m) => m.GuardianDetail),
+      },
+      {
         path: 'children',
         canActivate: [permissionGuard],
         component: ResourceScreen,
         data: {
           navKey: 'children', titleKey: 'nav.children',
           permission: 'CHILD.VIEW_ALL',
-          specs: [GUARDIANS_SPEC, CHILDREN_SPEC],
+          specs: [CHILDREN_SPEC],
         },
       },
       {
@@ -132,8 +191,15 @@ export const routes: Routes = [
           navKey: 'therapists', titleKey: 'nav.therapists',
           permission: 'STAFF.MANAGE',
           specs: [THERAPISTS_SPEC, WORKING_HOURS_SPEC, CASELOAD_SPEC],
+          // The services matrix is a fourth tab of the same subject. It had
+          // a route of its own only because the menu lit the wrong entry.
+          extraTabs: [{
+            key: 'services', titleKey: 'therapistServices.title',
+            permission: 'STAFF.MANAGE', component: TherapistServices,
+          }],
         },
       },
+      { path: 'therapist-services', redirectTo: movedTo('/therapists', { tab: 'services' }) },
       {
         path: 'rooms',
         canActivate: [permissionGuard],
@@ -165,7 +231,9 @@ export const routes: Routes = [
         data: {
           navKey: 'catalog', titleKey: 'nav.catalog',
           permission: 'CATALOG.MANAGE',
-          specs: [SERVICES_SPEC, PACKAGES_SPEC, ACTIVITY_LIBRARY_SPEC, NPS_SURVEYS_SPEC],
+          // The satisfaction surveys left for /satisfaction, beside the
+          // answers they collect: one subject, one screen.
+          specs: [SERVICES_SPEC, PACKAGES_SPEC, ACTIVITY_LIBRARY_SPEC],
         },
       },
       {
@@ -192,19 +260,21 @@ export const routes: Routes = [
           // are unchanged; this is one less place to hold a join in your
           // head.
           specs: [SITE_CONTACT_SPEC, SITE_SERVICES_SPEC, SITE_PROGRAMS_SPEC,
-                  SITE_FAQ_SPEC, SITE_REVIEWS_SPEC, SITE_TEXTS_SPEC,
+                  SITE_FAQ_SPEC, SITE_REVIEWS_SPEC,
                   SITE_SECTIONS_SPEC],
+          // The team on the site, as master and detail - an eighth tab of
+          // "the website", which is the job somebody opening this is doing.
+          extraTabs: [{key:'site-texts', titleKey:'siteEditor.title', permission:'SITE.EDIT', component:SiteEditor}, {
+            key: 'team', titleKey: 'site.team',
+            permission: 'SITE.EDIT', component: TeamScreen,
+          }],
         },
       },
       {
-        // The team, as master and detail rather than three flat lists.
         path: 'site/team',
         canActivate: [permissionGuard],
         component: TeamScreen,
-        data: {
-          navKey: 'team', titleKey: 'site.team',
-          permission: 'SITE.EDIT',
-        },
+        data: { navKey: 'site-team', titleKey: 'nav.teamProfiles', permission: 'SITE.EDIT' },
       },
 
       // ---- the centre-indexed reads, and the verbs that change them ----
@@ -213,12 +283,17 @@ export const routes: Routes = [
       // they are the reason this console does anything. All five run through
       // one screen: the columns and the verbs are descriptions in day-spec.
       {
+        // Reception's diary AND the clinician's own day: one screen, two
+        // permissions on the route. `?view=mine` narrows it to the signed-in
+        // therapist (what /my-day was); the verbs stay filtered one by one
+        // by their own permission, as they always were.
         path: 'appointments',
         canActivate: [permissionGuard],
         component: DayScreen,
         data: {
           navKey: 'appointments', titleKey: 'nav.appointments',
-          permission: 'APPOINTMENT.BOOK', spec: APPOINTMENTS_SPEC,
+          permission: 'APPOINTMENT.BOOK', altPermission: 'SESSION.START',
+          spec: APPOINTMENTS_SPEC,
         },
       },
       {
@@ -238,18 +313,11 @@ export const routes: Routes = [
         // every action by its own permission (day-screen.ts), so booking
         // and status changes stay invisible here without being restated -
         // a therapist sees exactly one verb, and it is the one they hold.
+        // Retired as a route: it is the same screen with `mine=1`, and now
+        // it is the same screen with `?view=mine`. The heading and the
+        // empty-state text that were route data are chosen by the view.
         path: 'my-day',
-        canActivate: [permissionGuard],
-        component: DayScreen,
-        data: {
-          navKey: 'my-day', titleKey: 'nav.myDay', subKey: 'myDay.sub',
-          // An empty PERSONAL day says something different from an empty
-          // centre day. "لا مواعيد في هذا اليوم" on this route reads as
-          // "the centre is closed", when what is true is that this
-          // clinician has nothing booked and a colleague may be busy.
-          emptyKey: 'myDay.empty', emptyNoteKey: 'myDay.emptyNote',
-          permission: 'SESSION.START', spec: APPOINTMENTS_SPEC,
-        },
+        redirectTo: movedTo('/appointments', { view: 'mine' }),
       },
       {
         path: 'sessions',
@@ -288,6 +356,16 @@ export const routes: Routes = [
         },
       },
       {
+        // One application, worked on in one place: header, next step, tabs,
+        // and the list's own action dialogs opened from here
+        // (docs/UX-DETAIL-PAGES.md section 1). The list stays the queue.
+        path: 'enrolments/:applicationId',
+        canActivate: [permissionGuard],
+        data: { navKey: 'enrolments', titleKey: 'enrolment.title', permission: 'ENROLMENT.MANAGE' },
+        loadComponent: () =>
+          import('./features/enrolment/enrolment-detail').then((m) => m.EnrolmentDetail),
+      },
+      {
         // The screen the static designs called "leads". It had no route
         // until now because it had no table; migration 0018 gave it one.
         path: 'enrolments',
@@ -323,20 +401,6 @@ export const routes: Routes = [
           .then((m) => m.TherapistProfileEditor),
       },
       {
-        // Which services each therapist practises. Without a row here no
-        // appointment can be booked at all - validate_slot answers
-        // THERAPIST_SERVICE_MISMATCH - and nothing in this console could
-        // write the table until the endpoint arrived.
-        path: 'therapist-services',
-        canActivate: [permissionGuard],
-        data: {
-          navKey: 'therapists', titleKey: 'therapistServices.title',
-          permission: 'STAFF.MANAGE',
-        },
-        loadComponent: () => import('./features/therapist-services/therapist-services')
-          .then((m) => m.TherapistServices),
-      },
-      {
         // Watching a session that is happening right now. Live only: nothing
         // is ever recorded, so there is no clip to open afterwards and no
         // seek bar on the player.
@@ -346,22 +410,34 @@ export const routes: Routes = [
         loadComponent: () => import('./features/live/live-view').then((m) => m.LiveView),
       },
       {
-        // Which screen needs which permission, and whether you hold it.
-        // NOT user administration: users, roles and permissions are five
-        // tables with no endpoint of any kind. Requested.
-        path: 'access',
+        // User administration: accounts, roles, staff records and papers,
+        // plus the "which screen needs which permission" table it started
+        // as. The screen creates users and assigns roles, so it is guarded
+        // by the permission those writes need rather than by the one every
+        // account holds (OQ-19). The database refuses the writes regardless.
+        path: 'users',
         canActivate: [permissionGuard],
-        data: { navKey: 'access', titleKey: 'access.title', permission: 'PORTAL.VIEW' },
+        data: { navKey: 'users', titleKey: 'nav.users', permission: 'USER.MANAGE' },
         loadComponent: () => import('./features/access/access').then((m) => m.Access),
       },
+      { path: 'access', redirectTo: 'users', pathMatch: 'full' },
       {
-        // What the families answered. The centre could create surveys on the
-        // catalogue screen long before it could read a single reply, so it was
-        // asking a question it could not hear the answer to.
+        // The surveys and what the families answered, on one screen: the
+        // survey definitions as a resource tab, the results as a component
+        // tab. The guard names NPS.MANAGE, which is what the database asks
+        // of both (it used to say CATALOG.MANAGE - a second answer to the
+        // same question).
         path: 'satisfaction',
         canActivate: [permissionGuard],
-        data: { navKey: 'satisfaction', titleKey: 'nav.satisfaction', permission: 'CATALOG.MANAGE' },
-        loadComponent: () => import('./features/satisfaction/satisfaction').then((m) => m.Satisfaction),
+        component: ResourceScreen,
+        data: {
+          navKey: 'satisfaction', titleKey: 'nav.satisfaction', permission: 'NPS.MANAGE',
+          specs: [NPS_SURVEYS_SPEC],
+          extraTabs: [{
+            key: 'results', titleKey: 'satisfaction.results',
+            permission: 'NPS.MANAGE', component: Satisfaction,
+          }],
+        },
       },
       {
         // What the service has been doing: one row per finished request,
@@ -377,7 +453,10 @@ export const routes: Routes = [
         // writes sys_params or the centre row. What is here comes from /me.
         path: 'settings',
         canActivate: [permissionGuard],
-        data: { navKey: 'settings', titleKey: 'nav.settings', permission: 'CATALOG.MANAGE' },
+        // SETTINGS.MANAGE: the permission hbh.set_center_param asks for. The
+        // guard used to name CATALOG.MANAGE, a different right that happened
+        // to belong to the same role.
+        data: { navKey: 'settings', titleKey: 'nav.settings', permission: 'SETTINGS.MANAGE' },
         loadComponent: () =>
           import('./features/settings/settings').then((m) => m.Settings),
       },

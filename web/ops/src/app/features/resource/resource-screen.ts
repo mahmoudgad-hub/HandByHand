@@ -1,8 +1,10 @@
+import { ArchiveSwitch } from '@hbh/shared/ui/archive-switch';
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
+  ChangeDetectionStrategy, Component, DestroyRef, Injector, Type, computed, inject, signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { NgComponentOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -19,9 +21,27 @@ import { DateParts } from '@hbh/shared/ui/date-parts';
 import { HbhNumberPipe } from '@hbh/shared/format/format.pipes';
 import { DayApi } from '../../core/ops/day-api';
 import { OpsApi, Row } from '../../core/api/ops-api';
-import { readRefusal, refusalKey } from '../../core/api/ops-error';
+import { readAllPages } from '../../core/api/read-all-pages';
+import { readRefusal, refusalKey, refusalSentence } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
+import { EmbeddedResource } from '../../core/ops/action-request';
 import { FieldSpec, ResourceSpec } from '../../core/resource/resource-spec';
+import { ChildProfile, EMBEDDED_CHILD_PROFILE } from '../child/child-profile';
+
+/** A tab drawn by a component of its own, declared in the route's `extraTabs`. */
+export interface ExtraTab {
+  readonly key: string;
+  readonly titleKey: string;
+  /** Decides whether the tab is drawn; the component's reads are refused by the server regardless. */
+  readonly permission: string;
+  readonly component: Type<unknown>;
+}
+
+interface TabRef {
+  readonly key: string;
+  readonly titleKey: string;
+  readonly permission: string;
+}
 
 /**
  * One screen for every resource the service exposes.
@@ -45,8 +65,8 @@ import { FieldSpec, ResourceSpec } from '../../core/resource/resource-spec';
 @Component({
   selector: 'hbh-resource-screen',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ReactiveFormsModule, RouterLink, Icon, TranslatePipe, HbhNumberPipe,
+  imports: [ArchiveSwitch, 
+    ReactiveFormsModule, RouterLink, NgComponentOutlet, Icon, TranslatePipe, HbhNumberPipe,
     Skeleton, EmptyState, ErrorNote, ModalDialog, DateParts,
   ],
   templateUrl: './resource-screen.html',
@@ -92,36 +112,58 @@ export class ResourceScreen {
   protected readonly specs: readonly ResourceSpec[] =
     (this.route.snapshot.data['specs'] as ResourceSpec[] | undefined) ?? [];
 
+  /**
+   * Tabs that are whole components rather than resources, drawn after the
+   * resource tabs: the therapist services matrix beside the therapists, the
+   * site team beside the site's texts, the satisfaction results beside the
+   * surveys. One screen per subject, not one route per table
+   * (docs/UX-TARGET-INFORMATION-ARCHITECTURE.md section 1.2).
+   */
+  protected readonly extraTabs: readonly ExtraTab[] =
+    (this.route.snapshot.data['extraTabs'] as ExtraTab[] | undefined) ?? [];
+
+  /** Every tab in order, resources first, for the tab bar and the URL. */
+  protected readonly tabs: readonly TabRef[] = [
+    ...this.specs.map((s) => ({ key: s.resource, titleKey: s.titleKey, permission: s.viewPermission })),
+    ...this.extraTabs.map((e) => ({ key: e.key, titleKey: e.titleKey, permission: e.permission })),
+  ];
+
   protected readonly guardianCounts = signal<Record<string, number | undefined>>({});
   protected readonly selectedGuardian = signal<Row | null>(null);
   protected readonly familyChildren = signal<readonly Row[]>([]);
-  protected readonly familyTotal = signal(0);
-  protected readonly familyPage = signal(1);
-  protected readonly familyLimit = signal(20);
+  private readonly familyInjector = inject(Injector);
+  protected readonly childProfileComponent = ChildProfile;
+  protected readonly familyChild = signal<{ row: Row; injector: Injector } | null>(null);
+  protected openFamilyChild(row: Row): void {
+    if (!this.auth.can('CHILD.VIEW_ALL')) return;
+    this.familyChild.set({ row, injector: Injector.create({ parent: this.familyInjector, providers: [
+      { provide: EMBEDDED_CHILD_PROFILE, useValue: { childId: Number(row['child_id']), close: () => this.familyChild.set(null) } },
+    ] }) });
+  }
   protected readonly familyLoading = signal(false);
   protected readonly familyFailed = signal(false);
-  protected readonly familySearch = new FormControl('', { nonNullable: true });
   private familyRequest?: Subscription;
   protected openGuardian(row: Row): void {
     this.selectedGuardian.set(row);
-    this.familySearch.setValue('');
-    this.loadFamily(1);
+    this.familyChild.set(null);
+    this.loadFamily();
   }
-  protected loadFamily(page = 1): void {
+  protected closeGuardian(): void {
+    this.familyRequest?.unsubscribe();
+    this.familyChild.set(null);
+    this.selectedGuardian.set(null);
+  }
+  protected loadFamily(): void {
     const guardian = this.selectedGuardian();
     if (!guardian) return;
     this.familyRequest?.unsubscribe();
-    this.familyPage.set(page);
     this.familyLoading.set(true);
     this.familyFailed.set(false);
-    this.familyRequest = this.api.list('children', {
-      guardian_id: Number(guardian['guardian_id']), page,
-      q: this.familySearch.value.trim() || undefined,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: result => {
-        this.familyChildren.set(result.rows);
-        this.familyTotal.set(result.total);
-        this.familyLimit.set(result.limit);
+    this.familyRequest = readAllPages(page => this.api.list('children', {
+      guardian_id: Number(guardian['guardian_id']), page, limit: 100,
+    })).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: rows => {
+        this.familyChildren.set(rows);
         this.familyLoading.set(false);
       },
       error: () => { this.familyLoading.set(false); this.familyFailed.set(true); },
@@ -145,7 +187,7 @@ export class ResourceScreen {
    * an empty screen.
    */
   private readonly firstPermitted = Math.max(
-    0, this.specs.findIndex((s) => this.auth.can(s.viewPermission)));
+    0, this.tabs.findIndex((t) => this.auth.can(t.permission)));
 
   protected readonly tabIndex = signal(this.tabFromUrl());
 
@@ -154,11 +196,23 @@ export class ResourceScreen {
     if (!wanted) {
       return this.firstPermitted;
     }
-    const found = this.specs.findIndex(
-      (s) => s.resource === wanted && this.auth.can(s.viewPermission));
+    const found = this.tabs.findIndex(
+      (t) => t.key === wanted && this.auth.can(t.permission));
     return found >= 0 ? found : this.firstPermitted;
   }
-  protected readonly spec = computed(() => this.specs[this.tabIndex()]);
+
+  /**
+   * The resource under the active tab. When the active tab is a component
+   * tab there is no resource, and the rest of this class - controls, list,
+   * editor - keeps pointing at the first resource so nothing it computes is
+   * undefined; the template draws none of it while `extra()` is set.
+   */
+  protected readonly spec = computed(
+    () => this.specs[this.tabIndex()] ?? this.specs[0]);
+
+  /** The component tab under the active index, or null on a resource tab. */
+  protected readonly extra = computed<ExtraTab | null>(
+    () => this.extraTabs[this.tabIndex() - this.specs.length] ?? null);
 
   protected readonly rows = signal<readonly Row[]>([]);
 
@@ -176,6 +230,18 @@ export class ResourceScreen {
    * to because a lookup failed.
    */
   private readonly refNames = signal<Record<string, Record<string, string>>>({});
+  protected readonly refState = signal<Record<string, 'loading' | 'ready' | 'failed'>>({});
+
+  protected refOptions(field: FieldSpec): readonly { value: string; label: string }[] {
+    const names = this.refNames()[field.ref!.resource] ?? {};
+    return Object.entries(names).map(([value, label]) => ({ value, label: `${label} · #${value}` }));
+  }
+
+  protected refHasCurrent(field: FieldSpec): boolean {
+    return !!this.refNames()[field.ref!.resource]?.[this.controls()[field.name].value];
+  }
+
+  protected retryReferences(): void { this.loadRefNames(); }
 
   private loadRefNames(): void {
     const seen = new Set<string>();
@@ -185,12 +251,13 @@ export class ResourceScreen {
         continue;
       }
       seen.add(ref.resource);
-      this.api.list(ref.resource, { limit: 200 })
+      this.refState.update(all => ({ ...all, [ref.resource]: 'loading' }));
+      readAllPages(page => this.api.list(ref.resource, { limit: 100, page }))
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: (page) => {
+          next: (rows) => {
             const names: Record<string, string> = {};
-            for (const row of page.rows) {
+            for (const row of rows) {
               const id = row[ref.idColumn];
               const label = row[ref.labelColumn];
               if (id !== null && id !== undefined && label) {
@@ -198,16 +265,22 @@ export class ResourceScreen {
               }
             }
             this.refNames.update((all) => ({ ...all, [ref.resource]: names }));
+            this.refState.update(all => ({ ...all, [ref.resource]: 'ready' }));
           },
           // Silent: the identifier still shows. A toast about a lookup the
           // person did not ask for would be noise on every screen open.
-          error: () => {},
+          error: () => this.refState.update(all => ({ ...all, [ref.resource]: 'failed' })),
         });
     }
   }
   /** What the whole filter matches, which is not what this page holds. */
   protected readonly total = signal(0);
   protected readonly limit = signal(0);
+  protected readonly pageSize = signal(10);
+  protected changePageSize(value: string): void {
+    const size=Number(value); if (![10,20,30,50].includes(size)) return;
+    this.pageSize.set(size); this.page.set(1); this.load();
+  }
   protected readonly page = signal(1);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
@@ -272,9 +345,33 @@ export class ResourceScreen {
   protected readonly listFields = computed(
     () => this.spec().fields.filter((field) => field.inList));
 
+  /**
+   * Set when this instance exists only to draw the editor for a caller
+   * elsewhere (ActionDialogHost, through ActionDialogService.openResource):
+   * the child's file adding a goal, the guardian's page editing the
+   * guardian. No list, no reads; the editor opens at once on the given row
+   * (or on a blank one with the caller's values) and reports back through
+   * `onClose`. Same editor, same save, same refusals as on the list.
+   */
+  protected readonly embeddedRes: EmbeddedResource | null =
+    (this.route.snapshot.data['embeddedResource'] as EmbeddedResource | undefined) ?? null;
+
   constructor() {
     this.buildControls();
-    this.load();
+    if (this.embeddedRes) {
+      this.loadRefNames();
+      this.openEditor(this.embeddedRes.row ?? {});
+      const prefill = this.embeddedRes.request.prefill ?? {};
+      const controls = this.controls();
+      for (const [name, value] of Object.entries(prefill)) {
+        controls[name]?.setValue(value);
+        if (this.embeddedRes.request.source === 'CHILD_PROFILE' && ['child_id', 'plan_id', 'goal_id'].includes(name)) {
+          controls[name]?.disable();
+        }
+      }
+    } else {
+      this.load();
+    }
     // buildControls drops the previous subscriptions on a tab change; this
     // drops the last set when the screen itself goes.
     this.destroyRef.onDestroy(() => this.valueWatch?.unsubscribe());
@@ -292,7 +389,7 @@ export class ResourceScreen {
     // are asking for when they press it.
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { tab: this.specs[index].resource },
+      queryParams: { tab: this.tabs[index].key },
       queryParamsHandling: 'merge',
     });
     this.editing.set(null);
@@ -316,6 +413,12 @@ export class ResourceScreen {
 
   protected load(): void {
     const version = ++this.listVersion;
+    if (this.extra()) {
+      // A component tab reads for itself; asking for the first resource's
+      // rows here would be a request nobody looks at.
+      this.loading.set(false);
+      return;
+    }
     const term = this.spec().searchable ? this.search.value.trim() : '';
     this.loading.set(true);
     this.failed.set(false);
@@ -326,6 +429,7 @@ export class ResourceScreen {
       archived: this.showArchived() || undefined,
       // Pages start at 1, not 0 - the service's own convention.
       page: this.page() > 1 ? this.page() : undefined,
+      limit: this.pageSize(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -338,8 +442,8 @@ if (this.spec().resource === 'guardians') {
 for (const guardian of result.rows) {
 this.api.list('children', {guardian_id: Number(guardian['guardian_id'])}).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next: children => this.guardianCounts.update(counts => ({...counts, [String(guardian['guardian_id'])]: children.total})), error: () => {}});
 }
-const selected = result.rows.find(row => row['guardian_id'] === this.selectedGuardian()?.['guardian_id']) ?? result.rows[0];
-if (selected) this.openGuardian(selected); else this.selectedGuardian.set(null);
+const selected = result.rows.find(row => row['guardian_id'] === this.selectedGuardian()?.['guardian_id']);
+if (selected) this.selectedGuardian.set(selected); else this.closeGuardian();
 }
           this.total.set(result.total);
           this.limit.set(result.limit);
@@ -492,6 +596,7 @@ if (selected) this.openGuardian(selected); else this.selectedGuardian.set(null);
 
   protected cancel(): void {
     this.editing.set(null);
+    this.embeddedRes?.onClose(false);
   }
 
   protected save(event?: Event): void {
@@ -563,7 +668,12 @@ if (selected) this.openGuardian(selected); else this.selectedGuardian.set(null);
         this.saving.set(false);
         this.editing.set(null);
         this.toast.show(this.i18n.translate(id === undefined ? 'crud.created' : 'crud.updated'));
-        this.load();
+        // Embedded, the caller re-reads its own rows; there is no list here.
+        if (this.embeddedRes) {
+          this.embeddedRes.onClose(true);
+        } else {
+          this.load();
+        }
       },
       error: (error: unknown) => {
         this.saving.set(false);
@@ -596,7 +706,7 @@ if (selected) this.openGuardian(selected); else this.selectedGuardian.set(null);
       },
       // The service's refusal, in the console's words. Never a status code.
       error: (error: unknown) =>
-        this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+        this.toast.error(refusalSentence(this.i18n, error)),
     });
   }
 

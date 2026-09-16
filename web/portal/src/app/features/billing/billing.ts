@@ -6,29 +6,28 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 
 import { PortalApi } from '../../core/api/portal-api';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
 import { FormatService } from '@hbh/shared/format/format.service';
 import { HbhMoneyPipe, HbhNumberPipe, HbhPluralPipe } from '@hbh/shared/format/format.pipes';
-import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { BillingOverview, Invoice, ServicePackage } from '../../core/models/portal.models';
 import { Icon } from '@hbh/shared/icon/icon';
-import { ToastService } from '@hbh/shared/toast/toast.service';
 import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
+import { BillingSection, markUnavailable, mergeSection } from './billing-sections';
 
 /**
  * Packages and invoices, across all of the guardian's children - which is why
  * this screen needs no child chosen.
  *
  * It takes no payment. No card number, no account number, and no payment form
- * appears anywhere in this portal; the button asks the centre to get in touch.
- * Handling money is a decision the centre has not made yet, and inventing a
- * flow for it here would be inventing a business rule.
+ * appears here. The inquiry button opens the existing family conversation;
+ * it does not claim that a callback was requested before a message is sent.
  */
 @Component({
   selector: 'hbh-billing',
@@ -38,12 +37,12 @@ import { StatusBadge } from '../../shared/ui/status-badge';
     StatusBadge, Skeleton, EmptyState, ErrorNote,
   ],
   templateUrl: './billing.html',
+  styleUrl: './billing.css',
 })
 export class Billing {
   private readonly api = inject(PortalApi);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly toast = inject(ToastService);
-  private readonly i18n = inject(I18nService);
+  private readonly router = inject(Router);
   protected readonly format = inject(FormatService);
 
   protected readonly data = signal<BillingOverview | null>(null);
@@ -53,8 +52,34 @@ export class Billing {
   /** Shown only where nobody can act on the failure. */
   protected readonly traceId = signal<string | null>(null);
 
+  /** The one section being fetched again, if any - drawn as busy in place. */
+  protected readonly retrying = signal<BillingSection | null>(null);
+
   constructor() {
     this.load();
+  }
+
+  /**
+   * Fetch one section again and leave the others on screen (#15). The page
+   * does not drop back to a skeleton: the figures that loaded are still
+   * right, and hiding them to reload something else was the defect.
+   */
+  protected retry(section: BillingSection): void {
+    const current = this.data();
+    if (!current || this.retrying()) { return; }
+    this.retrying.set(section);
+    this.api.billing(new Set([section]))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (fresh) => {
+          this.data.update((now) => now ? mergeSection(now, fresh, section) : now);
+          this.retrying.set(null);
+        },
+        error: () => {
+          this.data.update((now) => now ? markUnavailable(now, section) : now);
+          this.retrying.set(null);
+        },
+      });
   }
 
   protected load(): void {
@@ -109,8 +134,8 @@ export class Billing {
     return invoice.status === 'PAID' ? 'hbh-t--green' : 'hbh-t--amber';
   }
 
-  /** Says what actually happens next: reception calls. Nothing is charged. */
+  /** Open the family-wide conversation without requiring a selected child. */
   protected askAboutPayment(): void {
-    this.toast.show(this.i18n.translate('billing.paymentContact'));
+    void this.router.navigate(['/requests'], { queryParams: { tab: 'messages' } });
   }
 }

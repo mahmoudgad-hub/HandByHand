@@ -74,15 +74,24 @@ type RoomRef struct {
 // only when it is marked PARENT, is not a draft, and has been approved - and
 // an appointment note has no such ladder. Withheld until it gets one.
 type Appointment struct {
-	AppointmentID int           `json:"appointment_id"`
-	AppointmentNo string        `json:"appointment_no"`
-	StartsAt      time.Time     `json:"starts_at"`
-	EndsAt        time.Time     `json:"ends_at"`
-	Status        string        `json:"status"`
-	CancelReason  *string       `json:"cancel_reason,omitempty"`
-	Service       *ServiceRef   `json:"service,omitempty"`
-	Therapist     *TherapistRef `json:"therapist,omitempty"`
-	Room          *RoomRef      `json:"room,omitempty"`
+	AppointmentID int       `json:"appointment_id"`
+	AppointmentNo string    `json:"appointment_no"`
+	StartsAt      time.Time `json:"starts_at"`
+	EndsAt        time.Time `json:"ends_at"`
+	Status        string    `json:"status"`
+	CancelReason  *string   `json:"cancel_reason,omitempty"`
+
+	// DeliveryMode is IN_PERSON or ONLINE, and it is the field that makes
+	// the absence of Room readable. ck_appointments_room_mode ties the two
+	// together - an in-person appointment HAS a room and an online one has
+	// none - so without this a client sees a missing room and cannot tell a
+	// consultation from a row that failed to join. The parent portal draws
+	// the door into the consultation from it, and a screen that guessed
+	// instead would be guessing about which appointments have a video call.
+	DeliveryMode string        `json:"delivery_mode"`
+	Service      *ServiceRef   `json:"service,omitempty"`
+	Therapist    *TherapistRef `json:"therapist,omitempty"`
+	Room         *RoomRef      `json:"room,omitempty"`
 
 	// Child is present on the centre-indexed reads and absent on the
 	// child-scoped ones, where it would repeat the path.
@@ -175,6 +184,12 @@ type ReportSummary struct {
 // rewrite a document a parent has already read.
 type Report struct {
 	ReportSummary
+	// Version is what an editor must name when saving a draft (migration
+	// 0141): updated_at, or created_at for a draft never edited - updated_at
+	// is stamped by an UPDATE trigger and is NULL until the first one.
+	// Without it here the console could only ever send a version it had not
+	// read.
+	Version       time.Time       `json:"version"`
 	SummaryAr     *string         `json:"summary_ar,omitempty"`
 	GoalsSnapshot json.RawMessage `json:"goals_snapshot,omitempty"`
 }

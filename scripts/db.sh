@@ -26,6 +26,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$ROOT/deploy/compose/docker-compose.yml"
 
+# The same lock api.sh build/up/verify take. See cmd_migrate below.
+. "$ROOT/scripts/lock.sh"
+
 # Local overrides, if any. Never committed - see .gitignore.
 if [ -f "$ROOT/.env" ]; then
   set -a; . "$ROOT/.env"; set +a
@@ -190,6 +193,37 @@ cmd_migrate() {
   local ledger
   ledger="$(psqlf -tAc "SELECT version FROM hbh.schema_migrations" 2>/dev/null | tr -d '\r')"
 
+  # THE LOCK - taken only when there is something to apply.
+  #
+  # A migration is the commonest thing that moves the ground under an API
+  # run, and until 2026-09-12 this command ignored the lock api.sh takes:
+  # 0129 landed in the final suite of a full run and voided it. The pin
+  # there detected it; nothing prevented it.
+  #
+  # ONLY WHEN PENDING, because the ordinary call has nothing to do. CI and
+  # bring-up run migrate every time, and a no-op that waits forty minutes
+  # behind somebody's suite run is a command people learn to skip - on a
+  # shared database the most dangerous habit there is. Reading the ledger
+  # moves nothing, so the check above stays outside.
+  #
+  # AND THE LEDGER IS READ AGAIN AFTER, because the wait is exactly when
+  # another session applies the migration we were about to.
+  #
+  # The seeds below run inside the lock when it was taken and outside it
+  # when it was not, as they always have: they are idempotent and do not
+  # move the pinned ledger.
+  local pending=0 pf pv
+  for pf in "$ROOT"/db/migrations/*.up.sql; do
+    [ -e "$pf" ] || continue
+    pv="$(basename "$pf" | cut -d_ -f1)"
+    if ! printf '%s\n' "$ledger" | grep -qx "$pv"; then pending=$((pending + 1)); fi
+  done
+  if [ "$pending" -gt 0 ]; then
+    echo "  $pending migration(s) pending - taking the lock"
+    lock_acquire migrate || return 1
+    ledger="$(psqlf -tAc "SELECT version FROM hbh.schema_migrations" 2>/dev/null | tr -d '\r')"
+  fi
+
   local applied=0
   for f in "$ROOT"/db/migrations/*.up.sql; do
     [ -e "$f" ] || continue
@@ -251,19 +285,72 @@ run_suite() {
 }
 
 # verify [n]   one phase, or every phase in order when n is omitted.
+# The ground a verdict was measured on: migration COUNT and MAX, not
+# max alone. Numbers are reserved before files are written, so a lower
+# migration can land after a higher one and leave max untouched - which
+# is exactly the case where "the schema did not move" would be a lie.
+ledger_pin() {
+  psqlf -tAc "SELECT count(*) || '|' || max(version) FROM hbh.schema_migrations" 2>/dev/null \
+    | tr -d '\r[:space:]'
+}
+
 cmd_verify() {
   wait_healthy
   local want="${1:-}" failed=0 phase
   # A glob into an array - see the note in cmd_reset about $(ls).
   local suites=("$ROOT"/tests/db/p*_verify.sql)
   local f
+
+  # DETECTION, NOT PREVENTION. Three sessions apply migrations to this
+  # database. A run that straddles one of those produces a single total
+  # describing two schemas and not a line saying which suite ran on
+  # which - and a red result would then send somebody hunting in the
+  # wrong one. api.sh verify has pinned its ground for this reason; this
+  # did not, and a verdict from it could only be trusted after a manual
+  # before-and-after check.
+  #
+  # Preventing the straddle is a lock, and a lock is the owner's call.
+  # This only refuses to give a verdict it cannot vouch for.
+  local pinned current
+  pinned="$(ledger_pin)"
+  echo "schema: ${pinned:-<unreadable>}"
+
+  # An unreadable ground is not a ground. Without this, a ledger that
+  # cannot be read at all - bad credentials, a wrong database - reads as
+  # "" on every check, "" equals "", and the run reports the schema HELD
+  # and exits 0. Found by measuring this guard, not by reading it: every
+  # other case bit correctly and this one sailed through.
+  if [ -z "$pinned" ]; then
+    echo "*** RUN VOID - the migration ledger could not be read, so there is no ground to measure on" >&2
+    return 2
+  fi
+
   for f in "${suites[@]}"; do
     [ -e "$f" ] || continue
     phase="$(basename "$f" | sed 's/^p\([0-9a-z]*\)_verify\.sql$/\1/')"
     if [ -n "$want" ] && [ "$want" != "$phase" ]; then continue; fi
+
+    current="$(ledger_pin)"
+    if [ "$current" != "$pinned" ]; then
+      echo "*** RUN VOID - the schema moved before phase $phase" >&2
+      echo "    schema pinned: ${pinned} / now ${current:-<unreadable>}" >&2
+      echo "    no verdict: the suites so far measured one schema and the rest would measure another" >&2
+      return 2
+    fi
+
     echo "=================== phase $phase ==================="
     run_suite "$f" "$phase" || failed=1
   done
+
+  # And once after the last suite, which a check-before-each alone misses.
+  current="$(ledger_pin)"
+  if [ "$current" != "$pinned" ]; then
+    echo "*** RUN VOID - the schema moved during the final suite" >&2
+    echo "    schema pinned: ${pinned} / now ${current:-<unreadable>}" >&2
+    return 2
+  fi
+
+  echo "schema: ${pinned} (held for the whole run)"
   return "$failed"
 }
 
@@ -312,6 +399,12 @@ cmd_dev_family() {
 
 cmd_reset() {
   wait_healthy
+  # Always locked, and for the whole of it: the downs are the part that
+  # pulls the schema out from under a run, and they come BEFORE migrate.
+  # The migrate call at the end is re-entrant on the same token. (reset
+  # is still forbidden on a shared database - a lock does not make it
+  # safe to drop somebody's data, it only stops it landing mid-run.)
+  lock_acquire reset || return 1
   echo 'dropping schema and role'
   # An array and an index, not $(ls). This project lives under a path
   # containing a space - "سطح المكتب" - and command substitution

@@ -131,33 +131,103 @@ INSERT INTO hbh_test.fx (k, v)
 SELECT 'child', converted_child_id FROM hbh.enrolment_applications
 WHERE application_id = (SELECT v FROM hbh_test.fx WHERE k='app');
 
--- THE BUG. The family came in through the only official door and the
--- login screen does not know them.
-CALL hbh_test.chk('loop', 'and the enrolled family is STILL refused - NOT_REGISTERED',
-  $q$ SELECT reason = 'NOT_REGISTERED' FROM hbh.request_otp('+201800009999') $q$);
+-- THE BUG, CLOSED IN 0125 - AND THESE THREE CHECKS ARE ITS HEADSTONE.
+--
+-- They used to assert the defect as a baseline: "STILL refused",
+-- "linked no account", "the view says so plainly". They passed for as
+-- long as the loop was broken, and they are inverted here rather than
+-- deleted, because a check that reads
+--
+--     the enrolled family can sign in immediately
+--
+-- is the same check pointed the other way, and it fails the day anyone
+-- makes conversion stop granting. Deleting them would have left that
+-- regression with nothing watching it.
+CALL hbh_test.chk('loop', 'the enrolled family can sign in at once - reason OK',
+  $q$ SELECT ok AND reason = 'OK' FROM hbh.request_otp('+201800009999') $q$);
 
-CALL hbh_test.chk('loop', 'because convert_enrolment linked no account',
-  $q$ SELECT user_id IS NULL FROM hbh.guardians
+CALL hbh_test.chk('loop', 'because convert_enrolment linked an account',
+  $q$ SELECT user_id IS NOT NULL FROM hbh.guardians
       WHERE guardian_id = (SELECT v FROM hbh_test.fx WHERE k='gd') $q$);
 
 CALL hbh_test.chk('loop', 'and the portal-status view says so plainly',
-  $q$ SELECT NOT has_portal_access FROM hbh.v_guardian_portal_status
+  $q$ SELECT has_portal_access FROM hbh.v_guardian_portal_status
       WHERE guardian_id = (SELECT v FROM hbh_test.fx WHERE k='gd') $q$);
 
 -- =====================================================================
 -- 2. THE GRANT
+--
+-- Still tested, and still needed: every guardian created any way but
+-- conversion - by reception at the desk, by a data correction, by the
+-- rows that predate 0125 - reaches the portal through this function and
+-- no other. What changed is only that a CONVERTED family arrives here
+-- already holding an account, so the first call is the SECOND call.
 -- =====================================================================
-CALL hbh_test.chk('grant', 'reception grants portal access, and it reports a NEW account',
-  $q$ SELECT created AND user_id IS NOT NULL
+CALL hbh_test.chk('grant', 'on a converted family it reports no NEW account - it is already there',
+  $q$ SELECT NOT created AND user_id IS NOT NULL
       FROM hbh.grant_portal_access((SELECT v FROM hbh_test.fx WHERE k='gd')) $q$);
 
 INSERT INTO hbh_test.fx (k, v)
 SELECT 'user_gd', user_id FROM hbh.guardians
 WHERE guardian_id = (SELECT v FROM hbh_test.fx WHERE k='gd');
 
--- The check the card is actually about.
-CALL hbh_test.chk('grant', 'AND NOW THE SAME MOBILE SIGNS IN - reason OK',
-  $q$ SELECT ok AND reason = 'OK' FROM hbh.request_otp('+201800009999') $q$);
+-- THE CREATE BRANCH, WHICH CONVERSION NO LONGER REACHES.
+--
+-- Before 0125 the converted family WAS the create case, so one check
+-- covered both. Now conversion arrives here holding an account, and
+-- created = true is only reachable from a guardian that was made some
+-- other way - reception adding a family at the desk, a correction, and
+-- every guardian row that predates 0125. That is the population the
+-- backfill will run against, so it is the one this has to cover.
+INSERT INTO hbh.guardians (center_id, branch_id, full_name_ar, mobile)
+SELECT (SELECT v FROM hbh_test.fx WHERE k='center'),
+       (SELECT v FROM hbh_test.fx WHERE k='branch'),
+       'أسرة بلا تحويل — اختبار ١٢', '+201800009998';
+
+INSERT INTO hbh_test.fx (k, v)
+SELECT 'gd_direct', guardian_id FROM hbh.guardians WHERE mobile = '+201800009998';
+
+CALL hbh_test.chk('grant', 'a guardian made without conversion still gets a NEW account',
+  $q$ SELECT created AND user_id IS NOT NULL
+      FROM hbh.grant_portal_access((SELECT v FROM hbh_test.fx WHERE k='gd_direct')) $q$);
+
+-- Recorded HERE, not read in the teardown: by then the guardian row is
+-- already gone, and a lookup through it returns nothing - so the
+-- account would survive the run and the "nothing remains" check would
+-- fail on a row the cleanup thought it had deleted.
+INSERT INTO hbh_test.fx (k, v)
+SELECT 'user_direct', user_id FROM hbh.guardians
+WHERE guardian_id = (SELECT v FROM hbh_test.fx WHERE k='gd_direct');
+
+CALL hbh_test.chk('grant', 'and that one signs in too',
+  $q$ SELECT ok AND reason = 'OK' FROM hbh.request_otp('+201800009998') $q$);
+
+-- One account on that mobile, not two. The whole reason the function
+-- links an existing user instead of minting one: request_otp takes the
+-- lowest user_id, so a rival account silently resolves to the wrong one.
+CALL hbh_test.chk('grant', 'and exactly one account carries the converted mobile',
+  $q$ SELECT count(*) = 1 FROM hbh.users WHERE mobile = '+201800009999' AND active_flg $q$);
+
+-- The check the card is actually about - asked as a RESOLUTION, not as
+-- a second issue.
+--
+-- It used to call request_otp here, because before 0125 the call in the
+-- 'loop' group above was refused with NOT_REGISTERED and issued nothing,
+-- so this was the first code of the run. Now that conversion grants the
+-- account, that earlier call SUCCEEDS and opens the sixty-second resend
+-- window - and this one comes back RESEND_TOO_SOON. Measured, not
+-- guessed: two calls in a row answer OK then RESEND_TOO_SOON.
+--
+-- Re-issuing was never the property under test. "The same mobile signs
+-- in" means the number the family types resolves to the account this
+-- family's conversion created - which is what is asserted, and which a
+-- rate limiter cannot make look false.
+CALL hbh_test.chk('grant', 'AND THE SAME MOBILE RESOLVES TO THIS FAMILY''S ACCOUNT',
+  $q$ SELECT u.user_id = (SELECT v FROM hbh_test.fx WHERE k='user_gd')
+             AND u.user_type = 'GUARDIAN' AND u.active_flg
+      FROM hbh.users u
+      WHERE u.mobile = hbh.canonical_mobile('+201800009999') AND u.active_flg
+      ORDER BY u.user_id LIMIT 1 $q$);
 
 CALL hbh_test.chk('grant', 'the account is a GUARDIAN on this centre, active',
   $q$ SELECT user_type = 'GUARDIAN' AND active_flg AND status = 'ACTIVE'
@@ -212,6 +282,72 @@ CALL hbh_test.chk('again', 'exactly ONE guardian account exists on that mobile',
 CALL hbh_test.chk('again', 'and the partial unique index still holds one guardian per account',
   $q$ SELECT count(*) = 1 FROM pg_indexes
       WHERE schemaname = 'hbh' AND indexname = 'uix_guardians_user' $q$);
+
+-- =====================================================================
+-- 3b. CONVERSION IS WHOLE OR IT IS NOTHING          (0125, HBH-010)
+--
+-- The case is real, not contrived: a member of staff enrols her own
+-- child, so the parent_mobile on the application is a mobile that
+-- already belongs to a STAFF account. grant_portal_access looks for an
+-- existing account of user_type GUARDIAN, finds none, tries to insert -
+-- and uix_users_mobile_active refuses, because one active mobile is one
+-- account.
+--
+-- What must NOT happen is the half-converted family: a child and a
+-- guardian committed, no account, and a number burned. Everything is
+-- counted before and after, INCLUDING number_series.next_value - a
+-- consumed child number is invisible in a row count and is the thing
+-- that proves the transaction really unwound rather than merely
+-- looking tidy.
+-- =====================================================================
+INSERT INTO hbh.enrolment_applications
+  (center_id, branch_id, application_no, parent_name_ar, parent_mobile,
+   relationship_code, child_name_ar, child_birth_date, child_gender, source_code, status)
+VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
+        'APP-P12-0002', 'أخصائية تسجّل ابنها', '+201800000002',
+        'MOTHER', 'ابن الأخصائية — اختبار ١٢', DATE '2021-05-05', 'M', 'WEB', 'CONTACTED');
+
+INSERT INTO hbh_test.fx (k, v) SELECT 'app2', application_id
+  FROM hbh.enrolment_applications WHERE application_no = 'APP-P12-0002';
+
+-- Counted, not assumed. Recorded before the call so the comparison
+-- after it is against this run's own baseline and not a global total a
+-- neighbouring suite can move.
+INSERT INTO hbh_test.fx (k, v) SELECT 'n_children',  count(*) FROM hbh.children;
+INSERT INTO hbh_test.fx (k, v) SELECT 'n_guardians', count(*) FROM hbh.guardians;
+INSERT INTO hbh_test.fx (k, v) SELECT 'n_users',     count(*) FROM hbh.users;
+INSERT INTO hbh_test.fx (k, v) SELECT 'n_next', next_value FROM hbh.number_series
+  WHERE code = 'CHILD' AND center_id = (SELECT v FROM hbh_test.fx WHERE k='center');
+
+-- HB204 and not 23505. The refusal used to be the unique index firing,
+-- which reached the desk as "this value is already used" with no field
+-- named; 0126 asks the question before the insert so the answer can say
+-- what is in the way. Asserting the code and not merely "it raised" is
+-- the difference between proving THIS rule refused and proving that
+-- something, somewhere, did.
+CALL hbh_test.chk_raises('atomic', 'a mobile already held by a STAFF account refuses the conversion',
+  $q$ SELECT * FROM hbh.convert_enrolment((SELECT v FROM hbh_test.fx WHERE k='app2')) $q$, 'HB204');
+
+CALL hbh_test.chk('atomic', 'and no child was committed',
+  $q$ SELECT count(*) = (SELECT v FROM hbh_test.fx WHERE k='n_children') FROM hbh.children $q$);
+
+CALL hbh_test.chk('atomic', 'and no guardian was committed',
+  $q$ SELECT count(*) = (SELECT v FROM hbh_test.fx WHERE k='n_guardians') FROM hbh.guardians $q$);
+
+CALL hbh_test.chk('atomic', 'and no account was committed',
+  $q$ SELECT count(*) = (SELECT v FROM hbh_test.fx WHERE k='n_users') FROM hbh.users $q$);
+
+-- The one a row count cannot see.
+CALL hbh_test.chk('atomic', 'and no child number was consumed',
+  $q$ SELECT next_value = (SELECT v FROM hbh_test.fx WHERE k='n_next')
+      FROM hbh.number_series
+      WHERE code = 'CHILD' AND center_id = (SELECT v FROM hbh_test.fx WHERE k='center') $q$);
+
+CALL hbh_test.chk('atomic', 'and the application is still unconverted',
+  $q$ SELECT status = 'CONTACTED' AND converted_child_id IS NULL
+             AND converted_guardian_id IS NULL
+      FROM hbh.enrolment_applications
+      WHERE application_id = (SELECT v FROM hbh_test.fx WHERE k='app2') $q$);
 
 -- =====================================================================
 -- 4. REFUSALS
@@ -282,30 +418,34 @@ CALL hbh_test.chk('cleanup', 'guardian links and children removed',
                     (SELECT v FROM hbh_test.fx WHERE k='child') RETURNING 1)
       SELECT count(*) = 1 FROM gc $q$);
 
-CALL hbh_test.chk('cleanup', 'the application is removed',
+CALL hbh_test.chk('cleanup', 'the applications are removed',
   $q$ WITH d AS (DELETE FROM hbh.enrolment_applications
-                  WHERE application_no = 'APP-P12-0001' RETURNING 1)
-      SELECT count(*) = 1 FROM d $q$);
+                  WHERE application_no IN ('APP-P12-0001','APP-P12-0002') RETURNING 1)
+      SELECT count(*) = 2 FROM d $q$);
 
 CALL hbh_test.chk('cleanup', 'the child is removed',
   $q$ WITH d AS (DELETE FROM hbh.children WHERE child_id =
                    (SELECT v FROM hbh_test.fx WHERE k='child') RETURNING 1)
       SELECT count(*) = 1 FROM d $q$);
 
+-- Both of them now: the converted family AND the guardian built
+-- directly for the create branch. By fixture key, never by a LIKE on
+-- the mobile - '+2018000%' is a prefix, not a namespace, and a
+-- neighbouring suite's number can share nine characters with it. That
+-- exact mistake cost this project twenty-one failures once already.
 CALL hbh_test.chk('cleanup', 'the guardians are removed',
   $q$ WITH d AS (DELETE FROM hbh.guardians WHERE guardian_id IN
-                   (SELECT v FROM hbh_test.fx WHERE k = 'gd') RETURNING 1)
-      SELECT count(*) = 1 FROM d $q$);
+                   (SELECT v FROM hbh_test.fx WHERE k IN ('gd','gd_direct')) RETURNING 1)
+      SELECT count(*) = 2 FROM d $q$);
 
 CALL hbh_test.chk('cleanup', 'the accounts are removed',
-  $q$ WITH ur AS (DELETE FROM hbh.user_roles WHERE user_id IN
-                    (SELECT user_id FROM hbh.users
-                     WHERE username LIKE 'pc.%' OR user_id =
-                       (SELECT v FROM hbh_test.fx WHERE k='user_gd')) RETURNING 1),
-           u AS (DELETE FROM hbh.users
-                  WHERE username LIKE 'pc.%' OR user_id =
-                    (SELECT v FROM hbh_test.fx WHERE k='user_gd') RETURNING 1)
-      SELECT (SELECT count(*) FROM u) = 3 $q$);
+  $q$ WITH ids AS (SELECT user_id FROM hbh.users
+                    WHERE username LIKE 'pc.%'
+                       OR user_id IN (SELECT v FROM hbh_test.fx
+                                      WHERE k IN ('user_gd','user_direct'))),
+           ur AS (DELETE FROM hbh.user_roles WHERE user_id IN (SELECT user_id FROM ids) RETURNING 1),
+           u  AS (DELETE FROM hbh.users      WHERE user_id IN (SELECT user_id FROM ids) RETURNING 1)
+      SELECT (SELECT count(*) FROM u) = 4 $q$);
 
 -- One at least, then none left. An exact count breaks the day an id is
 -- reused after a hard delete and drags rows from a previous life.

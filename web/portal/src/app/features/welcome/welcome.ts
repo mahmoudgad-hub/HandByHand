@@ -19,6 +19,8 @@ import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { AttentionItem, Child, WelcomeSummary } from '../../core/models/portal.models';
 import { Icon, IconName } from '@hbh/shared/icon/icon';
+import { PersonAvatar } from '../../shared/ui/person-avatar';
+import { AttendanceView, attendanceView } from './attendance';
 import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
@@ -34,7 +36,7 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
 @Component({
   selector: 'hbh-welcome',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, HbhAgePipe, Skeleton, EmptyState, ErrorNote],
+  imports: [Icon, PersonAvatar, TranslatePipe, HbhAgePipe, Skeleton, EmptyState, ErrorNote],
   templateUrl: './welcome.html',
   styleUrl: './welcome.css',
 })
@@ -46,6 +48,12 @@ export class Welcome {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly i18n = inject(I18nService);
+
+  /** The ring, or null - in which case the card draws no ring at all. */
+  protected attendance(child: Child): AttendanceView | null {
+    return attendanceView(child.attendanceMonth);
+  }
+
   protected readonly format = inject(FormatService);
 
   protected readonly data = signal<WelcomeSummary | null>(null);
@@ -149,19 +157,15 @@ export class Welcome {
   }
 
   protected openAttention(item: AttentionItem): void {
+    const selected = this.data()?.children.find(child => child.id === item.childId);
+    if (selected) this.childContext.select(selected);
     const route = this.attentionRoute(item);
     if (route) {
       void this.router.navigate([route]);
       return;
     }
-    // A report or an activity belongs to a child, and no child is chosen yet
-    // on this screen. Rather than guess, send the guardian to the only child
-    // when there is one, and otherwise leave them to pick.
-    const children = this.data()?.children ?? [];
-    if (children.length === 1) {
-      this.childContext.select(children[0]);
+    if (selected) {
       void this.router.navigate([item.kind === 'REPORT' ? '/reports' : '/activities']);
     }
   }
 }
-

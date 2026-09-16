@@ -1,7 +1,27 @@
+@if (specs[0]?.resource === 'site-contact') {<aside class="site-manager-guide"><strong>{{ 'siteEditor.guideTitle' | t }}</strong><p>{{ 'siteEditor.guide' | t }}</p></aside>}
+<!-- A tab that is a whole component rather than a resource: the therapist
+     services matrix beside the therapists, the site team beside the site,
+     the satisfaction results beside the surveys. Same tab bar, and the
+     component keeps its own heading - nothing of the resource machinery
+     is drawn around it. -->
+@if (!embeddedRes) {
+@if (extra(); as extraTab) {
+  <div class="hbh-tabbar" role="tablist">
+    @for (item of tabs; track item.key; let i = $index) {
+      <button class="hbh-tabbar__item" type="button" role="tab"
+              [class.is-active]="tabIndex() === i"
+              [attr.aria-selected]="tabIndex() === i"
+              (click)="selectTab(i)">
+        {{ item.titleKey | t }}
+      </button>
+    }
+  </div>
+  <ng-container *ngComponentOutlet="extraTab.component" />
+} @else {
 @if (spec().resource === 'guardians') {
-<div class="family-top"><div class="family-title"><h1><hbh-icon name="ic-users" /> أولياء الأمور</h1><p>إدارة بيانات أولياء الأمور والبحث عنهم واختيار أحدهم لعرض التفاصيل</p><button type="button" class="hbh-btn hbh-btn--primary" (click)="startCreate()" [disabled]="!canWrite()"><hbh-icon name="ic-plus" /> إضافة ولي أمر جديد</button></div>
-<div class="family-tools"><div class="hbh-filters"><div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" aria-label="بحث أولياء الأمور" placeholder="ابحث بالاسم أو رقم الجوال..." [formControl]="search" (keyup.enter)="searchNow()"></div><button type="button" class="hbh-btn hbh-btn--ghost" (click)="search.setValue(''); searchNow()">مسح <hbh-icon name="ic-refresh" /></button><button type="button" class="hbh-btn hbh-btn--ghost" (click)="searchNow()">بحث</button></div>
-<div class="family-filterline"><label><hbh-icon name="ic-filter" /><select aria-label="السجلات المعروضة" [value]="showArchived() ? 'all' : 'active'" (change)="toggleArchived()"><option value="active">السجلات النشطة</option><option value="all">تضمين المؤرشف</option></select></label><button class="hbh-btn hbh-btn--ghost" type="button" (click)="selectTab(1)"><hbh-icon name="ic-users" /> عرض كل الأطفال</button></div></div></div>
+<div class="family-top ops-family-template"><div class="hbh-pagehead"><div class="hbh-pagehead__left"><div><h1 class="hbh-pagehead__title">{{ spec().titleKey | t }}</h1><p class="hbh-pagehead__sub">{{ spec().subKey | t }}</p></div></div><div class="hbh-pagehead__actions"><button type="button" class="hbh-btn hbh-btn--primary" (click)="startCreate()" [disabled]="!canWrite()"><hbh-icon name="ic-plus" /> {{ 'action.add' | t }}</button></div></div>
+<div class="family-tools"><div class="hbh-filters"><div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" [attr.aria-label]="'search.guardians' | t" [attr.placeholder]="'search.guardians' | t" [formControl]="search" (keyup.enter)="searchNow()"></div><button type="button" class="hbh-btn hbh-btn--ghost" (click)="search.setValue(''); searchNow()">مسح <hbh-icon name="ic-refresh" /></button><button type="button" class="hbh-btn hbh-btn--ghost" (click)="searchNow()">بحث</button>
+<div class="family-filterline"><hbh-archive-switch [checked]="showArchived()" [disabled]="loading()" (changed)="toggleArchived()" /><label class="family-page-size ops-page-size"><span>{{ 'table.rowsPerPage' | t }}</span><select [attr.aria-label]="'table.rowsPerPage' | t" [value]="pageSize()" (change)="changePageSize($any($event.target).value)" [disabled]="loading()">@for(size of [10,20,30,50];track size){<option [value]="size">{{size}}</option>}</select></label></div></div></div></div>
 } @else {
 <div class="hbh-pagehead">
   <div class="hbh-pagehead__left">
@@ -16,11 +36,7 @@
       <button class="hbh-btn hbh-btn--ghost" type="button" (click)="roomCards.set(!roomCards())">عرض الكروت / الجدول</button>
     }
     @if (canWrite()) {
-      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="toggleArchived()"
-              [attr.aria-pressed]="showArchived()">
-        <hbh-icon name="ic-filter" />
-        {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
-      </button>
+
       <!-- A fixed-row resource has no add button. The rows are the schema's
            - one per <section> the public page has - and the service grants
            no INSERT at all, so this control could only produce an error. -->
@@ -37,9 +53,9 @@
 <!-- Several resources on one screen become tabs: rooms and their cameras,
      services and packages and the activity library. They belong together in
      a person's head, so they belong on one page. -->
-@if (specs.length > 1) {
+@if (tabs.length > 1) {
   <div class="hbh-tabbar" role="tablist">
-    @for (item of specs; track item.resource; let i = $index) {
+    @for (item of tabs; track item.key; let i = $index) {
       <button class="hbh-tabbar__item" type="button" role="tab"
               [class.is-active]="tabIndex() === i"
               [attr.aria-selected]="tabIndex() === i"
@@ -50,19 +66,24 @@
   </div>
 }
 
-@if (spec().searchable) {
-  <div class="hbh-filters">
+<div class="hbh-filters ops-table-toolbar">
+  @if (!spec().fixedRows) { <hbh-archive-switch [checked]="showArchived()" [disabled]="loading()" (changed)="toggleArchived()" /> }
+  @if (spec().searchable) {
     <div class="hbh-field hbh-field--grow">
       <hbh-icon name="ic-search" />
+      <!-- What the term is matched against, per resource - the columns in
+           crud.go's `search`, not a guess (#17). Also the accessible name:
+           a placeholder disappears the moment somebody types. -->
       <input type="search" [formControl]="search" (keyup.enter)="searchNow()"
-             [attr.placeholder]="spec().resource === 'guardians' ? 'ابحث باسم ولي الأمر أو رقم الجوال' : ('action.searchPlaceholder' | t)">
+             [attr.placeholder]="(spec().searchKey ?? 'action.searchPlaceholder') | t"
+             [attr.aria-label]="(spec().searchKey ?? 'action.searchPlaceholder') | t">
     </div>
     <button class="hbh-btn hbh-btn--ghost" type="button" (click)="searchNow()">
       {{ 'action.search' | t }}
     </button>
-  </div>
-}
-
+  }
+  <label class="ops-page-size"><span>{{ 'table.rowsPerPage' | t }}</span><select [attr.aria-label]="'table.rowsPerPage' | t" [value]="pageSize()" (change)="changePageSize($any($event.target).value)" [disabled]="loading()">@for(size of [10,20,30,50];track size){<option [value]="size">{{size}}</option>}</select></label>
+</div>
 }
 @if (loading()) {
   <hbh-skeleton [count]="6" shape="row" />
@@ -106,7 +127,7 @@
   </div>
 } @else if (spec().resource === 'guardians') {
 <div class="hbh-tablewrap family-master"><table class="hbh-table"><thead><tr><th>#</th><th>اسم ولي الأمر</th><th>رقم الهوية</th><th>رقم الجوال</th><th>البريد الإلكتروني</th><th>نوع العلاقة</th><th>عدد الأبناء</th><th>المدينة</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>
-@for (row of rows(); track row['guardian_id']; let i=$index) {<tr [class.family-selected]="selectedGuardian()?.['guardian_id'] === row['guardian_id']"><td>{{ (page()-1)*limit()+i+1 }}</td><td><button class="family-name" type="button" (click)="openGuardian(row)">{{ cell(row,'full_name_ar') }}</button></td><td dir="ltr">{{ cell(row,'national_id') || '—' }}</td><td dir="ltr">{{ cell(row,'mobile') || '—' }}</td><td>{{ cell(row,'email') || '—' }}</td><td>{{ cell(row,'relationship') || '—' }}</td><td>{{ guardianCounts()[cell(row,'guardian_id')] ?? '—' }}</td><td>{{ cell(row,'city') || '—' }}</td><td><span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span></td><td><button class="family-view" type="button" (click)="openGuardian(row)"><hbh-icon name="ic-eye" /> عرض</button> @if (canWrite() && !isArchived(row)) { <button class="family-view" type="button" aria-label="تعديل بيانات ولي الأمر" title="تعديل البيانات" (click)="startEdit(row)"><hbh-icon name="ic-edit" /></button> }</td></tr>}
+@for (row of rows(); track row['guardian_id']; let i=$index) {<tr [class.family-selected]="selectedGuardian()?.['guardian_id'] === row['guardian_id']"><td>{{ (page()-1)*limit()+i+1 }}</td><td><a class="family-name" [routerLink]="['/guardians', row['guardian_id']]">{{ cell(row,'full_name_ar') }}</a></td><td dir="ltr">{{ cell(row,'national_id') || '—' }}</td><td dir="ltr">{{ cell(row,'mobile') || '—' }}</td><td dir="ltr">{{ cell(row,'email') || '—' }}</td><td>{{ cell(row,'relationship') || '—' }}</td><td>{{ guardianCounts()[cell(row,'guardian_id')] ?? '—' }}</td><td>{{ cell(row,'city') || '—' }}</td><td><span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span></td><td><div class="family-row-actions"><button class="family-view" type="button" (click)="openGuardian(row)"><hbh-icon name="ic-eye" /> عرض</button> @if (canWrite() && !isArchived(row)) { <button class="family-view" type="button" aria-label="تعديل بيانات ولي الأمر" title="تعديل البيانات" (click)="startEdit(row)"><hbh-icon name="ic-edit" /></button> }</div></td></tr>}
 </tbody></table></div>
 } @else {
   <div class="hbh-tablewrap">
@@ -213,34 +234,36 @@
 
 @if (spec().resource === 'guardians') {
   @if (selectedGuardian(); as guardian) {
+    <dialog class="family-dialog" [class.family-dialog--profile]="familyChild()" hbhModal (dismissed)="familyChild() ? familyChild.set(null) : closeGuardian()" aria-labelledby="familyDialogTitle">
+      <header class="family-dialog__head">
+        <h2 id="familyDialogTitle">@if(familyChild(); as selectedChild) { ملف الطفل — {{ cell(selectedChild.row, 'full_name_ar') }} } @else { أبناء ولي الأمر — {{ cell(guardian, 'full_name_ar') }} }</h2>
+        <button class="hbh-iconbtn" type="button" aria-label="إغلاق" (click)="familyChild() ? familyChild.set(null) : closeGuardian()"><hbh-icon name="ic-x" /></button>
+      </header>
     <section class="family-detail" aria-label="تفاصيل ولي الأمر">
-      <div class="family-section-heading"><h3><hbh-icon name="ic-users" />أبناء ولي الأمر</h3></div>
-      <div class="hbh-filters">
-        <div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" aria-label="البحث في أبناء ولي الأمر" placeholder="ابحث باسم الطفل أو كود الحالة" [formControl]="familySearch" (keyup.enter)="loadFamily(1)"></div>
-        <button type="button" class="hbh-btn hbh-btn--ghost" (click)="loadFamily(1)">بحث</button>
-      </div>
+      @if(familyChild(); as selectedChild) {
+        <ng-container *ngComponentOutlet="childProfileComponent; injector: selectedChild.injector" />
+      } @else {
       @if (familyLoading()) { <hbh-skeleton [count]="2" shape="row" /> }
-      @else if (familyFailed()) { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadFamily(familyPage())" /> }
+      @else if (familyFailed()) { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadFamily()" /> }
       @else {
         <div class="hbh-tablewrap"><table class="hbh-table family-children">
           <thead><tr><th>الاسم</th><th>كود الحالة</th><th>تاريخ الميلاد</th><th>الحالة</th><th>إجراءات</th></tr></thead>
           <tbody>@for (child of familyChildren(); track child['child_id']) {
-            <tr><td><a class="hbh-link" [routerLink]="['/children', child['child_id']]">{{ cell(child, 'full_name_ar') }}</a></td><td dir="ltr">{{ cell(child, 'child_no') }}</td><td dir="ltr">{{ cell(child, 'birth_date') || '—' }}</td><td><span class="hbh-badge">{{ cell(child, 'status') === 'ACTIVE' ? 'نشط' : cell(child, 'status') }}</span></td><td><a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', child['child_id']]">عرض الملف <hbh-icon name="ic-chevron" /></a></td></tr>
-          } @empty { <tr><td colspan="5">لا يوجد أطفال مطابقون للبحث أو مرتبطون بولي الأمر.</td></tr> }</tbody>
+            <tr><td>@if(auth.can('CHILD.VIEW_ALL')) {<button type="button" class="family-name" (click)="openFamilyChild(child)">{{ cell(child, 'full_name_ar') }}</button>} @else {{{ cell(child, 'full_name_ar') }}}</td><td dir="ltr">{{ cell(child, 'child_no') }}</td><td dir="ltr">{{ cell(child, 'birth_date') || '—' }}</td><td><span class="hbh-badge">{{ cell(child, 'status') === 'ACTIVE' ? 'نشط' : cell(child, 'status') }}</span></td><td>@if(auth.can('CHILD.VIEW_ALL')) {<button type="button" class="hbh-btn hbh-btn--ghost" (click)="openFamilyChild(child)">عرض الملف <hbh-icon name="ic-chevron" /></button>}</td></tr>
+          } @empty { <tr><td colspan="5">لا يوجد أطفال مرتبطون بولي الأمر.</td></tr> }</tbody>
         </table></div>
-        <div class="hbh-pager"><span>ظاهر {{ familyChildren().length }} من {{ familyTotal() }}</span><div class="hbh-pager__nav">
-          <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="familyPage() <= 1" (click)="loadFamily(familyPage()-1)">السابق</button>
-          <span class="hbh-badge">{{ familyPage() }}</span>
-          <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="familyPage()*familyLimit() >= familyTotal()" (click)="loadFamily(familyPage()+1)">التالي</button>
-        </div></div>
+      }
       }
     </section>
-  } @else { <div class="family-select-note"><hbh-icon name="ic-users" /> اختر ولي أمر من الجدول لعرض بياناته وأطفاله هنا.</div> }
+    </dialog>
+  }
 }
 
 <!-- One editor for create and edit: the only difference is whether the
      service is asked to POST or PATCH. Two panels would be two places to
      forget a field. -->
+}
+}
 @if (editing()) {
   <dialog class="hbh-sheet" hbhModal (dismissed)="cancel()" aria-labelledby="editorTitle">
     <form class="hbh-sheet__box hbh-sheet__box--editor" (submit)="save($event)">
@@ -283,6 +306,22 @@
                          (change)="setSwitch(field, $event)">
                   <span>{{ (controls()[field.name].value === 'true' ? 'flag.yes' : 'flag.no') | t }}</span>
                 </label>
+              } @else if (field.kind === 'ref' && field.ref) {
+                <select [id]="'f-' + field.name" [formControl]="controls()[field.name]">
+                  <option value="">{{ 'resource.chooseReference' | t }}</option>
+                  @if (controls()[field.name].value && !refHasCurrent(field)) {
+                    <option [value]="controls()[field.name].value">#{{ controls()[field.name].value }}</option>
+                  }
+                  @for (option of refOptions(field); track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+                @if (refState()[field.ref.resource] === 'loading') {
+                  <small role="status">{{ 'resource.referenceLoading' | t }}</small>
+                } @else if (refState()[field.ref.resource] === 'failed') {
+                  <p role="alert">{{ 'resource.referenceFailed' | t }}</p>
+                  <button type="button" (click)="retryReferences()">{{ 'action.retry' | t }}</button>
+                }
               } @else if (field.kind === 'select') {
                 <select [id]="'f-' + field.name" [formControl]="controls()[field.name]">
                   @for (option of field.options ?? []; track option.value) {
@@ -308,10 +347,7 @@
                                 [value]="controls()[field.name].value"
                                 (valueChange)="controls()[field.name].setValue($event)" />
               } @else {
-                <!-- A `ref` is a number box here on purpose. The kind changes
-                     how a foreign key READS in the list; it does not change
-                     how one is written. Identifiers are still typed, which is
-                     the decision recorded above PLANS_SPEC with its reasons. -->
+                <!-- References with lookup metadata use the named picker above. -->
                 <input [id]="'f-' + field.name"
                        [type]="field.kind === 'time' ? 'time'
                              : field.kind === 'number' || field.kind === 'ref' ? 'number' : 'text'"

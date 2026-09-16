@@ -28,7 +28,7 @@
         <span class="ring__n" dir="ltr">
           {{ programme.completed | hbhNum }}<small>/{{ programme.total | hbhNum }}</small>
         </span>
-        <span class="ring__t">{{ 'activities.thisWeek' | t }}</span>
+        <span class="ring__t">{{ 'activities.todaySummary' | t }}</span>
         <span class="ring__s">
           {{ programme.total | hbhPlural: 'activities.doneCount':
              { done: (programme.completed | hbhCount) } }}
@@ -37,6 +37,7 @@
       </span>
     </div>
 
+    <p class="note note--info">{{ 'activities.dailyNote' | t }}</p>
     <div class="sec">
       <div class="sec__head">
         <h2 class="sec__t">{{ 'activities.today' | t }}</h2>
@@ -49,11 +50,7 @@
       } @else {
         <div class="stack">
           @for (activity of programme.activities; track activity.id) {
-            <button class="task" type="button"
-                    [class.is-done]="activity.completedAt !== null"
-                    [disabled]="isSaving(activity)"
-                    [attr.aria-pressed]="activity.completedAt !== null"
-                    (click)="toggle(activity)">
+            <article class="task activity-card" [class.is-done]="activity.completedAt !== null">
               <span class="task__box"><hbh-icon name="ic-check" /></span>
               <span class="task__b">
                 <span class="task__t">{{ activity.title }}</span>
@@ -66,10 +63,10 @@
                      method, which is how a home programme stops being done.
                      Each is drawn only when it was actually recorded. -->
                 @if (activity.howTo) {
-                  <span class="task__how">{{ activity.howTo }}</span>
+                  <span class="task__how"><strong>{{ 'activities.generalGuide' | t }}</strong> {{ activity.howTo }}</span>
                 }
                 @if (activity.timesPerWeek > 0 || activity.minutesEach > 0) {
-                  <span class="task__dose">
+                  <span class="task__dose"><strong>{{ 'activities.personalDose' | t }}</strong> 
                     @if (activity.timesPerWeek > 0) {
                       {{ activity.timesPerWeek | hbhPlural: 'activities.timesPerWeek' }}
                     }
@@ -81,8 +78,12 @@
                     }
                   </span>
                 }
+                <button class="hbh-btn hbh-btn--primary activity-record" type="button"
+                  [disabled]="isSaving(activity) || activity.completedAt !== null" (click)="toggle(activity)">
+                  {{ (activity.completedAt ? 'activities.doneToday' : 'activities.recordToday') | t }}
+                </button>
               </span>
-            </button>
+            </article>
           }
         </div>
       }

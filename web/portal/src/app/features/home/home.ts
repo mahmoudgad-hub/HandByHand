@@ -12,7 +12,7 @@ import { PortalApi } from '../../core/api/portal-api';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
 import { ChildContextService } from '../../core/auth/child-context.service';
 import { FormatService } from '@hbh/shared/format/format.service';
-import { HbhAgePipe, HbhCountPipe, HbhMoneyPipe } from '@hbh/shared/format/format.pipes';
+import { HbhMoneyPipe, HbhNumberPipe } from '@hbh/shared/format/format.pipes';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { AppointmentSummary, HomeSummary } from '../../core/models/portal.models';
@@ -34,7 +34,7 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
   selector: 'hbh-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink, Icon, TranslatePipe, HbhAgePipe, HbhCountPipe, HbhMoneyPipe,
+    RouterLink, Icon, TranslatePipe, HbhNumberPipe, HbhMoneyPipe,
     AppointmentRow, Skeleton, ErrorNote,
   ],
   templateUrl: './home.html',

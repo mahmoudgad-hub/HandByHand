@@ -4,7 +4,7 @@ import { FormatService } from '@hbh/shared/format/format.service';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { IconName } from '@hbh/shared/icon/icon';
 import { Row } from '../api/ops-api';
-import { DayApi, DayResource } from './day-api';
+import { DayApi, DayResource, DeliveryMode, NewAppointment } from './day-api';
 
 /**
  * A description of one operational screen: what its rows say, what may be
@@ -158,6 +158,7 @@ export interface DayAction {
    * the screen - and so a navigation can never open the confirmation dialog.
    */
   readonly link?: (row: Row) => readonly (string | number)[];
+  readonly query?: Readonly<Record<string, string>>;
   readonly run: (
     api: DayApi, row: Row, values: Record<string, string>, ctx: DayContext,
   ) => Observable<unknown>;
@@ -237,7 +238,7 @@ export interface DaySpec {
  * disagree the database is right. What this buys is a dropdown with three
  * real choices instead of six, two of which would always be refused.
  */
-const APPOINTMENT_NEXT: Readonly<Record<string, readonly string[]>> = {
+export const APPOINTMENT_NEXT: Readonly<Record<string, readonly string[]>> = {
   BOOKED: ['CONFIRMED', 'CANCELLED', 'NO_SHOW'],
   CONFIRMED: ['CHECKED_IN', 'CANCELLED', 'NO_SHOW'],
   CHECKED_IN: ['COMPLETED', 'CANCELLED'],
@@ -265,7 +266,7 @@ const SESSION_NEXT: Readonly<Record<string, readonly string[]>> = {
  * Enrolling is therefore its own button, and it is refused from NEW: somebody
  * has to have spoken to the family before their child enters the record.
  */
-const ENROLMENT_NEXT: Readonly<Record<string, readonly string[]>> = {
+export const ENROLMENT_NEXT: Readonly<Record<string, readonly string[]>> = {
   NEW: ['CONTACTED', 'REJECTED', 'DUPLICATE'],
   CONTACTED: ['ASSESSMENT_BOOKED', 'REJECTED', 'DUPLICATE'],
   ASSESSMENT_BOOKED: ['REJECTED'],
@@ -378,7 +379,26 @@ export const APPOINTMENTS_SPEC: DaySpec = {
     { key: 'childNo', labelKey: 'field.childNo', read: (row) => ref(row, 'child', 'child_no'), ltr: true },
     { key: 'service', labelKey: 'field.service', read: (row) => ref(row, 'service', 'name_ar') },
     { key: 'therapist', labelKey: 'field.therapist', read: (row) => ref(row, 'therapist', 'full_name_ar') },
-    { key: 'room', labelKey: 'field.room', read: (row) => ref(row, 'room', 'name_ar') },
+    /*
+     * WHERE, and "nowhere" is an answer rather than a blank.
+     *
+     * An online consultation has no room. Reading the room alone left the
+     * cell empty, which reads as a row that failed to load - and it is the
+     * one column that tells reception whether to expect somebody at the
+     * door. delivery_mode is what distinguishes the two, so it is what is
+     * read when there is no room.
+     */
+    {
+      key: 'room', labelKey: 'field.room',
+      read: (row, ctx) => {
+        const room = ref(row, 'room', 'name_ar');
+        if (room) {
+          return room;
+        }
+        const mode = text(row, 'delivery_mode');
+        return mode && mode !== 'IN_PERSON' ? ctx.i18n.translate('delivery.' + mode) : '';
+      },
+    },
   ],
   create: [{
     key: 'book',
@@ -479,9 +499,37 @@ export const APPOINTMENTS_SPEC: DaySpec = {
        * free windows before either is chosen is asking "when is nobody
        * free", and the honest answer - nothing - reads as a full day.
        */
+      /*
+       * IN THE CENTRE, OR OVER VIDEO - and it is asked BEFORE the slot,
+       * because it changes which windows are free.
+       *
+       * An online consultation needs no room, so its free hours are the
+       * therapist's own rather than the intersection of the therapist and
+       * a room. Asking afterwards would mean showing a list of windows
+       * that were answered for the wrong question.
+       *
+       * NO PLACEHOLDER. Every appointment this centre has ever booked was
+       * in person, so that is a genuine default rather than an unanswered
+       * question - and `onlyWhen` on the room below needs a value here to
+       * match against, so an empty one would hide the room field on the
+       * ordinary path.
+       *
+       * EXTERNAL is in the schema and not offered here. Nobody has asked
+       * for it, and an option that books something the centre does not do
+       * is a wrong answer made available.
+       */
+      {
+        name: 'delivery_mode', labelKey: 'field.deliveryMode', kind: 'select',
+        required: true, section: 'appointments.sec.where',
+        options: [
+          { value: 'IN_PERSON', labelKey: 'delivery.IN_PERSON' },
+          { value: 'ONLINE', labelKey: 'delivery.ONLINE' },
+        ],
+      },
       {
         name: 'slot', labelKey: 'appointments.freeSlots', kind: 'slots',
-        section: 'appointments.sec.when', needs: ['service_id', 'therapist_id'],
+        section: 'appointments.sec.when',
+        needs: ['service_id', 'therapist_id', 'delivery_mode'],
       },
       /*
        * THE THREE FIELDS A SLOT FILLS IN, kept and demoted.
@@ -510,11 +558,19 @@ export const APPOINTMENTS_SPEC: DaySpec = {
         name: 'room_id', labelKey: 'field.room', kind: 'lookup', lookup: 'rooms',
         required: true, section: 'appointments.sec.where', secondary: true,
         hintKey: 'appointments.roomHint',
+        // GONE ENTIRELY for a consultation, not merely optional. An online
+        // appointment has no room - ck_appointments_room_mode makes that
+        // exact, and hbh.validate_slot answers ROOM_NOT_ALLOWED to one that
+        // names a room - so a room picker left on screen would be offering
+        // a choice whose every value is refused. `required` still stands:
+        // canConfirm only counts fields that are showing, so an in-person
+        // booking must still name one.
         // Picking a slot still fills this, and that is the ordinary path.
         // The placeholder only covers the other one - a booking typed by
         // hand, where an unpicked room would otherwise arrive as whichever
         // room sorts first and send a family to the wrong door.
         placeholderKey: 'field.chooseRoom',
+        onlyWhen: { field: 'delivery_mode', isOneOf: ['IN_PERSON'] },
       },
       { name: 'note_ar', labelKey: 'field.note', kind: 'textarea',
         section: 'appointments.sec.note' },
@@ -578,17 +634,24 @@ export const APPOINTMENTS_SPEC: DaySpec = {
 };
 
 /** The booking body, with wall-clock times converted to UTC instants. */
-function bookingBody(values: Record<string, string>, ctx: DayContext) {
+function bookingBody(values: Record<string, string>, ctx: DayContext): NewAppointment {
+  const mode = (values['delivery_mode'] || 'IN_PERSON') as DeliveryMode;
   return {
     child_id: Number(values['child_id']),
     therapist_id: Number(values['therapist_id']),
-    room_id: Number(values['room_id']),
+    // OMITTED, not zero, when the mode has no room. The room field is
+    // hidden for a consultation so `values['room_id']` is whatever the
+    // person left behind if they switched modes - and Number('') is 0,
+    // which would reach the service as a room that does not exist. The
+    // mode decides, not the leftover.
+    ...(mode === 'IN_PERSON' ? { room_id: Number(values['room_id']) } : {}),
     service_id: Number(values['service_id']),
     // The picker collects the centre's wall clock. Everything crosses the
     // wire as UTC.
     starts_at: ctx.format.toUtc(values['starts_at']),
     ends_at: ctx.format.toUtc(values['ends_at']),
     note_ar: values['note_ar'] ?? '',
+    delivery_mode: mode,
   };
 }
 
@@ -1047,6 +1110,16 @@ export const REQUESTS_SPEC: DaySpec = {
         idOf(row, 'request_id'), values['status'], values['note_ar'] ?? ''),
       doneKey: 'requests.decided',
     },
+    {
+      key: 'followAppointment', labelKey: 'requests.followAppointment', icon: 'ic-calendar',
+      permission: 'APPOINTMENT.BOOK',
+      when: row => text(row, 'status') === 'ACCEPTED'
+        && ['RESCHEDULE', 'CANCEL'].includes(text(row, 'kind_code'))
+        && Number((row['child'] as Row | undefined)?.['child_id']) > 0,
+      link: row => ['/children', Number((row['child'] as Row)['child_id'])],
+      query: { tab: 'appointments' },
+      run: () => { throw new Error('followAppointment is a link'); }, doneKey: '',
+    },
   ],
 };
 
@@ -1124,11 +1197,26 @@ export const ENROLMENTS_SPEC: DaySpec = {
   ],
   actions: [
     {
+      // The application's own page. The list stays the queue; the page is
+      // where one application is worked on (docs/UX-DETAIL-PAGES.md).
+      key: 'open',
+      labelKey: 'enrolments.open',
+      icon: 'ic-eye',
+      permission: 'ENROLMENT.MANAGE',
+      when: () => true,
+      link: (row) => ['/enrolments', idOf(row, 'application_id')],
+      run: () => {
+        throw new Error('open is a link; run is never called');
+      },
+      doneKey: '',
+    },
+    {
       key: 'status',
       labelKey: 'enrolments.changeStatus',
       icon: 'ic-check-circle',
       permission: 'ENROLMENT.MANAGE',
       when: (row) => (ENROLMENT_NEXT[text(row, 'status')] ?? []).length > 0,
+      noteKey: 'enrolments.statusNote',
       fields: [
         {
           name: 'status', labelKey: 'field.newStatus', kind: 'select', required: true,
@@ -1140,10 +1228,15 @@ export const ENROLMENTS_SPEC: DaySpec = {
           // call the system already believes it made.
           placeholderKey: 'field.chooseStatus',
         },
+        { name: 'assessment_at', labelKey: 'enrolments.assessmentAt', kind: 'datetime', required: true,
+          onlyWhen: { field: 'status', isOneOf: ['ASSESSMENT_BOOKED'] },
+          hintKey: 'enrolments.assessmentAtHint' },
         { name: 'note_ar', labelKey: 'field.note', kind: 'textarea' },
       ],
-      run: (api, row, values) => api.setEnrolmentStatus(
-        idOf(row, 'application_id'), values['status'], values['note_ar'] ?? ''),
+      run: (api, row, values, ctx) => api.setEnrolmentStatus(
+        idOf(row, 'application_id'), values['status'], values['note_ar'] ?? '',
+        values['status'] === 'ASSESSMENT_BOOKED' && values['assessment_at']
+          ? ctx.format.toUtc(values['assessment_at']) : undefined),
       doneKey: 'enrolments.statusChanged',
     },
     {

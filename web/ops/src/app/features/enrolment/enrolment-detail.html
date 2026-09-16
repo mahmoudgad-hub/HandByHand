@@ -1,0 +1,334 @@
+@if (state() === 'loading') {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (state() === 'notFound') {
+  <hbh-empty-state icon="ic-search" [title]="'enrolment.notFound' | t" [note]="'enrolment.notFoundNote' | t" />
+  <p class="enr__center"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="back()">{{ 'enrolment.backToList' | t }}</button></p>
+} @else if (state() === 'denied') {
+  <hbh-empty-state icon="ic-shield" [title]="'denied.title' | t" [note]="'denied.note' | t" />
+  <p class="enr__center"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="back()">{{ 'enrolment.backToList' | t }}</button></p>
+} @else if (state() === 'failed') {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="load()" />
+} @else if (row(); as app) {
+
+  <!-- ===== Header: who, where it stands, the one thing to do next ===== -->
+  <header class="enr__head ops-page-header">
+    <div class="enr__crumbs ops-page-breadcrumb">
+      <button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="back()">
+        <hbh-icon name="ic-back" /> {{ 'enrolment.backToList' | t }}
+      </button>
+    </div>
+
+    <div class="enr__title ops-page-identity">
+      <div class="enr__ident">
+        <span class="enr__no" dir="ltr">{{ val('application_no') }}</span>
+        <span class="hbh-badge" [class]="'hbh-badge ' + statusTone()">{{ statusKey() | t }}</span>
+        @for (flag of flags(); track flag.key) {
+          <span class="enr__flag" [class.enr__flag--warn]="flag.tone === 'warn'">
+            <hbh-icon [name]="flag.tone === 'warn' ? 'ic-warn' : 'ic-info'" />
+            {{ flag.key | t }}
+          </span>
+        }
+      </div>
+      <h1 class="enr__name ops-page-title">{{ val('child_name_ar') }}</h1>
+      <div class="enr__facts">
+        <span><b>{{ 'field.parentName' | t }}:</b>
+          @if (guardianId()) {
+            <a [routerLink]="['/guardians', guardianId()]">{{ val('parent_name_ar') }}</a>
+          } @else {
+            {{ val('parent_name_ar') }}
+          }
+          @if (has('relationship_code')) { <small>({{ labelled('relationship.', 'relationship_code') }})</small> }
+        </span>
+        @if (telHref(); as tel) {
+          <a [href]="tel" dir="ltr" class="enr__tel"><hbh-icon name="ic-phone" /> {{ mobile() }}</a>
+        }
+        <span><b>{{ 'field.submittedAt' | t }}:</b> {{ when(val('submitted_at')) }}</span>
+        <span><b>{{ 'enrolment.specialist' | t }}:</b> {{ 'enrolment.specialistNone' | t }}</span>
+      </div>
+    </div>
+
+    <div class="enr__actions ops-page-actions">
+      @if (next(); as step) {
+        @if (canNext()) {
+          @if (step.actionType === null && step.link) {
+            <a class="hbh-btn hbh-btn--primary" [routerLink]="step.link">{{ step.ctaKey | t }}</a>
+          } @else {
+            <button class="hbh-btn hbh-btn--primary" type="button" (click)="act()">{{ step.ctaKey | t }}</button>
+          }
+        }
+      }
+      @if (canChangeStatus()) {
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="changeStatus()">
+          <hbh-icon name="ic-check-circle" /> {{ 'enrolments.changeStatus' | t }}
+        </button>
+      }
+      @if (canConvert() && next()?.actionType !== 'convert') {
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="convert()">
+          <hbh-icon name="ic-user-plus" /> {{ 'enrolments.convert' | t }}
+        </button>
+      }
+      @if (telHref(); as tel) {
+        <a class="hbh-btn hbh-btn--ghost" [href]="tel"><hbh-icon name="ic-phone" /> {{ 'enrolment.call' | t }}</a>
+      }
+      @if (guardianId() && auth.can('REQUEST.MANAGE')) {
+        <a class="hbh-btn hbh-btn--ghost" routerLink="/communications"><hbh-icon name="ic-chat" /> {{ 'enrolment.openConversation' | t }}</a>
+      }
+      @if (childId()) {
+        <a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', childId()]"><hbh-icon name="ic-users" /> {{ 'enrolment.openChild' | t }}</a>
+      }
+    </div>
+  </header>
+
+  @if (notice()) {
+    <p class="hbh-alert enr__notice" role="status"><hbh-icon name="ic-info" /> {{ notice() | t }}</p>
+  }
+
+  <!-- ===== Next step: read off the state machine, never computed here ===== -->
+  <section class="enr__next" aria-labelledby="enrNextTitle">
+    <h2 id="enrNextTitle" class="enr__h2">{{ 'enrolment.nextTitle' | t }}</h2>
+    @if (next(); as step) {
+      <dl class="enr__kv">
+        <dt>{{ 'field.status' | t }}</dt><dd><span class="hbh-badge" [class]="'hbh-badge ' + statusTone()">{{ statusKey() | t }}</span></dd>
+        <dt>{{ 'enrolment.requiredNow' | t }}</dt><dd>{{ step.descriptionKey | t }}</dd>
+        <dt>{{ 'enrolment.responsible' | t }}</dt><dd>{{ step.roleKey | t }}</dd>
+      </dl>
+      @if (canNext()) {
+        @if (step.actionType === null && step.link) {
+          <a class="hbh-btn hbh-btn--primary" [routerLink]="step.link">{{ step.ctaKey | t }}</a>
+        } @else {
+          <button class="hbh-btn hbh-btn--primary" type="button" (click)="act()">{{ step.ctaKey | t }}</button>
+        }
+      } @else {
+        <p class="enr__muted">{{ 'enrolment.nextNoPermission' | t }}</p>
+      }
+    } @else {
+      <p class="enr__muted">{{ 'enrolment.nextNone' | t }}</p>
+    }
+  </section>
+
+  <!-- ===== Tabs ===== -->
+  <div class="hbh-tabbar enr__tabs" role="tablist">
+    @for (item of tabs; track item) {
+      <button class="hbh-tabbar__item" type="button" role="tab"
+              [class.is-active]="tab() === item" [attr.aria-selected]="tab() === item"
+              (click)="selectTab(item)">
+        {{ ('enrolment.tab.' + item) | t }}
+      </button>
+    }
+  </div>
+
+  @switch (tab()) {
+
+    @case ('overview') {
+      <section class="enr__grid">
+        <div class="enr__card">
+          <h3>{{ 'enrolment.overview.state' | t }}</h3>
+          <dl class="enr__kv">
+            <dt>{{ 'field.status' | t }}</dt><dd><span class="hbh-badge" [class]="'hbh-badge ' + statusTone()">{{ statusKey() | t }}</span></dd>
+            <dt>{{ 'enrolment.requiredNow' | t }}</dt><dd>{{ next() ? ((next()!.descriptionKey) | t) : ('enrolment.nextNone' | t) }}</dd>
+            <dt>{{ 'enrolment.specialist' | t }}</dt><dd>{{ 'enrolment.specialistNone' | t }}</dd>
+            <dt>{{ 'field.source' | t }}</dt><dd>{{ labelled('source.', 'source_code') || '—' }}</dd>
+            <dt>{{ 'field.submittedAt' | t }}</dt><dd>{{ when(val('submitted_at')) }}</dd>
+            @if (has('contacted_at')) { <dt>{{ 'enrolment.contactedAt' | t }}</dt><dd>{{ when(val('contacted_at')) }}</dd> }
+            @if (has('decided_at')) { <dt>{{ 'enrolment.decidedAt' | t }}</dt><dd>{{ when(val('decided_at')) }}</dd> }
+          </dl>
+        </div>
+        <div class="enr__card">
+          <h3>{{ 'enrolment.overview.flags' | t }}</h3>
+          @if (flags().length) {
+            <ul class="enr__flags">
+              @for (flag of flags(); track flag.key) {
+                <li [class.is-warn]="flag.tone === 'warn'"><hbh-icon [name]="flag.tone === 'warn' ? 'ic-warn' : 'ic-info'" /> {{ flag.key | t }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="enr__muted">{{ 'enrolment.noFlags' | t }}</p>
+          }
+        </div>
+        <div class="enr__card">
+          <h3>{{ 'enrolment.overview.latestAppointment' | t }}</h3>
+          @if (!childId()) {
+            <p class="enr__muted">{{ 'enrolment.appointmentsAfterConvert' | t }}</p>
+          } @else if (appointmentsState() === 'loading') {
+            <hbh-skeleton [count]="1" shape="row" />
+          } @else if (appointmentsState() === 'failed') {
+            <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadAppointments()" />
+          } @else if (latestAppointment(); as appt) {
+            <p><b dir="ltr">{{ when($any(appt['starts_at'])) }}</b></p>
+            <p>{{ nested(appt, 'service', 'name_ar') }} · {{ nested(appt, 'therapist', 'full_name_ar') }}
+              <span class="hbh-badge" [class]="'hbh-badge ' + appointmentTone(appt)">{{ appointmentStatusKey(appt) | t }}</span></p>
+          } @else {
+            <p class="enr__muted">{{ 'enrolment.noAppointments' | t }}</p>
+          }
+        </div>
+        <div class="enr__card">
+          <h3>{{ 'enrolment.overview.latestActivity' | t }}</h3>
+          @if (activity().length) {
+            @let last = activity()[0];
+            <p><b>{{ last.key | t }}</b> · {{ when(last.at) }}</p>
+            @if (last.detail) { <p class="enr__muted">{{ last.detail | t }}</p> }
+          } @else {
+            <p class="enr__muted">{{ 'enrolment.noActivity' | t }}</p>
+          }
+        </div>
+      </section>
+    }
+
+    @case ('beneficiary') {
+      <section class="enr__card">
+        <dl class="enr__kv enr__kv--wide">
+          <dt>{{ 'field.childName' | t }}</dt><dd>{{ val('child_name_ar') }}</dd>
+          <dt>{{ 'field.birthDate' | t }}</dt><dd>{{ val('child_birth_date') ? format.dayMonthYear(val('child_birth_date')) : '—' }} @if (age()) { <small>({{ age() }})</small> }</dd>
+          <dt>{{ 'field.gender' | t }}</dt><dd>{{ labelled('gender.', 'child_gender') || '—' }}</dd>
+          <dt>{{ 'field.mainConcern' | t }}</dt><dd class="enr__prose">{{ val('main_concern_ar') || '—' }}</dd>
+          <dt>{{ 'enrolment.previousTherapy' | t }}</dt><dd class="enr__prose">{{ val('previous_therapy_ar') || '—' }}</dd>
+        </dl>
+        @if (childId()) {
+          <a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', childId()]"><hbh-icon name="ic-users" /> {{ 'enrolment.openChild' | t }}</a>
+        } @else {
+          <p class="enr__muted">{{ 'enrolment.childAfterConvert' | t }}</p>
+        }
+      </section>
+    }
+
+    @case ('family') {
+      <section class="enr__card">
+        <dl class="enr__kv enr__kv--wide">
+          <dt>{{ 'field.parentName' | t }}</dt><dd>{{ val('parent_name_ar') }}</dd>
+          <dt>{{ 'field.relationship' | t }}</dt><dd>{{ labelled('relationship.', 'relationship_code') || '—' }}</dd>
+          <dt>{{ 'field.mobile' | t }}</dt><dd dir="ltr">{{ mobile() || '—' }}</dd>
+          <dt>{{ 'field.email' | t }}</dt><dd dir="ltr">{{ val('parent_email') || '—' }}</dd>
+          <dt>{{ 'enrolment.address' | t }}</dt><dd>{{ val('address_ar') || '—' }}</dd>
+          <dt>{{ 'enrolment.preferredContactTime' | t }}</dt><dd>{{ val('preferred_contact_time') || '—' }}</dd>
+          @if (val('sibling_applications') && val('sibling_applications') !== '0') {
+            <dt>{{ 'enrolment.siblings' | t }}</dt><dd>{{ val('sibling_applications') }}</dd>
+          }
+        </dl>
+        <div class="enr__row">
+          @if (telHref(); as tel) { <a class="hbh-btn hbh-btn--ghost" [href]="tel"><hbh-icon name="ic-phone" /> {{ 'enrolment.call' | t }}</a> }
+          @if (guardianId() && auth.can('REQUEST.MANAGE')) { <a class="hbh-btn hbh-btn--ghost" routerLink="/communications"><hbh-icon name="ic-chat" /> {{ 'enrolment.openConversation' | t }}</a> }
+          @if (!guardianId()) { <p class="enr__muted">{{ 'enrolment.guardianAfterConvert' | t }}</p> }
+        </div>
+      </section>
+    }
+
+    @case ('appointments') {
+      @if (!childId()) {
+        <hbh-empty-state icon="ic-calendar" [title]="'enrolment.noAppointments' | t" [note]="'enrolment.appointmentsAfterConvert' | t" />
+      } @else if (appointmentsState() === 'loading' || appointmentsState() === 'idle') {
+        <hbh-skeleton [count]="3" shape="row" />
+      } @else if (appointmentsState() === 'failed') {
+        <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadAppointments()" />
+      } @else if (!(appointments() ?? []).length) {
+        <hbh-empty-state icon="ic-calendar" [title]="'enrolment.noAppointments' | t" [note]="'enrolment.bookFromDiary' | t" />
+      } @else {
+        @if (upcoming().length) {
+          <h3 class="enr__h3">{{ 'enrolment.upcoming' | t }}</h3>
+          <ng-container *ngTemplateOutlet="apptTable; context: { rows: upcoming() }" />
+        }
+        @if (past().length) {
+          <h3 class="enr__h3">{{ 'enrolment.past' | t }}</h3>
+          <ng-container *ngTemplateOutlet="apptTable; context: { rows: past() }" />
+        }
+      }
+      <ng-template #apptTable let-rows="rows">
+        <hbh-table-pages #tablePage1 [rows]="rows">
+<div class="hbh-tablewrap"><table class="hbh-table">
+            <thead><tr>
+              <th>{{ 'field.time' | t }}</th><th>{{ 'field.service' | t }}</th><th>{{ 'field.therapist' | t }}</th>
+              <th>{{ 'field.room' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th>
+            </tr></thead>
+            <tbody>
+              @for (appt of tablePage1.visible(); track appt['appointment_id']) {
+                <tr>
+                  <td dir="ltr">{{ when($any(appt['starts_at'])) }}</td>
+                  <td>{{ nested(appt, 'service', 'name_ar') }}</td>
+                  <td>{{ nested(appt, 'therapist', 'full_name_ar') }}</td>
+                  <td>{{ nested(appt, 'room', 'name_ar') || (appt['delivery_mode'] ? (('delivery.' + appt['delivery_mode']) | t) : '') }}</td>
+                  <td><span class="hbh-badge" [class]="'hbh-badge ' + appointmentTone(appt)">{{ appointmentStatusKey(appt) | t }}</span></td>
+                  <td><a class="hbh-btn hbh-btn--ghost hbh-btn--sm" routerLink="/appointments" [queryParams]="{ focus: appt['appointment_id'] }">{{ 'enrolment.openInDiary' | t }}</a></td>
+                </tr>
+              }
+            </tbody>
+          </table></div>
+</hbh-table-pages>
+      </ng-template>
+    }
+
+    @case ('assessment') {
+      @if (app['assessment_at']) {
+        <section class="enr__card"><h2>{{ 'enrolments.assessmentAt' | t }}</h2>
+          <p>{{ when($any(app['assessment_at'])) }}</p>
+          <p>{{ 'enrolments.assessmentAtHint' | t }}</p>
+        </section>
+      }
+      <!-- The assessment exists in the schema and has no route yet
+           (UX-PROBLEMS.md R-01). What can be shown is shown; no button
+           promises a screen that is not there. -->
+      <hbh-empty-state icon="ic-clipboard" [title]="'enrolment.assessmentNone' | t"
+                       [note]="(status() === 'ASSESSMENT_BOOKED' ? 'enrolment.assessmentNoteBooked' : 'enrolment.assessmentNote') | t" />
+    }
+
+    @case ('recommendations') {
+      <section class="enr__card">
+        <dl class="enr__kv enr__kv--wide">
+          <dt>{{ 'enrolment.preferredService' | t }}</dt><dd>{{ preferredService() || '—' }}</dd>
+          <dt>{{ 'enrolment.previousTherapy' | t }}</dt><dd class="enr__prose">{{ val('previous_therapy_ar') || '—' }}</dd>
+        </dl>
+      </section>
+      @if (childId()) {
+        <h3 class="enr__h3">{{ 'enrolment.plans' | t }}</h3>
+        @if (plansState() === 'loading' || plansState() === 'idle') {
+          <hbh-skeleton [count]="2" shape="row" />
+        } @else if (plansState() === 'failed') {
+          <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPlans()" />
+        } @else if (!(plans() ?? []).length) {
+          <hbh-empty-state icon="ic-target" [title]="'enrolment.noPlans' | t" [note]="'enrolment.plansNote' | t" />
+        } @else {
+          <ul class="enr__list">
+            @for (plan of plans(); track plan['plan_id']) {
+              <li><b>{{ plan['title_ar'] }}</b> <span class="hbh-badge hbh-badge--info">{{ planStatusKey(plan) | t }}</span>
+                <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="['/children', childId()]" [queryParams]="{ tab: 'plans' }">{{ 'enrolment.openChild' | t }}</a></li>
+            }
+          </ul>
+        }
+      } @else {
+        <p class="enr__muted">{{ 'enrolment.plansAfterConvert' | t }}</p>
+      }
+    }
+
+    @case ('notes') {
+      @if (has('contact_note_ar') || has('decision_note_ar')) {
+        <ul class="enr__list">
+          @if (has('contact_note_ar')) {
+            <li><b>{{ 'enrolment.contactNote' | t }}</b> <small>{{ when(val('contacted_at')) }}</small><p class="enr__prose">{{ val('contact_note_ar') }}</p></li>
+          }
+          @if (has('decision_note_ar')) {
+            <li><b>{{ 'enrolment.decisionNote' | t }}</b> <small>{{ when(val('decided_at')) }}</small><p class="enr__prose">{{ val('decision_note_ar') }}</p></li>
+          }
+        </ul>
+      } @else {
+        <hbh-empty-state icon="ic-file" [title]="'enrolment.noNotes' | t" [note]="'enrolment.notesNote' | t" />
+      }
+    }
+
+    @case ('activity') {
+      @if (activity().length) {
+        <ol class="enr__timeline">
+          @for (event of activity(); track event.at + event.key) {
+            <li>
+              <time [attr.datetime]="event.at" dir="ltr">{{ when(event.at) }}</time>
+              <div>
+                <b>{{ event.key | t }}</b>
+                @if (event.status) { <span class="hbh-badge hbh-badge--muted">{{ (event.key === 'enrolment.event.appointment' ? 'status.appointment.' : 'status.enrolment.') + event.status | t }}</span> }
+                @if (event.detail) { <p class="enr__muted">{{ event.detail | t }}</p> }
+              </div>
+            </li>
+          }
+        </ol>
+      } @else {
+        <hbh-empty-state icon="ic-clock" [title]="'enrolment.noActivity' | t" />
+      }
+    }
+  }
+}

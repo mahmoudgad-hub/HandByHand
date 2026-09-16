@@ -1,0 +1,48 @@
+/* The record panels' own rules. Scoped to AppointmentPanel and InvoicePanel,
+   which both name this file: a rule in the host's stylesheet never reaches
+   an element inside a child component's template. */
+:host { display: block; }
+
+
+/* The verbs, first and full-width on a phone: the drawer is opened to
+   press one of them. */
+.rd__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.rd__actions .hbh-btn { min-height: 40px; }
+
+.rd__kv {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 16px; margin: 0; font-size: 13.5px;
+}
+.rd__kv dt { color: var(--hbh-muted); }
+.rd__kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.rd__no { font-size: 12px; color: var(--hbh-muted); margin-inline-start: 6px; unicode-bidi: isolate; }
+.rd__tel { color: var(--hbh-teal-600); unicode-bidi: isolate; }
+
+.rd__figures {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px;
+}
+.rd__figures > div {
+  padding: 10px 12px; border: 1px solid var(--hbh-line); border-radius: 12px;
+  background: var(--hbh-surface-2); display: grid; gap: 2px; min-width: 0;
+}
+.rd__figures small { font-size: 11.5px; color: var(--hbh-muted); }
+.rd__figures b { font-size: 15px; overflow-wrap: anywhere; }
+.rd__figures .is-due { background: var(--hbh-danger-bg); border-color: var(--hbh-danger-line); }
+.rd__figures .is-due b { color: var(--hbh-danger-ink); }
+
+.rd__h3 { margin: 18px 0 8px; font-size: 14px; }
+.rd__h3 small { color: var(--hbh-muted); font-weight: 400; }
+.rd__muted { color: var(--hbh-muted); font-size: 13px; margin: 0; }
+.rd__table { font-size: 13px; }
+
+.rd__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+
+/* Phone: the whole screen, and the buttons stack full width so none is
+   a sliver. */
+@media (max-width: 640px) {
+  .rd__actions { flex-direction: column; }
+  .rd__actions .hbh-btn { width: 100%; min-height: 44px; }
+  .rd__kv { grid-template-columns: 1fr; gap: 2px 0; }
+  .rd__kv dt { margin-top: 8px; font-size: 12px; }
+  .rd__figures { grid-template-columns: 1fr; }
+}

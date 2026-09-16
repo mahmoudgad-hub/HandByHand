@@ -1,6 +1,5 @@
 <section class="scr requests-page">
-<a class="hbh-btn hbh-btn--primary" href="/communications">المحادثات مع المركز</a>
-  <header class="requests-heading"><h1>{{ 'requests.manage' | t }}</h1><p>{{ 'requests.intro' | t }}</p></header>
+  <header class="requests-heading"><p>{{ 'requests.intro' | t }}</p></header>
   <div class="request-options">
     @for (option of kinds; track option.kind) {
       <article class="request-option" [class.is-open]="drafting() === option.kind" [class.is-cancel]="option.kind === 'CANCEL'">
@@ -13,18 +12,50 @@
         </button>
         <div class="request-panel" [id]="'panel-' + option.kind" [hidden]="drafting() !== option.kind" role="region" [attr.aria-labelledby]="'toggle-' + option.kind">
           @if (drafting() === option.kind) {
+            @if (option.kind !== 'CALLBACK') {
+              @if (appointmentsLoading()) {
+                <p role="status">{{ 'requests.loadingAppointments' | t }}</p>
+              } @else if (appointmentsFailed()) {
+                <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadAppointments()" />
+              } @else if (!appointments().length) {
+                <p class="note note--info">{{ 'requests.noAppointments' | t }}</p>
+              } @else {
+                <label class="fld__l" for="request-appointment">{{ 'requests.appointment' | t }}</label>
+                <select id="request-appointment" class="request-input" [formControl]="appointmentId">
+                  <option value="">{{ 'requests.chooseAppointment' | t }}</option>
+                  @for (appointment of appointments(); track appointment.id) {
+                    <option [value]="appointment.id">{{ appointment.serviceName }} · {{ format.dayMonthYear(appointment.startsAt) }} · {{ format.time(appointment.startsAt) }}</option>
+                  }
+                </select>
+                @if (option.kind === 'RESCHEDULE') {
+                  <div class="request-date-grid">
+                    <!-- Day, month BY NAME, year - not <input type="date">, which
+                         shows the browser's order and lets 7/3 go in as 3 July
+                         for the day a family asks to be seen (#18). A past
+                         date is still refused by validDraft. -->
+                    <div class="request-date-parts">
+                      <label for="req-alt-date">{{ 'requests.alternativeDate' | t }}</label>
+                      <hbh-date-parts fieldId="req-alt-date" [value]="alternativeDate.value"
+                                      (valueChange)="alternativeDate.setValue($event)" />
+                    </div>
+                    <label>{{ 'requests.alternativeTime' | t }}<input class="request-input" type="time" [formControl]="alternativeTime" /></label>
+                  </div>
+                  <p class="fld__hint">{{ 'requests.futureTime' | t }}</p>
+                }
+              }
+            }
             <label class="fld__l" [attr.for]="'note-' + option.kind">{{ 'requests.noteLabel' | t }}</label>
             <textarea [id]="'note-' + option.kind" class="req__note" rows="3" maxlength="500" [formControl]="note"
               [attr.aria-describedby]="'hint-' + option.kind" [attr.placeholder]="'requests.notePlaceholder' | t"></textarea>
             <div class="request-help"><p class="fld__hint" [id]="'hint-' + option.kind">{{ 'requests.noteHint' | t }}</p><span class="request-count" dir="ltr">{{ note.value.length }}/500</span></div>
-            <div class="req__actions"><button class="hbh-btn hbh-btn--primary" type="button" [class.is-busy]="sending()" [disabled]="sending() || note.invalid" (click)="submit()"><hbh-icon name="ic-send" />{{ (sending() ? 'requests.sending' : 'requests.send') | t }}</button><button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="sending()" (click)="cancelDraft()">{{ 'action.cancel' | t }}</button></div>
+            <div class="req__actions"><button class="hbh-btn hbh-btn--primary" type="button" [class.is-busy]="sending()" [disabled]="!validDraft()" (click)="submit()"><hbh-icon name="ic-send" />{{ (sending() ? 'requests.sending' : 'requests.send') | t }}</button><button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="sending()" (click)="cancelDraft()">{{ 'action.cancel' | t }}</button></div>
           }
         </div>
       </article>
     }
   </div>
 
-  <div class="sec">
+  <div class="sec requests-history">
     <div class="sec__head"><h2 class="sec__t">{{ 'requests.previous' | t }}</h2></div>
 
     @if (loading()) {
@@ -61,7 +92,7 @@
     }
   </div>
 
-  <div class="sec">
+  <div class="sec requests-policy">
     <div class="note note--info">
       <hbh-icon name="ic-info" />
       <span>{{ 'requests.receptionDecides' | t }}</span>

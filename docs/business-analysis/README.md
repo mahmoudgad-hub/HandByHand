@@ -32,6 +32,12 @@
 | `03-application-flows.pdf` | نفسه للإرسال — **مولَّد، لا يُحرَّر**. ٨ صفحات A4 |
 | [`04-app-notes.md`](04-app-notes.md) | **ملاحظات مفتوحة على التطبيق** — ثغرات وتناقضات ومبنيّ-غير-مستعمَل. ليست باك لوج ولا عيوبًا مؤكَّدة |
 | `04-app-notes.pdf` | نفسه للإرسال — **مولَّد، لا يُحرَّر**. ٥ صفحات |
+| [`09-FEAT-online-consultation.md`](09-FEAT-online-consultation.md) | **FEAT الاستشارة الأونلاين** — المرجع الدائم للميزة: الفلو · ٣ آلات حالة · `OC-01`…`OC-35` · ١٨ معيارًا · ٢٨ سيناريو · §21 القرارات العشر |
+| `09-FEAT-online-consultation.pdf` | نفسه — **مولَّد، لا يُحرَّر** |
+| [`10-FEAT-unified-customer-journey.md`](10-FEAT-unified-customer-journey.md) | **الوثيقة الأمّ لتكليف التوحيد** — Existing vs Requested · ٢٥ تعارضًا (K-xx) · ٢٤ قرارًا (`OD-xx`) · ٥ مفتوحة · الفلو الشامل · الملكيّة · `EN-xx` · ١٧ معيارًا · ٢٥ سيناريو · ترتيب البناء |
+| `10-FEAT-unified-customer-journey.pdf` | نفسه — **مولَّد، لا يُحرَّر** |
+| [`11-FEAT-packages-pricing-makeup.md`](11-FEAT-packages-pricing-makeup.md) | **الباقات والأسعار والتعويض والدفع بالحصة** — ٣ طبقات · آلة الاشتراك · `service_prices` · جدول الاستهلاك · `PK-xx` · `PR-xx` · `NT-xx` · ١٩ معيارًا · ٣٠ سيناريو |
+| `11-FEAT-packages-pricing-makeup.pdf` | نفسه — **مولَّد، لا يُحرَّر** |
 
 > **كل `.pdf` هنا ناتج بناء.** أُعيد توليده بـ`scripts/md-to-pdf.ps1` من الـ`.md`
 > المجاور له، ولا يُحرَّر مباشرةً — تعديل فيه يضيع عند أوّل إعادة توليد.

@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -13,7 +14,7 @@ import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
 
-import { readRefusal, refusalKey } from '../../core/api/ops-error';
+import { readRefusal, refusalKey, refusalSentence } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
 
 /** One row: what it is, what it holds, and where it is really stored. */
@@ -127,7 +128,7 @@ export interface CenterParam {
 @Component({
   selector: 'hbh-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, ErrorNote, ModalDialog],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, ErrorNote, ModalDialog],
   templateUrl: './settings.html',
 })
 export class Settings {
@@ -253,7 +254,7 @@ export class Settings {
         },
         error: (error: unknown) => {
           this.clearing.set('');
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }

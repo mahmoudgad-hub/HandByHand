@@ -1,4 +1,4 @@
-<section class="scr">
+<section class="scr profile-page">
 
   @if (loading()) {
     <hbh-skeleton [count]="1" shape="card" />
@@ -8,7 +8,7 @@
                     (retry)="load()" />
   } @else {
 
-    <div class="prof">
+    <div class="prof profile-identity">
       <span class="prof__ph"><hbh-icon name="ic-user" /></span>
       <span class="prof__b">
         <span class="prof__n">{{ guardian()?.fullName }}</span>
@@ -22,7 +22,7 @@
          of staff signed into the portal - because an empty form there
          would invite them to fill in something that has nowhere to go. -->
     @if (contact()) {
-      <div class="sec">
+      <div class="sec profile-card profile-contact">
         <div class="sec__head"><h2 class="sec__t">{{ 'profile.contact' | t }}</h2></div>
         <p class="sec__note">{{ 'profile.contactNote' | t }}</p>
         <div class="fld">
@@ -47,11 +47,11 @@
         }
         @if (contactDirty()) {
           <div class="actions">
-            <button class="btn primary" type="button"
+            <button class="hbh-btn hbh-btn--primary" type="button"
                     [disabled]="savingContact()" (click)="saveContact()">
               {{ (savingContact() ? 'action.saving' : 'action.save') | t }}
             </button>
-            <button class="btn secondary" type="button"
+            <button class="hbh-btn hbh-btn--ghost" type="button"
                     [disabled]="savingContact()" (click)="cancelContact()">
               {{ 'action.cancel' | t }}
             </button>
@@ -60,12 +60,12 @@
       </div>
     }
 
-    <div class="sec">
+    <div class="sec profile-card profile-children">
       <div class="sec__head"><h2 class="sec__t">{{ 'profile.children' | t }}</h2></div>
       <div class="stack">
         @for (child of children(); track child.id) {
           <button class="opt" type="button" (click)="openChild(child)">
-            <hbh-icon name="ic-user" />
+            <hbh-person-avatar style="width:48px;height:48px" [childId]="child.id" [gender]="child.gender" [birthDate]="child.birthDate" />
             <span class="opt__b">
               {{ child.fullName }}
               <span class="opt__s">
@@ -79,10 +79,64 @@
       </div>
     </div>
 
-    <!-- Consents. Withdrawing one takes effect on the server; the live screen
-         will be refused a ticket the moment live viewing is switched off. -->
-    <div class="sec">
+    <!-- HOW TO REACH THE CENTRE, first on the page.
+         The screen used to offer a "help" button whose whole behaviour was
+         a toast that said nothing - a parent with a question had no phone
+         number, no address and no way in. These four are the ways that
+         actually exist today; WhatsApp is absent because the owner
+         deferred it, not because it was forgotten. -->
+    @if (centre(); as c) {
+      <div class="sec profile-card profile-centre">
+        <div class="sec__head"><h2 class="sec__t">{{ 'contact.title' | t }}</h2></div>
+        <div class="quick">
+          @if (c.phone) {
+            <a class="quick__a" [href]="'tel:' + c.phone">
+              <hbh-icon name="ic-phone" />
+              <span>{{ 'contact.call' | t }}</span>
+            </a>
+          }
+          @if (mapHref()) {
+            <!-- rel="noopener" and a new tab: the map is a third party, and
+                 nothing of the family goes with them - the link carries the
+                 CENTRE's coordinates and nothing else. -->
+            <a class="quick__a" [href]="mapHref()" target="_blank" rel="noopener noreferrer">
+              <hbh-icon name="ic-pin" />
+              <span>{{ 'contact.map' | t }}</span>
+            </a>
+          }
+          <a class="quick__a" routerLink="/requests">
+            <hbh-icon name="ic-chat" />
+            <span>{{ 'contact.request' | t }}</span>
+          </a>
+          <a class="quick__a" routerLink="/requests" [queryParams]="{tab: 'messages'}">
+            <hbh-icon name="ic-mail" />
+            <span>{{ 'contact.messages' | t }}</span>
+          </a>
+        </div>
+        <dl class="facts">
+          @if (c.hoursAr) {
+            <div><dt>{{ 'contact.hours' | t }}</dt><dd>{{ c.hoursAr }}</dd></div>
+          }
+          @if (c.weekendAr) {
+            <div><dt>{{ 'contact.weekend' | t }}</dt><dd>{{ c.weekendAr }}</dd></div>
+          }
+          @if (c.addressAr) {
+            <div><dt>{{ 'contact.address' | t }}</dt><dd>{{ c.addressAr }}</dd></div>
+          }
+          @if (c.arrivalAr) {
+            <div><dt>{{ 'contact.arrival' | t }}</dt><dd class="pre">{{ c.arrivalAr }}</dd></div>
+          }
+          @if (c.landline) {
+            <div><dt>{{ 'contact.landline' | t }}</dt><dd dir="ltr">{{ c.landline }}</dd></div>
+          }
+        </dl>
+      </div>
+    }
+
+    <!-- Recorded access only; changes must reach the centre's consent workflow. -->
+    <div class="sec profile-card profile-consents">
       <div class="sec__head"><h2 class="sec__t">{{ 'profile.consents' | t }}</h2></div>
+      <p>{{ 'profile.consentsReadOnly' | t }}</p>
       <div class="stack">
         <!-- Tracked by key AND child: watching is granted per child, so a
              family with two children has two of these rows and they are not
@@ -99,23 +153,14 @@
               }
               <span class="opt__s">{{ 'consent.' + consent.key + '.note' | t }}</span>
             </span>
-            <!-- The child is part of the switch's NAME, not decoration: two
-                 live-view switches announcing the same words leave a screen
-                 reader user choosing blind between them. -->
-            <button class="sw" type="button"
-                    [class.is-on]="consent.granted"
-                    [disabled]="isSaving(consent)"
-                    role="switch"
-                    [attr.aria-checked]="consent.granted"
-                    [attr.aria-label]="('consent.' + consent.key | t)
-                                       + (consent.childName ? ' — ' + consent.childName : '')"
-                    (click)="toggleConsent(consent)"></button>
+            <span class="hbh-badge">{{ (consent.granted ? 'profile.consentOnFile' : 'profile.consentNotOnFile') | t }}</span>
           </div>
         }
       </div>
+      <a class="hbh-btn hbh-btn--ghost" routerLink="/requests" [queryParams]="{tab: 'messages'}">{{ 'profile.askConsentChange' | t }}</a>
     </div>
 
-    <div class="sec">
+    <div class="sec profile-actions">
       <div class="stack">
         <a class="opt" routerLink="/requests">
           <hbh-icon name="ic-send" />
@@ -127,12 +172,7 @@
           <span class="opt__b">{{ 'nav.billing' | t }}</span>
           <span class="opt__go"><hbh-icon name="ic-arrow" /></span>
         </a>
-        <button class="opt" type="button" (click)="help()">
-          <hbh-icon name="ic-help" />
-          <span class="opt__b">{{ 'profile.help' | t }}</span>
-          <span class="opt__go"><hbh-icon name="ic-arrow" /></span>
-        </button>
-        <button class="opt" type="button" (click)="signOut()">
+        <button class="opt profile-signout" type="button" (click)="signOut()">
           <hbh-icon name="ic-lock" />
           <span class="opt__b">{{ 'action.signOut' | t }}</span>
         </button>

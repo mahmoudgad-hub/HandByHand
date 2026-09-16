@@ -6,5 +6,5 @@ window.HBH_TEAM_MEDIA = {
   nermin: [{ type: 'image', src: 'assets/team-nermin.jpeg', title: 'الملف المهني — أ.د. نرمين حمدي' }],
   mohamed: [{ type: 'image', src: 'assets/team-mohamed.jpeg', title: 'الملف المهني — أ.د. محمد صبرة' }],
   amal: [{ type: 'image', src: 'assets/team-amal.jpeg', title: 'الملف المهني — أ. آمال يسري' }],
-  quran: [{ type: 'image', src: 'assets/team-quran.jpeg', title: 'تفاصيل جلسات القرآن الكريم' }]
+  quran: [{ type: 'image', src: 'assets/team-quran.jpeg', title: 'الملف المهني — معلّم القرآن الكريم' }]
 };

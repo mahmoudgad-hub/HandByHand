@@ -80,7 +80,7 @@
             }
           }
           <text x="21" y="20.4" text-anchor="middle" class="hbh-donut__num">
-            {{ format.count(answered()) }}
+            {{ format.number(answered()) }}
           </text>
           <text x="21" y="25" text-anchor="middle" class="hbh-donut__cap">
             {{ 'nps.answeredTotal' | t }}
@@ -93,7 +93,7 @@
               <span class="hbh-nps-dot" [style.background]="slice.colour"></span>
               <span class="hbh-nps-legend__l">{{ slice.labelKey | t }}</span>
               <span class="hbh-nps-legend__v" dir="ltr">
-                {{ format.count(slice.count) }}
+                {{ format.number(slice.count) }}
                 @if (answered() > 0) {
                   <span class="hbh-muted">({{ sharePercent(slice) }})</span>
                 }
@@ -106,8 +106,8 @@
   </div>
 
   <h2 class="satisfaction-detail-title">تفاصيل رضا الأسر</h2>
-  <div class="hbh-tablewrap">
-    <table class="hbh-table">
+  <hbh-table-pages #tablePage1 [rows]="rows()">
+<div class="hbh-tablewrap"><table class="hbh-table">
       <thead>
         <tr>
           @for (column of columns; track column.key) {
@@ -116,7 +116,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of rows(); track rowKey(row, $index)) {
+        @for (row of tablePage1.visible(); track rowKey(row, $index)) {
           <tr>
             @for (column of columns; track column.key) {
               <!-- Counts and scores are figures and read left to right even
@@ -126,8 +126,8 @@
           </tr>
         }
       </tbody>
-    </table>
-  </div>
+    </table></div>
+</hbh-table-pages>
 
   <!-- Said once, rather than left for a reader to infer from two columns that
        disagree: these are two different measures of the same answers. -->

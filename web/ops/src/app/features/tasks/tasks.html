@@ -1,0 +1,97 @@
+<div class="hbh-pagehead">
+  <div class="hbh-pagehead__left">
+    <div>
+      <div class="hbh-pagehead__title">
+        {{ 'tasks.title' | t }}
+        @if (svc.count()) { <span class="hbh-badge hbh-badge--progress">{{ svc.count() }}</span> }
+      </div>
+      <div class="hbh-pagehead__sub">{{ 'tasks.sub' | t }}</div>
+      @if (auth.can('SESSION.COMPLETE')) { <p>{{ 'tasks.sessionWindow' | t }}</p> }
+    </div>
+  </div>
+  <div class="hbh-pagehead__actions">
+    @if (asOf()) { <span class="tasks__asof">{{ 'tasks.asOf' | t }} {{ asOf() }}</span> }
+    <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="svc.loading()" (click)="load()">
+      <hbh-icon name="ic-refresh" />
+      {{ 'action.refresh' | t }}
+    </button>
+  </div>
+</div>
+
+<!-- A compact bar, not a drawer: five scopes and two selects. The scopes are
+     the questions a shift actually asks - what is urgent, what is overdue,
+     what is today's, what is mine. -->
+<div class="tasks__filters" role="group" [attr.aria-label]="'tasks.filters' | t">
+  <div class="tasks__scopes" role="tablist">
+    @for (item of scopes; track item) {
+      @if (item !== 'mine' || hasPersonal()) {
+        <button class="hbh-chip" type="button" role="tab"
+                [class.is-active]="scope() === item"
+                [attr.aria-selected]="scope() === item"
+                (click)="setScope(item)">
+          {{ ('tasks.scope.' + item) | t }}
+          @if (svc.loadedAt()) { <b>{{ countFor(item) }}</b> }
+        </button>
+      }
+    }
+  </div>
+  <div class="tasks__selects">
+    <label class="hbh-sr" for="tasks-type">{{ 'tasks.byType' | t }}</label>
+    <select id="tasks-type" class="hbh-select" [value]="type()" (change)="setType($any($event.target).value)">
+      <option value="">{{ 'tasks.byType' | t }}</option>
+      @for (item of types(); track item) {
+        <option [value]="item">{{ ('tasks.type.' + item + '.title') | t }}</option>
+      }
+    </select>
+    <label class="hbh-sr" for="tasks-entity">{{ 'tasks.byEntity' | t }}</label>
+    <select id="tasks-entity" class="hbh-select" [value]="entity()" (change)="setEntity($any($event.target).value)">
+      <option value="">{{ 'tasks.byEntity' | t }}</option>
+      @for (item of entities(); track item) {
+        <option [value]="item">{{ ('tasks.entity.' + item) | t }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+@if (svc.failed().length) {
+  <!-- Partial is said out loud. A list that quietly omits what it could not
+       read tells somebody their invoices are fine. -->
+  <div class="hbh-alert hbh-alert--warn tasks__partial">
+    <hbh-icon name="ic-warn" />
+    <span>
+      {{ 'tasks.partial' | t }}
+      @for (item of svc.failed(); track item; let last = $last) {
+        {{ ('tasks.type.' + item + '.title') | t }}@if (!last) {، }
+      }
+    </span>
+  </div>
+}
+
+@if (svc.loading() && !svc.loadedAt()) {
+  <hbh-skeleton [count]="4" shape="row" />
+} @else if (failedAll()) {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="load()" />
+} @else if (!visible().length) {
+  @if (filtered()) {
+    <hbh-empty-state icon="ic-filter" [title]="'tasks.emptyFiltered' | t" [note]="'tasks.emptyFilteredNote' | t" />
+    <p class="tasks__clear"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="clearFilters()">{{ 'tasks.clearFilters' | t }}</button></p>
+  } @else {
+    <hbh-empty-state icon="ic-check-circle" [title]="'tasks.empty' | t" [note]="'tasks.emptyNote' | t" />
+  }
+} @else {
+  <hbh-table-pages [rows]="visible()" #pages>
+    <div class="hbh-tablewrap"><table class="hbh-table tasks-table">
+      <thead><tr><th>{{'tasks.column.type' | t}}</th><th>{{'tasks.column.subject' | t}}</th><th>{{'tasks.required' | t}}</th><th>{{'tasks.column.assignment' | t}}</th><th>{{'tasks.column.date' | t}}</th><th>{{'tasks.column.action' | t}}</th></tr></thead>
+      <tbody>@for(task of pages.visible();track task.id){<tr>
+        <td><strong>{{task.titleKey | t}}</strong>@if(task.priority==='urgent'){<span class="hbh-badge hbh-badge--danger">{{'tasks.urgent' | t}}</span>}</td>
+        <td><b>{{task.entityDisplayName}}</b>@if(task.entityNo){<small>{{task.entityNo}}</small>}@if(task.parentName){<small>{{task.parentName}}</small>}@if(task.meta){<small class="task-preview">{{task.meta}}</small>}</td>
+        <td>{{task.descriptionKey | t}}@if(task.statusKey){<small><span class="hbh-badge">{{task.statusKey | t}}</span></small>}</td>
+        <td><span class="hbh-badge" [class.hbh-badge--info]="task.assignedUser==='me'">{{(task.assignedUser==='me'?'tasks.assignment.me':'tasks.assignment.role') | t}}</span></td>
+        <td>@if(task.dueDate || task.createdAt;as date){{{format.dayMonthYear(date)}}<small>{{format.time(date)}}</small>}@else{—}</td>
+        <td>@if(task.primaryAction.drawer){<button class="hbh-btn hbh-btn--primary hbh-btn--sm" type="button" (click)="openTask(task)">{{task.primaryAction.labelKey | t}}</button>}@else{<a class="hbh-btn hbh-btn--primary hbh-btn--sm" [routerLink]="task.primaryAction.link" [queryParams]="task.primaryAction.query">{{task.primaryAction.labelKey | t}}</a>}
+        @for(action of task.secondaryActions;track action.labelKey){@if(action.drawer){<button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="openTask(task,action)">{{action.labelKey | t}}</button>}@else{<a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="action.link" [queryParams]="action.query">{{action.labelKey | t}}</a>}}
+        </td>
+      </tr>}</tbody>
+    </table></div>
+  </hbh-table-pages>
+}

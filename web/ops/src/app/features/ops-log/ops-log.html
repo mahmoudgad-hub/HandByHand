@@ -14,17 +14,20 @@
 </div>
 
 <div class="hbh-tabbar" role="tablist">
+  <button class="hbh-tabbar__item" type="button" role="tab" [class.is-active]="dashboard()" [attr.aria-selected]="dashboard()" (click)="dashboard.set(true)">{{ 'analytics.title' | t }}</button>
   @for (item of views; track item.key; let i = $index) {
     <button class="hbh-tabbar__item" type="button" role="tab"
-            [class.is-active]="index() === i"
-            [attr.aria-selected]="index() === i"
+            [class.is-active]="!dashboard() && index() === i"
+            [attr.aria-selected]="!dashboard() && index() === i"
             (click)="select(i)">
       {{ item.labelKey | t }}
     </button>
   }
 </div>
 
-@if (loading()) {
+@if (dashboard()) {
+  <hbh-ops-analytics [refresh]="refresh()" />
+} @else if (loading()) {
   <hbh-skeleton [count]="6" shape="row" />
 } @else if (failed()) {
   <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
@@ -33,8 +36,8 @@
   <hbh-empty-state icon="ic-db" [title]="'opslog.empty' | t"
                    [note]="'opslog.emptyNote' | t" />
 } @else {
-  <div class="hbh-tablewrap">
-    <table class="hbh-table">
+  <hbh-table-pages #tablePage1 [rows]="rows()">
+<div class="hbh-tablewrap"><table class="hbh-table">
       <thead>
         <tr>
           @for (column of view().columns; track column.key) {
@@ -43,7 +46,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of rows(); track rowKey(row, $index)) {
+        @for (row of tablePage1.visible(); track rowKey(row, $index)) {
           <tr [class.is-hot]="isHot(row)">
             @for (column of view().columns; track column.key) {
               <!-- Routes, codes, identifiers and durations are Latin text and
@@ -53,8 +56,8 @@
           </tr>
         }
       </tbody>
-    </table>
-  </div>
+    </table></div>
+</hbh-table-pages>
 
   <!-- Three properties of this log that change how it should be read, said
        once rather than left for somebody to work out from a blank column. -->

@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { UserAvatars } from '@hbh/shared/ui/user-avatar';
 import { Observable, tap } from 'rxjs';
 
 import { AuthApi, AuthSession, OtpChallenge, OtpFailure, OtpRefusal } from './auth-api';
@@ -26,6 +27,7 @@ const TOKEN_KEY = 'hbh.portal.session';
 export class AuthService {
   private readonly api = inject(AuthApi);
   private readonly router = inject(Router);
+  private readonly avatars = inject(UserAvatars);
 
   private readonly session = signal<AuthSession | null>(this.restore());
   private readonly challenge = signal<OtpChallenge | null>(null);
@@ -137,6 +139,7 @@ export class AuthService {
    * signed out.
    */
   signOut(): void {
+    this.avatars.reset(null);
     this.session.set(null);
     this.abandonChallenge();
     sessionStorage.removeItem(TOKEN_KEY);
@@ -149,6 +152,7 @@ export class AuthService {
 
   /** Called by the interceptor when the server rejects the token. */
   sessionExpired(): void {
+    this.avatars.reset(null);
     this.session.set(null);
     sessionStorage.removeItem(TOKEN_KEY);
     void this.router.navigate(['/login'], { queryParams: { reason: 'expired' } });

@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import { PortraitCrop } from './portrait-crop';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
@@ -14,10 +15,11 @@ import { Icon, IconName } from '@hbh/shared/icon/icon';
 import { ToastService } from '@hbh/shared/toast/toast.service';
 import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
+import { DateParts } from '@hbh/shared/ui/date-parts';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 
 import { OpsApi, OpsResource, Row } from '../../core/api/ops-api';
-import { readRefusal, refusalKey } from '../../core/api/ops-error';
+import { readRefusal, refusalKey, refusalSentence } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
 
 const text = (row: Row, key: string): string => {
@@ -137,9 +139,9 @@ const BIO_MAX = 500;
 @Component({
   selector: 'hbh-team-screen',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PortraitCrop,
+  imports: [TablePages, PortraitCrop,
     ReactiveFormsModule, ModalDialog, Icon, TranslatePipe,
-    Skeleton, EmptyState, ErrorNote,
+    Skeleton, EmptyState, ErrorNote, DateParts,
   ],
   templateUrl: './team-screen.html',
 })
@@ -392,7 +394,7 @@ export class TeamScreen {
         },
         error: (error: unknown) => {
           this.savingProfile.set(false);
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }
@@ -463,7 +465,7 @@ export class TeamScreen {
           this.load();
         },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -473,7 +475,7 @@ export class TeamScreen {
       .subscribe({
         next: () => this.load(),
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -573,7 +575,7 @@ export class TeamScreen {
       .subscribe({
         next: () => { this.toast.show(this.i18n.translate('team.removed')); this.load(); },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -587,25 +589,28 @@ export class TeamScreen {
       .subscribe({
         next: () => { this.toast.show(this.i18n.translate('team.removed')); this.load(); },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
   /** Records today's consent for one file. The database stamps who. */
   protected consentMedia(row: Row): void {
-    const today = new Date().toISOString().slice(0, 10);
+    // The centre's calendar day, not UTC's: toISOString() is UTC, so a
+    // consent recorded in Cairo between midnight and 03:00 was dated the
+    // day before (HBH-047). format.today() is tested once, in shared.
+    const today = this.format.today();
     this.api.update('site-team-media', idOf(row, 'media_id'), { consent_given_at: today })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => { this.toast.show(this.i18n.translate('team.consentRecorded')); this.load(); },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
   private failUpload(error: unknown): void {
     this.busy.set(null);
-    this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+    this.toast.error(refusalSentence(this.i18n, error));
   }
 
   // ---- the qualification / certificate editor --------------------------
@@ -705,7 +710,7 @@ export class TeamScreen {
       .subscribe({
         next: () => { this.toast.show(this.i18n.translate('crud.archived')); this.load(); },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -718,7 +723,7 @@ export class TeamScreen {
       .subscribe({
         next: () => { this.toast.show(this.i18n.translate('crud.restored')); this.load(); },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 

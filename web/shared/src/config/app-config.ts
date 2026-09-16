@@ -38,6 +38,8 @@ export interface AppConfig {
   /** Mobile shape accepted at sign-in, as a source-of-truth pattern. */
   readonly phonePattern: string;
   readonly phoneCountryCode: string;
+  /** Published reception number; omit to hide the sign-in call link. */
+  readonly receptionPhone?: string;
 
   /**
    * The centre this deployment belongs to, as its short code.
@@ -94,6 +96,7 @@ export const DEFAULT_HBH_CONFIG: AppConfig = {
   numberNumbering: 'latn',
   phonePattern: '^01[0-9]{9}$',
   phoneCountryCode: '+20',
+  receptionPhone: '01095006478', // Published contact in site/content.js.
   centerCode: 'HBH',
   otpLength: 6,
 

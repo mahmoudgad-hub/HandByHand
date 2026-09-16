@@ -5,10 +5,12 @@ import {
   Consent,
   ConsentKey,
   Guardian,
+  CentreContact,
   GuardianContact,
   HomeProgramme,
   HomeSummary,
   LiveSession,
+  MeetingPass,
   NewRequest,
   ParentRequest,
   ProgressOverview,
@@ -36,6 +38,18 @@ import {
 export abstract class PortalApi {
   /** Welcome screen: who the guardian is, their children, what is waiting. */
   abstract welcome(): Observable<WelcomeSummary>;
+
+  /**
+   * The guardian and their children, and nothing about their day (#16).
+   *
+   * Two requests. For the callers that only need to know WHO: the child
+   * guard resolving a remembered child after a reload, and the profile.
+   * They used welcome(), which also fetches appointments, sessions, balance
+   * and activities for every child - four requests per child, thrown away.
+   * A child from here has no next appointment or live session loaded, and
+   * says so (`scheduleUnavailable`).
+   */
+  abstract family(): Observable<Pick<WelcomeSummary, 'guardian' | 'children'>>;
 
   /** Home screen for one child. */
   abstract home(childId: Uuid): Observable<HomeSummary>;
@@ -68,7 +82,14 @@ export abstract class PortalApi {
   /** One report, opened. The service has always answered this. */
   abstract report(reportId: Uuid): Observable<ReportDetail>;
 
-  abstract billing(): Observable<BillingOverview>;
+  /**
+   * The billing screen. `sections` names what to fetch - a retry under the
+   * invoices fetches the invoices (#15). Sections not asked for come back as
+   * placeholders and must not be read; the screen merges only what it asked.
+   */
+  abstract billing(
+    sections?: ReadonlySet<'balance' | 'packages' | 'invoices'>,
+  ): Observable<BillingOverview>;
 
   abstract requests(): Observable<readonly ParentRequest[]>;
 
@@ -106,6 +127,15 @@ export abstract class PortalApi {
 
   abstract setContact(value: GuardianContact): Observable<GuardianContact>;
 
+  /**
+   * How to reach the centre: its number, address, hours and map.
+   *
+   * Null when the centre has not published a contact row yet - which is a
+   * real state and not an error, and the screen says so rather than
+   * drawing a call button that dials nothing.
+   */
+  abstract centreContact(): Observable<CentreContact | null>;
+
   /** The session running right now for this child, or null. */
   abstract liveSession(childId: Uuid): Observable<LiveSession | null>;
 
@@ -125,6 +155,22 @@ export abstract class PortalApi {
   abstract markMoment(sessionId: Uuid, note: string): Observable<void>;
 
   /**
+   * Ask to be let into an online consultation.
+   *
+   * IT IS A WRITE, and the verb is not decoration. Every call mints a fresh
+   * credential and records that it was minted, against this guardian, with
+   * this address, at this minute. Nothing about it is cacheable and nothing
+   * about it is safe to repeat on a whim - a screen that called this on
+   * every change detection would be issuing passes into a child's
+   * consultation for as long as the tab was open.
+   *
+   * Every rule lives behind it: is this appointment yours, is it a
+   * consultation at all, has it been paid for, has the hour come, is the
+   * room still open. The button is paint; this call is the door.
+   */
+  abstract enterConsultation(appointmentId: Uuid): Observable<MeetingPass>;
+
+  /**
    * The notification feed: what the centre has told this family, newest
    * first.
    *
@@ -133,7 +179,7 @@ export abstract class PortalApi {
    * rows and nobody else's. An argument here would be a second copy of that
    * rule - and one an attacker could change.
    */
-  abstract notifications(limit?: number): Observable<NotificationFeed>;
+  abstract notifications(limit?: number, offset?: number): Observable<NotificationFeed>;
 
   /**
    * Mark one read. UI state only: nothing in the schema branches on it, and

@@ -151,7 +151,21 @@ export class FormatService {
     return `${this.number(value)}%`;
   }
 
-  /** Latin digits: counters, ratios, measurements. */
+  /**
+   * WHICH DIGITS (#22, settled 2026-09-16). This service is the only place
+   * that decides, so the rule is written once, here:
+   *
+   *   Latin (123)        - clock times, money, identifiers and numbers,
+   *                        ratios and percentages, and any figure that
+   *                        stands on its own: a KPI tile, a badge, a
+   *                        table of metrics, a quantity on an invoice.
+   *   Arabic-Indic (١٢٣) - dates, and a count that sits INSIDE an Arabic
+   *                        sentence ("حضر ٣ من ٤ جلسات", "٦ سنوات").
+   *
+   * So `number()` for a figure read on its own and `count()` for one read
+   * as part of a sentence. A template that writes a raw number bypasses
+   * both, and gets Latin by accident rather than by rule.
+   */
   number(value: number): string {
     return this.numberFormat(this.config.numberNumbering).format(value);
   }

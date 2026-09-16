@@ -110,6 +110,8 @@ func (d *DB) Users(ctx context.Context, ident string, q UserQuery) ([]json.RawMe
 			         'full_name_ar', u.full_name_ar,
 			         'user_type',    u.user_type,
 			         'mobile',       u.mobile,
+                         'center_name', (SELECT c.name_ar FROM hbh.centers c WHERE c.center_id=u.center_id),
+                         'time_zone', (SELECT c.time_zone FROM hbh.centers c WHERE c.center_id=u.center_id),
 			         'status',       u.status,
 			         'active_flg',   u.active_flg,
 			         'has_password', (u.password_hash IS NOT NULL),

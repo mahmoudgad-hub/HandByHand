@@ -140,10 +140,115 @@ function proxy(req, res) {
 // that is what max-age said.
 const HASHED = /-[A-Z0-9_]{8,}\.[a-z0-9]+$/;
 
+// =====================================================================
+// THE CONTENT SECURITY POLICY, AND IT IS WRITTEN HERE BECAUSE THIS IS
+// WHAT RUNS.
+//
+// hbh.nginx.conf carries the same policy and needs a root install this
+// account does not have, so on this machine it is a document. The last
+// time a rule lived only in that file, the running server proxied the
+// API for an origin the file said must never have one, and the leak was
+// on the open internet for eleven minutes. The rule is written where it
+// is enforced. Both copies exist; this is the one that decides.
+//
+// WHY THE PORTAL HAD NO POLICY AT ALL UNTIL NOW: the site block in the
+// nginx file has had one since it was written, and the two application
+// blocks never did. That was survivable while the applications loaded
+// nothing but their own bundles. The consultation screen changes it -
+// it fetches a script from a video provider and embeds that provider in
+// a frame - so the set of third parties this page may talk to stopped
+// being empty, and a set that is not empty has to be written down.
+//
+// Each entry, and what breaks without it:
+//
+//   script-src   'self' plus the two provider hosts. The consultation
+//                screen appends <script src="https://<domain>/external_api.js">
+//                and the component checks the SAME two hosts before it
+//                does - the page and the policy agree on purpose, so a
+//                provider added to one and not the other fails loudly
+//                rather than half-working.
+//   frame-src    the provider's conference, which is an iframe. Without
+//                it the call is a blank box AND NOTHING IS LOGGED that
+//                a person looking at the screen could act on.
+//   style-src    'unsafe-inline' is required and not laziness: Angular
+//                injects every component's styles as a <style> element
+//                at runtime, and index.html carries the boot styles
+//                inline so the first paint is not a white page. The
+//                alternative is a per-response nonce, which a static
+//                file server cannot mint.
+//   font-src     the web font the built stylesheet asks gstatic for.
+//   connect-src  'self' only. The API is same-origin; the provider's
+//                own XHR and WebSocket happen INSIDE its iframe, which
+//                is a separate document with its own origin and its own
+//                policy, and nothing this header says reaches it.
+//   img-src      data: for the inline brand marks.
+//
+// frame-ancestors says nobody may embed the portal. It is the opposite
+// direction from frame-src and both are needed: we frame the provider,
+// and nobody frames us.
+//
+// AND THIS POLICY REQUIRED A BUILD CHANGE, which is recorded here because
+// angular.json cannot hold a comment. The production build deferred the
+// stylesheet with
+//
+//     <link rel="stylesheet" href="styles-*.css" media="print"
+//           onload="this.media='all'">
+//
+// and an inline event handler is exactly what script-src refuses. The
+// result was 761 CSS rules left on media="print" and never applied -
+// with the page still looking correct at the top, because Angular had
+// inlined 45 rules of critical CSS above them. A policy that silently
+// unstyles everything below the fold is worse than none.
+//
+// The fix is "inlineCritical": false in web/angular.json for BOTH
+// applications, which emits one ordinary blocking <link>. Not
+// 'unsafe-inline' in script-src, which would have made the policy
+// decorative to buy back a few milliseconds of first paint.
+//
+// If somebody turns critical-CSS inlining back on, this is what breaks,
+// and it breaks looking almost fine.
+const PROVIDER_HOSTS = 'https://8x8.vc https://meet.jit.si';
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' ${PROVIDER_HOSTS}`,
+  `frame-src ${PROVIDER_HOSTS}`,
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  'font-src https://fonts.gstatic.com',
+  "img-src 'self' data:",
+  "connect-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join('; ');
+
+// The site serves no application and frames nobody, so it keeps the
+// stricter policy it already had in nginx. Widening it to match the
+// portal would hand the one origin that faces the internet permissions
+// it has no use for.
+const CSP_STATIC = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  'font-src https://fonts.gstatic.com',
+  "img-src 'self' data:",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join('; ');
+
+/** The headers every response from this server carries. */
+function securityHeaders() {
+  return {
+    'content-security-policy': SPA ? CSP : CSP_STATIC,
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+  };
+}
+
 function sendFile(res, file, isIndex) {
   const ext = path.extname(file).toLowerCase();
   const immutable = !isIndex && HASHED.test(path.basename(file));
   res.writeHead(200, {
+    ...securityHeaders(),
     'content-type': TYPES[ext] ?? 'application/octet-stream',
     // index.html is never stored: it is the one file that names all the
     // others, and a stale copy points at bundles that no longer exist.

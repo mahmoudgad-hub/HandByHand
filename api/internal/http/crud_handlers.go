@@ -286,10 +286,39 @@ func (s *Server) crudError(w http.ResponseWriter, req *http.Request, r store.Res
 			if store.Code(err) == store.ErrNationalIDFormat {
 				field = "national_id"
 			}
+
+			// AND THE RULE ITSELF, when the rule is a number.
+			//
+			// "The value is not in the accepted format" names the field and
+			// stops there, which leaves the reader to guess what the format
+			// IS. The centre owner met this on the staff card with a national
+			// id one digit short: correct refusal, and nothing on the screen
+			// said fourteen. So the length travels with the refusal - it is
+			// the rule, not the value, and it is the only place that knows
+			// it, since sys_params may override it per centre and no screen
+			// may read that table.
+			//
+			// Mobile gets no equivalent: MOBILE_PATTERN is a regular
+			// expression, and printing one at somebody filling in a form
+			// explains nothing and discloses the shape of the check.
+			//
+			// Unreadable parameter, absent key. A guessed 14 here would be
+			// the business value in code that this whole rule exists to keep
+			// out - and it would read as authoritative.
+			fields := map[string]any{"field": field, "constraint": "FORMAT"}
+			if field == "national_id" {
+				if want, perr := s.params.GetForCenter(
+					req.Context(), ident.CenterID, "NATIONAL_ID_LENGTH", "",
+				); perr == nil && want != "" {
+					if n, cerr := strconv.Atoi(want); cerr == nil {
+						fields["expected_length"] = n
+					}
+				}
+			}
+
 			s.log.WarnContext(req.Context(), "a write was refused by an identity format rule",
 				"resource", r.Name, "field", field)
-			writeErrorFields(w, req, http.StatusBadRequest, CodeValidation,
-				map[string]any{"field": field, "constraint": "FORMAT"})
+			writeErrorFields(w, req, http.StatusBadRequest, CodeValidation, fields)
 
 		case store.ErrCheckViolation, store.ErrForeignKeyViolation, pgUniqueViolation,
 			pgNotNullViolation, pgInvalidText, pgInvalidDatetime, pgNumericValue,

@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -43,7 +44,7 @@ const LEVELS = ['NATIVE', 'FLUENT', 'WORKING', 'BASIC'] as const;
 @Component({
   selector: 'hbh-therapist-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, ErrorNote],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, ErrorNote],
   templateUrl: './therapist-profile.html',
 })
 export class TherapistProfileEditor {

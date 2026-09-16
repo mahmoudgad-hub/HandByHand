@@ -60,6 +60,16 @@ import { I18nService } from '../i18n/i18n.service';
        than a day number, and letting them size themselves puts one wide box
        beside two narrow ones, which reads as a mistake. */
     .hbh-dateparts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    /* Its own box styling. A parent screen's "select { ... }" does not reach
+       in here - styles are scoped per component - so on the enrolment form
+       the three boxes rendered as bare browser controls beside the styled
+       inputs around them. 44px is the touch height the forms use. */
+    .hbh-dateparts select {
+      box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px;
+      padding: 8px 10px; border: 1px solid #d5e2e2; border-radius: 8px;
+      background: #fff; color: inherit; font: inherit; cursor: pointer;
+    }
+    .hbh-dateparts select:focus-visible { outline: 2px solid #0a8f97; outline-offset: 1px; }
   `],
 })
 export class DateParts {

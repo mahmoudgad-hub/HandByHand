@@ -10,6 +10,15 @@
 :host.family-screen .hbh-table .hbh-btn { min-height:34px; padding:7px 12px; font-size:14px; }
 :host.family-screen .hbh-pager { padding:12px 4px; margin:0 0 12px; align-items:center; }
 .family-detail { background:white; border:1px solid #dcecf2; border-radius:18px; padding:20px; box-shadow:0 5px 24px #15576b08; margin-top:12px; }
+.family-dialog { box-sizing:border-box; width:min(980px,calc(100vw - 32px)); max-width:calc(100vw - 32px); max-height:calc(100dvh - 32px); margin:auto; padding:0; border:1px solid #dcecf2; border-radius:20px; background:white; color:var(--hbh-ink); box-shadow:0 24px 80px #073f5933; overflow:hidden; }
+.family-dialog[open] { display:flex; flex-direction:column; }
+.family-dialog--profile { width:min(1280px,calc(100vw - 32px)); }
+.family-dialog::backdrop { background:#073f5973; }
+.family-dialog__head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; background:#f0faff; border-bottom:1px solid #dcecf2; flex-shrink:0; }
+.family-dialog__head h2 { margin:0; font-size:19px; line-height:1.6; overflow-wrap:anywhere; }
+.family-dialog__head button { flex-shrink:0; }
+.family-dialog .family-detail { min-height:0; margin:0; padding:20px; border:0; border-radius:0; box-shadow:none; overflow:auto; overscroll-behavior:contain; }
+@media(max-width:640px) { .family-dialog__head { padding:14px; } .family-dialog__head h2 { font-size:16px; } .family-dialog .family-detail { padding:12px; } }
 .family-summary { display:flex; flex-wrap:wrap; align-items:center; gap:20px; padding-bottom:22px; border-bottom:1px solid #e5f0f3; }
 .family-person { display:flex; align-items:center; gap:14px; flex:1; min-width:220px; }
 .family-person h2 { font-size:20px; margin:0 0 8px; color:#064d67; }
@@ -78,3 +87,18 @@
    message it belongs to rather than left in the toolbar, because it is
    the answer to what the screen just said. */
 .hbh-empty-action { display: flex; justify-content: center; margin-block-start: 12px; }
+
+.site-manager-guide{background:#eaf6f5;border:1px solid #d1e8e6;padding:18px 22px;border-radius:18px;margin-bottom:20px}.site-manager-guide p{margin:8px 0 0;line-height:1.8;color:#4b6b73}
+
+/* Keep table controls together and align LTR values with their RTL headings. */
+.family-filterline{align-items:center;flex-wrap:wrap}
+.family-tools .hbh-filters > .hbh-field--grow { flex:1 1 260px; }
+.family-tools .hbh-filters > .family-filterline { flex:0 1 auto; gap:10px; }
+.family-filterline .family-page-size{margin-inline-start:auto;min-width:0;gap:12px;min-height:42px;color:#315c78}
+.family-page-size span{white-space:nowrap;font-size:13px}
+.family-filterline .family-page-size select{flex:none;width:64px;font-size:14px;min-height:28px}
+:host.family-screen .family-master .hbh-table :is(th,td){text-align:right;padding:12px 16px;vertical-align:middle}
+:host.family-screen .family-master .hbh-table :is(th,td):is(:first-child,:nth-child(7),:nth-child(9),:last-child){text-align:center}
+.family-row-actions{display:flex;align-items:center;justify-content:center;gap:12px;white-space:nowrap}
+.family-row-actions .family-view{min-height:38px;justify-content:center;flex-shrink:0}
+@media(max-width:640px){.family-filterline .family-page-size{flex:1 1 100%;margin-inline-start:0;justify-content:space-between}}

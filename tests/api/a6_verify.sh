@@ -87,16 +87,36 @@ APP1_NO="$(jstr "$BODY" application_no)"
 ok_if anon 'the family is given an application number' "$([ -n "$APP1_NO" ] && echo 0 || echo 1)" 'no application_no in the body'
 eq anon 'the answer carries no reason'         'no' "$(jhas "$BODY" reason)"
 eq anon 'the answer carries no identifier'     'no' "$(jhas "$BODY" application_id)"
-eq anon 'the row was written'                  '1'  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile='01500000063'")"
-eq anon 'it starts in NEW'                     'NEW' "$(psqlq "SELECT status FROM hbh.enrolment_applications WHERE parent_mobile='01500000063'")"
-eq anon 'the address was recorded for the limit' 't' "$(psqlq "SELECT client_ip IS NOT NULL FROM hbh.enrolment_applications WHERE parent_mobile='01500000063'")"
+eq anon 'the row was written'                  '1'  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
+eq anon 'it starts in NEW'                     'NEW' "$(psqlq "SELECT status FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
+
+# THE NUMBER IS STORED CANONICALISED, AND THIS IS THE ONE PLACE THAT SAYS SO.
+#
+# WHAT IT COST. trg_enr_mobile_canon rewrites parent_mobile to E.164 on
+# the way in, so the form sends 01500000063 and the table holds
+# +201500000063. a6_fixture.sql and a6_teardown.sql were updated to the
+# new form; THIS FILE WAS NOT - and every lookup here read by the number
+# the form had sent, found nothing, and left APP1 empty. Forty-nine
+# checks failed, and not one of them named a mobile number: with an empty
+# id the path became /api/v1/enrolments//convert, which ServeMux cleans
+# and answers 301, so the suite reported a redirect where it expected a
+# refusal. It read exactly like a broken route.
+#
+# Every lookup above now asks the schema what the number becomes rather
+# than spelling it out - one rule, one place. But a suite that only ever
+# asks the function can no longer NOTICE the function changing, so the
+# literal is asserted here, once, deliberately. This line is the one that
+# is supposed to fail the day the stored shape moves.
+eq anon 'and the mobile is stored canonicalised, not as typed' '+201500000063' \
+  "$(psqlq "SELECT parent_mobile FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
+eq anon 'the address was recorded for the limit' 't' "$(psqlq "SELECT client_ip IS NOT NULL FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
 
 # An unknown centre code. REJECTED must not travel: it would let anybody
 # enumerate the centres on this installation by trying codes.
 UNKNOWN='{"center_code":"NOPE","parent_name_ar":"أسرة","parent_mobile":"01500000063","child_name_ar":"طفل","child_birth_date":"2021-03-15","child_gender":"M"}'
 eq anon 'an unknown centre is refused'          '400' "$(req POST /api/v1/enrolments "$UNKNOWN")"
 eq anon 'and is not told that it was the centre' 'no' "$(jhas "$BODY" reason)"
-eq anon 'and no row was written'                 '1' "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile='01500000063'")"
+eq anon 'and no row was written'                 '1' "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
 
 eq anon 'a missing mobile is refused' '400' \
   "$(req POST /api/v1/enrolments '{"center_code":"HBH","parent_name_ar":"أسرة","parent_mobile":"","child_name_ar":"طفل","child_birth_date":"2021-03-15","child_gender":"M"}')"
@@ -142,11 +162,53 @@ eq limit 'third application accepted'  '201' "$(req POST /api/v1/enrolments "$LI
 eq limit 'the fourth is refused'       '429' "$(req POST /api/v1/enrolments "$LIMIT_BODY")"
 eq limit 'and is not told which limit fired' 'no' "$(jhas "$BODY" reason)"
 eq limit 'exactly three rows exist' '3' \
-  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile='01500000064'")"
+  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000064')")"
 eq limit 'the refusal was recorded with its real reason' 't' \
   "$(psqlq "SELECT count(*) > 0 FROM hbh.audit_log WHERE action='DENY' AND detail LIKE 'ENROLMENT TOO_MANY%' AND changed_at >= '$RUN_START'")"
 
-APP1="$(psqlq "SELECT application_id FROM hbh.enrolment_applications WHERE parent_mobile='01500000063'")"
+# THE ROWS ARE GIVEN BACK NOW, NOT AT CLEANUP - AND THE REASON IS THE
+# OTHER LIMIT.
+#
+# ENROLMENT_MAX_PER_IP_HOUR is ten, counted against client_ip, and every
+# request from this host arrives as the same address: 172.18.0.1. That
+# bucket is therefore SHARED with every other session on this machine,
+# with any hand-run curl, and with the end-to-end probe a migration does
+# to prove itself. The suite cannot scope it - TRUST_PROXY is false, so
+# X-Forwarded-For is ignored and a test cannot choose its own address,
+# which is the correct posture and not something to relax for a test.
+#
+# WHAT IT COST. The three rows above sat in the bucket for the rest of
+# the run, and the neighbours had already used seven. `reuse` and
+# `siblings` then got 429 where they expected 201 - eighteen failures
+# whose first line said "a known family applies again: expected 201, got
+# 429", which reads as the per-mobile limit misfiring on a mobile that
+# had submitted once. It was the per-IP limit, and no failure named it.
+# The suite had passed forty minutes earlier with the same code, on a
+# quieter bucket.
+#
+# So the suite stops holding what it no longer needs. These rows have
+# already proved everything they were written to prove. Deleted BY THE
+# MOBILE THIS SECTION OWNS - never by client_ip, which would reach into
+# the rows of whoever else is on this host, and never by resemblance.
+psqlq "DELETE FROM hbh.enrolment_applications
+        WHERE parent_mobile = hbh.canonical_mobile('01500000064')" >/dev/null
+eq limit 'and the section gives its slots back' '0' \
+  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000064')")"
+
+# AND THE PRECONDITION IS ASSERTED BY NAME, because it cannot be
+# guaranteed. If the shared bucket is full when the sections below run,
+# they will be refused and every one of their failures will describe the
+# wrong rule. Better to say it once, here, in the words of the thing that
+# actually happened.
+IP_USED="$(psqlq "SELECT count(*) FROM hbh.enrolment_applications
+                   WHERE client_ip='172.18.0.1' AND submitted_at > now() - interval '1 hour'")"
+IP_CAP="$(psqlq "SELECT hbh.param((SELECT center_id FROM hbh.centers WHERE code='HBH'),
+                                  'ENROLMENT_MAX_PER_IP_HOUR','10')::integer")"
+ok_if limit 'the shared per-IP bucket still has room for what follows' \
+  "$([ -n "$IP_USED" ] && [ -n "$IP_CAP" ] && [ "$((IP_CAP - IP_USED))" -ge 4 ] && echo 0 || echo 1)" \
+  "only $((${IP_CAP:-0} - ${IP_USED:-0})) of ${IP_CAP:-?} per-IP slots left - another session or a hand-run probe submitted enrolments from this host within the hour, so the sections below will be refused for a reason that has nothing to do with what they test"
+
+APP1="$(psqlq "SELECT application_id FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
 ok_if queue 'the application id is known' "$([ -n "$APP1" ] && echo 0 || echo 1)" 'no application_id'
 
 # =====================================================================
@@ -262,7 +324,7 @@ eq convert 'and one child was created, not two' '1' \
 # family, and a duplicate parent record splits their history in half.
 REUSE='{"center_code":"HBH","parent_name_ar":"وليّ الأمر — ستة","parent_mobile":"01500000062","child_name_ar":"الطفل الثاني","child_birth_date":"2022-08-08","child_gender":"F"}'
 eq reuse 'a known family applies again' '201' "$(req POST /api/v1/enrolments "$REUSE")"
-APP2="$(psqlq "SELECT application_id FROM hbh.enrolment_applications WHERE parent_mobile='01500000062'")"
+APP2="$(psqlq "SELECT application_id FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000062')")"
 eq reuse 'reception contacts them' '204' \
   "$(req PATCH "/api/v1/enrolments/$APP2" '{"status":"CONTACTED"}' "$RECEPTION")"
 eq reuse 'and the application converts' '201' \
@@ -271,7 +333,7 @@ eq reuse 'to the guardian already on file' "$FIXTURE_GUARDIAN" "$(jnum "$BODY" g
 eq reuse 'who now has two children' '2' \
   "$(psqlq "SELECT count(*) FROM hbh.guardian_children WHERE guardian_id=$FIXTURE_GUARDIAN")"
 eq reuse 'and there is still one guardian on that mobile' '1' \
-  "$(psqlq "SELECT count(*) FROM hbh.guardians WHERE mobile='01500000062' AND active_flg")"
+  "$(psqlq "SELECT count(*) FROM hbh.guardians WHERE mobile=hbh.canonical_mobile('01500000062') AND active_flg")"
 
 # =====================================================================
 # A FAMILY WITH TWO CHILDREN
@@ -293,10 +355,10 @@ SIB='{"center_code":"HBH","parent_name_ar":"أسرة الالتحاق الأول
 eq siblings 'the same family applies for a second child' '201' \
   "$(req POST /api/v1/enrolments "$SIB")"
 SIB_ID="$(psqlq "SELECT application_id FROM hbh.enrolment_applications
-                 WHERE parent_mobile='01500000063' AND child_name_ar='الأخ الأصغر'")"
+                 WHERE parent_mobile=hbh.canonical_mobile('01500000063') AND child_name_ar='الأخ الأصغر'")"
 ok_if siblings 'the second application exists' "$([ -n "$SIB_ID" ] && echo 0 || echo 1)" 'no second application'
 eq siblings 'and it is a separate row, not a merge' '2' \
-  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile='01500000063'")"
+  "$(psqlq "SELECT count(*) FROM hbh.enrolment_applications WHERE parent_mobile=hbh.canonical_mobile('01500000063')")"
 
 eq siblings 'the queue row says there is a sibling' '200' \
   "$(req GET "/api/v1/enrolments/$SIB_ID" '' "$ADMIN")"
@@ -319,7 +381,7 @@ eq siblings 'to the guardian the first child created' "$NEW_GUARDIAN" "$(jnum "$
 eq siblings 'who now has two children'  '2' \
   "$(psqlq "SELECT count(*) FROM hbh.guardian_children WHERE guardian_id=${NEW_GUARDIAN:-0}")"
 eq siblings 'and is still one person on that mobile' '1' \
-  "$(psqlq "SELECT count(*) FROM hbh.guardians WHERE mobile='01500000063' AND active_flg")"
+  "$(psqlq "SELECT count(*) FROM hbh.guardians WHERE mobile=hbh.canonical_mobile('01500000063') AND active_flg")"
 eq siblings 'each child kept their own birth date' '2' \
   "$(psqlq "SELECT count(DISTINCT birth_date) FROM hbh.children c
             JOIN hbh.guardian_children gc ON gc.child_id = c.child_id

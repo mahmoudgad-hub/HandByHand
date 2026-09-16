@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { ChildContextService } from '../../core/auth/child-context.service';
 
 import { PortalApi } from '../../core/api/portal-api';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
@@ -45,6 +46,7 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
 export class Notifications {
   private readonly api = inject(PortalApi);
   private readonly router = inject(Router);
+  private readonly childContext = inject(ChildContextService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly format = inject(FormatService);
 
@@ -53,6 +55,8 @@ export class Notifications {
   protected readonly failed = signal(false);
   protected readonly failureKey = signal('error.load');
   protected readonly traceId = signal<string | null>(null);
+  protected readonly opening = signal<string | null>(null);
+  protected readonly openError = signal('');
 
   constructor() {
     this.load();
@@ -103,10 +107,41 @@ export class Notifications {
    * the parent has already navigated away from, would be worse.
    */
   protected open(item: PortalNotification): void {
-    this.markRead(item);
-    if (item.target) {
-      void this.router.navigate(item.target as string[]);
+    if (this.opening()) return;
+    this.openError.set('');
+    if (!item.target) { this.markRead(item); return; }
+    this.opening.set(item.id);
+    // Resolve the child through the authenticated family read. A notification
+    // can outlive access to its child; never fall back to the selected sibling.
+    if (item.childId) {
+      this.api.family().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: family => {
+          const child = family.children.find(child => child.id === item.childId);
+          if (!child) {
+            this.opening.set(null);
+            this.openError.set('notifications.childUnavailable');
+            return;
+          }
+          this.childContext.select(child);
+          this.navigateTo(item);
+        },
+        error: () => {
+          this.opening.set(null);
+          this.openError.set('notifications.openFailed');
+        },
+      });
+    } else {
+      this.navigateTo(item);
     }
+  }
+
+  private navigateTo(item: PortalNotification): void {
+    this.markRead(item);
+    void this.router.navigate([...(item.target ?? [])], { queryParams: item.targetQuery })
+      .then(opened => {
+        if (!opened) this.openError.set('notifications.openFailed');
+      }, () => this.openError.set('notifications.openFailed'))
+      .finally(() => this.opening.set(null));
   }
 
   protected markRead(item: PortalNotification): void {
@@ -121,9 +156,9 @@ export class Notifications {
         unread: Math.max(0, feed.unread - 1),
       });
     }
-    this.api.markNotificationRead(item.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ error: () => undefined });
+    // This finite HTTP write must survive the navigation it accompanies.
+    // Cancelling on component destruction leaves every opened item unread.
+    this.api.markNotificationRead(item.id).subscribe({ error: () => undefined });
   }
 
   /**
@@ -134,6 +169,7 @@ export class Notifications {
    */
   protected icon(item: PortalNotification): IconName {
     switch (item.kind) {
+      case 'CHAT_MESSAGE': return 'ic-chat';
       case 'REPORT_PUBLISHED':
       case 'ASSESSMENT_PUBLISHED':
       case 'NOTE_PUBLISHED':

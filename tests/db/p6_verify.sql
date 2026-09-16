@@ -494,6 +494,29 @@ CALL hbh_test.chk('cleanup', 'notifications removed',
                    (SELECT user_id FROM hbh.users WHERE username LIKE 'p6.%') RETURNING 1)
       SELECT count(*) >= 0 FROM d $q$);
 
+-- 0142: issuing an invoice now writes its payment schedule, and the
+-- schedule's history is append-only. Both go before the invoices do -
+-- the history first, then the instalments, each its own statement -
+-- and the guard comes straight back on, checked by name below.
+ALTER TABLE hbh.invoice_installment_status_history DISABLE TRIGGER trg_iish_append_only;
+CALL hbh_test.chk('cleanup', 'the payment schedule history of this suite''s invoices removed',
+  $q$ WITH h AS (DELETE FROM hbh.invoice_installment_status_history WHERE installment_id IN
+                   (SELECT x.installment_id FROM hbh.invoice_installments x
+                    JOIN hbh.invoices i ON i.invoice_id = x.invoice_id
+                    WHERE i.child_id IN (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b')))
+                 RETURNING 1)
+      SELECT count(*) >= 1 FROM h $q$);
+ALTER TABLE hbh.invoice_installment_status_history ENABLE TRIGGER trg_iish_append_only;
+
+CALL hbh_test.chk('cleanup', 'and the schedules themselves',
+  $q$ WITH x AS (DELETE FROM hbh.invoice_installments WHERE invoice_id IN
+                   (SELECT invoice_id FROM hbh.invoices WHERE child_id IN
+                      (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b'))) RETURNING 1)
+      SELECT count(*) >= 1 FROM x $q$);
+
+CALL hbh_test.chk('cleanup', 'the schedule history append-only trigger is enabled again',
+  $q$ SELECT tgenabled = 'O' FROM pg_trigger WHERE tgname = 'trg_iish_append_only' $q$);
+
 CALL hbh_test.chk('cleanup', 'payments, lines and invoices removed',
   $q$ WITH p AS (DELETE FROM hbh.payments WHERE invoice_id IN
                    (SELECT invoice_id FROM hbh.invoices WHERE child_id IN

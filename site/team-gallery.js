@@ -6,6 +6,13 @@
   dialog.innerHTML = '<header><h2 id="teamMediaTitle"></h2><button type="button" class="media-close" aria-label="إغلاق / Close">×</button></header><div class="media-stage"><button type="button" class="media-prev" aria-label="السابق / Previous"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button><div class="media-content"></div><button type="button" class="media-next" aria-label="التالي / Next"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button></div><footer><span class="media-count" aria-live="polite"></span><a class="media-original" target="_blank" rel="noopener">فتح الملف / Open file</a></footer>';
   document.body.appendChild(dialog);
   var content = dialog.querySelector('.media-content');
+  var profileText = document.createElement('div');
+  profileText.className = 'team-profile-text';
+  var body = document.createElement('div');
+  body.className = 'team-profile-body';
+  var stage = dialog.querySelector('.media-stage');
+  stage.before(body);
+  body.append(profileText, stage);
   var prev = dialog.querySelector('.media-prev');
   var next = dialog.querySelector('.media-next');
   var items = [], index = 0, savedOverflow = '';
@@ -19,7 +26,10 @@
     dialog.querySelector('h2').textContent = item.title || (document.documentElement.lang === 'en' ? 'Professional profile' : 'الملف المهني');
     dialog.querySelector('.media-count').textContent = (index + 1) + ' / ' + items.length;
     prev.disabled = next.disabled = items.length < 2;
+    prev.hidden = next.hidden = items.length < 2;
+    dialog.querySelector('.media-count').hidden = items.length < 2;
     var original = dialog.querySelector('.media-original');
+    original.textContent = document.documentElement.lang === 'en' ? 'Open full-size file ↗' : 'فتح الملف بالحجم الكامل ↗';
     original.hidden = !url;
     if (!url) { content.textContent = 'تعذّر فتح الملف / Unable to open file'; return; }
     original.href = url;
@@ -34,9 +44,38 @@
   document.addEventListener('click', function (e) {
     var link = e.target.closest('.member-profile'); if (!link) return;
     var card = link.closest('.member-card'); if (!card) return;
-    var key = ['nermin', 'mohamed', 'amal', 'quran'].find(function (id) { return card.classList.contains('member-' + id); });
-    items = (window.HBH_TEAM_MEDIA || {})[key];
-    if (!Array.isArray(items) || !items.length) items = [{ type: 'image', src: link.href, title: card.querySelector('h3').textContent }];
+    profileText.replaceChildren();
+    var displayedName = card.querySelector('h3').textContent.trim();
+    var member = ((window.HBH_SITE_CONTENT || {}).team || []).find(function (entry) {
+      return String(entry.id) === card.getAttribute('data-member-id');
+    });
+    if (member) {
+      var en = document.documentElement.lang === 'en';
+      var role = document.createElement('p');
+      role.textContent = (en ? member.roleEn : member.roleAr) || member.roleAr || '';
+      profileText.appendChild(role);
+      var facts = document.createElement('ul');
+      (member.facts || []).forEach(function (fact) {
+        var li = document.createElement('li');
+        li.textContent = (en ? fact.textEn : fact.textAr) || fact.textAr || '';
+        facts.appendChild(li);
+      });
+      profileText.appendChild(facts);
+    }
+    profileText.hidden = !member;
+    body.classList.toggle('media-only', !member);
+    items = [];
+    if (member) {
+      var title = 'الملف المهني — ' + displayedName;
+      if (member.profileHref) items.push({type: /\.pdf(?:[?#]|$)/i.test(member.profileHref) ? 'pdf' : 'image', src: member.profileHref, title: title});
+      ['photos','videos','certificates'].forEach(function (kind) {
+        (member[kind] || []).forEach(function (media) {
+          if (!media.path || items.some(function (item) { return item.src === media.path; })) return;
+          items.push({type:kind === 'videos' ? 'video' : /\.pdf(?:[?#]|$)/i.test(media.path) ? 'pdf' : 'image',src:media.path,title:media.captionAr || title});
+        });
+      });
+    }
+    if (!items.length) return;
     /* A class, not body.style.overflow. The site is served with
        Content-Security-Policy: style-src 'self', which blocks inline
        style attributes as well as inline <style> blocks - so the

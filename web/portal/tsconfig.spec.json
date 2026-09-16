@@ -2,7 +2,8 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../out-tsc/portal-spec",
-    "types": ["jasmine"]
+    "types": ["jasmine"],
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "../shared/src/**/*.ts"]
 }

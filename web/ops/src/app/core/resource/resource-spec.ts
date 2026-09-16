@@ -43,12 +43,9 @@ export interface FieldSpec {
    * columns across the clinical screens looked like that.
    *
    * So the screen loads the referenced resource once and joins by id. The
-   * number stays the value that is stored and sent; only the reading changes.
-   *
-   * THIS IS THE DISPLAY HALF ONLY. Identifiers are still TYPED in the editor,
-   * which is a decision recorded above PLANS_SPEC with its reasons - four
-   * dependent pickers is a different piece of work. Nothing here changes what
-   * a form sends.
+   * number stays the value that is stored and sent. The same complete list
+   * supplies named choices in the editor, with identifiers to disambiguate
+   * equal names. Contextual parent references are prefilled by the child's file.
    */
   readonly ref?: {
     /** The resource to read the names from. */
@@ -147,6 +144,16 @@ export interface ResourceSpec {
   /** Whether the list takes a `q` search parameter. */
   readonly searchable?: boolean;
   /**
+   * The search box's placeholder: WHAT the term is matched against (#17).
+   *
+   * It must name the columns in `search` for this resource in
+   * api/internal/store/crud.go, and nothing else. A placeholder is a promise:
+   * "search by name or code" on therapists, who have no code searched, sends
+   * a receptionist typing a code into a box that can never find it - and
+   * reads the empty result as "no such therapist". Change both together.
+   */
+  readonly searchKey?: string;
+  /**
    * The column carrying the row's own lifecycle status, if it has one. It is
    * NOT the archive flag: a child can be DISCHARGED and still be a live row,
    * while archiving is the centre hiding the record. Different questions.
@@ -202,6 +209,7 @@ export const CHILDREN_SPEC: ResourceSpec = {
   viewPermission: 'CHILD.VIEW_ALL',
   writePermission: 'CHILD.EDIT',
   searchable: true,
+  searchKey: 'search.children',
   statusColumn: 'status',
   statusPrefix: 'status.child.',
   rowLink: (id) => ['/children', id],
@@ -227,6 +235,7 @@ export const THERAPISTS_SPEC: ResourceSpec = {
   viewPermission: 'STAFF.MANAGE',
   writePermission: 'STAFF.MANAGE',
   searchable: true,
+  searchKey: 'search.therapists',
   // The name opens the profile editor - biography, languages, certificates,
   // and the consent that lets any of it reach a family.
   rowLink: (id) => ['/therapists', id, 'profile'],
@@ -292,6 +301,7 @@ export const ROOMS_SPEC: ResourceSpec = {
   viewPermission: 'CATALOG.MANAGE',
   writePermission: 'CATALOG.MANAGE',
   searchable: true,
+  searchKey: 'search.rooms',
   fields: [
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true },
@@ -329,10 +339,42 @@ export const SERVICES_SPEC: ResourceSpec = {
   viewPermission: 'CATALOG.MANAGE',
   writePermission: 'CATALOG.MANAGE',
   searchable: true,
+  searchKey: 'search.services',
   fields: [
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true },
     { name: 'kind_code', labelKey: 'field.kind', kind: 'text', ltr: true, inList: true },
+    /*
+     * HOW LONG IT RUNS, which decides every slot the booking screen offers.
+     *
+     * The column has always existed and this form never showed it, so every
+     * service created from the console took the default of 45 minutes and
+     * there was no way to say otherwise without SQL. A thirty-minute
+     * consultation could not be described at all.
+     */
+    { name: 'default_duration_min', labelKey: 'field.defaultDuration', kind: 'number',
+      ltr: true, inList: true },
+    /*
+     * THE TWO FLAGS THAT MAKE A SERVICE A CONSULTATION.
+     *
+     * Off and off is a consultation: no therapy session is opened when it
+     * starts, and the child is not added to the therapist's caseload for
+     * it. That combination is also the ONLY one hbh.validate_slot will
+     * accept without a room - it answers SERVICE_NEEDS_ROOM otherwise - so
+     * until these were on this form, nobody could create a service that
+     * could be held online, and the whole consultation feature had no way
+     * in.
+     *
+     * ck_services_caseload_needs_session refuses "no session but yes
+     * caseload", which is the one combination of the four that means
+     * nothing: a child cannot be on a caseload for work that never opens a
+     * session. The schema refuses it and the service answers 400; the
+     * labels are written so the dependency reads in the order the switches
+     * are drawn.
+     */
+    { name: 'creates_session_flg', labelKey: 'field.createsSession', kind: 'switch',
+      inList: true },
+    { name: 'needs_caseload_flg', labelKey: 'field.needsCaseload', kind: 'switch' },
   ],
 };
 
@@ -361,6 +403,7 @@ export const ACTIVITY_LIBRARY_SPEC: ResourceSpec = {
   viewPermission: 'CATALOG.MANAGE',
   writePermission: 'CATALOG.MANAGE',
   searchable: true,
+  searchKey: 'search.activity-library',
   fields: [
     { name: 'title_ar', labelKey: 'field.title', kind: 'text', inList: true, required: true },
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true },
@@ -386,18 +429,9 @@ const GOAL_STATUS = [
 /**
  * The treatment plan, and the three things hung off it.
  *
- * This is the clinician's own work and none of it was reachable from the
- * console: a therapist could not write a plan, set a goal, record a
- * measurement or assign a home activity from any screen. The child's file
- * SHOWS plans; nothing created one. Four CRUD resources the service has
- * always served and nothing ever called.
- *
- * Identifiers are typed rather than picked from a list. The lookup machinery
- * belongs to the day screens, and a plan is chosen against a child who was
- * chosen on the screen before - wiring four dependent pickers here would be
- * a bigger change than the value it adds today. The service refuses an
- * identifier that is not the caller's, so a wrong number is a refusal and
- * never someone else's child.
+ * The child's file opens these same editors with the originating child,
+ * plan or goal prefilled. Reference fields show names while preserving the
+ * identifiers expected by CRUD; the server still checks every relationship.
  */
 export const PLANS_SPEC: ResourceSpec = {
   resource: 'plans',
@@ -521,6 +555,7 @@ export const NPS_SURVEYS_SPEC: ResourceSpec = {
   viewPermission: 'NPS.MANAGE',
   writePermission: 'NPS.MANAGE',
   searchable: true,
+  searchKey: 'search.nps-surveys',
   fields: [
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true, required: true },
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
@@ -554,6 +589,7 @@ export const GUARDIANS_SPEC: ResourceSpec = {
   viewPermission: 'GUARDIAN.MANAGE',
   writePermission: 'GUARDIAN.MANAGE',
   searchable: true,
+  searchKey: 'search.guardians',
   fields: [
     { name: 'full_name_ar', labelKey: 'field.fullName', kind: 'text', inList: true, required: true },
     { name: 'mobile', labelKey: 'field.mobile', kind: 'text', ltr: true, inList: true },
@@ -687,6 +723,7 @@ export const SITE_TEXTS_SPEC: ResourceSpec = {
   viewPermission: 'SITE.EDIT',
   writePermission: 'SITE.EDIT',
   searchable: true,
+  searchKey: 'search.site-texts',
   statusColumn: 'status',
   statusPrefix: 'site.status.',
   fields: [

@@ -3,6 +3,8 @@ import {
   Component,
   DestroyRef,
   inject,
+  input,
+  OnInit,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -34,14 +36,14 @@ type Scope = 'reports' | 'notes';
   imports: [Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
   templateUrl: './reports.html',
 })
-export class Reports {
+export class Reports implements OnInit {
   private readonly api = inject(PortalApi);
   private readonly childContext = inject(ChildContextService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   protected readonly format = inject(FormatService);
 
-  protected readonly scope = signal<Scope>('reports');
+  readonly scope = input<Scope>('reports');
   protected readonly items = signal<readonly ReportSummary[]>([]);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
@@ -49,15 +51,7 @@ export class Reports {
   /** Shown only where nobody can act on the failure. */
   protected readonly traceId = signal<string | null>(null);
 
-  constructor() {
-    this.load();
-  }
-
-  protected select(scope: Scope): void {
-    if (scope === this.scope()) {
-      return;
-    }
-    this.scope.set(scope);
+  ngOnInit(): void {
     this.load();
   }
 

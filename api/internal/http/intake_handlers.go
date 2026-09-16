@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/handbyhand/hbh/api/internal/audit"
 	"github.com/handbyhand/hbh/api/internal/auth"
@@ -171,10 +172,9 @@ func (s *Server) handleEnrolmentStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, http.StatusNotFound, CodeNotFound)
 		return
 	}
-	var in store.EnrolmentUpdate
-	if err := decodeJSON(w, r, &in); err != nil || strings.TrimSpace(in.Status) == "" {
-		writeErrorFields(w, r, http.StatusBadRequest, CodeValidation,
-			map[string]any{"status": "CONTACTED|ASSESSMENT_BOOKED|ENROLLED|REJECTED|DUPLICATE"})
+	in, fields := decodeEnrolmentUpdate(w, r)
+	if fields != nil {
+		writeErrorFields(w, r, http.StatusBadRequest, CodeValidation, fields)
 		return
 	}
 	if err := s.db.SetEnrolmentStatus(r.Context(), ident.Username, id, in); err != nil {
@@ -182,6 +182,37 @@ func (s *Server) handleEnrolmentStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// Decode field shape here; transition legality and permissions remain in PostgreSQL.
+func decodeEnrolmentUpdate(w http.ResponseWriter, r *http.Request) (store.EnrolmentUpdate, map[string]any) {
+	var body struct {
+		Status       string          `json:"status"`
+		NoteAr       string          `json:"note_ar"`
+		AssessmentAt json.RawMessage `json:"assessment_at"`
+	}
+	if err := decodeJSON(w, r, &body); err != nil {
+		return store.EnrolmentUpdate{}, map[string]any{"body": "invalid JSON object"}
+	}
+	in := store.EnrolmentUpdate{Status: body.Status, NoteAr: body.NoteAr}
+	if strings.TrimSpace(in.Status) == "" {
+		return in, map[string]any{"status": "required"}
+	}
+	if len(body.AssessmentAt) > 0 && string(body.AssessmentAt) != "null" {
+		var at time.Time
+		if err := json.Unmarshal(body.AssessmentAt, &at); err != nil || at.IsZero() {
+			return in, map[string]any{"assessment_at": "RFC3339 timestamp with timezone required"}
+		}
+		at = at.UTC()
+		in.AssessmentAt = &at
+	}
+	if in.Status == "ASSESSMENT_BOOKED" && in.AssessmentAt == nil {
+		return in, map[string]any{"assessment_at": "required"}
+	}
+	if in.Status != "ASSESSMENT_BOOKED" && in.AssessmentAt != nil {
+		return in, map[string]any{"assessment_at": "only allowed with ASSESSMENT_BOOKED"}
+	}
+	return in, nil
 }
 
 // handleConvertEnrolment turns an application into a family.

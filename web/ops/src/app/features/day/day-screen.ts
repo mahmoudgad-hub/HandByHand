@@ -1,3 +1,4 @@
+import { ArchiveSwitch } from '@hbh/shared/ui/archive-switch';
 import { BillingLedger } from './billing-ledger';
 import { BillingOverview } from './billing-overview';
 import {
@@ -24,7 +25,10 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { OpsApi, Page, Row } from '../../core/api/ops-api';
 import { readRefusal, refusalKey } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
-import { DayApi, DayQuery, Slot } from '../../core/ops/day-api';
+import { EmbeddedAction } from '../../core/ops/action-request';
+import { DayApi, DayQuery, DeliveryMode, Slot } from '../../core/ops/day-api';
+import { DrawerEntity, RESOURCE_OF } from '../../core/ops/record-drawer';
+import { RecordDrawerService } from '../../core/ops/record-drawer.service';
 import {
   ActionField, ActionOption, CreateAction, DayAction, DayContext, DaySpec,
   LOOKUP_SHAPE, LookupResource, readText,
@@ -55,7 +59,7 @@ interface OpenAction {
 @Component({
   selector: 'hbh-day-screen',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BillingLedger, BillingOverview, NgTemplateOutlet, RouterLink, Icon, TranslatePipe, HbhNumberPipe, Skeleton, EmptyState, ErrorNote, ModalDialog],
+  imports: [ArchiveSwitch, BillingLedger, BillingOverview, NgTemplateOutlet, RouterLink, Icon, TranslatePipe, HbhNumberPipe, Skeleton, EmptyState, ErrorNote, ModalDialog],
   templateUrl: './day-screen.html',
   styleUrl: './day-screen.css',
 })
@@ -66,10 +70,41 @@ export class DayScreen {
   private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly drawer = inject(RecordDrawerService);
   protected readonly auth = inject(OpsAuthService);
   protected readonly format = inject(FormatService);
 
   protected readonly spec: DaySpec = this.route.snapshot.data['spec'] as DaySpec;
+
+  /**
+   * Set when this instance exists only to draw ONE action's dialog for a
+   * caller elsewhere (ActionDialogHost, through ActionDialogService). No
+   * list, no filters, no reads of its own: the dialog opens at once on the
+   * row it was given and reports back through `onClose`. The dialog's
+   * fields, checks and submit are the same code paths as on the list -
+   * that is the whole reason for embedding this component rather than
+   * writing a second dialog.
+   */
+  protected readonly embedded: EmbeddedAction | null =
+    (this.route.snapshot.data['embedded'] as EmbeddedAction | undefined) ?? null;
+  /** True between a successful confirm and the close that follows it. */
+  private completed = false;
+
+  /**
+   * "My day" by default for an account that has a day of its own and no
+   * diary of the centre's: a therapist holds SESSION.START and not
+   * APPOINTMENT.BOOK, and /appointments without `?view=` used to hand
+   * them the whole centre's diary to search their six rows in. The
+   * default narrows and never widens - `?view=all` is still honoured, and
+   * reception, who books, keeps the centre's diary.
+   */
+  private readonly mineByDefault: boolean =
+    this.route.snapshot.queryParamMap.get('view') === null
+    && this.spec.resource === 'appointments'
+    && !this.auth.can('APPOINTMENT.BOOK')
+    && this.auth.me()?.therapistId !== undefined;
+  private readonly viewMine: boolean =
+    this.route.snapshot.queryParamMap.get('view') === 'mine' || this.mineByDefault;
 
   /**
    * The heading, which the ROUTE may override.
@@ -84,21 +119,35 @@ export class DayScreen {
    * state machine are the same screen and must stay one definition.
    */
   protected readonly headTitleKey: string =
-    (this.route.snapshot.data['titleKey'] as string | undefined) ?? this.spec.titleKey;
+    this.viewMine ? 'nav.myDay'
+    : (this.route.snapshot.data['titleKey'] as string | undefined) ?? this.spec.titleKey;
   protected readonly headSubKey: string =
-    (this.route.snapshot.data['subKey'] as string | undefined) ?? this.spec.subKey;
+    this.viewMine ? 'myDay.sub'
+    : (this.route.snapshot.data['subKey'] as string | undefined) ?? this.spec.subKey;
 
-  /** Overridable for the same reason the heading is: one spec, two audiences. */
+  /**
+   * Overridable for the same reason the heading is: one spec, two audiences.
+   * An empty PERSONAL day says something different from an empty centre
+   * day - "no appointments today" on the clinician's view reads as "the
+   * centre is closed", when a colleague may be busy.
+   */
   protected readonly emptyKey: string =
-    (this.route.snapshot.data['emptyKey'] as string | undefined) ?? this.spec.emptyKey;
+    this.viewMine ? 'myDay.empty'
+    : (this.route.snapshot.data['emptyKey'] as string | undefined) ?? this.spec.emptyKey;
   protected readonly emptyNoteKey: string =
-    (this.route.snapshot.data['emptyNoteKey'] as string | undefined) ?? this.spec.emptyNoteKey;
+    this.viewMine ? 'myDay.emptyNote'
+    : (this.route.snapshot.data['emptyNoteKey'] as string | undefined) ?? this.spec.emptyNoteKey;
 
   private readonly ctx: DayContext = { format: this.format, i18n: this.i18n };
 
   protected readonly rows = signal<readonly Row[]>([]);
   protected readonly total = signal(0);
   protected readonly limit = signal(0);
+  protected readonly pageSize = signal(10);
+  protected changePageSize(value: string): void {
+    const size=Number(value); if (![10,20,30,50].includes(size)) return;
+    this.pageSize.set(size); this.page.set(1); this.load();
+  }
   protected readonly page = signal(1);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
@@ -111,7 +160,9 @@ export class DayScreen {
    * Cairo, which is exactly the hour reception is still working.
    */
   protected readonly day = signal(
-    this.spec.window === 'diary' ? this.format.today() : '');
+    this.spec.window === 'diary'
+      ? (/^\d{4}-\d{2}-\d{2}$/.test(this.route.snapshot.queryParamMap.get('date') ?? '')
+        ? this.route.snapshot.queryParamMap.get('date')! : this.format.today()) : '');
   protected readonly from = signal('');
   protected readonly to = signal('');
   /**
@@ -202,7 +253,7 @@ export class DayScreen {
   /** Asked-for service; the pipeline keeps only the latest answer. */
   private readonly therapistsFor = new Subject<number>();
   private readonly slotsFor = new Subject<
-    { therapistId: number; serviceId: number; date: string }>();
+    { therapistId: number; serviceId: number; date: string; mode: DeliveryMode }>();
 
   /**
    * How long each service runs, by service_id.
@@ -331,8 +382,36 @@ export class DayScreen {
     () => (this.spec.create ?? []).filter((item) => this.auth.can(item.permission)));
 
   constructor() {
-    this.load();
-    if (this.spec.window === 'diary') this.loadFilterOptions();
+    if (this.embedded) {
+      // Open on the given row, with the caller's pre-filled values laid over
+      // the defaults the dialog computes. A pre-filled status is still a
+      // select the person sees and can change before confirming.
+      this.openDialog(this.embedded.action, this.embedded.row);
+      const prefill = this.embedded.request.prefill;
+      if (prefill) {
+        this.values.update((current) => ({ ...current, ...prefill }));
+      }
+      // A picker that shows a name rather than a number reads its label
+      // from the caller: the child's file already knows whose file it is.
+      const childLabel = this.embedded.request.prefillLabels?.['child_id'];
+      if (prefill?.['child_id'] && childLabel) {
+        this.childPicked.set(childLabel);
+        this.childTerm.set(childLabel);
+      }
+    } else {
+      this.load();
+      if (this.spec.window === 'diary') this.loadFilterOptions();
+      // A row changed from the record drawer beside this list: the list is
+      // read again so its badge agrees with the drawer. Only this resource;
+      // the embedded instance above has no list to refresh.
+      this.drawer.changed$
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((target) => {
+          if (RESOURCE_OF[target.entity] === this.spec.resource) {
+            this.load();
+          }
+        });
+    }
 
     /*
      * The child search, one pipeline.
@@ -406,7 +485,14 @@ export class DayScreen {
    * with a deactivated one, gets an empty day and never the centre's.
    */
   protected readonly isMyDay =
-    this.route.snapshot.data['navKey'] === 'my-day';
+    this.route.snapshot.data['navKey'] === 'my-day' || this.viewMine;
+
+  /**
+   * A row somebody was sent to. The task inbox links here with `?focus=`
+   * and the row is marked and scrolled into view once the list arrives -
+   * display only; nothing is opened on the person's behalf.
+   */
+  protected readonly focusId = this.route.snapshot.queryParamMap.get('focus') ?? '';
 
   /**
    * Whether this account can have a personal day at all.
@@ -578,6 +664,7 @@ export class DayScreen {
       status: this.status() || undefined,
       kind: this.kind() || undefined,
       page: this.page() > 1 ? this.page() : undefined,
+      limit: this.pageSize(),
     };
     if (this.spec.window === 'diary') {
       // One day, resolved in the centre's zone by the service. The window is
@@ -610,6 +697,12 @@ export class DayScreen {
           this.total.set(result.total);
           this.limit.set(result.limit);
           this.loading.set(false);
+          if (this.focusId) {
+            // After the rows are drawn. A miss is silent: the row may be on
+            // another page or already moved on, and saying so would be a
+            // second message about a thing the list already shows.
+            setTimeout(() => document.querySelector('.is-focus')?.scrollIntoView({ block: 'center' }), 0);
+          }
         },
         error: () => {
           if (version !== this.readVersion) return;
@@ -708,6 +801,24 @@ export class DayScreen {
       (action) => action.when(row) && this.auth.can(action.permission));
   }
 
+  /**
+   * Which record drawer this list's rows open in, or null for a list whose
+   * rows have no drawer (sessions, reports, requests keep their screens).
+   */
+  protected readonly drawerEntity: DrawerEntity | null =
+    this.spec.resource === 'appointments' ? 'appointment'
+    : this.spec.resource === 'invoices' ? 'invoice' : null;
+
+  /** Opens the row in the record drawer, beside this list. The row is handed over; nothing is read. */
+  protected openRecord(row: Row): void {
+    if (!this.drawerEntity) {
+      return;
+    }
+    void this.drawer.open({
+      entity: this.drawerEntity, id: Number(row[this.spec.idColumn]), row, source: 'LIST',
+    });
+  }
+
   // =====================================================================
   // Acting
   // =====================================================================
@@ -791,6 +902,11 @@ export class DayScreen {
     this.pickedSlot.set('');
     this.resetChildSearch();
     this.advancedOpen.set(false);
+    if (this.embedded) {
+      const done = this.completed;
+      this.completed = false;
+      this.embedded.onClose(done);
+    }
   }
 
   protected setValue(name: string, value: string): void {
@@ -806,6 +922,18 @@ export class DayScreen {
     // books a different therapist's free hour into this one's day.
     if (name === 'therapist_id') {
       this.pickedSlot.set('');
+      this.loadSlots();
+    }
+
+    // THE SAME REASON, FOR THE SAME KIND OF MISTAKE. An online consultation
+    // needs no room, so its free hours are the therapist's own rather than
+    // the intersection of the therapist and a room - a different question
+    // with a different answer. A list left standing from the other mode is
+    // a set of times that each book the wrong kind of appointment, and the
+    // room the old list carried would travel with it.
+    if (name === 'delivery_mode') {
+      this.pickedSlot.set('');
+      this.setValue('room_id', '');
       this.loadSlots();
     }
 
@@ -1115,6 +1243,16 @@ export class DayScreen {
     this.childState.set('idle');
   }
 
+  /**
+   * A datetime-local value (the centre's wall clock) in words, or '' when it
+   * is not a complete instant yet (#18). Converted through toUtc so the day
+   * and hour read are the centre's, the same instant that will be sent.
+   */
+  protected readableWhen(wallLocal: string | undefined): string {
+    const utc = this.format.toUtc(wallLocal ?? '');
+    return utc ? `${this.format.fullDate(utc)} · ${this.format.time(utc)}` : '';
+  }
+
   protected setSlotDate(value: string): void {
     this.slotDate.set(value);
     this.pickedSlot.set('');
@@ -1140,6 +1278,9 @@ export class DayScreen {
     const therapistId = Number(this.values()['therapist_id']);
     const serviceId = Number(this.values()['service_id']);
     const date = this.slotDate();
+    // Absent on every form but the booking one, and IN_PERSON is what those
+    // have always asked for.
+    const mode = (this.values()['delivery_mode'] || 'IN_PERSON') as DeliveryMode;
     if (!therapistId || !serviceId || !date) {
       this.slots.set([]);
       this.slotsState.set('idle');
@@ -1147,7 +1288,7 @@ export class DayScreen {
     }
     this.slots.set([]);
     this.slotsState.set('loading');
-    this.slotsFor.next({ therapistId, serviceId, date });
+    this.slotsFor.next({ therapistId, serviceId, date, mode });
   }
 
   /**
@@ -1161,7 +1302,7 @@ export class DayScreen {
    */
   private wireSlots(): void {
     this.slotsFor.pipe(
-      switchMap((q) => this.api.slots(q.therapistId, q.serviceId, q.date).pipe(
+      switchMap((q) => this.api.slots(q.therapistId, q.serviceId, q.date, undefined, q.mode).pipe(
         map((rows) => ({ rows, error: null as unknown })),
         catchError((error: unknown) => of({ rows: [] as readonly Slot[], error })))),
       takeUntilDestroyed(this.destroyRef),
@@ -1193,7 +1334,10 @@ export class DayScreen {
     this.pickedSlot.set(slot.starts_at);
     this.setValue('starts_at', this.format.toWallLocal(slot.starts_at));
     this.setValue('ends_at', this.format.toWallLocal(slot.ends_at));
-    this.setValue('room_id', String(slot.room_id));
+    // TWO fields on a consultation and three on a visit. A slot with no room
+    // sets none: String(null) is "null", which would go into the room field
+    // as text and reach the service as NaN.
+    this.setValue('room_id', slot.room_id === null ? '' : String(slot.room_id));
   }
 
   protected slotLabel(slot: Slot): string {
@@ -1378,9 +1522,13 @@ export class DayScreen {
     call.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.saving.set(false);
+        this.completed = true;
         this.close();
         this.toast.show(this.i18n.translate(open.action.doneKey));
-        this.load();
+        // Embedded, the caller re-reads its own row; there is no list here.
+        if (!this.embedded) {
+          this.load();
+        }
       },
       error: (error: unknown) => {
         this.saving.set(false);

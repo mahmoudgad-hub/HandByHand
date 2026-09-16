@@ -45,7 +45,7 @@
           <button class="inbox__row" type="button" (click)="open(item)">
             <span class="inbox__ic"><hbh-icon [name]="icon(item)" /></span>
             <span class="inbox__b">
-              <span class="inbox__t">{{ item.title }}</span>
+              <span class="inbox__t">{{ item.title }} @if(item.kind==='CHAT_MESSAGE'){<span class="hbh-badge">{{'chat.notification' | t}}</span>}</span>
               @if (item.body) { <span class="inbox__s">{{ item.body }}</span> }
               <span class="inbox__when">{{ format.dayMonthYear(item.at) }} · {{ format.time(item.at) }}</span>
             </span>
@@ -55,7 +55,7 @@
           <div class="inbox__row inbox__row--flat">
             <span class="inbox__ic"><hbh-icon [name]="icon(item)" /></span>
             <span class="inbox__b">
-              <span class="inbox__t">{{ item.title }}</span>
+              <span class="inbox__t">{{ item.title }} @if(item.kind==='CHAT_MESSAGE'){<span class="hbh-badge">{{'chat.notification' | t}}</span>}</span>
               @if (item.body) { <span class="inbox__s">{{ item.body }}</span> }
               <span class="inbox__when">{{ format.dayMonthYear(item.at) }} · {{ format.time(item.at) }}</span>
             </span>

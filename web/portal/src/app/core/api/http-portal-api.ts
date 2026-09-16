@@ -1,8 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap, throwError, tap } from 'rxjs';
+import { UserAvatars } from '@hbh/shared/ui/user-avatar';
+import { reportDisplayTitle } from './report-title';
 
-import { Result, dataOr, resilient } from './result';
+import { Result, dataOr, ok, resilient } from './result';
 
 import { HBH_CONFIG } from '@hbh/shared/config/app-config';
 import {
@@ -14,6 +16,7 @@ import {
   Consent,
   ConsentKey,
   Guardian,
+  CentreContact,
   GuardianContact,
   HomeProgramme,
   HomeActivity,
@@ -22,6 +25,7 @@ import {
   Invoice,
   InvoiceStatus,
   LiveSession,
+  MeetingPass,
   NewRequest,
   ParentRequest,
   ProgressOverview,
@@ -63,6 +67,7 @@ import { PortalApi } from './portal-api';
 @Injectable()
 export class HttpPortalApi extends PortalApi {
   private readonly http = inject(HttpClient);
+  private readonly avatars = inject(UserAvatars);
   private readonly base = `${inject(HBH_CONFIG).apiBaseUrl}/api/v1`;
 
   // =====================================================================
@@ -70,7 +75,9 @@ export class HttpPortalApi extends PortalApi {
   // =====================================================================
 
   private me(): Observable<MeResponse> {
-    return this.http.get<MeResponse>(`${this.base}/me`);
+    return this.http.get<MeResponse>(`${this.base}/me`).pipe(tap(me => {
+      if(this.avatars.viewer() !== me.user.user_id) this.avatars.reset(me.user.user_id);
+    }));
   }
 
   private children(): Observable<readonly ChildRow[]> {
@@ -87,6 +94,14 @@ export class HttpPortalApi extends PortalApi {
    * money outstanding, activities not done - and never padded: an invented
    * line on this screen is a parent told to do something that does not exist.
    */
+  family(): Observable<Pick<WelcomeSummary, 'guardian' | 'children'>> {
+    return forkJoin({ me: this.me(), children: this.children() }).pipe(map(({ me, children }) => ({
+      guardian: toGuardian(me),
+      // The diary was not asked, which is not "nothing booked".
+      children: children.map((child) => toChild(child, null, null, true)),
+    })));
+  }
+
   welcome(): Observable<WelcomeSummary> {
     return forkJoin({ me: this.me(), children: this.children() }).pipe(
       switchMap(({ me, children }) => {
@@ -315,7 +330,7 @@ export class HttpPortalApi extends PortalApi {
             timesPerWeek: row.times_per_week ?? 0,
             minutesEach: row.minutes_each ?? 0,
             dueOn: row.end_date ?? '',
-            completedAt: row.last_done_at ?? null,
+            completedAt: row.done_today ? (row.last_done_at || new Date().toISOString()) : null,
           })),
         };
       }));
@@ -330,7 +345,7 @@ export class HttpPortalApi extends PortalApi {
    */
   setActivityDone(childId: Uuid, activityId: Uuid, done: boolean): Observable<void> {
     if (!done) {
-      return of(undefined);
+      return throwError(() => new Error('Activity logs cannot be undone'));
     }
     return this.http.post<void>(
       `${this.base}/children/${Number(childId)}/activities/${Number(activityId)}/log`, {});
@@ -375,7 +390,7 @@ export class HttpPortalApi extends PortalApi {
       .pipe(map((row) => ({
         id: String(row.report_id),
         number: row.report_no,
-        title: row.title_ar,
+        title: reportDisplayTitle(row.title_ar, row.report_id),
         summary: row.summary_ar ?? '',
         periodStart: row.period_start ?? null,
         periodEnd: row.period_end ?? null,
@@ -408,7 +423,13 @@ export class HttpPortalApi extends PortalApi {
    * sums the SERVICE calculated - each child's own outstanding total - never
    * a total this client assembled from a page of invoice rows.
    */
-  billing(): Observable<BillingOverview> {
+  billing(
+    sections: ReadonlySet<'balance' | 'packages' | 'invoices'> = new Set(['balance', 'packages', 'invoices']),
+  ): Observable<BillingOverview> {
+    // A section not asked for is not requested. Its placeholder is an
+    // empty success, never a failure - but the screen must not read it
+    // either way (see features/billing/billing-sections.ts).
+    const skip = <T>(value: T): Observable<Result<T>> => of(ok(value));
     return this.children().pipe(switchMap((children) => {
       if (children.length === 0) {
         return of({ dueAmount: 0, currency: '', packages: [], invoices: [],
@@ -420,15 +441,21 @@ export class HttpPortalApi extends PortalApi {
       // other child's, and a family with an unpaid invoice saw "تعذّر تحميل
       // البيانات" instead of the money they owed.
       return forkJoin(children.map((child) => forkJoin({
-        balance: resilient(this.balanceOf(child.child_id)),
-        invoices: resilient(this.http
-          .get<{ invoices?: readonly InvoiceRow[] }>(
-            `${this.base}/children/${child.child_id}/invoices`)
-          .pipe(map((body) => body.invoices ?? []))),
-        packages: resilient(this.http
-          .get<{ packages?: readonly PackageRow[] }>(
-            `${this.base}/children/${child.child_id}/packages`)
-          .pipe(map((body) => body.packages ?? []))),
+        balance: sections.has('balance')
+          ? resilient(this.balanceOf(child.child_id))
+          : skip<BalanceRow>({ outstanding_amt: '0', currency_code: '', open_invoice_count: 0 }),
+        invoices: sections.has('invoices')
+          ? resilient(this.http
+            .get<{ invoices?: readonly InvoiceRow[] }>(
+              `${this.base}/children/${child.child_id}/invoices`)
+            .pipe(map((body) => body.invoices ?? [])))
+          : skip<readonly InvoiceRow[]>([]),
+        packages: sections.has('packages')
+          ? resilient(this.http
+            .get<{ packages?: readonly PackageRow[] }>(
+              `${this.base}/children/${child.child_id}/packages`)
+            .pipe(map((body) => body.packages ?? [])))
+          : skip<readonly PackageRow[]>([]),
       }))).pipe(map((parts) => {
         // A TOTAL IS ONLY A TOTAL IF EVERY PART ARRIVED. Summing the
         // balances that happened to load would show a family a smaller
@@ -488,30 +515,16 @@ export class HttpPortalApi extends PortalApi {
     }));
   }
 
-  /**
-   * A request is submitted against a CHILD, which the model does not carry.
-   *
-   * The service needs one, so the family's first child is used when the
-   * request names no appointment. That is a real limitation of the model
-   * rather than a detail: a family with two children submitting a callback
-   * has no way here to say which it is about. Recorded rather than hidden -
-   * NewRequest needs a child, and the screen needs to ask for one.
-   */
+  /** The selected child is explicit; the server checks the guardian's access. */
   submitRequest(request: NewRequest): Observable<ParentRequest> {
-    return this.children().pipe(switchMap((children) => {
-      const child = children[0];
-      if (!child) {
-        return of(emptyRequest(request));
-      }
-      return this.http.post<RequestRow>(
-        `${this.base}/children/${child.child_id}/requests`,
+    return this.http.post<RequestRow>(
+        `${this.base}/children/${Number(request.childId)}/requests`,
         {
           kind_code: request.kind,
           body_ar: request.note,
           appointment_id: request.appointmentId ? Number(request.appointmentId) : undefined,
         },
       ).pipe(map(toRequest));
-    }));
   }
 
   // =====================================================================
@@ -644,27 +657,42 @@ export class HttpPortalApi extends PortalApi {
         childName: child.full_name_ar,
         decidedAt: null,
       })),
-      {
-        key: 'sms_notifications' as ConsentKey,
-        granted: false, childId: null, childName: null, decidedAt: null,
-      },
-      {
-        key: 'activity_photos' as ConsentKey,
-        granted: false, childId: null, childName: null, decidedAt: null,
-      },
     ]));
   }
 
   /**
    * Refused, because there is nothing to call.
    *
-   * The screen reverts its optimistic toggle when this errors, which is
-   * exactly the behaviour wanted: the switch snaps back rather than leaving a
-   * parent believing they granted something.
+   * Kept fail-closed for callers of the abstract API. The profile displays
+   * recorded access and does not offer this unsupported operation.
    */
   setConsent(): Observable<Consent> {
     return new Observable<Consent>((subscriber) =>
       subscriber.error({ status: 405, error: { error: { code: 'FORBIDDEN' } } }));
+  }
+
+  /**
+   * How to reach the centre.
+   *
+   * The site-contact resource returns a LIST of one - the table holds one
+   * row per centre and the policy narrows it to the caller's - so the
+   * first row is taken and an empty list becomes null. Null is a real
+   * answer: a centre that has not published a contact row yet, and the
+   * screen says that instead of drawing a call button that dials nothing.
+   *
+   * Wrapped in catchError for the same reason: a family reading their
+   * profile must not lose the page because one card could not load.
+   */
+  centreContact(): Observable<CentreContact | null> {
+    return this.http
+      .get<{ 'site-contact'?: readonly ContactRow[] }>(`${this.base}/site-contact`)
+      .pipe(
+        map((body) => {
+          const row = (body['site-contact'] ?? [])[0];
+          return row ? toCentreContact(row) : null;
+        }),
+        catchError(() => of<CentreContact | null>(null)),
+      );
   }
 
   /** The two fields a parent owns. See GuardianContact for what is absent. */
@@ -729,6 +757,38 @@ export class HttpPortalApi extends PortalApi {
   }
 
   /**
+   * Opens the consultation. Unlike the stream above, the answer DOES carry a
+   * credential - see MeetingPass for why it has to and what narrows it.
+   *
+   * No `withCredentials`, because there is no cookie in this exchange: the
+   * session cookie for our own service is already attached by the
+   * interceptor, and the provider's credential travels in the body. Passing
+   * it would widen the request for nothing.
+   *
+   * The response is mapped field by field rather than cast. The wire shape
+   * is snake_case and the model is not, and a cast would have quietly
+   * produced an object whose every property was undefined - which reads, on
+   * screen, as a provider that failed rather than a mapping that was never
+   * written.
+   */
+  enterConsultation(appointmentId: Uuid): Observable<MeetingPass> {
+    return this.http
+      .post<MeetingPassRow>(
+        `${this.base}/appointments/${Number(appointmentId)}/consultation`, {})
+      .pipe(map((row) => ({
+        provider: row.provider,
+        domain: row.domain,
+        room: row.room,
+        // Absent for a provider with no tokens. Not a refusal - a refusal
+        // is a status code, and this call would not have resolved.
+        token: row.token ?? '',
+        displayName: row.display_name,
+        moderator: row.moderator,
+        expiresAt: row.expires_at,
+      })));
+  }
+
+  /**
    * ONE CALL, and that is the whole point of it.
    *
    * Every other aggregate on this screen fans out per child, because the
@@ -738,9 +798,9 @@ export class HttpPortalApi extends PortalApi {
    * C4's Result wrapping - there is no partial state to preserve when a single
    * call fails.
    */
-  notifications(limit = 30): Observable<NotificationFeed> {
+  notifications(limit = 30, offset = 0): Observable<NotificationFeed> {
     return this.http
-      .get<NotificationFeedResponse>(`${this.base}/notifications?limit=${limit}`)
+      .get<NotificationFeedResponse>(`${this.base}/notifications?limit=${limit}${offset ? `&offset=${offset}` : ''}`)
       .pipe(map((body) => ({
         rows: (body.rows ?? []).map(toNotification),
         unread: body.unread ?? 0,
@@ -774,7 +834,10 @@ interface ChildRow {
   readonly child_no: string;
   readonly full_name_ar: string;
   readonly birth_date: string;
+  readonly gender?: string | null;
   readonly link?: ChildLink;
+  /** Absent from a service older than migration 0139. */
+  readonly attendance_month?: { readonly attended?: unknown; readonly missed?: unknown } | null;
 }
 
 interface Named {
@@ -788,6 +851,17 @@ interface AppointmentRow {
   readonly starts_at: string;
   readonly ends_at: string;
   readonly status: string;
+  /**
+   * Optional here and required in the model, on purpose.
+   *
+   * The service has sent this since the consultation work landed, but a
+   * browser holding a cached bundle can still be talking to an older build
+   * in either direction. Absent is read as IN_PERSON below, which is the
+   * answer that draws no door - the safe way round. Typing it required
+   * would not make the field arrive; it would make the compiler stop
+   * asking what happens when it does not.
+   */
+  readonly delivery_mode?: string;
   readonly service?: Named;
   readonly therapist?: Named;
   readonly room?: Named;
@@ -951,6 +1025,17 @@ interface StreamGrantRow {
   readonly expires_at: string;
 }
 
+/** The wire shape of domain.MeetingPass. `token` is absent, not empty, when the provider has none. */
+interface MeetingPassRow {
+  readonly provider: string;
+  readonly domain: string;
+  readonly room: string;
+  readonly token?: string;
+  readonly display_name: string;
+  readonly moderator: boolean;
+  readonly expires_at: string;
+}
+
 // =====================================================================
 // Translation between the two vocabularies
 // =====================================================================
@@ -995,23 +1080,41 @@ function toChild(
     fullName: row.full_name_ar,
     childNo: row.child_no,
     birthDate: row.birth_date,
+    // Only the two the schema records, and '' for everything else -
+    // absent, null, or a value this build has not met. Guessing would
+    // put a boy's picture on a girl's card, which is worse than the
+    // neutral one this falls back to.
+    gender: row.gender === 'M' || row.gender === 'F' ? row.gender : '',
     // The service does not list a child's services on the child row, and
     // deriving them from the plan would need a call per child on a screen
     // that already makes several. Left empty rather than half-filled.
     services: [],
     liveSessionId,
     nextAppointment: next,
+    attendanceMonth: attendanceOf(row.attendance_month),
   };
 }
 
 /**
- * CHECKED_IN is the service's word for a child who has arrived; the portal's
- * vocabulary calls that IN_PROGRESS. Mapped rather than renamed, because the
- * screens and their translations are built on the portal's word.
+ * The two counts, or null when they are not two whole non-negative numbers.
+ *
+ * Checked rather than trusted: a service older than 0139 sends nothing, and
+ * a malformed value turned into 0 would print "0 of 0" - a statement about
+ * the child - where the truth is that nothing was counted.
  */
+function attendanceOf(
+  value: ChildRow['attendance_month'],
+): Child['attendanceMonth'] {
+  const whole = (n: unknown): n is number =>
+    typeof n === 'number' && Number.isInteger(n) && n >= 0;
+  return value && whole(value.attended) && whole(value.missed)
+    ? { attended: value.attended, missed: value.missed }
+    : null;
+}
+
+/** Arrival does not mean a clinical session has started. Preserve both states. */
 function toAppointment(row: AppointmentRow): AppointmentSummary {
-  const status: AppointmentStatus =
-    row.status === 'CHECKED_IN' ? 'IN_PROGRESS' : (row.status as AppointmentStatus);
+  const status = row.status as AppointmentStatus;
   return {
     id: String(row.appointment_id),
     startsAt: row.starts_at,
@@ -1020,6 +1123,7 @@ function toAppointment(row: AppointmentRow): AppointmentSummary {
     therapistId: row.therapist?.therapist_id ? String(row.therapist.therapist_id) : null,
     therapistName: named(row.therapist),
     roomName: named(row.room),
+    deliveryMode: row.delivery_mode === 'ONLINE' ? 'ONLINE' : 'IN_PERSON',
     status,
   };
 }
@@ -1132,7 +1236,7 @@ function toReport(row: ReportRow): ReportSummary {
   return {
     id: String(row.report_id),
     kind: 'PROGRESS',
-    title: row.title_ar,
+    title: reportDisplayTitle(row.title_ar, row.report_id),
     authorName: row.published_by?.full_name_ar ?? '',
     publishedAt: row.published_at ?? '',
     unread: false,
@@ -1193,13 +1297,6 @@ function toRequest(row: RequestRow): ParentRequest {
   };
 }
 
-function emptyRequest(request: NewRequest): ParentRequest {
-  return {
-    id: '', kind: request.kind, subject: request.note,
-    outcome: null, submittedAt: new Date().toISOString(), status: 'SUBMITTED',
-  };
-}
-
 /**
  * Something waiting for this family, built only from things actually counted.
  *
@@ -1226,6 +1323,7 @@ function attentionFrom(parts: readonly {
     if (part.balance.state === 'ok' && Number(part.balance.data.outstanding_amt) > 0) {
       items.push({
         kind: 'INVOICE',
+        childId: String(part.child.child_id),
         titleKey: 'attention.invoice',
         amount: Number(part.balance.data.outstanding_amt),
         currency: part.balance.data.currency_code,
@@ -1238,6 +1336,7 @@ function attentionFrom(parts: readonly {
     if (open > 0) {
       items.push({
         kind: 'ACTIVITY',
+        childId: String(part.child.child_id),
         titleKey: 'attention.activities',
         amount: null,
         currency: null,
@@ -1302,6 +1401,7 @@ interface NotificationFeedResponse {
  */
 function notificationTarget(row: NotificationRow): readonly string[] | null {
   switch (row.link_kind) {
+    case 'CHAT': return ['/requests'];
     case 'REPORT':
       return row.link_id === null ? null : ['/reports', String(row.link_id)];
     case 'APPOINTMENT':
@@ -1310,10 +1410,9 @@ function notificationTarget(row: NotificationRow): readonly string[] | null {
       return ['/billing'];
     case 'REQUEST':
       return ['/requests'];
-    // NOTE points at a session note, which this portal shows inside the
-    // reports screen rather than on one of its own.
+    // Notes share the progress hub and require its notes tab.
     case 'NOTE':
-      return ['/reports'];
+      return ['/progress'];
     case 'CHILD':
       return ['/home'];
     default:
@@ -1332,5 +1431,39 @@ function toNotification(row: NotificationRow): PortalNotification {
     createdAt: row.created_at,
     read: row.read_at !== null,
     target: notificationTarget(row),
+    targetQuery: row.link_kind==='CHAT' && row.link_id ? {tab:'messages',peer:String(row.link_id)} : row.link_kind === 'NOTE' ? { tab: 'notes' } : undefined,
+  };
+}
+
+/** The site-contact row as the service returns it. */
+interface ContactRow {
+  readonly phone?: string | null;
+  readonly landline?: string | null;
+  readonly email?: string | null;
+  readonly address_ar?: string | null;
+  readonly map_url?: string | null;
+  readonly hours_ar?: string | null;
+  readonly weekend_ar?: string | null;
+  readonly arrival_ar?: string | null;
+}
+
+/**
+ * The row, as the screen needs it.
+ *
+ * WHATSAPP IS NOT MAPPED even though the column is right there. The
+ * owner's list defers WhatsApp and SMS entirely, and a mapped field
+ * invites a button - which would be the feature arriving through the
+ * back door of a data mapping.
+ */
+function toCentreContact(row: ContactRow): CentreContact {
+  return {
+    phone: (row.phone ?? '').trim(),
+    landline: (row.landline ?? '').trim(),
+    email: (row.email ?? '').trim(),
+    addressAr: (row.address_ar ?? '').trim(),
+    mapUrl: (row.map_url ?? '').trim(),
+    hoursAr: (row.hours_ar ?? '').trim(),
+    weekendAr: (row.weekend_ar ?? '').trim(),
+    arrivalAr: (row.arrival_ar ?? '').trim(),
   };
 }

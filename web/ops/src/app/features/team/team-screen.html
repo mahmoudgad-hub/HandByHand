@@ -60,22 +60,7 @@
             <div class="hbh-card-title">{{ cell(member, 'name_ar') }}</div>
             <span class="hbh-muted">{{ cell(member, 'role_ar') }}</span>
           </div>
-          @if (canWrite() && dirty()) {
-            <!-- Only while something has actually changed. A save button that
-                 is always lit says nothing about whether there is anything to
-                 save. -->
-            <div class="hbh-pagehead__actions">
-              <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelProfile()">
-                <hbh-icon name="ic-x" />
-                {{ 'action.cancel' | t }}
-              </button>
-              <button class="hbh-btn hbh-btn--primary" type="button"
-                      [disabled]="savingProfile()" (click)="saveProfile()">
-                <hbh-icon name="ic-check" />
-                {{ (savingProfile() ? 'action.saving' : 'team.saveChanges') | t }}
-              </button>
-            </div>
-          }
+
         </div>
 
         @if (blockers().length) {
@@ -231,8 +216,8 @@
             <hbh-empty-state icon="ic-list" [title]="'team.noFacts' | t"
                              [note]="'team.noFactsNote' | t" />
           } @else {
-            <div class="hbh-tablewrap">
-              <table class="hbh-table">
+            <hbh-table-pages #tablePage1 [rows]="memberFacts()">
+<div class="hbh-tablewrap"><table class="hbh-table">
                 <thead>
                   <tr>
                     <th>{{ 'site.fact' | t }}</th>
@@ -241,7 +226,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (fact of memberFacts(); track cell(fact, 'fact_id')) {
+                  @for (fact of tablePage1.visible(); track cell(fact, 'fact_id')) {
                     <tr [class.is-archived]="isArchived(fact)">
                       <td>{{ cell(fact, 'text_ar') }}</td>
                       <td dir="ltr">{{ cell(fact, 'sort_order') }}</td>
@@ -270,8 +255,8 @@
                     </tr>
                   }
                 </tbody>
-              </table>
-            </div>
+              </table></div>
+</hbh-table-pages>
           }
         }
 
@@ -395,6 +380,22 @@
             </div>
           }
         }
+          @if (canWrite() && dirty()) {
+            <!-- Only while something has actually changed. A save button that
+                 is always lit says nothing about whether there is anything to
+                 save. -->
+            <div class="ops-form-actions">
+        <button class="hbh-btn hbh-btn--primary" type="button"
+                      [disabled]="savingProfile()" (click)="saveProfile()">
+                <hbh-icon name="ic-check" />
+                {{ (savingProfile() ? 'action.saving' : 'team.saveChanges') | t }}
+              </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelProfile()">
+                <hbh-icon name="ic-x" />
+                {{ 'action.cancel' | t }}
+              </button>
+      </div>
+          }
       </section>
     }
   </div>
@@ -436,11 +437,11 @@
         }
       </div>
       <div class="hbh-sheet__foot">
-        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelAddMember()">
-          {{ 'action.cancel' | t }}
-        </button>
         <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
           {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelAddMember()">
+          {{ 'action.cancel' | t }}
         </button>
       </div>
     </form>
@@ -475,13 +476,21 @@
             <label class="hbh-fld__l" [attr.for]="'t-' + field.name">
               {{ field.labelKey | t }}
             </label>
-            <div class="hbh-fld__box" [class.is-bad]="badField() === field.name">
-              <input [id]="'t-' + field.name"
-                     [type]="field.kind === 'date' ? 'date'
-                           : field.kind === 'number' ? 'number' : 'text'"
-                     [attr.dir]="field.ltr ? 'ltr' : null"
-                     [formControl]="controls()[field.name]">
-            </div>
+            @if (field.kind === 'date') {
+              <!-- A stored date (consent given, redaction checked) in three
+                   named parts - not <input type="date">, whose order is the
+                   browser's and lets 7/3 be read as 3 July (#18). -->
+              <hbh-date-parts [fieldId]="'t-' + field.name"
+                              [value]="controls()[field.name].value"
+                              (valueChange)="controls()[field.name].setValue($event)" />
+            } @else {
+              <div class="hbh-fld__box" [class.is-bad]="badField() === field.name">
+                <input [id]="'t-' + field.name"
+                       [type]="field.kind === 'number' ? 'number' : 'text'"
+                       [attr.dir]="field.ltr ? 'ltr' : null"
+                       [formControl]="controls()[field.name]">
+              </div>
+            }
             @if (field.name === 'path' && canWrite()) {
               <div class="hbh-md__slotA">
                 <label class="hbh-btn hbh-btn--ghost">
@@ -504,11 +513,11 @@
       </div>
 
       <div class="hbh-sheet__foot">
-        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelEdit()">
-          {{ 'action.cancel' | t }}
-        </button>
         <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
           {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelEdit()">
+          {{ 'action.cancel' | t }}
         </button>
       </div>
     </form>

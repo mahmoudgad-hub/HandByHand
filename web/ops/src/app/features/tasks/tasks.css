@@ -1,0 +1,32 @@
+/* The task inbox screen: header, filter bar, list. The card itself is
+   styled in task-card.css - one component, one stylesheet. */
+:host { display: block; }
+
+.tasks__asof { font-size: 12px; color: var(--hbh-muted); align-self: center; }
+
+.tasks__filters {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px; margin: 0 0 16px;
+}
+.tasks__scopes { display: flex; flex-wrap: wrap; gap: 6px; }
+.tasks__selects { display: flex; flex-wrap: wrap; gap: 8px; }
+.tasks__selects select { min-width: 160px; }
+
+.hbh-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--hbh-line); background: var(--hbh-surface, #fff);
+  color: var(--hbh-ink-2); font: inherit; font-size: 13px; cursor: pointer;
+}
+.hbh-chip b { font-weight: 600; font-size: 12px; }
+.hbh-chip.is-active { background: var(--hbh-teal-600); border-color: var(--hbh-teal-600); color: #fff; }
+
+.tasks__partial { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+.tasks__clear { text-align: center; }
+
+.tasks__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+@media (max-width: 640px) {
+  .tasks__selects select { min-width: 0; flex: 1; }
+}
+.tasks-table small{display:block;margin-top:6px;color:var(--hbh-ink-2);font-size:12px}.tasks-table td{vertical-align:middle}.task-preview{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tasks-table .hbh-btn{white-space:nowrap}.tasks-table td:first-child .hbh-badge{display:block;width:max-content;margin-top:6px}

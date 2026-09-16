@@ -1,0 +1,582 @@
+[
+  {
+    "app": "ops",
+    "route": "/login",
+    "line": 54,
+    "redirect": null,
+    "component": "() => import('./features/login/login').then((m) => m.Login)",
+    "titleKey": "login.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/",
+    "line": 60,
+    "redirect": null,
+    "component": "() => import('./layout/shell/shell').then((m) => m.Shell)",
+    "shell": true
+  },
+  {
+    "app": "ops",
+    "route": "/communications",
+    "line": 65,
+    "redirect": null,
+    "component": "()=>import('@hbh/shared/ui/family-messages').then(m=>m.FamilyMessages)",
+    "permission": "REQUEST.MANAGE",
+    "titleKey": "nav.communications",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/tasks",
+    "line": 66,
+    "redirect": null,
+    "component": "() =>\n          import('./features/tasks/tasks').then((m) => m.Tasks)",
+    "permission": "PORTAL.VIEW",
+    "titleKey": "nav.tasks",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/notifications",
+    "line": 75,
+    "redirect": null,
+    "component": "() =>\n          import('./features/inbox/inbox').then((m) => m.Inbox)",
+    "permission": "PORTAL.VIEW",
+    "titleKey": "nav.notifications",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/inbox",
+    "line": 85,
+    "redirect": "'notifications'",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/dashboard",
+    "line": 86,
+    "redirect": null,
+    "component": "() =>\n          import('./features/dashboard/dashboard').then((m) => m.Dashboard)",
+    "permission": "PORTAL.VIEW",
+    "titleKey": "nav.dashboard",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/guardians",
+    "line": 95,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "GUARDIAN.MANAGE",
+    "titleKey": "nav.guardians",
+    "specs": "[GUARDIANS_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/guardians/:guardianId",
+    "line": 107,
+    "redirect": null,
+    "component": "() =>\n          import('./features/guardian/guardian-detail').then((m) => m.GuardianDetail)",
+    "permission": "GUARDIAN.MANAGE",
+    "titleKey": "guardian.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/children",
+    "line": 117,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "CHILD.VIEW_ALL",
+    "titleKey": "nav.children",
+    "specs": "[CHILDREN_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/children/:childId",
+    "line": 127,
+    "redirect": null,
+    "component": "() =>\n          import('./features/child/child-profile').then((m) => m.ChildProfile)",
+    "permission": "CHILD.VIEW_ALL",
+    "titleKey": "child.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/children/:childId/reports/new",
+    "line": 143,
+    "redirect": null,
+    "component": "() =>\n          import('./features/report-editor/report-editor').then((m) => m.ReportEditor)",
+    "permission": "REPORT.WRITE",
+    "titleKey": "report.new",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/children/:childId/reports/:reportId",
+    "line": 160,
+    "redirect": null,
+    "component": "() =>\n          import('./features/report-editor/report-editor').then((m) => m.ReportEditor)",
+    "permission": "REPORT.WRITE",
+    "titleKey": "report.edit",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/children/:childId/card",
+    "line": 167,
+    "redirect": null,
+    "component": "() =>\n          import('./features/child-card/child-card').then((m) => m.ChildCard)",
+    "permission": "CHILD.VIEW_ALL",
+    "titleKey": "card.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/therapists",
+    "line": 177,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "STAFF.MANAGE",
+    "titleKey": "nav.therapists",
+    "specs": "[THERAPISTS_SPEC, WORKING_HOURS_SPEC, CASELOAD_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/therapist-services",
+    "line": 193,
+    "redirect": "movedTo('/therapists', { tab: 'services' })",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/rooms",
+    "line": 194,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "CATALOG.MANAGE",
+    "titleKey": "nav.rooms",
+    "specs": "[ROOMS_SPEC, CAMERAS_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/plans",
+    "line": 204,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "PLAN.MANAGE",
+    "titleKey": "plans.plans",
+    "specs": "[PLANS_SPEC, GOALS_SPEC, MEASUREMENTS_SPEC, CHILD_ACTIVITIES_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/catalog",
+    "line": 218,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "CATALOG.MANAGE",
+    "titleKey": "nav.catalog",
+    "specs": "[SERVICES_SPEC, PACKAGES_SPEC, ACTIVITY_LIBRARY_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/site",
+    "line": 230,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "SITE.EDIT",
+    "titleKey": "nav.site",
+    "specs": "[SITE_CONTACT_SPEC, SITE_SERVICES_SPEC, SITE_PROGRAMS_SPEC,\n                  SITE_FAQ_SPEC, SITE_REVIEWS_SPEC, SITE_TEXTS_SPEC,\n                  SITE_SECTIONS_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/site/team",
+    "line": 264,
+    "redirect": "movedTo('/site', { tab: 'team' })",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/appointments",
+    "line": 271,
+    "redirect": null,
+    "component": "DayScreen",
+    "permission": "APPOINTMENT.BOOK",
+    "altPermission": "SESSION.START",
+    "titleKey": "nav.appointments",
+    "specs": "APPOINTMENTS_SPEC",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/my-day",
+    "line": 285,
+    "redirect": "movedTo('/appointments', { view: 'mine' })",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/sessions",
+    "line": 308,
+    "redirect": null,
+    "component": "DayScreen",
+    "permission": "SESSION.START",
+    "titleKey": "nav.sessions",
+    "specs": "SESSIONS_SPEC",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/reports",
+    "line": 317,
+    "redirect": null,
+    "component": "DayScreen",
+    "permission": "REPORT.VIEW",
+    "titleKey": "nav.reports",
+    "specs": "REPORTS_SPEC",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/billing",
+    "line": 326,
+    "redirect": null,
+    "component": "DayScreen",
+    "permission": "BILLING.VIEW",
+    "titleKey": "nav.billing",
+    "specs": "INVOICES_SPEC",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/requests",
+    "line": 335,
+    "redirect": null,
+    "component": "DayScreen",
+    "permission": "REQUEST.MANAGE",
+    "titleKey": "nav.requests",
+    "specs": "REQUESTS_SPEC",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/enrolments/:applicationId",
+    "line": 344,
+    "redirect": null,
+    "component": "() =>\n          import('./features/enrolment/enrolment-detail').then((m) => m.EnrolmentDetail)",
+    "permission": "ENROLMENT.MANAGE",
+    "titleKey": "enrolment.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/enrolments",
+    "line": 354,
+    "redirect": null,
+    "component": "DayScreen",
+    "permission": "ENROLMENT.MANAGE",
+    "titleKey": "nav.enrolments",
+    "specs": "ENROLMENTS_SPEC",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/therapists/:therapistId/profile",
+    "line": 366,
+    "redirect": null,
+    "component": "() => import('./features/therapist-profile/therapist-profile')\n          .then((m) => m.TherapistProfileEditor)",
+    "titleKey": "tprofile.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/sessions/:sessionId/live",
+    "line": 389,
+    "redirect": null,
+    "component": "() => import('./features/live/live-view').then((m) => m.LiveView)",
+    "permission": "LIVE.VIEW",
+    "titleKey": "live.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/users",
+    "line": 398,
+    "redirect": null,
+    "component": "() => import('./features/access/access').then((m) => m.Access)",
+    "permission": "USER.MANAGE",
+    "titleKey": "nav.users",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/access",
+    "line": 409,
+    "redirect": "'users'",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/satisfaction",
+    "line": 410,
+    "redirect": null,
+    "component": "ResourceScreen",
+    "permission": "NPS.MANAGE",
+    "titleKey": "nav.satisfaction",
+    "specs": "[NPS_SURVEYS_SPEC]",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/ops-log",
+    "line": 428,
+    "redirect": null,
+    "component": "() => import('./features/ops-log/ops-log').then((m) => m.OpsLog)",
+    "permission": "OPS.VIEW",
+    "titleKey": "nav.opslog",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/settings",
+    "line": 437,
+    "redirect": null,
+    "component": "() =>\n          import('./features/settings/settings').then((m) => m.Settings)",
+    "permission": "SETTINGS.MANAGE",
+    "titleKey": "nav.settings",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/denied",
+    "line": 449,
+    "redirect": null,
+    "component": "() => import('./features/denied/denied').then((m) => m.Denied)",
+    "titleKey": "denied.title",
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/",
+    "line": 454,
+    "redirect": "'/dashboard'",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "ops",
+    "route": "/**",
+    "line": 457,
+    "redirect": "'/dashboard'",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/login",
+    "line": 15,
+    "redirect": null,
+    "component": "() => import('./features/login/login').then((m) => m.Login)",
+    "titleKey": "login.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/login/otp",
+    "line": 20,
+    "redirect": null,
+    "component": "() => import('./features/otp/otp').then((m) => m.Otp)",
+    "titleKey": "otp.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/apply",
+    "line": 26,
+    "redirect": null,
+    "component": "() => import('./features/apply/apply').then((m) => m.Apply)",
+    "titleKey": "apply.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/otp",
+    "line": 34,
+    "redirect": "'login/otp'",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/welcome",
+    "line": 39,
+    "redirect": null,
+    "component": "() => import('./features/welcome/welcome').then((m) => m.Welcome)",
+    "titleKey": "welcome.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/",
+    "line": 45,
+    "redirect": null,
+    "component": "() => import('./layout/shell/shell').then((m) => m.Shell)",
+    "shell": true
+  },
+  {
+    "app": "portal",
+    "route": "/communications",
+    "line": 50,
+    "redirect": null,
+    "component": "()=>import('@hbh/shared/ui/family-messages').then(m=>m.FamilyMessages)",
+    "titleKey": "nav.communications",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/home",
+    "line": 51,
+    "redirect": null,
+    "component": "() => import('./features/home/home').then((m) => m.Home)",
+    "titleKey": "nav.home",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/schedule",
+    "line": 57,
+    "redirect": null,
+    "component": "() =>\n          import('./features/schedule/schedule').then((m) => m.Schedule)",
+    "titleKey": "nav.schedule",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/progress",
+    "line": 64,
+    "redirect": null,
+    "component": "() =>\n          import('./features/progress/progress').then((m) => m.Progress)",
+    "titleKey": "nav.progress",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/activities",
+    "line": 71,
+    "redirect": null,
+    "component": "() =>\n          import('./features/activities/activities').then((m) => m.Activities)",
+    "titleKey": "nav.activities",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/live",
+    "line": 78,
+    "redirect": null,
+    "component": "() => import('./features/live/live').then((m) => m.Live)",
+    "titleKey": "live.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/consultation/:appointmentId",
+    "line": 84,
+    "redirect": null,
+    "component": "() =>\n          import('./features/consultation/consultation').then((m) => m.Consultation)",
+    "titleKey": "consult.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/reports",
+    "line": 104,
+    "redirect": null,
+    "component": "() =>\n          import('./features/reports/reports').then((m) => m.Reports)",
+    "titleKey": "reports.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/reports/:reportId",
+    "line": 111,
+    "redirect": null,
+    "component": "() =>\n          import('./features/report/report').then((m) => m.Report)",
+    "titleKey": "report.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/billing",
+    "line": 121,
+    "redirect": null,
+    "component": "() =>\n          import('./features/billing/billing').then((m) => m.Billing)",
+    "titleKey": "billing.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/requests",
+    "line": 127,
+    "redirect": null,
+    "component": "() =>\n          import('./features/requests/requests').then((m) => m.Requests)",
+    "titleKey": "requests.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/therapists/:therapistId",
+    "line": 134,
+    "redirect": null,
+    "component": "() =>\n          import('./features/therapist/therapist').then((m) => m.Therapist)",
+    "titleKey": "therapist.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/notifications",
+    "line": 148,
+    "redirect": null,
+    "component": "() =>\n          import('./features/notifications/notifications').then((m) => m.Notifications)",
+    "titleKey": "notifications.title",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/profile",
+    "line": 158,
+    "redirect": null,
+    "component": "() =>\n          import('./features/profile/profile').then((m) => m.Profile)",
+    "titleKey": "nav.profile",
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/",
+    "line": 164,
+    "redirect": "'/welcome'",
+    "component": null,
+    "shell": false
+  },
+  {
+    "app": "portal",
+    "route": "/**",
+    "line": 167,
+    "redirect": "'/welcome'",
+    "component": null,
+    "shell": false
+  }
+]

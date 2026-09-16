@@ -1,0 +1,61 @@
+<div class="comms" dir="rtl">
+  <dialog #bulkDialog class="bulk" aria-labelledby="bulk-title" aria-describedby="bulk-description" (cancel)="$event.preventDefault();closeBulk()">
+    <header class="bulk-header"><h2 id="bulk-title">{{guardianPortal()?roleLabels[recipientRole()]:('chat.bulkTitle' | t)}}</h2><button type="button" autofocus (click)="closeBulk()" [disabled]="sending()">{{'action.close' | t}}</button></header>
+    <p id="bulk-description">{{'chat.bulkNote' | t}}</p>
+    @if(!guardianPortal()){<label class="broadcast-choice"><input type="checkbox" [checked]="allStaff()" [disabled]="sending()" (change)="allStaff.set($any($event.target).checked)">{{'chat.allStaff' | t}}</label>}
+    @if(guardianPortal()&&recipientRole()==='therapist'){<button type="button" (click)="selectAllTherapists()" [disabled]="sending()||!bulkRecipients().length">تحديد كل الأخصائيين</button>}
+    <div class="recipients">@for(c of bulkRecipients();track c.guardian_id){@if(c.can_send && c.kind!=='legacy'){<label><input type="checkbox" [disabled]="sending()||allStaff()" [checked]="allStaff()?c.kind==='staff':recipients().includes(c.guardian_id)" (change)="toggleRecipient(c.guardian_id)">{{c.name}} @if(guardianPortal()){<button type="button" (click)="chooseRecipient(c);$event.preventDefault()" [disabled]="sending()">محادثة</button>}</label>}} @empty {<p>لا يوجد مستلمون متاحون في هذا الدور حاليًا.</p>}</div>
+    <textarea aria-label="نص الرسالة الجماعية" placeholder="اكتب رسالتك للمستلمين المحددين…" rows="3" maxlength="4000" [disabled]="sending()" [value]="bulkBody()" (input)="bulkBody.set($any($event.target).value)"></textarea>
+    <footer><span>{{allStaff()?('chat.allStaff' | t):recipients().length+' مستلم'}}</span><button type="button" [disabled]="sending()||(!allStaff()&&!recipients().length)||!bulkBody().trim()" (click)="sendBulk()">{{'chat.sendSelected' | t}}</button></footer><p role="status">{{bulkStatus()}}</p>
+  </dialog>
+  <div class="comms-grid" [class.has-chat]="selected()">
+    <aside class="contact-pane" [attr.aria-label]="'chat.conversations' | t">
+      <header class="list-header"><h2>{{ 'chat.conversations' | t }}</h2><span class="list-count">{{visibleContacts().length}}</span>
+        @if(!guardianPortal()&&contacts().some(canManage)){<button class="bulk-toggle" type="button" (click)="openBulk()" [disabled]="sending()" aria-haspopup="dialog"><hbh-icon name="ic-users" />{{'chat.bulkTitle' | t}}</button>}
+      </header>
+      <form class="search" (submit)="$event.preventDefault();search()"><hbh-icon name="ic-search" /><input id="family-search" type="search" aria-label="البحث بالاسم" [placeholder]="'chat.search' | t" [value]="query()" (input)="query.set($any($event.target).value)" maxlength="100"><button type="submit">بحث</button></form>
+      @if(guardianPortal()){
+      <div class="contact-filters guardian-roles" aria-label="بدء محادثة"><span>محادثة جديدة مع</span>@for(role of roleOptions;track role){<button type="button" (click)="openRole(role)" [disabled]="sending()||contactsLoading()" aria-haspopup="dialog">{{roleLabels[role]}}</button>}</div>
+      } @else {<div class="contact-filters">@for(kind of ['all','staff','guardian','legacy'];track kind){<button type="button" [attr.aria-pressed]="audience()===kind" (click)="audience.set(kind)">{{('chat.filter.'+kind) | t}}</button>}</div>}
+      <div class="contact-list">
+        @if(contactsLoading()){<p class="list-notice" role="status">{{'chat.loading' | t}}</p>}
+        @else { @for(contact of visibleContacts();track contact.guardian_id){
+          <button class="contact" type="button" [class.selected]="selected()?.guardian_id===contact.guardian_id" [attr.aria-current]="selected()?.guardian_id===contact.guardian_id ? 'true' : null" [disabled]="sending()" (click)="select(contact)">
+            <span class="avatar" aria-hidden="true"><hbh-user-avatar [userId]="contact.user_id" [name]="contact.name" /></span>
+            <span class="contact-copy"><span class="contact-top"><strong>{{contact.name}}</strong><small class="contact-kind">{{guardianPortal()&&contact.role?roleLabels[contact.role]:('chat.filter.'+(contact.kind||'legacy') | t)}}</small>@if(contact.last_at){<time>{{format.time(contact.last_at)}}</time>}</span>
+              <span class="contact-bottom"><span class="preview">{{contact.last_message || (contact.can_send?'فتح المحادثة':'ليس لديه حساب بوابة')}}</span>@if(contact.unread){<b class="unread" [attr.aria-label]="('chat.unread' | t) + ': ' + contact.unread">{{contact.unread}}</b>}</span>
+            </span>
+          </button>
+        } @empty {<p class="list-notice">{{guardianPortal()&&!query().trim()?'لا توجد محادثات بعد. اختر دورًا بالأعلى لبدء محادثة.':('chat.noContacts' | t)}}</p>}}
+        @if(moreContacts()){<p class="list-notice">توجد نتائج إضافية؛ حدّد الاسم أو رقم الجوال للبحث.</p>}
+      </div>
+    </aside>
+    <section class="conversation" [attr.aria-label]="selected()?.name || ('chat.conversations' | t)">
+      @if(selected();as contact){
+        <header class="conversation-header">
+          <button class="icon-button back" type="button" (click)="backToContacts()" [disabled]="sending()" [attr.aria-label]="'chat.back' | t"><hbh-icon name="ic-back" /></button>
+          <span class="avatar" aria-hidden="true"><hbh-user-avatar [userId]="contact.user_id" [name]="contact.name" /></span>
+          <div class="conversation-name"><h2>{{contact.name}}</h2><small>{{'chat.internal' | t}}</small></div>
+          <button class="icon-button" type="button" (click)="load()" [disabled]="loading() || sending()" aria-label="تحديث الرسائل" title="تحديث الرسائل"><hbh-icon name="ic-refresh" /></button>
+        </header>
+        <div class="messages" #messageList aria-live="polite" aria-relevant="additions text" [attr.aria-busy]="loading()">
+          @if(loading()){<p class="chat-notice" role="status">جارٍ تحميل الرسائل…</p>}
+          @if(more()){<button class="older" type="button" [disabled]="loading()" (click)="load(true)">رسائل أقدم</button>}
+          @for(message of messages();track message.message_id){
+            <article class="bubble" [class.mine]="message.mine"><span class="message-avatar" aria-hidden="true"><hbh-user-avatar [userId]="message.mine ? avatars.viewer() : contact.user_id" [name]="message.mine ? 'أنت' : contact.name" /></span><p dir="auto">{{message.body}}</p><footer><span>{{message.mine?'أنت':'الطرف الآخر'}}</span><time>{{format.shortDate(message.created_at)}} · {{format.time(message.created_at)}}</time></footer></article>
+          } @empty { @if(!loading()){<p class="chat-notice">لا توجد رسائل بعد.</p>} }
+        </div>
+        @if(error()){<p role="alert" class="error">{{error()}}</p>}
+        @if(contact.can_send && contact.kind!=='legacy'){
+          <form class="compose" (submit)="$event.preventDefault();send()">
+            <div class="compose-tools">@if(contact.can_manage && contact.kind!=='staff'){<select aria-label="قالب رسالة" [disabled]="sending()" (change)="useTemplate($any($event.target).value);$any($event.target).value='' "><option value="">إدراج قالب رسالة…</option>@for(t of templates;track t.title){<option [value]="t.body">{{t.title}}</option>}</select>}<small dir="ltr">{{draft().length}} / 4000</small></div>
+            <div class="compose-row"><textarea id="message-body" aria-label="الرسالة" [placeholder]="'chat.write' | t" rows="2" maxlength="4000" [disabled]="sending()" [value]="draft()" (input)="draft.set($any($event.target).value)"></textarea><button class="send" type="submit" [disabled]="sending() || !draft().trim()" [attr.aria-label]="sending()?'جارٍ الإرسال…':'إرسال'" [attr.title]="sending()?'جارٍ الإرسال…':'إرسال'"><hbh-icon name="ic-send" /></button></div>
+          </form>
+        } @else {<p class="no-account">{{(contact.kind==='legacy'?'chat.legacyNote':'chat.noAccount') | t}}</p>}
+      } @else {
+        <div class="empty"><span class="empty-icon"><hbh-icon name="ic-chat" /></span><h2>{{'chat.start' | t}}</h2><p>{{'chat.choose' | t}}</p><small>{{'chat.internal' | t}}</small></div>
+        @if(error()){<p role="alert" class="error">{{error()}}</p>}
+      }
+    </section>
+  </div>
+</div>

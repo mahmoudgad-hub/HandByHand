@@ -1,0 +1,259 @@
+/* Parent portal: one responsive system for the signed-in experience. */
+.portal-redesign {
+  --hbh-bg: #f4f7f7;
+  --hbh-line: #dfe8e8;
+  --hbh-ink: #183d49;
+  --hbh-ink-2: #3e616c;
+  --hbh-muted: #54717b;
+  --hbh-surface-2: #f3f8f7;
+  width: 100%; max-width: none; background: var(--hbh-bg);
+  border: 0; box-shadow: none; margin:0; border-radius:0;
+}
+.portal-redesign .pa__body { width:100%; max-width:1680px; min-width:0; padding:24px clamp(16px,3vw,48px) 40px; }
+.portal-redesign :is(.scr,.portal-page-heading) { width:100%; max-width:none; margin-inline:0; }
+.portal-redesign :is(hbh-home,hbh-schedule,hbh-progress,hbh-activities,hbh-reports,hbh-billing,hbh-profile,hbh-requests,hbh-notifications,hbh-progress-hub,hbh-requests-hub) { display:block; min-width:0; min-height:0; max-width:none; }
+.portal-redesign .portal-page-heading { margin-bottom:26px; }
+.portal-redesign .portal-page-title { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.portal-redesign .portal-page-title h1 { margin:0; font-size:clamp(25px,2.1vw,34px); line-height:1.5; letter-spacing:-.4px; }
+.portal-redesign .portal-page-intro { font-size:14px; line-height:1.8; color:var(--hbh-muted); margin:5px 0 0; }
+.portal-redesign .portal-child-heading { display:flex; align-items:center; gap:12px; padding:12px 16px; background:#fff; border:1px solid var(--hbh-line); border-radius:16px; }
+.portal-redesign .portal-child-context { display:flex; flex:1; min-width:0; border:0; padding:0; gap:12px; background:transparent; }
+.portal-redesign .portal-child-context .portal-context-avatar { width:44px; height:44px; flex:none; }
+.portal-redesign .portal-child-context strong { font-size:16px; }
+.portal-redesign .portal-child-context > span { padding:7px 12px; border-radius:9px; background:#edf7f6; font-weight:600; }
+.portal-redesign .portal-page-heading > p { font-size:13px; margin-top:10px; }
+.portal-nav-label { display:none; }
+.portal-redesign .sec { margin-top:24px; }
+.portal-redesign .sec__head { margin-bottom:14px; align-items:center; gap:10px; }
+.portal-redesign .sec__t { font-size:20px; line-height:1.6; }
+.portal-redesign .stack { gap:12px; }
+.portal-redesign .portal-panel { padding:24px; border:1px solid var(--hbh-line); border-radius:20px; background:#fff; box-shadow:0 3px 14px #183d4904; min-width:0; }
+.portal-redesign .row { padding:18px; gap:14px; border:1px solid var(--hbh-line); border-radius:15px; box-shadow:none; background:#fff; min-width:0; }
+.portal-redesign :is(.row__b,.opt__b,.task__b,.prof__b) { min-width:0; overflow-wrap:anywhere; }
+.portal-redesign .row__t { font-size:16px; line-height:1.7; }
+.portal-redesign .row__s { font-size:13px; line-height:1.85; margin-top:5px; }
+.portal-redesign .row__e { flex:none; gap:8px; }
+.portal-redesign .hbh-badge { font-size:12px; line-height:1.6; padding:5px 10px; }
+.portal-redesign .row__ic { width:44px; height:44px; border-radius:12px; }
+.portal-redesign .row__date { width:64px; min-height:66px; flex:none; background:#edf6f5; border:0; border-radius:12px; display:flex; flex-direction:column; justify-content:center; gap:3px; }
+.portal-redesign .row__date b { font-size:22px; }
+.portal-redesign .row__date small { font-size:12px; }
+.portal-redesign .row__time { font-size:14px; font-weight:600; }
+.portal-redesign .seg { display:flex; gap:5px; background:#edf2f2; border:1px solid #e5ebeb; padding:5px; border-radius:13px; margin-bottom:22px; }
+.portal-redesign .seg__i { display:flex; align-items:center; justify-content:center; flex:1; min-width:0; min-height:44px; padding:8px 12px; font-size:14px; text-align:center; border-radius:9px; line-height:1.5; }
+.portal-redesign .seg__i.is-on { background:#fff; color:#087886; font-weight:700; box-shadow:0 2px 6px #173c4910; }
+.portal-redesign :is(.hbh-btn,.request-toggle) { min-height:46px; font-size:14px; }
+.portal-redesign :is(a,button,input,select,textarea):focus-visible { outline:3px solid #148998; outline-offset:3px; }
+.portal-redesign .hbh-btn--primary { background:#087e89; border-color:#087e89; }
+.portal-redesign .hbh-btn--ghost { background:#fff; border-color:#cbdcde; color:#255866; }
+.portal-redesign .schedule-workspace { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,310px); gap:24px; align-items:start; }
+.portal-redesign .schedule-content > .grp { font-size:14px; font-weight:700; color:#496872; margin:24px 0 12px; }
+.portal-redesign .schedule-content > .grp:first-of-type { margin-top:0; }
+.portal-redesign .schedule-content .row { background:#fcfdfd; }
+.portal-redesign .schedule-actions { display:flex; flex-direction:column; gap:14px; background:linear-gradient(160deg,#fff,#f0f8f6); }
+.portal-redesign .schedule-actions h2 { font-size:19px; margin:0; }
+.portal-redesign .schedule-actions p { font-size:14px; line-height:1.9; color:var(--hbh-muted); margin:0 0 6px; }
+.portal-redesign .portal-panel-icon { display:grid; place-items:center; width:48px; height:48px; border-radius:14px; color:#087e89; background:#e0f1ef; }
+.portal-redesign .hbh-pgrid { grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:24px; }
+.portal-redesign .hbh-pcol { gap:22px; }
+.portal-redesign .hbh-pcol > .sec { margin-top:0; }
+.portal-redesign .next { background:linear-gradient(130deg,#076975,#168e96); border:0; border-radius:20px; padding:26px; box-shadow:none; }
+.portal-redesign .next__l { font-size:16px; }
+.portal-redesign .next__g { gap:16px; margin-top:18px; }
+.portal-redesign .next__r { font-size:15px; line-height:1.8; }
+.portal-redesign .next__f { margin-top:22px; gap:10px; flex-wrap:wrap; }
+.portal-redesign .next .hbh-btn--ghost { color:#fff; background:#ffffff12; border-color:#ffffff70; }
+.portal-redesign .home-shortcuts { padding:22px; }
+.portal-redesign .quick { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.portal-redesign .quick__i { min-height:100px; }
+.portal-redesign .due { border-radius:17px; padding:22px; gap:18px; flex-wrap:wrap; }
+.portal-redesign .due__a { font-size:28px; line-height:1.6; }
+.portal-redesign .due__a--missing { font-size:18px; }
+.portal-redesign :is(.ring,.goal,.prof,.activity-card) { padding:22px; border:1px solid var(--hbh-line); border-radius:17px; background:#fff; box-shadow:none; }
+.portal-redesign .ring { margin-bottom:18px; gap:20px; }
+.portal-redesign .task__t { font-size:17px; line-height:1.7; }
+.portal-redesign :is(.task__s,.task__how,.task__dose) { font-size:14px; line-height:1.9; }
+.portal-redesign .activity-record { margin-top:16px; }
+.portal-redesign .activity-card.is-done { border-color:#beded0; background:#f5fbf7; }
+.portal-redesign .goal__t { font-size:16px; }
+.portal-redesign .goal__m { font-size:13px; }
+.portal-redesign .opt { box-shadow:none; border-radius:14px; padding:18px; min-width:0; }
+.portal-redesign .nrow--unread { background:#f0f9f9; border-inline-start:3px solid #148b96; }
+.portal-redesign .note { border-radius:13px; font-size:13px; line-height:1.9; }
+.portal-redesign .requests-heading { margin-bottom:20px; }
+.portal-redesign .request-option { border-radius:15px; box-shadow:none; background:#fff; }
+.portal-redesign .request-option.is-open { border-color:#168e96; }
+.portal-redesign :is(.request-input,.req__note,.fld__box) { border-radius:10px; font-size:16px; }
+.portal-redesign .req__actions { display:flex; flex-wrap:wrap; gap:10px; }
+@media (hover:hover) {
+ .portal-redesign :is(a.row,button.row,.opt,.quick__i):hover { border-color:#9ac8ca; background:#f8fcfb; box-shadow:0 4px 14px #183d4908; }
+}
+/* A persistent, labeled sidebar removes the crowded desktop header. */
+@media (min-width:1100px) {
+ .portal-redesign { display:block; height:auto; min-height:100dvh; overflow:visible; padding-inline-start:248px; }
+ .portal-redesign .hbh-webhead { position:fixed; display:block; inset-block:0; inset-inline-start:0; width:248px; z-index:30; border:0; border-inline-end:1px solid var(--hbh-line); background:#fff; }
+ .portal-redesign .hbh-webhead__in { display:flex; flex-direction:column; align-items:stretch; gap:0; padding:30px 18px 20px; width:100%; height:100%; max-width:none; overflow-y:auto; }
+ .portal-redesign .hbh-brand { margin:0 auto 18px; gap:8px; }
+ .portal-redesign .hbh-brand__logo { width:46px; }
+ .portal-redesign .hbh-brand__wm { width:142px; }
+ .portal-redesign .portal-nav-label { display:block; padding:0 12px 20px; margin:0; text-align:center; font-size:12px; color:var(--hbh-muted); border-bottom:1px solid var(--hbh-line); }
+ .portal-redesign .hbh-webnav { display:flex; flex-direction:column; align-items:stretch; flex:none; overflow:visible; gap:6px; padding-block:22px 10px; }
+ .portal-redesign .hbh-webnav__item { display:flex; gap:12px; width:100%; padding:13px 14px; min-height:48px; font-size:14px; border-radius:12px; white-space:normal; }
+ .portal-redesign .hbh-webnav__item .hbh-i { width:21px; height:21px; flex:none; }
+ .portal-redesign .hbh-webnav__item.is-active { background:#e3f2f1; color:#076c77; box-shadow:inset -3px 0 #108993; }
+ .portal-redesign .hbh-webtools { display:flex; flex:1; flex-direction:column; align-items:stretch; gap:6px; }
+ .portal-redesign .hbh-userchip { margin-top:auto; padding:14px 10px; border-radius:13px; gap:10px; overflow-wrap:anywhere; white-space:normal; }
+ .portal-redesign .hbh-userchip .hbh-avatar { width:36px; height:36px; flex:none; }
+ .portal-redesign .hbh-userchip small { font-size:12px; margin-top:3px; }
+ .portal-redesign .hbh-bell .hbh-badge { margin-inline-start:auto; }
+ .portal-redesign .pa__body { height:auto; overflow:visible; margin-inline:auto; padding-top:32px; }
+ .portal-redesign .pa__head,.portal-redesign .pa__tabs { display:none; }
+}
+@media (min-width:1400px) {
+ .portal-redesign hbh-activities .stack { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+ .portal-redesign hbh-profile .stack { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+/* Tablet keeps the same full-width content and the familiar mobile navigation. */
+@media (max-width:1099px) {
+ .portal-redesign { display:flex; height:100dvh; overflow:hidden; padding:0; }
+ .portal-redesign .hbh-webhead { display:none; }
+ .portal-redesign .pa__head { display:flex; flex:none; padding:12px 20px; background:#fff; border-radius:0; border-bottom:1px solid var(--hbh-line); }
+ .portal-redesign .pa__sub { display:none; }
+ .portal-redesign .pa__tabs { display:flex; flex:none; position:static; width:100%; background:#fff; padding:7px 12px calc(7px + env(safe-area-inset-bottom)); border-top:1px solid var(--hbh-line); }
+ .portal-redesign .pa__tab { flex:1; }
+ .portal-redesign .pa__body { flex:1; min-height:0; overflow-y:auto; margin:0; }
+ .portal-redesign .portal-page-title { display:none; }
+ .portal-redesign .portal-page-heading { margin-bottom:20px; }
+ .portal-redesign .schedule-workspace { grid-template-columns:minmax(0,1fr); gap:18px; }
+ .portal-redesign .hbh-pgrid { grid-template-columns:1fr; }
+ .portal-redesign .schedule-actions { display:grid; grid-template-columns:48px minmax(0,1fr); align-items:center; }
+ .portal-redesign .schedule-actions p,.portal-redesign .schedule-actions a { grid-column:1/-1; }
+}
+@media (max-width:600px) {
+ .portal-redesign .pa__body { padding:16px 14px 24px; }
+ .portal-redesign .pa__head { padding:10px 14px; gap:10px; }
+ .portal-redesign .pa__sub { display:none; }
+ .portal-redesign .portal-child-heading { padding:10px 12px; gap:8px; }
+ .portal-redesign .portal-child-context { gap:8px; flex-wrap:nowrap; }
+ .portal-redesign .portal-child-context strong { flex:1; font-size:14px; }
+ .portal-redesign .portal-child-context > span { padding:6px 8px; font-size:12px; }
+ .portal-redesign .portal-child-context > hbh-icon:last-child { display:none; }
+ .portal-redesign .portal-child-context .portal-context-avatar { width:38px; height:38px; }
+ .portal-redesign .portal-panel { padding:16px; border-radius:16px; }
+ .portal-redesign .row { padding:14px 12px; gap:10px; }
+ .portal-redesign .row__date { width:52px; min-height:60px; }
+ .portal-redesign .row__t { font-size:15px; }
+ .portal-redesign .row__s { font-size:12px; }
+ .portal-redesign .row__e { max-width:100px; }
+ .portal-redesign .hbh-badge { font-size:11px; padding:4px 7px; }
+ .portal-redesign .seg__i { font-size:13px; padding:8px 5px; }
+ .portal-redesign .sec__t { font-size:18px; }
+ .portal-redesign :is(.next,.ring,.goal,.prof,.activity-card) { padding:18px; }
+ .portal-redesign .due { padding:18px; }
+ .portal-redesign .due .hbh-btn { width:100%; }
+ .portal-redesign .pa__tab { font-size:10px; padding-inline:2px; }
+ .portal-redesign .pa__tabs { gap:2px; padding-inline:5px; }
+}
+@media (max-width:380px) {
+ .portal-redesign [hbhAppointmentRow] { flex-wrap:wrap; }
+ .portal-redesign [hbhAppointmentRow] .row__b { flex:1; }
+ .portal-redesign [hbhAppointmentRow] .row__e { width:100%; max-width:none; flex-direction:row; justify-content:space-between; padding-top:8px; border-top:1px solid var(--hbh-line); }
+}
+@media (prefers-reduced-motion:reduce) { .portal-redesign * { scroll-behavior:auto; transition:none; animation:none; } }
+.portal-redesign .pa__title{margin:0}
+.portal-redesign .next :is(.next__l,.next__r,.next__r b,.next__r .hbh-i){color:#fff;opacity:1}
+.portal-redesign .schedule-cancel{display:flex;align-items:center;justify-content:center;min-height:44px;color:#8c4148;text-decoration:underline;text-underline-offset:4px;font-size:14px}
+.portal-redesign .pkg__t{font-size:15px}.portal-redesign .pkg__m{font-size:13px;line-height:1.8}.portal-redesign .inv__split{font-size:13px}
+.portal-redesign .task.is-done .task__t{text-decoration:none;color:#356658}
+.portal-redesign hbh-requests .requests-page{width:100%;max-width:none;margin-inline:0}
+@media(min-width:1100px){
+ .portal-redesign .billing-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:start;gap:24px}
+ .portal-redesign .billing-workspace>.due,.portal-redesign .billing-note{grid-column:1/-1}
+ .portal-redesign .billing-workspace>.sec{margin-top:0}
+ .portal-redesign .billing-workspace:not(:has(.billing-packages)) .billing-invoices{grid-column:1/-1}
+ .portal-redesign .requests-page{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start;gap:24px}
+ .portal-redesign .requests-heading,.portal-redesign .requests-policy{grid-column:1/-1;margin:0}
+ .portal-redesign .requests-page .request-options,.portal-redesign .requests-page>.sec{max-width:none;width:100%;margin:0}
+ .portal-redesign .requests-history{padding:22px;background:#fff;border:1px solid var(--hbh-line);border-radius:18px}
+ .portal-redesign hbh-progress .stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+}
+@media(max-width:1099px){.portal-redesign .schedule-cancel{grid-column:1/-1}.portal-redesign .portal-child-back{display:none}}
+
+/* Account information stays grouped, with centre details beside it on wide screens. */
+.portal-redesign .portal-child-context strong { flex:1; min-width:0; }
+.portal-switch-child { display:flex; align-items:center; gap:10px; flex:none; padding:10px 14px; min-height:44px; border:0; border-radius:10px; color:#087886; background:#edf7f6; font:inherit; cursor:pointer; }
+.portal-child-picker { width:min(520px,calc(100vw - 28px)); max-height:80dvh; padding:24px; border:1px solid #dce8e9; border-radius:22px; color:#17475d; background:#f8fbfb; box-shadow:0 24px 80px #163e4933; }
+.portal-child-picker::backdrop { background:#15394466; }
+.child-picker-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.child-picker-head h2 { font-size:22px; margin:0; }
+.child-picker-list { display:grid; gap:12px; }
+.child-picker-option { display:flex; align-items:center; gap:14px; width:100%; padding:16px; text-align:start; font:inherit; color:inherit; background:#fff; border:1px solid #dce8e9; border-inline-start:4px solid #38b4bd; border-radius:16px; cursor:pointer; }
+.child-picker-option.is-female { border-inline-start-color:#ff858e; }
+.child-picker-option.is-selected { background:#eaf5f5; outline:2px solid #168e96; outline-offset:1px; }
+.child-picker-option hbh-person-avatar { width:58px; height:58px; }
+.child-picker-option > span { min-width:0; }
+.child-picker-option strong { display:block; font-size:17px; overflow-wrap:anywhere; }
+.child-picker-option small { display:block; margin-top:5px; color:#58717b; }
+@media(max-width:599px) { .portal-child-picker { padding:18px; } .portal-switch-child { padding:8px; gap:6px; font-size:13px; } }
+.portal-redesign .profile-page { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:22px; align-items:start; }
+.portal-redesign .profile-page > .sec { margin:0; }
+.portal-redesign .profile-identity { grid-column:1/-1; margin:0; gap:16px; }
+.portal-redesign .profile-identity .prof__b { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+.portal-redesign .profile-identity .prof__m { text-align:start; font-size:14px; }
+.portal-redesign .profile-identity .prof__n { font-size:21px; line-height:1.7; }
+.portal-redesign .profile-card { padding:24px; background:#fff; border:1px solid var(--hbh-line); border-radius:18px; min-width:0; }
+.portal-redesign .profile-contact { grid-column:1; grid-row:2; }
+.portal-redesign .profile-children { grid-column:1; grid-row:3; }
+.portal-redesign .profile-centre { grid-column:2; grid-row:2/4; }
+.portal-redesign .profile-consents,.portal-redesign .profile-actions,.portal-redesign .profile-page > .priv { grid-column:1/-1; }
+.portal-redesign .profile-card :is(.sec__note,p) { font-size:14px; line-height:1.9; color:var(--hbh-muted); margin:0 0 18px; }
+.portal-redesign .profile-card .fld + .fld { margin-top:18px; }
+.portal-redesign .profile-card .fld__l { font-size:14px; margin-bottom:8px; }
+.portal-redesign .profile-card .fld__box { min-height:48px; border:1px solid #cbdcde; background:#fcfefe; }
+.portal-redesign .profile-card .actions { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+.portal-redesign .profile-centre .quick__a { min-height:84px; gap:9px; background:#f4f9f9; border:1px solid #e1ecec; border-radius:12px; font-size:14px; }
+.portal-redesign .profile-centre .facts { margin:20px 0 0; }
+.portal-redesign .profile-centre .facts > div { display:grid; grid-template-columns:90px minmax(0,1fr); gap:12px; padding:12px 0; border-bottom:1px solid #edf1f1; }
+.portal-redesign .profile-centre .facts > div:last-child { border-bottom:0; }
+.portal-redesign .profile-centre :is(dt,dd) { margin:0; font-size:13px; line-height:1.9; overflow-wrap:anywhere; }
+.portal-redesign .profile-centre dt { color:var(--hbh-muted); }
+.portal-redesign hbh-profile .profile-children .stack { grid-template-columns:1fr; }
+.portal-redesign .profile-consents .opt { align-items:flex-start; flex-wrap:wrap; }
+.portal-redesign .profile-consents .opt__b { flex:1; min-width:140px; font-size:14px; line-height:1.8; }
+.portal-redesign .profile-consents > .hbh-btn { margin-top:18px; }
+.portal-redesign hbh-profile .profile-actions .stack { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.portal-redesign .profile-signout { color:#a83d45; border-color:#ebd5d8; }
+.portal-redesign .profile-page > .priv { margin:0!important; font-size:12px; line-height:1.9; }
+@media(max-width:1199px) {
+ .portal-redesign .profile-page { grid-template-columns:minmax(0,1fr); gap:18px; }
+ .portal-redesign .profile-page > * { grid-column:1; grid-row:auto; }
+ .portal-redesign .profile-identity { order:0; }
+ .portal-redesign .profile-contact { order:1; }
+ .portal-redesign .profile-children { order:2; }
+ .portal-redesign .profile-centre { order:3; }
+ .portal-redesign .profile-consents { order:4; }
+ .portal-redesign .profile-actions { order:5; }
+ .portal-redesign .profile-page > .priv { order:6; }
+}
+@media(max-width:599px) {
+ .portal-redesign .profile-card { padding:18px; }
+ .portal-redesign .profile-identity .prof__n { font-size:17px; }
+ .portal-redesign hbh-profile .profile-actions .stack { grid-template-columns:1fr; }
+ .portal-redesign .profile-centre .facts > div { grid-template-columns:1fr; gap:3px; }
+}
+@media(min-width:1400px){hbh-welcome{max-width:1480px;width:100%}hbh-welcome .scr{max-width:none}}
+
+/* BOTTOM TAB LABELS, sized to the phone (#21). They were 10px on every phone
+   because five Arabic labels have to fit 320px. Measured with the real font
+   (IBM Plex Sans Arabic) and the real labels on 2026-09-16:
+     320px - only 10px keeps "البرنامج المنزلي" on one line
+     360px - 11px fits, 12px wraps it
+     375px - 12px fits all five
+   So each width gets the largest size that stays on one line. A longer label
+   in ar.json needs this measured again. */
+@media (min-width:360px) and (max-width:600px) {
+ .portal-redesign .pa__tabs .pa__tab { font-size:11px; }
+}
+@media (min-width:375px) and (max-width:1099px) {
+ .portal-redesign .pa__tabs .pa__tab { font-size:12px; }
+}

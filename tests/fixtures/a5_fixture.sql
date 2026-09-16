@@ -62,6 +62,25 @@ VALUES ((SELECT v FROM a5_fx WHERE k='center'), (SELECT v FROM a5_fx WHERE k='br
         'A5-SPEECH', 'تخاطب — الدفعة الخامسة', 'SPEECH', '#2E6F8E');
 INSERT INTO a5_fx (k, v) SELECT 'svc', service_id FROM hbh.services WHERE code='A5-SPEECH';
 
+-- A CONSULTATION, which is a different KIND of service and not a
+-- different name for the same one.
+--
+-- Both flags off: it opens no therapy session when it starts, and the
+-- child is not added to a caseload for it. That combination is the only
+-- one hbh.validate_slot accepts without a room - everything else is
+-- answered SERVICE_NEEDS_ROOM - so it is what makes an appointment able
+-- to be held over video at all.
+--
+-- Thirty minutes rather than forty-five, so the online slot list is a
+-- DIFFERENT list from the in-person one and a test cannot pass by
+-- reading the wrong one.
+INSERT INTO hbh.services (center_id, branch_id, code, name_ar, kind_code, color_hex,
+                          default_duration_min, creates_session_flg, needs_caseload_flg)
+VALUES ((SELECT v FROM a5_fx WHERE k='center'), (SELECT v FROM a5_fx WHERE k='branch'),
+        'A5-CONSULT', 'استشارة — الدفعة الخامسة', 'SPEECH', '#7E57C2',
+        30, false, false);
+INSERT INTO a5_fx (k, v) SELECT 'consult_svc', service_id FROM hbh.services WHERE code='A5-CONSULT';
+
 INSERT INTO hbh.rooms (center_id, branch_id, code, name_ar)
 VALUES ((SELECT v FROM a5_fx WHERE k='center'), (SELECT v FROM a5_fx WHERE k='branch'),
         'A5-R1', 'غرفة الدفعة الخامسة');
@@ -101,8 +120,12 @@ INSERT INTO hbh.therapists (center_id, branch_id, user_id, full_name_ar, title_a
 SELECT u.center_id, u.branch_id, u.user_id, u.full_name_ar, 'أخصائي'
 FROM   hbh.users u WHERE u.username = 'a5_colleague';
 
+-- The therapist offers BOTH, or hbh.validate_slot answers
+-- THERAPIST_SERVICE_MISMATCH and the consultation checks below are all
+-- zero for a reason that has nothing to do with rooms.
 INSERT INTO hbh.therapist_services (therapist_id, service_id)
-VALUES ((SELECT v FROM a5_fx WHERE k='th'), (SELECT v FROM a5_fx WHERE k='svc'));
+VALUES ((SELECT v FROM a5_fx WHERE k='th'), (SELECT v FROM a5_fx WHERE k='svc')),
+       ((SELECT v FROM a5_fx WHERE k='th'), (SELECT v FROM a5_fx WHERE k='consult_svc'));
 
 INSERT INTO hbh.therapist_working_hours (center_id, therapist_id, weekday, start_time, end_time)
 SELECT (SELECT v FROM a5_fx WHERE k='center'), (SELECT v FROM a5_fx WHERE k='th'),

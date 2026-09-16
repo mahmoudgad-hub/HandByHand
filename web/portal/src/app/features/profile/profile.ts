@@ -18,20 +18,20 @@ import { HbhAgePipe } from '@hbh/shared/format/format.pipes';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import {
-  Child, Consent, ConsentKey, Guardian, GuardianContact,
+  CentreContact, Child, Consent, Guardian, GuardianContact,
 } from '../../core/models/portal.models';
 import { Icon, IconName } from '@hbh/shared/icon/icon';
+import { PersonAvatar } from '../../shared/ui/person-avatar';
 import { ToastService } from '@hbh/shared/toast/toast.service';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 
 /**
- * The guardian's own account: their children, and the consents they control.
+ * The guardian's account, children and recorded live-view access.
  *
- * A consent is a decision with clinical and legal weight, so the switch does
- * not pretend. It shows the value the server returned, and if a change is
- * refused it snaps back rather than leaving the parent believing they granted
- * or withdrew something they did not.
+ * Consent changes are handled by the centre until the portal has a real
+ * consent write endpoint. Display recorded access without offering a switch
+ * that always fails, and link to the existing family conversation.
  *
  * Nothing here is editable that the centre owns. A phone number, a name or a
  * child's file are changed at reception, where the change is checked against
@@ -46,7 +46,7 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
 @Component({
   selector: 'hbh-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, TranslatePipe, HbhAgePipe, Skeleton, ErrorNote],
+  imports: [RouterLink, Icon, PersonAvatar, TranslatePipe, HbhAgePipe, Skeleton, ErrorNote],
   templateUrl: './profile.html',
 })
 export class Profile {
@@ -58,6 +58,7 @@ export class Profile {
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
 
+
   protected readonly guardian = signal<Guardian | null>(null);
   protected readonly children = signal<readonly Child[]>([]);
   protected readonly consents = signal<readonly Consent[]>([]);
@@ -66,7 +67,6 @@ export class Profile {
   protected readonly failureKey = signal('error.load');
   /** Shown only where nobody can act on the failure. */
   protected readonly traceId = signal<string | null>(null);
-  protected readonly saving = signal<ReadonlySet<ConsentKey>>(new Set());
 
   // ---- the two fields a parent owns ----
   //
@@ -141,7 +141,9 @@ export class Profile {
     // endpoint, so there is one server-side definition of "this guardian's
     // children" and not two that could disagree.
     forkJoin({
-      welcome: this.api.welcome(),
+      // family(), not welcome(): the same list of children without each
+      // child's day - four requests per child this screen never showed (#16).
+      welcome: this.api.family(),
       consents: this.api.consents(),
       // Wrapped, unlike the two above. Those two ARE the screen; this one
       // fills a card on it. A staff account signed into the portal has no
@@ -149,13 +151,18 @@ export class Profile {
       // page they came to read.
       contact: this.api.contact().pipe(
         catchError(() => of<GuardianContact | null>(null))),
+      // The centre's own card. Already null-on-failure inside the API,
+      // so a centre that has published no contact row and a request that
+      // failed both end as an absent card rather than a broken page.
+      centre: this.api.centreContact(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ welcome, consents, contact }) => {
+        next: ({ welcome, consents, contact, centre }) => {
           this.guardian.set(welcome.guardian);
           this.children.set(welcome.children);
           this.consents.set(consents);
+          this.centre.set(centre);
           this.contact.set(contact);
           this.draftEmail.set(contact?.email ?? '');
           this.draftCity.set(contact?.city ?? '');
@@ -180,64 +187,47 @@ export class Profile {
     }
   }
 
-  protected isSaving(consent: Consent): boolean {
-    return this.saving().has(consent.key);
-  }
-
-  protected toggleConsent(consent: Consent): void {
-    if (this.isSaving(consent)) {
-      return;
-    }
-    const granted = !consent.granted;
-    this.markSaving(consent.key, true);
-    this.applyLocally(consent.key, granted);
-
-    this.api.setConsent(consent.key, granted)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (saved) => {
-          this.markSaving(consent.key, false);
-          // Trust the server's answer over the optimistic one.
-          this.applyLocally(saved.key, saved.granted);
-          this.toast.show(this.i18n.translate(
-            saved.granted ? 'profile.consentGranted' : 'profile.consentWithdrawn'));
-        },
-        error: () => {
-          this.markSaving(consent.key, false);
-          this.applyLocally(consent.key, !granted);
-          this.toast.error(this.i18n.translate('error.saveFailed'));
-        },
-      });
-  }
-
   protected openChild(child: Child): void {
     this.childContext.select(child);
     void this.router.navigate(['/home']);
   }
 
-  protected help(): void {
-    this.toast.show(this.i18n.translate('profile.helpNote'));
-  }
+  // ---- how to reach the centre ----
+  //
+  // This replaced a "help" button whose entire behaviour was a toast. A
+  // parent with a question had no number, no address and no route in -
+  // on the one screen where they would look for all three.
+  protected readonly centre = signal<CentreContact | null>(null);
+
+  /**
+   * A link to the centre on a map, from whichever shape the column holds.
+   *
+   * `site_contact.map_url` carries BOTH in practice: a real link on some
+   * centres and a bare "lat, lng" pair on this one. Treating the second
+   * as a URL puts "30.001, 31.481" in an href and the link goes nowhere -
+   * silently, because a browser will happily navigate to a relative path
+   * of that name.
+   *
+   * Anything else returns '' and the button is not drawn at all. A map
+   * button that opens nothing is worse than no map button.
+   */
+  protected readonly mapHref = computed(() => {
+    const raw = (this.centre()?.mapUrl ?? '').trim();
+    if (!raw) {
+      return '';
+    }
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+    const pair = raw.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+    return pair
+      ? `https://www.google.com/maps/search/?api=1&query=${pair[1]},${pair[2]}`
+      : '';
+  });
 
   protected signOut(): void {
     this.childContext.clear();
     this.auth.signOut();
   }
 
-  private applyLocally(key: ConsentKey, granted: boolean): void {
-    this.consents.update((current) =>
-      current.map((consent) => consent.key === key ? { ...consent, granted } : consent));
-  }
-
-  private markSaving(key: ConsentKey, saving: boolean): void {
-    this.saving.update((current) => {
-      const next = new Set(current);
-      if (saving) {
-        next.add(key);
-      } else {
-        next.delete(key);
-      }
-      return next;
-    });
-  }
 }

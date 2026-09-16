@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -39,6 +40,21 @@ type Config struct {
 	// ends up in the audit log as the client address, and a header a client
 	// can write is a client-controlled audit trail.
 	TrustProxy bool
+
+	// TrustedProxies are the peers whose X-Forwarded-For is believed, and
+	// TrustProxy alone is not enough without them.
+	//
+	// "The flag is on" answers WHETHER a proxy sets the header. It cannot
+	// answer WHO is talking to us right now - and a caller that reaches the
+	// socket directly, carrying a header it wrote itself, looks identical to
+	// the proxy unless somebody checks the peer. That check is this list.
+	//
+	// Defaults to loopback when TRUST_PROXY is on, which is the deployment
+	// in deploy/server: nginx does proxy_pass to 127.0.0.1:8090 and the
+	// service binds to 127.0.0.1, so nothing off-host can be the peer at
+	// all. A different topology - a proxy on another machine, a container
+	// network - names its addresses in TRUSTED_PROXIES instead.
+	TrustedProxies []netip.Prefix
 
 	// OTPEcho returns the generated one-time code in the HTTP response.
 	// There is no SMS gateway yet, and the acceptance suite has no other way
@@ -80,6 +96,26 @@ type Config struct {
 	// Empty disables staff document upload entirely, which is the default:
 	// a service with nowhere safe to put a file should refuse to take one.
 	StaffDocsDir string
+
+	// MeetingProvider selects who carries the video for an online
+	// consultation: "JITSI_PUBLIC" or "JITSI_JAAS".
+	//
+	// JITSI_PUBLIC is meet.jit.si and has NO tokens: the room name is the
+	// only credential and it never expires. Right on a laptop, and refused
+	// in production by meeting.PublicProvider.Usable for the same reason
+	// sms.DevSender is.
+	//
+	// The provider a ROOM was opened with is recorded on the row, so a
+	// centre that changes this does not strand a consultation booked last
+	// week - the handler refuses that case out loud rather than minting a
+	// pass for a room somewhere else.
+	MeetingProvider string
+
+	// The JaaS account. Each is a secret or an address, and none of them is
+	// written to the database, to a log, or to an error detail.
+	MeetingJaaSAppID      string
+	MeetingJaaSKeyID      string
+	MeetingJaaSPrivateKey string
 
 	// SMSProvider selects the delivery implementation: "dev", "http" or
 	// "twilio_whatsapp".
@@ -203,6 +239,9 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	if cfg.TrustProxy, err = boolean(getenv, "TRUST_PROXY", false); err != nil {
 		errs = append(errs, err)
 	}
+	if cfg.TrustedProxies, err = prefixes(getenv, "TRUSTED_PROXIES", cfg.TrustProxy); err != nil {
+		errs = append(errs, err)
+	}
 	if cfg.OTPEcho, err = boolean(getenv, "OTP_ECHO", false); err != nil {
 		errs = append(errs, err)
 	}
@@ -211,6 +250,17 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	}
 	cfg.SiteAssetsDir = strings.TrimSpace(getenv("SITE_ASSETS_DIR"))
 	cfg.StaffDocsDir = strings.TrimSpace(getenv("STAFF_DOCS_DIR"))
+
+	// The video for an online consultation. JITSI_PUBLIC is the default
+	// because it needs no account and works on a laptop; meeting.New
+	// refuses it outside development, where it has no access control at
+	// all - the room name is the only credential and nothing expires.
+	cfg.MeetingProvider = strings.ToUpper(str(getenv, "MEETING_PROVIDER", "JITSI_PUBLIC"))
+	cfg.MeetingJaaSAppID = strings.TrimSpace(getenv("MEETING_JAAS_APP_ID"))
+	cfg.MeetingJaaSKeyID = strings.TrimSpace(getenv("MEETING_JAAS_KEY_ID"))
+	// Not trimmed: a PEM block is whitespace-significant and trimming has
+	// been the cause of "not PEM" on a key that was perfectly good.
+	cfg.MeetingJaaSPrivateKey = getenv("MEETING_JAAS_PRIVATE_KEY")
 
 	cfg.SMSProvider = strings.ToLower(str(getenv, "SMS_PROVIDER", "dev"))
 	cfg.SMSHTTPURL = strings.TrimSpace(getenv("SMS_HTTP_URL"))
@@ -283,6 +333,25 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	// The two rules together are the guarantee: a production process has a
 	// real delivery channel, or it does not start. Neither can be satisfied
 	// by remembering to set something.
+	// THE VIDEO IS NOT CHECKED HERE, AND THAT IS DELIBERATE.
+	//
+	// The obvious symmetry would be to refuse MEETING_PROVIDER=JITSI_PUBLIC
+	// in production the way SMS_PROVIDER=dev is refused above. It was
+	// written that way first, and it is wrong: the two are not the same
+	// kind of setting.
+	//
+	// Every deployment needs to deliver a login code, so a process that
+	// cannot has no front door and should not start. Not every centre holds
+	// online consultations. Refusing here would stop a centre that has never
+	// booked one from starting at all, over a feature it does not use.
+	//
+	// So the refusal lives where the feature is used: meeting_handlers.go
+	// asks Usable() on every entry and answers 503, and
+	// meeting.PublicProvider.Usable refuses in production. A centre with no
+	// consultations never reaches it; one that tries gets a clear refusal
+	// and nobody is handed a room with no access control. hbhd also says so
+	// once at startup, so the misconfiguration is visible before a family
+	// finds it.
 	if cfg.Env != "development" {
 		switch cfg.SMSProvider {
 		case "dev", "":
@@ -389,6 +458,50 @@ func boolean(getenv func(string) string, key string, def bool) (bool, error) {
 		return def, fmt.Errorf("%s: %q is not a boolean", key, v)
 	}
 	return b, nil
+}
+
+// prefixes reads a comma-separated list of CIDRs, or bare addresses, which
+// are taken as single-host prefixes.
+//
+// The default is loopback and only when the caller says the proxy switch is
+// on: an empty list with TRUST_PROXY=true would believe the header from
+// nobody, which reads at a glance as "trusting" and behaves as "off". A
+// default that silently does the opposite of its name is worse than a
+// missing one.
+//
+// An unparseable entry is an error rather than a skipped line. A typo in a
+// trust list that quietly narrows what is trusted fails closed, which sounds
+// safe and is: it is also invisible, and the operator who wrote it believes
+// the opposite.
+func prefixes(getenv func(string) string, key string, trustOn bool) ([]netip.Prefix, error) {
+	raw := strings.TrimSpace(getenv(key))
+	if raw == "" {
+		if !trustOn {
+			return nil, nil
+		}
+		return []netip.Prefix{
+			netip.MustParsePrefix("127.0.0.0/8"),
+			netip.MustParsePrefix("::1/128"),
+		}, nil
+	}
+
+	var out []netip.Prefix
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if p, err := netip.ParsePrefix(part); err == nil {
+			out = append(out, p)
+			continue
+		}
+		addr, err := netip.ParseAddr(part)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %q is not an address or CIDR", key, part)
+		}
+		out = append(out, netip.PrefixFrom(addr, addr.BitLen()))
+	}
+	return out, nil
 }
 
 func integer(getenv func(string) string, key string, def int) (int, error) {

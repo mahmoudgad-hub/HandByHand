@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
+import { TabBadge } from './tab-badge';
 import { I18nService } from '../i18n/i18n.service';
 
 /**
@@ -26,6 +27,7 @@ import { I18nService } from '../i18n/i18n.service';
   `,
 })
 export class RouteAnnouncer {
+  private readonly tabBadge = inject(TabBadge);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly i18n = inject(I18nService);
@@ -41,9 +43,9 @@ export class RouteAnnouncer {
       this.announcement.set(title);
       // The browser tab should carry it too - it is the same answer to the
       // same question, and it is what a bookmark and a task switcher show.
-      document.title = title
+      this.tabBadge.setTitle(title
         ? `${title} — ${this.i18n.translate('app.name')}`
-        : this.i18n.translate('app.name');
+        : this.i18n.translate('app.name'));
     });
   }
 

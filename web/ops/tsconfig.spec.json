@@ -2,7 +2,13 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../out-tsc/ops-spec",
-    "types": ["jasmine"]
+    "types": ["jasmine"],
+    // Tests only, and deliberately not in tsconfig.app.json: the app loads
+    // its translations over HTTP at run time, and a bundle compiled INTO
+    // the app would be a second copy that drifts. ops-error.spec.ts reads
+    // the real ar.json to prove no message key it can produce is missing
+    // or left holding an unfilled {placeholder}.
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "../shared/src/**/*.ts"],
   "exclude": ["../shared/src/**/*.spec.ts"]

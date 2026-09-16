@@ -1,4 +1,5 @@
-<section class="scr">
+<section class="scr schedule-workspace">
+  <div class="schedule-content portal-panel">
 
   <div class="seg" role="tablist">
     <button class="seg__i" type="button" role="tab"
@@ -34,6 +35,16 @@
             <!-- A session running now is the one row that leads somewhere:
                  the live screen. Whether it opens is still the server's call. -->
             <a hbhAppointmentRow [appointment]="appointment" routerLink="/live"></a>
+          } @else if (appointment.deliveryMode === 'ONLINE') {
+            <!-- EVERY online row is a link, including one three weeks past.
+                 The hour, the invoice and the room still being open are the
+                 door's questions, and a condition here would be a second
+                 copy of them - drawn from a list this screen loaded minutes
+                 ago and never refreshed. The screen it opens says why when
+                 the answer is no, which is more use to a parent than a row
+                 that does nothing and explains nothing. -->
+            <a hbhAppointmentRow [appointment]="appointment"
+               [routerLink]="['/consultation', appointment.id]"></a>
           } @else {
             <div hbhAppointmentRow [appointment]="appointment"></div>
           }
@@ -42,13 +53,16 @@
     }
   }
 
-  <div class="sec">
-    <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/requests">
-      <hbh-icon name="ic-send" />
-      {{ 'schedule.requestChange' | t }}
-    </a>
-    <p class="fld__hint" style="text-align:center">
-      {{ 'schedule.requestNote' | t }}
-    </p>
   </div>
+  <aside class="schedule-actions portal-panel">
+    <span class="portal-panel-icon"><hbh-icon name="ic-calendar" /></span>
+    <h2>{{ 'portal.schedule.helpTitle' | t }}</h2>
+    <p>{{ 'schedule.requestNote' | t }}</p>
+    <a class="hbh-btn hbh-btn--primary hbh-btn--block" routerLink="/requests" [queryParams]="{kind: 'RESCHEDULE'}">
+      <hbh-icon name="ic-send" />
+      {{ 'requests.kind.RESCHEDULE' | t }}
+    </a>
+    <a class="schedule-cancel" routerLink="/requests" [queryParams]="{kind: 'CANCEL'}">{{ 'requests.kind.CANCEL' | t }}</a>
+    <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/requests" [queryParams]="{tab: 'messages'}"><hbh-icon name="ic-chat" />{{ 'requests.tabMessages' | t }}</a>
+  </aside>
 </section>

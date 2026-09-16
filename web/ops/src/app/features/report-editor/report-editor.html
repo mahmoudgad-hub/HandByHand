@@ -1,5 +1,5 @@
 <div class="hbh-pagehead report-head">
-  <div>
+  <div class="hbh-pagehead__left ops-report-identity">
     <button type="button" class="hbh-btn hbh-btn--ghost" (click)="back()">
       <hbh-icon name="ic-back" /> رجوع لملفّ الطفل
     </button>
@@ -17,21 +17,11 @@
   </div>
 
   @if (!loading() && !failed()) {
-    <div class="report-actions">
+    <div class="hbh-pagehead__actions">
       <button type="button" class="hbh-btn hbh-btn--ghost" (click)="togglePreview()">
         <hbh-icon name="ic-eye" /> {{ preview() ? 'عودة للتحرير' : 'معاينة' }}
       </button>
-      @if (!published()) {
-        <button type="button" class="hbh-btn" [disabled]="saving()" (click)="save()">
-          <hbh-icon name="ic-check" /> {{ saving() ? 'جارٍ الحفظ…' : 'حفظ كمسودّة' }}
-        </button>
-        @if (reportId() && auth.can('REPORT.PUBLISH')) {
-          <button type="button" class="hbh-btn hbh-btn--primary"
-                  [disabled]="publishing() || dirty()" (click)="publish()">
-            <hbh-icon name="ic-check-circle" /> {{ publishing() ? 'جارٍ النشر…' : 'نشر لوليّ الأمر' }}
-          </button>
-        }
-      }
+
     </div>
   }
 </div>
@@ -45,12 +35,25 @@
 
   @if (errorKey()) {
     <div class="report-error" role="alert">
-      <hbh-icon name="ic-warn" /> {{ errorKey() | t }}
+      <hbh-icon name="ic-warn" /> <span>{{ errorKey() | t }}</span>
+      @if (changed()) {
+        <button type="button" class="hbh-btn report-error__act" (click)="loadLatest()">
+          {{ 'report.loadLatest' | t }}
+        </button>
+      }
     </div>
   }
 
-  @if (dirty()) {
-    <p class="report-dirty" role="status">تعديلات لم تُحفَظ بعد.</p>
+  <!-- One status line, and it says what will happen next - not only what
+       has not happened. A new report does not save itself (a report number
+       is a decision), and the therapist should know that before trusting
+       it to. After a colleague's save the alert above says what to do. -->
+  @if (dirty() && !changed()) {
+    <p class="report-dirty" role="status">
+      {{ (isNew() ? 'report.autosave.new' : 'report.autosave.pending') | t }}
+    </p>
+  } @else if (!dirty() && autosavedAt(); as time) {
+    <p class="report-saved" role="status">{{ 'report.autosave.saved' | t: { time } }}</p>
   }
 
   @if (published()) {
@@ -69,7 +72,7 @@
       @if (!published()) { <p class="report-preview__flag">مسودّة — لم تُنشر بعد ولا يراها وليّ الأمر</p> }
       <h1>{{ title.value || 'بلا عنوان' }}</h1>
       <p class="report-preview__meta">
-        {{ childName() }} · من {{ from.value }} إلى {{ to.value }}
+        {{ childName() }} · من {{ from.value ? format.dayMonthYear(from.value) : '—' }} إلى {{ to.value ? format.dayMonthYear(to.value) : '—' }}
       </p>
       <div class="report-preview__body">{{ summary.value || 'لا يوجد نص بعد.' }}</div>
     </article>
@@ -81,15 +84,30 @@
                [readOnly]="published()" placeholder="مثال: تقرير التقدّم — أغسطس ٢٠٢٦">
       </label>
 
+      <!-- The period in three named parts, not <input type="date">: on an
+           English browser that showed 08/04/2026 - 4 August or 8 April - on
+           the dates a family reads at the top of the report (#18). A
+           published report shows the dates as words; there is nothing to
+           pick on a report that cannot change. -->
       <div class="report-period">
-        <label class="hbh-field-block">
-          <span>من <b aria-hidden="true">*</b></span>
-          <input type="date" [formControl]="from" [readOnly]="published()">
-        </label>
-        <label class="hbh-field-block">
-          <span>إلى <b aria-hidden="true">*</b></span>
-          <input type="date" [formControl]="to" [readOnly]="published()">
-        </label>
+        <div class="hbh-field-block">
+          <label for="report-from">من <b aria-hidden="true">*</b></label>
+          @if (published()) {
+            <p id="report-from">{{ from.value ? format.dayMonthYear(from.value) : '—' }}</p>
+          } @else {
+            <hbh-date-parts fieldId="report-from" [value]="from.value"
+                            (valueChange)="from.setValue($event)" />
+          }
+        </div>
+        <div class="hbh-field-block">
+          <label for="report-to">إلى <b aria-hidden="true">*</b></label>
+          @if (published()) {
+            <p id="report-to">{{ to.value ? format.dayMonthYear(to.value) : '—' }}</p>
+          } @else {
+            <hbh-date-parts fieldId="report-to" [value]="to.value"
+                            (valueChange)="to.setValue($event)" />
+          }
+        </div>
       </div>
 
       <label class="hbh-field-block">
@@ -104,4 +122,21 @@
       </label>
     </form>
   }
+}
+
+@if (!loading() && !failed() && !published()) {
+  <footer class="ops-form-actions report-actions">
+        <button type="button" class="hbh-btn" [class.hbh-btn--primary]="!reportId() || !auth.can('REPORT.PUBLISH')" [disabled]="saving() || changed()" (click)="save()">
+          <hbh-icon name="ic-check" /> {{ saving() ? 'جارٍ الحفظ…' : 'حفظ كمسودّة' }}
+        </button>
+        @if (reportId() && auth.can('REPORT.PUBLISH')) {
+          <button type="button" class="hbh-btn hbh-btn--primary"
+                  [disabled]="publishing() || dirty()" (click)="publish()">
+            <hbh-icon name="ic-check-circle" /> {{ publishing() ? 'جارٍ النشر…' : 'نشر لوليّ الأمر' }}
+          </button>
+        }
+        <button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="saving() || publishing()" (click)="back()">
+          {{ 'action.cancel' | t }}
+        </button>
+  </footer>
 }

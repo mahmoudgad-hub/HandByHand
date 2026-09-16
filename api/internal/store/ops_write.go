@@ -27,13 +27,38 @@ import (
 // NewAppointment is a booking request. The centre and the branch are absent
 // deliberately - see above.
 type NewAppointment struct {
-	ChildID     int       `json:"child_id"`
-	TherapistID int       `json:"therapist_id"`
-	RoomID      int       `json:"room_id"`
-	ServiceID   int       `json:"service_id"`
-	StartsAt    time.Time `json:"starts_at"`
-	EndsAt      time.Time `json:"ends_at"`
-	NoteAr      string    `json:"note_ar"`
+	ChildID     int `json:"child_id"`
+	TherapistID int `json:"therapist_id"`
+
+	// RoomID is a POINTER because "no room" is now a real answer and not a
+	// missing field. An online consultation has none, and
+	// ck_appointments_room_mode makes that exact: an IN_PERSON appointment
+	// has a room and any other mode has none. As a plain int, absent and
+	// zero were the same value, and zero would have gone to the schema as a
+	// room that does not exist.
+	RoomID    *int      `json:"room_id"`
+	ServiceID int       `json:"service_id"`
+	StartsAt  time.Time `json:"starts_at"`
+	EndsAt    time.Time `json:"ends_at"`
+	NoteAr    string    `json:"note_ar"`
+
+	// DeliveryMode is IN_PERSON, ONLINE or EXTERNAL. Empty means IN_PERSON,
+	// which is what every caller written before this field meant - and the
+	// default is applied HERE rather than by leaving the argument off, so
+	// that the value sent to the schema is the value this struct says.
+	DeliveryMode string `json:"delivery_mode"`
+}
+
+// Mode is the delivery mode to send, with the default made explicit.
+//
+// A client that omits the field gets IN_PERSON. That is not a guess: it is
+// the same default hbh.book_appointment carries, and the console booked
+// nothing else for as long as it existed.
+func (n NewAppointment) Mode() string {
+	if n.DeliveryMode == "" {
+		return "IN_PERSON"
+	}
+	return n.DeliveryMode
 }
 
 // ValidateSlot asks whether a booking would be accepted, without making one.
@@ -48,9 +73,9 @@ func (d *DB) ValidateSlot(ctx context.Context, ident string, in NewAppointment, 
 	err := d.InReadTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
 			SELECT ok, reason FROM hbh.validate_slot(
-				hbh.current_center_id(), $1, $2, $3, $4, $5, $6, $7)`,
+				hbh.current_center_id(), $1, $2, $3, $4, $5, $6, $7, $8)`,
 			in.ChildID, in.TherapistID, in.RoomID, in.ServiceID,
-			in.StartsAt, in.EndsAt, excludeID).Scan(&c.OK, &c.Reason)
+			in.StartsAt, in.EndsAt, excludeID, in.Mode()).Scan(&c.OK, &c.Reason)
 	})
 	if err != nil {
 		return domain.SlotCheck{}, fmt.Errorf("validate_slot: %w", err)
@@ -67,13 +92,20 @@ func (d *DB) ValidateSlot(ctx context.Context, ident string, in NewAppointment, 
 func (d *DB) BookAppointment(ctx context.Context, ident string, in NewAppointment) (int, error) {
 	var id int
 	err := d.InTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
+		// The branch still comes from the room and from nowhere else - a
+		// client that could name it could book a child into a building they
+		// do not attend. An online consultation has no room, so the
+		// subquery matches nothing and the branch is NULL, which is what
+		// the column allows and what the fact is: a video call happens at
+		// no branch. Inventing one - the centre's first, the therapist's -
+		// would put a consultation on a building's day sheet.
 		return tx.QueryRow(ctx, `
 			SELECT hbh.book_appointment(
 				hbh.current_center_id(),
 				(SELECT branch_id FROM hbh.rooms WHERE room_id = $3),
-				$1, $2, $3, $4, $5, $6, nullif($7, ''))`,
+				$1, $2, $3, $4, $5, $6, nullif($7, ''), $8)`,
 			in.ChildID, in.TherapistID, in.RoomID, in.ServiceID,
-			in.StartsAt, in.EndsAt, in.NoteAr).Scan(&id)
+			in.StartsAt, in.EndsAt, in.NoteAr, in.Mode()).Scan(&id)
 	})
 	return id, err
 }
@@ -223,12 +255,18 @@ type NewReport struct {
 // ReportEdit carries only the fields a draft may change. A nil field is
 // "leave it alone", so the editor can save one box without resending the
 // whole report - and cannot blank a field by omitting it.
+//
+// ExpectedVersion is the version the editor opened - the "version" it
+// read. It is a pointer so that leaving it out reaches the function as NULL
+// and is refused there (HB029), rather than being defaulted here to a zero
+// time that would read as "some other version" (migration 0141, #14).
 type ReportEdit struct {
-	TitleAr     *string `json:"title_ar,omitempty"`
-	SummaryAr   *string `json:"summary_ar,omitempty"`
-	PeriodStart *string `json:"period_start,omitempty"`
-	PeriodEnd   *string `json:"period_end,omitempty"`
-	PlanID      *int    `json:"plan_id,omitempty"`
+	ExpectedVersion *time.Time `json:"expected_version"`
+	TitleAr         *string    `json:"title_ar,omitempty"`
+	SummaryAr       *string    `json:"summary_ar,omitempty"`
+	PeriodStart     *string    `json:"period_start,omitempty"`
+	PeriodEnd       *string    `json:"period_end,omitempty"`
+	PlanID          *int       `json:"plan_id,omitempty"`
 }
 
 // CreateReport opens a DRAFT report and returns its id.
@@ -237,26 +275,39 @@ type ReportEdit struct {
 // hbh.create_report. This function carries values and nothing else: the
 // table grants hbh_app SELECT alone, so there is no direct INSERT for it
 // to make even if it wanted to.
-func (d *DB) CreateReport(ctx context.Context, ident string, in NewReport) (int, error) {
-	var id int
+//
+// It also returns the new draft's version, read in the same transaction,
+// so the editor's first save after creating has something to name.
+func (d *DB) CreateReport(ctx context.Context, ident string, in NewReport) (int, time.Time, error) {
+	var (
+		id      int
+		version time.Time
+	)
 	err := d.InTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
-		return tx.QueryRow(ctx,
+		if err := tx.QueryRow(ctx,
 			`SELECT hbh.create_report($1, $2, $3::date, $4::date, $5, $6)`,
 			in.ChildID, in.TitleAr, in.PeriodStart, in.PeriodEnd, in.PlanID, in.SummaryAr,
-		).Scan(&id)
+		).Scan(&id); err != nil {
+			return err
+		}
+		return tx.QueryRow(ctx,
+			`SELECT coalesce(updated_at, created_at) FROM hbh.progress_reports WHERE report_id = $1`, id).Scan(&version)
 	})
-	return id, err
+	return id, version, err
 }
 
-// UpdateReport edits a DRAFT. A published report is refused by the
-// function with HB033 - see migration 0088.
-func (d *DB) UpdateReport(ctx context.Context, ident string, reportID int, in ReportEdit) error {
-	return d.InTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
-		_, err := tx.Exec(ctx,
-			`SELECT hbh.update_report($1, $2, $3, $4::date, $5::date, $6)`,
-			reportID, in.TitleAr, in.SummaryAr, in.PeriodStart, in.PeriodEnd, in.PlanID)
-		return err
+// UpdateReport edits a DRAFT and returns its new version. A published
+// report is refused with HB033 (0088); a draft someone saved since
+// in.ExpectedVersion with HB290 (0141).
+func (d *DB) UpdateReport(ctx context.Context, ident string, reportID int, in ReportEdit) (time.Time, error) {
+	var version time.Time
+	err := d.InTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
+		return tx.QueryRow(ctx,
+			`SELECT hbh.update_report($1, $2::timestamptz, $3, $4, $5::date, $6::date, $7)`,
+			reportID, in.ExpectedVersion, in.TitleAr, in.SummaryAr, in.PeriodStart, in.PeriodEnd, in.PlanID,
+		).Scan(&version)
 	})
+	return version, err
 }
 
 // IssueInvoice moves an invoice out of DRAFT, after which a family can see it
@@ -392,15 +443,18 @@ func (d *DB) RemoveInvoiceLine(ctx context.Context, ident string, lineID int) er
 // not standing behind it the way it stands behind everything else here.
 func (d *DB) AvailableSlots(
 	ctx context.Context, ident string,
-	therapistID, serviceID int, day time.Time, roomID *int,
+	therapistID, serviceID int, day time.Time, roomID *int, mode string,
 ) ([]domain.Slot, error) {
+	if mode == "" {
+		mode = "IN_PERSON"
+	}
 	out := []domain.Slot{}
 	err := d.InReadTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
 			SELECT starts_at, ends_at, room_id, room_name_ar
 			  FROM hbh.available_slots(
-			         hbh.current_center_id(), $1, $2, $3::date, $4)`,
-			therapistID, serviceID, day.Format("2006-01-02"), roomID)
+			         hbh.current_center_id(), $1, $2, $3::date, $4, $5)`,
+			therapistID, serviceID, day.Format("2006-01-02"), roomID, mode)
 		if err != nil {
 			return err
 		}

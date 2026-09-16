@@ -885,15 +885,35 @@ CALL hbh_test.chk('cleanup', 'and the append-only trigger is enabled again',
 ALTER TABLE hbh.assessment_item_scores DISABLE TRIGGER trg_ascore_guard;
 ALTER TABLE hbh.assessments            DISABLE TRIGGER trg_asmt_guard;
 
+-- SCOPED BY THE INSTRUMENT, NOT BY THIS RUN'S ONE ASSESSMENT - and the
+-- difference is not cosmetic. Keyed on fx.asmt, a run that fails before
+-- the teardown leaves its assessment behind for ever, and every later
+-- run adds one more. Twenty-nine had piled up before anyone counted:
+-- each new run then saw thirty published assessments where it expected
+-- one, failed the family-visibility check, and left a thirtieth.
+--
+-- "At least one, then nothing left" rather than an exact count, because
+-- the exact count is what made the pile invisible: it kept passing on
+-- the single row it knew about while ignoring the twenty-eight it did
+-- not.
 CALL hbh_test.chk('cleanup', 'assessment scores removed',
-  $q$ WITH d AS (DELETE FROM hbh.assessment_item_scores WHERE assessment_id =
-                   (SELECT v FROM hbh_test.fx WHERE k='asmt') RETURNING 1)
-      SELECT count(*) = 2 FROM d $q$);
+  $q$ WITH d AS (DELETE FROM hbh.assessment_item_scores WHERE assessment_id IN
+                   (SELECT a.assessment_id FROM hbh.assessments a
+                    WHERE a.instrument_id IN
+                      (SELECT instrument_id FROM hbh.assessment_instruments WHERE code = 'PB-LANG'))
+                 RETURNING 1)
+      SELECT count(*) >= 2 FROM d $q$);
 
 CALL hbh_test.chk('cleanup', 'assessments removed',
-  $q$ WITH d AS (DELETE FROM hbh.assessments WHERE child_id IN
-                   (SELECT v FROM hbh_test.fx WHERE k IN ('child','child_b')) RETURNING 1)
-      SELECT count(*) = 1 FROM d $q$);
+  $q$ WITH d AS (DELETE FROM hbh.assessments WHERE instrument_id IN
+                   (SELECT instrument_id FROM hbh.assessment_instruments WHERE code = 'PB-LANG')
+                 RETURNING 1)
+      SELECT count(*) >= 1 FROM d $q$);
+
+CALL hbh_test.chk('cleanup', 'and no assessment of this suite is left behind',
+  $q$ SELECT count(*) = 0 FROM hbh.assessments a
+      WHERE a.instrument_id IN
+        (SELECT instrument_id FROM hbh.assessment_instruments WHERE code = 'PB-LANG') $q$);
 
 ALTER TABLE hbh.assessments            ENABLE TRIGGER trg_asmt_guard;
 ALTER TABLE hbh.assessment_item_scores ENABLE TRIGGER trg_ascore_guard;

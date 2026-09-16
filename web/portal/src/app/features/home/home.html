@@ -1,22 +1,5 @@
 <section class="scr parent-home">
 
-  <!-- Switching child returns to the welcome screen, which is the only place
-       a child is chosen. -->
-  <a class="cbar" routerLink="/welcome">
-    <span class="cbar__ph"><hbh-icon name="ic-user" /></span>
-    <span class="cbar__b">
-      <span class="cbar__n">{{ child()?.fullName }}</span>
-      <span class="cbar__m">
-        {{ child()?.birthDate | hbhAge }}
-        &middot; {{ child()?.childNo }}
-      </span>
-    </span>
-    <span class="cbar__sw">
-      <hbh-icon name="ic-refresh" />
-      {{ 'action.switchChild' | t }}
-    </span>
-  </a>
-
   @if (loading()) {
     <div class="sec"><hbh-skeleton [count]="1" shape="card" /></div>
     <div class="sec"><hbh-skeleton [count]="3" shape="row" /></div>
@@ -68,7 +51,19 @@
                 {{ 'home.watchLive' | t }}
               </a>
             }
-            <a class="hbh-btn hbh-btn--ghost" routerLink="/requests">
+            @if (next.deliveryMode === 'ONLINE') {
+              <!-- The front page is where a family looks five minutes before
+                   a consultation, and making them find the diary first is
+                   the difference between joining and telephoning to ask how.
+                   No condition on the hour: the door decides that, and the
+                   screen behind this button says so when the answer is no. -->
+              <a class="hbh-btn hbh-btn--light"
+                 [routerLink]="['/consultation', next.id]">
+                <hbh-icon name="ic-video" />
+                {{ 'consult.enter' | t }}
+              </a>
+            }
+            <a class="hbh-btn hbh-btn--ghost" routerLink="/requests" [queryParams]="{ kind: 'RESCHEDULE', appointment: next.id }">
               {{ 'home.requestChange' | t }}
             </a>
           </div>
@@ -267,7 +262,7 @@
           {{ 'nav.activities' | t }}
           @if (summary.openActivityCount > 0) {
             <span class="hbh-badge hbh-badge--progress">
-              {{ summary.openActivityCount | hbhCount }}
+              {{ summary.openActivityCount | hbhNum }}
             </span>
           }
         </a>

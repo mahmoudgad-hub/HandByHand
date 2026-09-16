@@ -41,6 +41,7 @@ export class StatusBadge {
       case 'ACCEPTED':
         return 'hbh-badge--success';
       case 'BOOKED':
+      case 'CHECKED_IN':
         return 'hbh-badge--info';
       case 'DUE':
       case 'PARTIAL':

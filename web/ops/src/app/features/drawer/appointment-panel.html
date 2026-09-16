@@ -1,0 +1,94 @@
+<!-- The verbs first, because the drawer is opened to do one of them. Every
+     button is the list's own action; the host opens the list's dialog. -->
+@if (offers().length) {
+  <div class="rd__actions">
+    @for (offer of offers(); track offer.key) {
+      <button class="hbh-btn" type="button"
+              [class.hbh-btn--primary]="offer.primary" [class.hbh-btn--ghost]="!offer.primary"
+              (click)="act.emit(offer.step)">
+        <hbh-icon [name]="offer.icon" />
+        {{ offer.labelKey | t }}
+      </button>
+    }
+  </div>
+}
+
+<dl class="rd__kv">
+  <dt>{{ 'field.child' | t }}</dt>
+  <dd>
+    @if (child(); as c) {
+      @if (c.id) {
+        <a [routerLink]="['/children', c.id]">{{ c.name || ('tasks.openChild' | t) }}</a>
+      } @else {
+        {{ c.name }}
+      }
+      @if (c.no) { <span class="rd__no" dir="ltr">{{ c.no }}</span> }
+    } @else { — }
+  </dd>
+
+  <dt>{{ 'field.guardian' | t }}</dt>
+  <dd>
+    @if (primaryGuardian(); as g) {
+      @if (canOpenGuardian() && g['guardian_id']) {
+        <a [routerLink]="['/guardians', g['guardian_id']]">{{ text(g, 'full_name_ar') }}</a>
+      } @else {
+        {{ text(g, 'full_name_ar') }}
+      }
+      @if (text(g, 'mobile')) {
+        · <a class="rd__tel" dir="ltr" [href]="'tel:' + text(g, 'mobile')">{{ text(g, 'mobile') }}</a>
+      }
+    } @else if (guardiansState() === 'loading') {
+      {{ 'action.loading' | t }}
+    } @else if (guardiansState() === 'ready') {
+      {{ 'drawer.noGuardian' | t }}
+    } @else { — }
+  </dd>
+
+  <dt>{{ 'field.date' | t }}</dt>
+  <dd>{{ startsAt() ? format.dayMonthYear(startsAt()) : '—' }}</dd>
+
+  <dt>{{ 'field.time' | t }}</dt>
+  <dd dir="ltr">{{ clock() || '—' }}</dd>
+
+  <dt>{{ 'field.service' | t }}</dt>
+  <dd>{{ service() || '—' }}</dd>
+
+  <dt>{{ 'field.therapist' | t }}</dt>
+  <dd>{{ therapist() || '—' }}</dd>
+
+  <!-- Where, and "nowhere" is an answer: an online consultation has no
+       room, and that is said rather than left blank. -->
+  <dt>{{ 'field.room' | t }}</dt>
+  <dd>{{ room() || (deliveryKey() ? (deliveryKey() | t) : '—') }}</dd>
+
+  <dt>{{ 'field.deliveryMode' | t }}</dt>
+  <dd>{{ deliveryKey() ? (deliveryKey() | t) : '—' }}</dd>
+
+  <dt>{{ 'field.status' | t }}</dt>
+  <dd><span class="hbh-badge" [class]="'hbh-badge ' + tone()">{{ statusKey() | t }}</span></dd>
+
+  @if (cancelReason()) {
+    <dt>{{ 'field.reason' | t }}</dt>
+    <dd>{{ cancelReason() }}</dd>
+  }
+
+  @if (sessionId(); as sid) {
+    <dt>{{ 'drawer.session' | t }}</dt>
+    <dd>
+      <a routerLink="/sessions" [queryParams]="{ focus: sid }">
+        {{ sessionStatusKey() ? (sessionStatusKey() | t) : ('action.open' | t) }}
+      </a>
+    </dd>
+  }
+</dl>
+
+<div class="rd__links">
+  <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" routerLink="/appointments" [queryParams]="{ focus: id() }">
+    <hbh-icon name="ic-calendar" /> {{ 'enrolment.openInDiary' | t }}
+  </a>
+  @if (child()?.id; as cid) {
+    <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="['/children', cid]" [queryParams]="{ tab: 'appointments' }">
+      <hbh-icon name="ic-users" /> {{ 'tasks.openChild' | t }}
+    </a>
+  }
+</div>

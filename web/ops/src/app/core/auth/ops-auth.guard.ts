@@ -37,8 +37,14 @@ export const permissionGuard: CanActivateFn = (route) => {
   const auth = inject(OpsAuthService);
   const router = inject(Router);
   const needed = route.data['permission'] as string | undefined;
+  // A second permission that ALSO opens the screen. One screen, two
+  // audiences: /appointments is reception's diary (APPOINTMENT.BOOK) and
+  // the clinician's own day (SESSION.START). Either lets the person in; the
+  // actions on the screen are still filtered one by one by their own
+  // permission, so neither audience sees a verb it does not hold.
+  const alternative = route.data['altPermission'] as string | undefined;
 
-  if (!needed || auth.can(needed)) {
+  if (!needed || auth.can(needed) || (alternative !== undefined && auth.can(alternative))) {
     return true;
   }
   return router.createUrlTree(['/denied'], { queryParams: { need: needed } });

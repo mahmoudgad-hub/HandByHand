@@ -1,3 +1,4 @@
+@if (!embedded) {
 <div class="hbh-pagehead">
   <div class="hbh-pagehead__left">
     <div>
@@ -107,11 +108,7 @@
        never called back would disappear from it. -->
 
   @if (spec.archivable) {
-    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="toggleArchived()"
-            [attr.aria-pressed]="showArchived()">
-      <hbh-icon name="ic-filter" />
-      {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
-    </button>
+    <hbh-archive-switch [checked]="showArchived()" [disabled]="loading()" (changed)="toggleArchived()" />
   }
 
   <!-- `selected` on each option, not `value` on the select. Angular sets the
@@ -147,6 +144,7 @@
       </select>
     </div>
   }
+  <label class="ops-page-size"><span>{{ 'table.rowsPerPage' | t }}</span><select [attr.aria-label]="'table.rowsPerPage' | t" [value]="pageSize()" (change)="changePageSize($any($event.target).value)" [disabled]="loading()">@for(size of [10,20,30,50];track size){<option [value]="size">{{size}}</option>}</select></label>
 </div>
 
 @if (spec.resource === 'invoices') {
@@ -159,7 +157,7 @@
 @if(spec.resource==='appointments'){
 <section class="appointment-attention"><h3>متابعة مواعيد {{calendarDate(day())}} · @if(isMyDay){مواعيدي}@else{كل الأخصائيين والغرف}</h3>
 @if(attentionLoading()){<p>جارٍ مراجعة المواعيد…</p>}@else if(attentionFailed()){<p role="alert">تعذر تحميل متابعة المواعيد.</p>}@else{
-<details><summary>بانتظار التأكيد ({{pendingAppointments().length}})</summary>@for(row of pendingAppointments();track rowKey(row)){<article><strong>{{appointmentName(row)}}</strong> · {{format.time($any(row['starts_at']))}}<div class="week-actions">@for(action of actionsFor(row);track action.key){<button class="hbh-btn hbh-btn--sm" (click)="startAction(action,row)">{{action.labelKey|t}}</button>}</div></article>}@empty{<p>لا توجد مواعيد بانتظار التأكيد.</p>}</details>
+<details><summary>{{ 'appointments.pendingConfirm' | t }} ({{pendingAppointments().length}})</summary>@for(row of pendingAppointments();track rowKey(row)){<article><strong>{{appointmentName(row)}}</strong> · {{format.time($any(row['starts_at']))}}<div class="week-actions"><button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="openRecord(row)">{{ 'action.open' | t }}</button>@for(action of actionsFor(row);track action.key){<button class="hbh-btn hbh-btn--sm" type="button" (click)="startAction(action,row)">{{action.labelKey|t}}</button>}</div></article>}@empty{<p>{{ 'appointments.noPendingConfirm' | t }}</p>}</details>
 <details><summary>تداخلات الأخصائي أو الغرفة ({{appointmentConflicts().length}})</summary>@for(pair of appointmentConflicts();track $index){<p>{{appointmentName(pair.first)}} · {{format.time($any(pair.first['starts_at']))}} — {{appointmentName(pair.second)}} · {{format.time($any(pair.second['starts_at']))}}</p>}@empty{<p>لا توجد تداخلات في المواعيد النشطة لهذا اليوم.</p>}</details>}
 </section>}
 @if (loading()) {
@@ -197,7 +195,7 @@
             <div class="week-actions">
               @for (action of actionsFor(row); track action.key) {
                 @if (action.link) {
-                  <a class="hbh-btn hbh-btn--sm" [routerLink]="action.link(row)">{{ action.labelKey | t }}</a>
+                  <a class="hbh-btn hbh-btn--sm" [routerLink]="action.link(row)" [queryParams]="action.query">{{ action.labelKey | t }}</a>
                 } @else {
                   <button type="button" class="hbh-btn hbh-btn--sm" (click)="startAction(action, row)">{{ action.labelKey | t }}</button>
                 }
@@ -232,7 +230,7 @@
       </thead>
       <tbody>
         @for (row of rows(); track rowKey(row)) {
-          <tr>
+          <tr [class.is-focus]="focusId !== '' && rowKey(row) === focusId">
             @for (column of spec.columns; track column.key) {
               <!-- Clock times, money and identifiers read left to right even
                    on an Arabic page; names do not. -->
@@ -245,6 +243,14 @@
             </td>
             <td>
               <div class="hbh-pagehead__actions">
+                <!-- The record, beside the list: everything about this row
+                     and the same verbs, without leaving the day. -->
+                @if (drawerEntity) {
+                  <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="openRecord(row)">
+                    <hbh-icon name="ic-eye" />
+                    {{ 'action.open' | t }}
+                  </button>
+                }
                 @for (action of actionsFor(row); track action.key) {
                   @if (action.link) {
                     <!-- Goes somewhere. Drawn as a link so it gets the
@@ -253,7 +259,7 @@
                     <a class="hbh-btn hbh-btn--sm"
                        [class.hbh-btn--primary]="action.primary"
                        [class.hbh-btn--ghost]="!action.primary"
-                       [routerLink]="action.link(row)">
+                       [routerLink]="action.link(row)" [queryParams]="action.query">
                       <hbh-icon [name]="action.icon" />
                       {{ action.labelKey | t }}
                     </a>
@@ -300,6 +306,8 @@
       </div>
     }
   </div>
+}
+}
 }
 
 <!-- One dialog for every verb on this screen. An action with no fields is a
@@ -425,6 +433,10 @@
                          [id]="'d-' + field.name"
                          [value]="slotDate()"
                          (change)="setSlotDate($any($event.target).value)">
+                  @if (slotDate()) {
+                    <!-- The day in words, for the same reason as above (#18). -->
+                    <p class="hbh-fld__hint">{{ format.fullDate(slotDate()) }}</p>
+                  }
                   @if (slotsState() === 'loading') {
                     <p class="hbh-fld__hint">{{ 'appointments.slotsLoading' | t }}</p>
                   } @else if (slotsState() === 'denied') {
@@ -445,7 +457,11 @@
                                 [attr.aria-pressed]="pickedSlot() === slot.starts_at"
                                 (click)="pickSlot(slot)">
                           <b dir="ltr">{{ slotLabel(slot) }}</b>
-                          <small>{{ slot.room_name_ar }}</small>
+                          <!-- The room, or the fact that there is none. An
+                               empty line under an online slot would read as a
+                               room whose name failed to load, and the two are
+                               not the same thing to say to reception. -->
+                          <small>{{ slot.room_name_ar ?? ('delivery.ONLINE' | t) }}</small>
                         </button>
                       }
                     </div>
@@ -468,6 +484,13 @@
                        (input)="setValue(field.name, $any($event.target).value)">
               }
             </div>
+            @if (field.kind === 'datetime' && readableWhen(values()[field.name]); as when) {
+              <!-- The same instant in words. datetime-local shows the
+                   BROWSER's order - 08/04/2026 is 4 August or 8 April
+                   depending on whose Chrome - and this box books a child's
+                   appointment or an assessment (#18). -->
+              <p class="hbh-fld__hint">{{ when }}</p>
+            }
             @if (field.hintKey) {
               <p class="hbh-fld__hint">{{ field.hintKey | t }}</p>
             }
@@ -616,6 +639,4 @@
       </div>
     </form>
   </dialog>
-}
-
 }

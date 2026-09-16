@@ -29,6 +29,7 @@ export interface InboxItem {
   readonly at: string;
   readonly read: boolean;
   /** Where this item leads, or null when it leads nowhere. */
+  readonly targetQuery?: {peer:number};
   readonly target: readonly (string | number)[] | null;
 }
 
@@ -70,6 +71,7 @@ export class InboxApi {
         body: row.body_ar ?? '',
         at: row.created_at,
         read: !!row.read_at,
+        targetQuery: row.link_kind==='CHAT' && row.link_id ? {peer:row.link_id} : undefined,
         target: InboxApi.target(row.link_kind, row.link_id, row.child_id),
       })),
     })));
@@ -96,6 +98,7 @@ export class InboxApi {
     id: number | null | undefined,
     childId: number | null | undefined,
   ): readonly (string | number)[] | null {
+    if(kind==='CHAT' && id) return ['/communications'];
     if (kind === 'CHILD' && id) {
       return ['/children', id];
     }
@@ -109,7 +112,10 @@ export class InboxApi {
       return ['/appointments'];
     }
     if (kind === 'INVOICE' && id) {
-      return ['/invoices'];
+      // /billing, not /invoices: there has never been an /invoices route, so
+      // this link fell through the wildcard onto the dashboard and the person
+      // never saw the invoice they were told about.
+      return ['/billing'];
     }
     // No link of its own, but it names a child - open the child.
     if (childId) {

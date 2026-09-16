@@ -99,17 +99,5 @@ func (d *DB) SetStaffPhoto(ctx context.Context, ident string, userID int, name s
 // ErrNotFound, and that is deliberate: whether a colleague has uploaded a
 // photograph is not something to confirm to somebody who may not see it.
 func (d *DB) StaffPhoto(ctx context.Context, ident string, userID int) (string, error) {
-	var name *string
-	err := d.InReadTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
-		return tx.QueryRow(ctx, `
-			SELECT photo_path FROM hbh.staff_profiles
-			WHERE user_id = $1 AND active_flg`, userID).Scan(&name)
-	})
-	if err != nil {
-		return "", fmt.Errorf("staff photo: %w", noRows(err))
-	}
-	if name == nil || *name == "" {
-		return "", ErrNotFound
-	}
-	return *name, nil
+	return d.UserAvatar(ctx, ident, userID)
 }

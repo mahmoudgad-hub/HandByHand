@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -85,7 +86,7 @@ interface Slice {
 @Component({
   selector: 'hbh-satisfaction',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
   templateUrl: './satisfaction.html',
   styleUrl: './satisfaction.css',
 })
@@ -156,27 +157,27 @@ export class Satisfaction {
       ? this.i18n.translate('nps.perSurvey') : undefined;
 
     return [
-      { key: 'skipped', labelKey: 'nps.skipped', icon: 'ic-x-circle', tone: 'red', value: this.format.count(t.skipped) },
+      { key: 'skipped', labelKey: 'nps.skipped', icon: 'ic-x-circle', tone: 'red', value: this.format.number(t.skipped) },
       {
         key: 'answered', labelKey: 'nps.answered', icon: 'ic-users', tone: 'blue',
-        value: this.format.count(t.answered),
+        value: this.format.number(t.answered),
         foot: t.skipped > 0
           ? this.i18n.translate('nps.skippedFoot', { count: this.format.count(t.skipped) })
           : undefined,
       },
       {
         key: 'promoters', labelKey: 'nps.promoters', icon: 'ic-check-circle',
-        tone: 'green', value: this.format.count(t.promoters),
+        tone: 'green', value: this.format.number(t.promoters),
         foot: this.shareFoot(t.promoters, t.answered),
       },
       {
         key: 'passives', labelKey: 'nps.passives', icon: 'ic-info', tone: 'amber',
-        value: this.format.count(t.passives),
+        value: this.format.number(t.passives),
         foot: this.shareFoot(t.passives, t.answered),
       },
       {
         key: 'detractors', labelKey: 'nps.detractors', icon: 'ic-x-circle',
-        tone: 'red', value: this.format.count(t.detractors),
+        tone: 'red', value: this.format.number(t.detractors),
         foot: this.shareFoot(t.detractors, t.answered),
       },
       {

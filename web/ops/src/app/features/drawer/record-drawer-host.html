@@ -1,0 +1,66 @@
+@if (svc.active(); as open) {
+  <!-- A real <dialog>: focus is contained, Escape closes it, the page
+       behind is inert while it is open, and focus returns to whatever
+       opened it. A dialog opened FROM the drawer - an action's form -
+       stacks above it, and Escape then closes only the topmost one. -->
+  <dialog class="hbh-drawer" hbhModal (dismissed)="close()" aria-labelledby="rdTitle">
+    <div class="hbh-drawer__panel">
+      <div class="hbh-drawer__head">
+        <div class="hbh-drawer__title">
+          <span class="hbh-drawer__kind">{{ kindKey() | t }}</span>
+          <h2 class="hbh-card-title" id="rdTitle" dir="auto">
+            <span dir="ltr">{{ title() }}</span>
+            @if (statusKey()) {
+              <span class="hbh-badge" [class]="'hbh-badge ' + statusTone()">{{ statusKey() | t }}</span>
+            }
+          </h2>
+        </div>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.close' | t" (click)="close()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+
+      <div class="hbh-drawer__body">
+        @if (notice()) {
+          <p class="hbh-alert hbh-alert--info rd__notice" role="status">
+            <hbh-icon name="ic-info" />
+            <span>{{ notice() | t }}</span>
+          </p>
+        }
+
+        @switch (phase()) {
+          @case ('loading') {
+            <hbh-skeleton [count]="6" shape="row" />
+          }
+          @case ('failed') {
+            <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="reload()" />
+          }
+          @case ('notFound') {
+            <!-- Not visible to this account, or not there at all: the service
+                 answers both the same way, and so does this. -->
+            <hbh-empty-state icon="ic-search"
+                             [title]="(open.target.entity === 'invoice' ? 'drawer.invoiceNotFound' : 'drawer.appointmentNotFound') | t"
+                             [note]="'drawer.notFoundNote' | t" />
+          }
+          @default {
+            @if (record(); as row) {
+              @if (open.target.entity === 'invoice') {
+                <hbh-invoice-panel [row]="row" [child]="child()" [guardians]="guardians()"
+                                   [guardiansState]="guardiansState()" (act)="run($event)" />
+              } @else {
+                <hbh-appointment-panel [row]="row" [child]="child()" [guardians]="guardians()"
+                                       [guardiansState]="guardiansState()" (act)="run($event)" />
+              }
+            }
+          }
+        }
+      </div>
+
+      <div class="hbh-drawer__foot">
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="close()">
+          <hbh-icon name="ic-x" /> {{ 'action.close' | t }}
+        </button>
+      </div>
+    </div>
+  </dialog>
+}

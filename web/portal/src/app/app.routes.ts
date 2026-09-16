@@ -1,6 +1,7 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 
-import { authGuard, childSelectedGuard, guestOnlyGuard } from './core/auth/auth.guard';
+import { authGuard, childSelectedGuard, guestOnlyGuard, requestChildGuard } from './core/auth/auth.guard';
 
 /**
  * Two shapes of screen. Sign-in and the welcome screen stand alone, with no
@@ -47,7 +48,8 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
-      {path:'communications',data:{titleKey:'nav.communications',tab:'requests'},loadComponent:()=>import('@hbh/shared/ui/family-messages').then(m=>m.FamilyMessages)},
+      { path: 'communications', pathMatch: 'full', redirectTo: ({ queryParams }) =>
+        inject(Router).createUrlTree(['/requests'], { queryParams: { ...queryParams, tab: 'messages' } }) },
       {
         path: 'home',
         canActivate: [childSelectedGuard],
@@ -66,7 +68,7 @@ export const routes: Routes = [
         canActivate: [childSelectedGuard],
         data: { titleKey: 'nav.progress', subtitle: 'child', tab: 'progress' },
         loadComponent: () =>
-          import('./features/progress/progress').then((m) => m.Progress),
+          import('./features/progress/progress-hub').then((m) => m.ProgressHub),
       },
       {
         path: 'activities',
@@ -82,11 +84,31 @@ export const routes: Routes = [
         loadComponent: () => import('./features/live/live').then((m) => m.Live),
       },
       {
-        path: 'reports',
-        canActivate: [childSelectedGuard],
-        data: { titleKey: 'reports.title', subtitle: 'child', back: '/home', tab: 'reports' },
+        // One online consultation, opened.
+        //
+        // The appointment id IS in the path, like a report's and unlike a
+        // child's. The rule this file states above still holds - editing the
+        // address must not decide what may be seen - and it holds because
+        // hbh.authorize_meeting_entry re-asks whose appointment this is on
+        // every single call. A parent who types somebody else's number here
+        // is answered 404, which is the same answer they get for an
+        // appointment that does not exist.
+        //
+        // NO childSelectedGuard. The appointment names its own child, so
+        // requiring one to be chosen first would add a condition that
+        // decides nothing - and a family arriving from a message about one
+        // child's consultation should not be stopped to pick a child.
+        path: 'consultation/:appointmentId',
+        data: { titleKey: 'consult.title', back: '/schedule' },
         loadComponent: () =>
-          import('./features/reports/reports').then((m) => m.Reports),
+          import('./features/consultation/consultation').then((m) => m.Consultation),
+      },
+      {
+        path: 'reports',
+        pathMatch: 'full',
+        redirectTo: ({ queryParams }) => inject(Router).createUrlTree(['/progress'], {
+          queryParams: { ...queryParams, tab: queryParams['tab'] === 'notes' || queryParams['scope'] === 'notes' ? 'notes' : 'reports' },
+        }),
       },
       {
         // One report, open. `back` returns to the list rather than to home:
@@ -94,7 +116,7 @@ export const routes: Routes = [
         // four, not the front page.
         path: 'reports/:reportId',
         canActivate: [childSelectedGuard],
-        data: { titleKey: 'report.title', subtitle: 'child', back: '/reports', tab: 'reports' },
+        data: { titleKey: 'report.title', subtitle: 'child', back: '/reports', tab: 'progress' },
         loadComponent: () =>
           import('./features/report/report').then((m) => m.Report),
       },
@@ -106,9 +128,11 @@ export const routes: Routes = [
       },
       {
         path: 'requests',
+        canActivate: [requestChildGuard],
+        runGuardsAndResolvers: 'paramsOrQueryParamsChange',
         data: { titleKey: 'requests.title', back: '/home', tab: 'requests' },
         loadComponent: () =>
-          import('./features/requests/requests').then((m) => m.Requests),
+          import('./features/requests/requests-hub').then((m) => m.RequestsHub),
       },
       {
         // One therapist, reached by tapping their name on an appointment.

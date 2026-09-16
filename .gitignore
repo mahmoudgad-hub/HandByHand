@@ -56,3 +56,9 @@ Desktop.ini
 # ---- CI ----
 # Default is ~/hbh-ci-logs, outside the tree; this catches an override.
 .ci-logs/
+
+# ---- Package store and local build/test logs ----
+# A pnpm store copied into the tree (a cache of sources and images) and the
+# *-result.log / *-build.log files the build and test runs leave behind.
+.pnpm-store/
+*.log

@@ -18,6 +18,7 @@ import (
 	"github.com/handbyhand/hbh/api/internal/audit"
 	"github.com/handbyhand/hbh/api/internal/config"
 	httpapi "github.com/handbyhand/hbh/api/internal/http"
+	"github.com/handbyhand/hbh/api/internal/meeting"
 	"github.com/handbyhand/hbh/api/internal/sms"
 	"github.com/handbyhand/hbh/api/internal/store"
 )
@@ -122,9 +123,42 @@ func run() error {
 			"note", "delivered only inside an open 24-hour WhatsApp session, such as the sandbox")
 	}
 
+	// The consultation provider, asked to prove itself at startup for the
+	// same reason the sender is: a key that will not parse is a deployment
+	// that cannot hold a consultation, and the place to find that out is the
+	// first second of the process rather than the moment a parent presses a
+	// button. meeting.PublicProvider.Usable refuses outside development.
+	meetings, err := meeting.New(cfg.MeetingProvider, cfg.Env, meeting.JaaSConfig{
+		AppID:         cfg.MeetingJaaSAppID,
+		KeyID:         cfg.MeetingJaaSKeyID,
+		PrivateKeyPEM: cfg.MeetingJaaSPrivateKey,
+	})
+	if err != nil {
+		return err
+	}
+	// SAID, NOT ENFORCED, and the difference matters.
+	//
+	// The sender above is fatal because every deployment needs to deliver a
+	// login code. Not every centre holds online consultations, and refusing
+	// to start over a feature a centre does not use would be this process
+	// having an opinion about their business.
+	//
+	// So the refusal is at the point of use - meeting_handlers.go asks
+	// Usable() on every entry and answers 503, so nobody is handed a room
+	// with no access control - and this is here so that a deployment which
+	// DOES intend to hold consultations finds out now rather than in front
+	// of a family.
+	if err := meetings.Usable(); err != nil {
+		log.Warn("no consultation can be held with this configuration",
+			"provider", meetings.Code(), "reason", err.Error(),
+			"effect", "every attempt to enter a consultation answers 503")
+	} else {
+		log.Info("consultation video provider", "provider", meetings.Code())
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.Listen,
-		Handler:           httpapi.NewServer(cfg, db, params, audit.New(db.Pool(), log), log, sender).Handler(),
+		Handler:           httpapi.NewServer(cfg, db, params, audit.New(db.Pool(), log), log, sender, meetings).Handler(),
 		ReadHeaderTimeout: config.ReadHeaderTimeout,
 		ReadTimeout:       config.ReadTimeout,
 		WriteTimeout:      config.WriteTimeout,

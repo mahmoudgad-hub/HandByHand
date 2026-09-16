@@ -12,6 +12,9 @@ import { Icon } from '@hbh/shared/icon/icon';
 import { OpsApi, Row } from '../../core/api/ops-api';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
 import { DayApi } from '../../core/ops/day-api';
+import { RecordDrawerService } from '../../core/ops/record-drawer.service';
+import { Task, TaskEntity } from '../../core/tasks/task-model';
+import { TasksService } from '../../core/tasks/tasks.service';
 import { DASHBOARD_TILES, Tile } from './dashboard-tiles';
 import { openAhead, runningNow, startable } from './day-summary';
 
@@ -44,6 +47,7 @@ export class Dashboard {
   private readonly crud = inject(OpsApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly drawer = inject(RecordDrawerService);
   protected readonly auth = inject(OpsAuthService);
   protected readonly format = inject(FormatService);
 
@@ -70,6 +74,22 @@ export class Dashboard {
   protected readonly rooms = signal<readonly Row[]>([]);
   protected readonly roomsState = signal('loading');
   protected readonly alerts = computed(() => this.tiles().filter(t => this.needsAction(t)));
+
+  /**
+   * The first five tasks, from the service the task inbox reads. Not a
+   * second computation: the tiles above still count with `limit=1`, and
+   * this panel shows what those counts are made of.
+   */
+  protected readonly tasks = inject(TasksService);
+  protected readonly taskPreview = computed<readonly Task[]>(() => this.tasks.tasks().slice(0, 5));
+  protected taskIcon(task: Task): 'ic-user-plus' | 'ic-users' | 'ic-calendar' | 'ic-activity' | 'ic-file' | 'ic-chat' | 'ic-receipt' | 'ic-user-check' {
+    const byEntity: Record<TaskEntity, 'ic-user-plus' | 'ic-users' | 'ic-calendar' | 'ic-activity' | 'ic-file' | 'ic-chat' | 'ic-receipt' | 'ic-user-check'> = {
+      CONVERSATION:'ic-chat',
+      APPLICATION: 'ic-user-plus', BENEFICIARY: 'ic-users', APPOINTMENT: 'ic-calendar', SESSION: 'ic-activity',
+      REPORT: 'ic-file', REQUEST: 'ic-chat', INVOICE: 'ic-receipt', THERAPIST: 'ic-user-check',
+    };
+    return byEntity[task.entityType];
+  }
   protected readonly agenda = signal<Record<string, number>>({});
   protected readonly agendaFailed = signal(false);
   protected readonly agendaParts = [{key:'COMPLETED',label:'مكتملة',color:'#2eaa88'},{key:'CHECKED_IN',label:'حضروا',color:'#e0a326'},{key:'BOOKED',label:'محجوزة',color:'#288797'},{key:'CONFIRMED',label:'مؤكدة',color:'#76b7cb'},{key:'CANCELLED',label:'ملغاة',color:'#d66562'},{key:'NO_SHOW',label:'لم يحضروا',color:'#9279ba'}];
@@ -197,12 +217,36 @@ export class Dashboard {
 
   protected readonly toolbarPanel = signal<'alerts' | 'help' | null>(null);
   protected toggleToolbar(panel: 'alerts' | 'help'): void { this.toolbarPanel.update(current => current === panel ? null : panel); }
+
+  /** A task about an appointment or an invoice opens in the drawer, beside this page. */
+  protected openTask(task: Task): void {
+    const target = task.primaryAction.drawer;
+    if (!target) {
+      return;
+    }
+    this.toolbarPanel.set(null);
+    void this.drawer.open({
+      entity: target.entity, id: target.id, action: target.action, source: 'DASHBOARD',
+      row: task.row && task.entityId === target.id ? task.row : undefined,
+      context: task.childId ? { childId: task.childId, childName: task.childName } : undefined,
+    });
+  }
+
   constructor() {
     this.load();
+    // A record changed from the drawer: the figures and the preview that
+    // counted it are read again. The page is not rebuilt.
+    this.drawer.changed$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.load());
   }
 
   protected load(): void {
     this.metrics.set(null);
+    // The preview panel and the sidebar badge read the same signal; asking
+    // here makes the first screen's preview fresh without a second read
+    // when the person then opens the inbox.
+    this.tasks.refreshIfStale(0);
     this.http.get(this.config.apiBaseUrl+'/api/v1/dashboard/metrics').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:m=>this.metrics.set(m),error:()=>this.metrics.set(null)});
     this.roomsState.set('loading');
     if (this.auth.can('CATALOG.MANAGE')) this.crud.list('rooms',{limit:6}).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({next:p=>{this.rooms.set(p.rows);this.roomsState.set('ready')},error:()=>this.roomsState.set('failed')});
@@ -266,7 +310,9 @@ export class Dashboard {
       return '—';
     }
     const value = this.counts()[tile.key];
-    return value === undefined || value === null ? '' : this.format.count(value);
+    // KPI tiles read as figures, not prose: Latin digits (the rule in
+    // FormatService.number, #22). count() is for a number inside a sentence.
+    return value === undefined || value === null ? '' : this.format.number(value);
   }
 
   protected isPending(tile: Tile): boolean {

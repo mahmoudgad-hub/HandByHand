@@ -121,8 +121,11 @@
 | [`business-analysis/04-app-notes.md`](business-analysis/04-app-notes.md) | **١٦ ملاحظة** مفتوحة على التطبيق | ✅ ومنها ما حُسِم بتشغيلة (`N-15`) |
 | [`business-analysis/05-test-cases.csv`](business-analysis/05-test-cases.csv) | ١٩١ حالة اختبار | 🟨 **يتقاطع مع `tests/test-cases/`** |
 | [`business-analysis/06-owner-answers.md`](business-analysis/06-owner-answers.md) | تحليل ردّ المالك 09-10 · ثلاثة ملفّات مصدر | ✅ |
-| [`business-analysis/08-owner-questions-lifecycle.md`](business-analysis/08-owner-questions-lifecycle.md) | **ستّة أسئلة للمالك** من دورة الحالة · ورقة موجَّهة إليه لا للفريق | ✅ **أُرسلت 09-11** |
+| [`business-analysis/08-owner-questions-lifecycle.md`](business-analysis/08-owner-questions-lifecycle.md) | **كل ما ننتظره من المالك** — ٨ أسئلة · رقما الطاقة · ٣ أوراق · ١٠ أسئلة سابقة | ✅ **أُرسلت 09-12** |
 | [`business-analysis/07-intake-to-active-lifecycle.md`](business-analysis/07-intake-to-active-lifecycle.md) | **دورة المالك الاثنتا عشرة مقابل الكود** · ١٥ ثغرة `LC-xx` · ٦ أسئلة للمالك | ✅ **كلّها مقابَلة بالكود لا بوثيقة** |
+| [`business-analysis/09-FEAT-online-consultation.md`](business-analysis/09-FEAT-online-consultation.md) | **FEAT الاستشارة الأونلاين** · ٢١ قسمًا · `OC-xx` · القرارات العشر في §21 | ✅ 🟢 البناء بالترتيب في `10` §9 |
+| [`business-analysis/10-FEAT-unified-customer-journey.md`](business-analysis/10-FEAT-unified-customer-journey.md) | **الوثيقة الأمّ لتكليف التوحيد** · Existing vs Requested · ٢٥ تعارضًا · ٢٤ قرارًا `OD-xx` · الفلو الشامل · الملكيّة · `EN-xx` · الترتيب | ✅ 🟢 |
+| [`business-analysis/11-FEAT-packages-pricing-makeup.md`](business-analysis/11-FEAT-packages-pricing-makeup.md) | **الباقات · الأسعار · التعويض · الدفع بالحصة** · `PK-xx` · `PR-xx` · `NT-xx` | ✅ 🟢 |
 
 ## هـ · `pm/` — إدارة المشروع
 
@@ -224,3 +227,19 @@
 
 > **وما ليس قرارًا:** `00-roadmap.md` متقادم بالتأكيد — يُحدَّث أو يُوسَم بتاريخه
 > في أوّل سطر. لا يحتاج نقاشًا.
+
+
+## تدقيق تجربة المستخدم (UX Audit) · 2026-09-13 — تحليل فقط، بانتظار موافقة المالك
+
+| الملفّ | ما فيه |
+|---|---|
+| `UX-SCREEN-INVENTORY.md` | جرد 48 شاشة (31 كونسول · 17 بوّابة) و51 تبويبًا بالمسار والصلاحية والأفعال والمشكلة |
+| `UX-BUSINESS-FLOW-MAP.md` | التدفّق المبنيّ فعلًا خطوة خطوة (حالة · مسؤول · فعل · إشعار · شاشة · API) + «من ينتظر ماذا» |
+| `UX-PROBLEMS.md` | المشاكل بالدليل: تنقّل · شاشات · حالات · مهامّ · تسمية · وتوصيات backend `R-01…R-12` |
+| `UX-TASK-INBOX.md` | «صندوق الوارد» إشعارات لا مهامّ؛ صندوق مهامّ مشتقّ من الحالات القائمة (23 نوعًا، 19 متاحة) |
+| `UX-TARGET-INFORMATION-ARCHITECTURE.md` | القائمة المستهدفة: 8 مجموعات بالنطاق بدل 22 بندًا مسطّحًا؛ بوّابة بـ«المزيد» |
+| `UX-DETAIL-PAGES.md` | تفصيل الطلب ووليّ الأمر (جديدان) · المستفيد (موسَّع) · درجا الموعد والفاتورة |
+| `UX-ROLE-BASED-VIEWS.md` | ما يراه كل دور من الأربعة — ناتج مصفوفة الصلاحيات لا مدخل للكود |
+| `UX-SCREEN-CLASSIFICATION.md` | كل جزء في تصنيف واحد: PAGE · DETAIL · TAB · MODAL · TASK · STATUS · FILTER · ACTION · NOTIFICATION · REPORT |
+| `UX-CURRENT-TO-TARGET.md` | Current → Problem → Target → Action + جدول إعادة التوجيه |
+| `UX-REDESIGN-IMPLEMENTATION-PROMPT.md` | الـPrompt الكامل لوكيل الواجهة — **لا يُنفَّذ قبل الموافقة** |

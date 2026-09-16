@@ -353,8 +353,17 @@ func (s *Server) handleAvailableSlots(w http.ResponseWriter, r *http.Request) {
 		roomID = &n
 	}
 
+	// Which kind of hour is being looked for. Absent means IN_PERSON, so
+	// every caller written before consultations existed asks the question it
+	// always asked and gets the answer it always got.
+	mode := q.Get("delivery_mode")
+	if !validDeliveryMode(mode) {
+		writeError(w, r, http.StatusBadRequest, CodeValidation)
+		return
+	}
+
 	slots, err := s.db.AvailableSlots(
-		r.Context(), ident.Username, therapistID, serviceID, day, roomID)
+		r.Context(), ident.Username, therapistID, serviceID, day, roomID, mode)
 	if err != nil {
 		s.opsError(w, r, "AVAILABLE_SLOTS", err)
 		return
@@ -486,12 +495,12 @@ func (s *Server) handleCreateReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := s.db.CreateReport(r.Context(), ident.Username, in)
+	id, version, err := s.db.CreateReport(r.Context(), ident.Username, in)
 	if err != nil {
 		s.opsError(w, r, "CREATE_REPORT", err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"report_id": id})
+	writeJSON(w, http.StatusCreated, map[string]any{"report_id": id, "version": version})
 }
 
 // handleUpdateReport edits a draft. Every rule about who and when is in
@@ -507,11 +516,13 @@ func (s *Server) handleUpdateReport(w http.ResponseWriter, r *http.Request) {
 	if err := decodeJSON(w, r, &in); err != nil {
 		return
 	}
-	if err := s.db.UpdateReport(r.Context(), ident.Username, id, in); err != nil {
+	version, err := s.db.UpdateReport(r.Context(), ident.Username, id, in)
+	if err != nil {
 		s.opsError(w, r, "UPDATE_REPORT", err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	// 200 with the new version, not 204: the editor's next save names it.
+	writeJSON(w, http.StatusOK, map[string]any{"version": version})
 }
 
 func (s *Server) handlePublishReport(w http.ResponseWriter, r *http.Request) {
@@ -796,9 +807,48 @@ func isQueryErr(err error) bool {
 // validAppointment checks only that the required identifiers and instants are
 // present and coherent. Whether the SLOT is free is not asked here - that is
 // hbh.validate_slot's question, and asking it twice would be two answers.
+// validAppointment rejects a request that is not even shaped like a booking.
+//
+// IT DOES NOT DECIDE WHETHER THE ROOM IS RIGHT, and the line matters. Whether
+// this mode may have a room, whether this service may be held without one,
+// whether that room is free - all three are hbh.validate_slot's, and it
+// answers them by name (ROOM_REQUIRED, ROOM_NOT_ALLOWED, SERVICE_NEEDS_ROOM)
+// so the screen can say which. A copy of any of them here would be a second
+// rule, and the day the two disagreed the weaker one would decide - rule 4.
+//
+// What is left here is the shape: identifiers that are identifiers, and an
+// end after a start. It used to demand `RoomID > 0` unconditionally, and that
+// one condition is what made an online consultation impossible to book
+// through this service at all - a 400 before the schema was ever asked.
 func validAppointment(in store.NewAppointment) bool {
-	return in.ChildID > 0 && in.TherapistID > 0 && in.RoomID > 0 && in.ServiceID > 0 &&
-		!in.StartsAt.IsZero() && !in.EndsAt.IsZero() && in.EndsAt.After(in.StartsAt)
+	if in.ChildID <= 0 || in.TherapistID <= 0 || in.ServiceID <= 0 {
+		return false
+	}
+	if in.StartsAt.IsZero() || in.EndsAt.IsZero() || !in.EndsAt.After(in.StartsAt) {
+		return false
+	}
+	// A room that is named must be a real identifier. A room that is absent
+	// is a question for validate_slot, not an answer here.
+	if in.RoomID != nil && *in.RoomID <= 0 {
+		return false
+	}
+	return validDeliveryMode(in.DeliveryMode)
+}
+
+// validDeliveryMode admits the three the schema admits, and empty for the
+// callers written before the field existed.
+//
+// Listed rather than passed through: an unknown string would reach
+// validate_slot and come back BAD_DELIVERY_MODE as a 200 with ok:false, which
+// reads to a screen as "that hour is taken" rather than "this build sent
+// nonsense". A 400 naming validation is the truthful answer to a typo.
+func validDeliveryMode(mode string) bool {
+	switch mode {
+	case "", "IN_PERSON", "ONLINE", "EXTERNAL":
+		return true
+	default:
+		return false
+	}
 }
 
 // The exclusion-constraint violation. Two callers raced for one slot and the
@@ -845,8 +895,40 @@ func businessRefusal(code string) (int, string, bool) {
 	// is how a working button gets reported as broken.
 	case "HB250":
 		return http.StatusConflict, "NOT_IN_PERSON", true
+
+	// FROM 0118, and it is refused at BOOKING rather than at start: a
+	// service that opens a therapy session was given no room, and
+	// hbh.therapy_sessions.room_id is NOT NULL.
+	//
+	// 400 rather than 409. A state-machine refusal means the caller's
+	// view is out of date and repeating cannot help; this one is a form
+	// with a field missing, and the caller fixes it and sends it again.
+	case "HB251":
+		return http.StatusBadRequest, "SERVICE_NEEDS_ROOM", true
+
+	// FROM 0121, and the two are kept apart because the family does
+	// different things about them.
+	//
+	// HB252 is the hour: too early, too late, or a room that was closed
+	// when the consultation was cancelled. Nothing to fix - come back at
+	// the time, or speak to the centre.
+	//
+	// HB253 is the money: the consultation is booked and its invoice is
+	// not paid, so the appointment is still BOOKED rather than CONFIRMED.
+	// There IS something to do about that, and "the door is not open"
+	// would have hidden it behind a sentence about time.
+	case "HB252":
+		return http.StatusConflict, "DOOR_CLOSED", true
+	case "HB253":
+		return http.StatusConflict, "NOT_CONFIRMED", true
 	case "HB033":
 		return http.StatusConflict, "ALREADY_PUBLISHED", true
+	// FROM 0141 (#14, numbered 0150 until 2026-09-13). A colleague saved this draft after the caller opened
+	// it. 409 and its own name, not ALREADY_PUBLISHED: the draft is still
+	// editable, and the screen's job is to keep what was typed and offer
+	// the newer text - which it cannot do if it is told the report is closed.
+	case "HB290":
+		return http.StatusConflict, "REPORT_CHANGED", true
 
 	// A report's own content is not fit for what was asked: no title, a
 	// period that runs backwards, a plan belonging to another child, or -
@@ -1161,6 +1243,288 @@ func businessRefusal(code string) (int, string, bool) {
 	case "HB171":
 		return http.StatusBadRequest, CodeValidation, true
 	case "HB172":
+		return http.StatusInternalServerError, CodeInternal, true
+
+	// THE STRAGGLERS. Fifteen codes live in PL/pgSQL that this table never
+	// named, found by asking the database rather than by reading this file.
+	//
+	// They are not a new family. They are HB0xx and HB1xx - the ranges this
+	// table thought it covered - with holes in the middle, which is why
+	// nobody spotted them: HB040 and HB043 are here, so HB041 and HB042
+	// look covered until you go and count.
+
+	// Our own faults, not the caller's. An append-only table mutated, a
+	// number series never seeded, audit_attempt handed a non-attempt. No
+	// request body reaches any of them; each means this service called a
+	// function wrongly or the centre was deployed half-configured. 500 so
+	// opsError logs the cause - the same call HB172 makes.
+	case "HB001", "HB010", "HB012":
+		return http.StatusInternalServerError, CodeInternal, true
+
+	// The OTP matched and the account is still not allowed to open a
+	// session - dismissed staff, a disabled family. 403 and not 401: the
+	// caller proved who they are, and 401 would invite the client to try
+	// authenticating again at a door that will never open. It tells a
+	// holder of a valid code that the account is disabled, which is not a
+	// leak - they are holding the code sent to that mobile.
+	case "HB011":
+		return http.StatusForbidden, CodeForbidden, true
+
+	// Activity logging. HB041 conflates "no such activity" with "not
+	// yours" on purpose and 404 keeps them conflated; HB042 is the second
+	// click on a button whose first click landed.
+	case "HB041":
+		return http.StatusNotFound, CodeNotFound, true
+	case "HB042":
+		return http.StatusConflict, CodeAlreadyLogged, true
+
+	// Passwords. HB071 is an account that signs in by one-time code, so
+	// there is no password to set - 409, because nothing about the request
+	// is malformed and a different body would not help. HB072 is the
+	// length rule and names the field. HB073 conflates absent with
+	// not-permitted, and 404 keeps it conflated.
+	case "HB071":
+		return http.StatusConflict, "NOT_A_PASSWORD_USER", true
+	case "HB072":
+		return http.StatusBadRequest, CodeValidation, true
+	case "HB073":
+		return http.StatusNotFound, CodeNotFound, true
+
+	// Consent. HB080 is the caller sending a child with a guardian-only
+	// consent or omitting one from a child consent - a malformed request,
+	// 400. HB082 conflates no such guardian, not linked to this child, and
+	// not permitted; 404 keeps all three indistinguishable, which is the
+	// point.
+	case "HB080":
+		return http.StatusBadRequest, CodeValidation, true
+	case "HB082":
+		return http.StatusNotFound, CodeNotFound, true
+
+	// HB081 IS THE LIVE-VIEWING CONSENT GATE and the only one of these
+	// that a family will ever see.
+	//
+	// can_view_live_flg cannot be set for a guardian and child with no
+	// recorded LIVE_VIEW consent. 409 with a code of its own rather than
+	// the catch-all's "REFUSED", because the screen has something useful
+	// to say - record the consent - and a generic refusal sends reception
+	// to an administrator instead. This is the rule that keeps a camera
+	// from being opened to somebody who never agreed to it, so it answers
+	// in its own name.
+	case "HB081":
+		return http.StatusConflict, "CONSENT_REQUIRED", true
+
+	// HB094: the survey is closed, archived, or belongs to another centre -
+	// one message for all three, so one status for all three. 404 puts it
+	// with HB041, HB073 and HB082, every other place in this table where
+	// the schema refuses to say which of "gone" and "not yours" it means.
+	case "HB094":
+		return http.StatusNotFound, CodeNotFound, true
+
+	// HB113 is a score above the item's maximum: the caller's number, and
+	// the field is named. It sits beside HB093, which is the 0-10 bound on
+	// an NPS score and is already a 400 here.
+	case "HB113":
+		return http.StatusBadRequest, CodeValidation, true
+
+	// HB173 is canonical_mobile refusing a number, and it belongs with
+	// HB170 - the caller's mobile - and not with HB172, which is our
+	// unseeded parameter. Three of its four messages are about the number
+	// that arrived; the fourth, "no country to read a national mobile
+	// number against", is a missing default dial code and is ours. They
+	// share a code, so they share an answer, and 400 is the one that is
+	// wrong in the direction that does not hide a caller's typo behind a
+	// server fault.
+	case "HB173":
+		return http.StatusBadRequest, CodeValidation, true
+
+	// HB2xx - AND THE SAME LESSON AGAIN, ONE FAMILY LATER.
+	//
+	// The HB1xx fix below replaced a fallback the schema had outgrown. It
+	// did not stop the schema growing. Six HB2xx codes are live in
+	// PL/pgSQL right now and none of them was named here, so every one
+	// answered 409 REFUSED through the catch-all - which is the safe
+	// direction to be wrong in, and still wrong in three different ways
+	// at once. That is the whole complaint I made about HB101.
+	//
+	// The catch-all cannot be the plan for a family. It is the plan for a
+	// code invented after this build shipped.
+
+	// Portal access for a guardian. HB200 is the missing permission and
+	// belongs with every other missing permission: a caller without
+	// GUARDIAN.MANAGE must be told they are not allowed, not that the
+	// request conflicts with something.
+	case "HB200":
+		return http.StatusForbidden, CodeForbidden, true
+
+	// HB201 is "no such guardian in this centre" - which conflates absent,
+	// archived and belonging to another centre, deliberately, because the
+	// answer must not distinguish them.
+	//
+	// 404 here where HB232 above chose 403, and the difference is real:
+	// HB200 has already established that this caller holds GUARDIAN.MANAGE
+	// in this centre. What is left is a staff member who mistyped an id,
+	// and telling them "not allowed" sends them to an administrator over a
+	// row that does not exist. HB232 refuses a reach ACROSS centres, where
+	// 404 would confirm nothing and 403 names the actual rule.
+	case "HB201":
+		return http.StatusNotFound, CodeNotFound, true
+
+	// HB204: the family's mobile already belongs to an account that is
+	// not a guardian - a member of staff enrolling her own child is the
+	// ordinary way this happens in a small centre.
+	//
+	// 409 and not 400: nothing the caller typed is malformed. The values
+	// are right and the world conflicts with them, which is what 409 is
+	// for. Before 0126 this arrived as a bare 23505 and became
+	// "VALIDATION / DUPLICATE" - a sentence with no field and no reason,
+	// on a screen holding a dozen values.
+	//
+	// Its own code rather than the catch-all, because the answer is
+	// actionable and specific: the number needs to differ from the staff
+	// one, and that is a decision for the centre to make, not a retry.
+	case "HB204":
+		return http.StatusConflict, "MOBILE_NOT_A_GUARDIAN", true
+
+	// HB203: the text states a permanent rule - "no recording, ever" is
+	// the one that exists - and the row is locked against rewording. 409
+	// because the row is real, the caller may edit site text in general,
+	// and this particular text refuses. Named rather than left to the
+	// catch-all so the screen can say why instead of saying "refused".
+	case "HB203":
+		return http.StatusConflict, "TEXT_LOCKED", true
+
+	// HB220, HB230 and HB231 are not refusals of anything a client asked
+	// for. They are assertions inside the notification and delivery
+	// machinery - a staff notification handed a kind that is not a staff
+	// kind, the outbox reached from a user session, a delivery record
+	// without a centre. No request body can produce them and no client can
+	// act on them; if one ever surfaces, this service called a function
+	// wrongly. 500 so that opsError logs the cause rather than filing our
+	// own bug as the caller's conflict.
+	//
+	// HB254 joins them: record_verification_delivery handed no centre or no
+	// destination. Nothing in api/ calls it yet, and when something does,
+	// both values come from this service, not from a request body.
+	case "HB220", "HB230", "HB231", "HB254":
+		return http.StatusInternalServerError, CodeInternal, true
+
+	// FROM 0129/0130. A record's origin is written once. HB241 is the
+	// second write - 409, because the row is real, the caller may edit the
+	// guardian, and this one column refuses. It was briefly HB240, which
+	// already meant "may not read the booking diary"; a receptionist would
+	// have been told she lacked a permission she holds.
+	case "HB241":
+		return http.StatusConflict, "ORIGIN_LOCKED", true
+
+	// FROM 0132. Matching needs GUARDIAN.MANAGE - and the same code is also
+	// raised for "this guardian is not this centre's", AFTER the permission
+	// has been established. 403 fits the first branch and is the HB232
+	// answer to the second; HB201's reasoning (a caller who holds the
+	// permission and mistyped an id deserves 404) argues the other way. It
+	// is recorded as a split still owed, not settled here.
+	case "HB255":
+		return http.StatusForbidden, CodeForbidden, true
+
+	// FROM 0133. A profile-completeness rule naming a field the table does
+	// not have. The caller wrote the rule, so the caller fixes it: 400.
+	case "HB256":
+		return http.StatusBadRequest, CodeValidation, true
+
+	// FROM 0135/0136 - catalogue prices, named to the owner's pricing
+	// contract of 2026-09-12. HB258 and HB260 were each raised for more
+	// than one reason; each now means exactly one thing, and the reasons
+	// split away from them have their own codes.
+	//
+	// HB257: strict pricing is on and the service has no effective price.
+	// Nothing the caller typed is wrong; the catalogue is incomplete.
+	case "HB257":
+		return http.StatusConflict, "NO_EFFECTIVE_CATALOGUE_PRICE", true
+
+	// HB258: overriding a price without BILLING.PRICE_OVERRIDE - and only
+	// that. Its own client code rather than FORBIDDEN, because the person
+	// refused may bill the line at the catalogue price and the screen can
+	// say so.
+	case "HB258":
+		return http.StatusForbidden, "PRICE_OVERRIDE_FORBIDDEN", true
+
+	// HB260: editing a price without BILLING.PRICE_EDIT - and only that.
+	// A service of another centre is NOT this code: set_service_price
+	// answers it with HB051 and the text of a service that does not exist,
+	// so a foreign id and a ghost id are indistinguishable.
+	case "HB260":
+		return http.StatusForbidden, "PRICE_MANAGEMENT_FORBIDDEN", true
+
+	// HB259: the service's billing model refuses this charge - a
+	// package-only service booked with no package, or a package sold for a
+	// service that has none. A rule about the service, not the request.
+	case "HB259":
+		return http.StatusConflict, "BILLING_MODEL_DISALLOWS_CHARGE", true
+
+	// HB262: an override reason on a line with no service_id - there is no
+	// catalogue price to override. 422, by the owner's contract: the body
+	// is well-formed and each field valid on its own, and it is the
+	// combination the rule refuses.
+	case "HB262":
+		return http.StatusUnprocessableEntity, CodeValidation, true
+
+	// HB264: a price kind that is neither PACKAGE nor SINGLE. The contract
+	// did not name it; 400, a malformed field the caller corrects.
+	case "HB264":
+		return http.StatusBadRequest, CodeValidation, true
+
+	// FROM 0138 (OD-26: two guardians may share one phone). HB261: the
+	// number's portal account already belongs to another guardian. Before
+	// it, grant_portal_access linked the second guardian to the first
+	// one's account and died on uix_guardians_user as a bare 23505 -
+	// "VALIDATION / DUPLICATE", the defect 0126 fixed for staff numbers.
+	// 409 for HB204's reason: the values are right and the world
+	// conflicts with them. The API names it before the migration ships,
+	// because an unknown code answers 500 - worse than today's 400.
+	case "HB261":
+		return http.StatusConflict, "MOBILE_HELD_BY_GUARDIAN", true
+
+	// FROM 0142 - payment plans, layer A. Named before the migration ships,
+	// one meaning per code.
+	//
+	// 409: the plan or the invoice is in a state that forbids the action.
+	// HB265 is a plan transition off the DRAFT -> ACTIVE -> RETIRED path;
+	// HB266 is everything a plan's CURRENT status forbids - editing a
+	// template that is no longer DRAFT, issuing on a plan that is not
+	// ACTIVE, making one default, retiring the default.
+	case "HB265":
+		return http.StatusConflict, "PAYMENT_PLAN_TRANSITION", true
+	case "HB266":
+		return http.StatusConflict, "PAYMENT_PLAN_STATE", true
+
+	// 422: every field is well-formed and the combination is refused.
+	// HB267 a plan that cannot be activated as written; HB268 fixed amounts
+	// larger than the invoice; HB271 an override with a blank reason; HB272
+	// new rows that do not add up to the total less what is already PAID.
+	case "HB267":
+		return http.StatusUnprocessableEntity, "PAYMENT_PLAN_INCOMPLETE", true
+	case "HB268":
+		return http.StatusUnprocessableEntity, "SCHEDULE_EXCEEDS_TOTAL", true
+	case "HB271":
+		return http.StatusUnprocessableEntity, "OVERRIDE_REASON_REQUIRED", true
+	case "HB272":
+		return http.StatusUnprocessableEntity, "SCHEDULE_TOTAL_MISMATCH", true
+
+	// HB270: overriding a schedule without BILLING.SCHEDULE_OVERRIDE.
+	case "HB270":
+		return http.StatusForbidden, "SCHEDULE_OVERRIDE_FORBIDDEN", true
+
+	// HB273: a schedule entry that is not the shape the function reads -
+	// not an array, an amount that is not a positive number, not exactly
+	// one of due_date / due_after_sessions, a date that is not a date.
+	case "HB273":
+		return http.StatusBadRequest, CodeValidation, true
+
+	// HB269: an instalment moved off its state machine, or its amount
+	// rewritten. Only schema code writes instalments - no request body
+	// reaches that UPDATE - so if this ever surfaces, a function we wrote
+	// is wrong. 500, with HB220/HB230/HB231/HB254, so the cause is logged
+	// rather than handed to the caller as a conflict they could resolve.
+	case "HB269":
 		return http.StatusInternalServerError, CodeInternal, true
 	}
 

@@ -299,6 +299,81 @@ eq note 'the colleague really does hold the right' '1' \
 eq note 'and neither refusal wrote anything' '1' \
   "$(psqlq "SELECT count(*) FROM hbh.session_notes WHERE session_id=$SESSION")"
 
+# =====================================================================
+# PUBLISHING - the half that was missing, and the half that matters
+#
+# POST /api/v1/notes/{id}/publish is, in the router's own words, the only
+# thing that puts a clinical note in front of a family. NO SUITE HAD EVER
+# CALLED IT. Notes were written here and read there, and the ladder
+# between them - INTERNAL to visible - was never climbed.
+#
+# And the check that made it look covered is four lines above: "the
+# family cannot see it yet" reads 0 and passes. It would pass just as
+# green if publishing were broken in every possible way, because it
+# asserts the note is HIDDEN. A refusal with no accept after it proves
+# the gate is shut, not that it opens - this project already shipped a
+# consent gate with no key that way, and it refused every photograph for
+# a fortnight while its first assertion stayed green.
+#
+# So the accept side is the point of this block, and the refusals are
+# only there to stop it being trivially true.
+# =====================================================================
+NOTE_ID="$(psqlq "SELECT note_id FROM hbh.session_notes WHERE session_id=$SESSION")"
+ok_if note 'the note has an id to publish' \
+  "$([ -n "$NOTE_ID" ] && echo 0 || echo 1)" 'no note_id for this session'
+
+# Asserted BY NAME before it is relied on. NOTE.PUBLISH sits on the
+# THERAPIST role, not on the manager's - writing a note and releasing it
+# are two rights with two codes, and a fixture that had lost this grant
+# would turn the accept check below into a second refusal check that
+# nobody noticed had stopped proving anything.
+eq note 'the therapist really does hold NOTE.PUBLISH' '1' \
+  "$(psqlq "SELECT count(*) FROM hbh.users u
+            JOIN hbh.user_roles ur ON ur.user_id = u.user_id
+            JOIN hbh.role_permissions rp ON rp.role_id = ur.role_id
+            JOIN hbh.permissions p ON p.permission_id = rp.permission_id
+            WHERE u.username='a5_therapist' AND p.code='NOTE.PUBLISH'")"
+
+eq note 'a guardian may not publish a note about their own child' '403' \
+  "$(req POST "/api/v1/notes/$NOTE_ID/publish" '' "$PARENT")"
+eq note 'and the note is still internal' 'INTERNAL' \
+  "$(psqlq "SELECT visibility FROM hbh.session_notes WHERE note_id=$NOTE_ID")"
+
+# A note id nobody owns answers exactly like a note somebody else owns:
+# hbh.publish_session_note raises HB032 for "no such note" AND for "no
+# NOTE.PUBLISH", so neither answer tells a caller whether the id is real.
+eq note 'an unknown note id is refused the same way' '403' \
+  "$(req POST "/api/v1/notes/999999999/publish" '' "$PARENT")"
+
+# THE ACCEPT SIDE.
+eq note 'the therapist publishes it' '204' \
+  "$(req POST "/api/v1/notes/$NOTE_ID/publish" '' "$THERAPIST")"
+eq note 'and the row says it is out' 'PARENT' \
+  "$(psqlq "SELECT visibility FROM hbh.session_notes WHERE note_id=$NOTE_ID")"
+
+# A CHECK constraint on this table says a note may only leave INTERNAL
+# with approved_by and approved_at both set and the draft flag down. So
+# the schema already refuses a note that reaches a family with nobody's
+# name on it - and this asserts that publishing SETS those rather than
+# that some other path filled them in. A clinical note in front of a
+# parent is somebody's professional decision, and the row has to say
+# whose.
+eq note 'and it carries who released it, and when' 't' \
+  "$(psqlq "SELECT approved_by IS NOT NULL AND approved_at IS NOT NULL AND NOT is_draft_flg
+              FROM hbh.session_notes WHERE note_id=$NOTE_ID")"
+eq note 'and the name on it is the therapist who published' 'a5_therapist' \
+  "$(psqlq "SELECT u.username FROM hbh.session_notes n
+              JOIN hbh.users u ON u.user_id = n.approved_by
+             WHERE n.note_id=$NOTE_ID")"
+
+# AND THE FAMILY CAN ACTUALLY SEE IT. This is the assertion the whole
+# block exists for: the same request that returned 0 before publishing
+# must return the note now. Reading the row's visibility column is not
+# enough - it proves the write happened, not that the read path agrees.
+eq note 'the family can now see it' '200' \
+  "$(req GET "/api/v1/children/$CHILD/notes" '' "$PARENT")"
+eq note 'and the note is in what they were sent' '1' "$(jcount "$BODY" note_id)"
+
 eq sess 'the session closes' '204' \
   "$(req PATCH "/api/v1/sessions/$SESSION/close" '{"status":"COMPLETED"}' "$THERAPIST")"
 # Closing an already-closed session is a no-op for the same reason: the
@@ -320,6 +395,29 @@ ok_if ladder 'and the child is named on it' \
 # The same endpoint, a guardian: the policy withholds the draft.
 eq ladder 'a guardian sees no draft report' '0' \
   "$(req GET /api/v1/reports '' "$PARENT" >/dev/null; jcount "$BODY" report_id)"
+
+# TWO EDITORS, ONE DRAFT (migration 0141, backlog #14). The version is read
+# from the report, named on the save, and a save still naming the old one
+# after a colleague's is refused by name - not overwritten, and not a 500.
+eq draft 'staff open the draft' '200' "$(req GET "/api/v1/reports/$REPORT" '' "$ADMIN")"
+V0="$(jstr "$BODY" version)"
+neq draft 'and it carries a version' '' "$V0"
+eq draft 'a save that names no version is refused as a validation' '400' \
+  "$(req PATCH "/api/v1/reports/$REPORT" '{"summary_ar":"بلا إصدار"}' "$ADMIN")"
+eq draft 'editor A saves at the version opened' '200' \
+  "$(req PATCH "/api/v1/reports/$REPORT" "{\"expected_version\":\"$V0\",\"summary_ar\":\"ملخّص المحرّر الأول\"}" "$ADMIN")"
+V1="$(jstr "$BODY" version)"
+ok_if draft 'and gets a new version back' \
+  "$([ -n "$V1" ] && [ "$V1" != "$V0" ] && echo 0 || echo 1)" "v0=$V0 v1=$V1"
+eq draft 'editor B, still at the old version, is refused' '409' \
+  "$(req PATCH "/api/v1/reports/$REPORT" "{\"expected_version\":\"$V0\",\"summary_ar\":\"نسخة قديمة\"}" "$ADMIN")"
+eq draft 'by name, so the screen can offer the newer text' 'REPORT_CHANGED' "$(jstr "$BODY" code)"
+eq draft 'and editor A''s text is what is stored' 'ملخّص المحرّر الأول' \
+  "$(psqlq "SELECT summary_ar FROM hbh.progress_reports WHERE report_id=$REPORT")"
+# The acceptance after the refusal: HB290 on every save would pass the two
+# checks above just as well.
+eq draft 'a save at the version it was given goes through' '200' \
+  "$(req PATCH "/api/v1/reports/$REPORT" "{\"expected_version\":\"$V1\",\"summary_ar\":\"ملخّص المحرّر الأول\"}" "$ADMIN")"
 
 eq ladder 'the report publishes' '204' "$(req POST "/api/v1/reports/$REPORT/publish" '' "$ADMIN")"
 eq ladder 'publishing twice is refused' '409' "$(req POST "/api/v1/reports/$REPORT/publish" '' "$ADMIN")"

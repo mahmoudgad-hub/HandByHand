@@ -1,4 +1,45 @@
-
-/* A figure that did not load. Deliberately not styled like a number:
-   it is a sentence, and it must not be mistaken for an amount. */
-.due__a--missing { font-size: .95rem; font-weight: 500; color: #8a5100; }
+:host { display: block; }
+.billing-frame {
+  padding: 20px;
+  border: 1px solid #dce7e5;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 5px 20px rgb(19 78 92 / 5%);
+  min-width: 0;
+}
+.billing-frame .pkg {
+  background: #f7faf9;
+  border: 1px solid #e1eae7;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.billing-frame .inv {
+  overflow: hidden;
+  border: 1px solid #e1eae7;
+  border-radius: 14px;
+  background: #fff;
+}
+.billing-frame .inv .row {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  min-width: 0;
+}
+.billing-frame .inv__split {
+  padding: 14px 16px;
+  margin: 0;
+  border-top: 1px solid #e1eae7;
+  background: #f7faf9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+.billing-frame .row__b { min-width: 0; }
+.billing-frame .row__t { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .billing-frame { padding: 12px; border-radius: 16px; }
+  .billing-frame .inv .row { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .billing-frame .row__e { margin-inline-start: auto; }
+  .billing-frame .inv__split { padding: 12px; font-size: 12px; }
+}

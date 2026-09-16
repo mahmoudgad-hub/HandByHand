@@ -1,0 +1,558 @@
+<title>سجل استكشاف النظام</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --paper:#EFF2F5;
+    --surface:#FFFFFF;
+    --surface-2:#F7F9FA;
+    --ink:#14202A;
+    --ink-soft:#57697A;
+    --ink-faint:#8798A6;
+    --rule:#D2DAE1;
+    --rule-soft:#E4EAEF;
+    --accent:#0D6E78;
+    --accent-soft:#E3F0F1;
+    --crit:#A82015;
+    --high:#B45309;
+    --med:#7A6003;
+    --low:#5C6F7E;
+    --ok:#17693F;
+    --crit-bg:#FAEBE9;
+    --high-bg:#FBF0E3;
+    --med-bg:#F8F3E2;
+    --low-bg:#EDF1F4;
+    --ok-bg:#E6F1EA;
+    --shadow:0 1px 2px rgba(20,32,42,.06), 0 6px 18px -12px rgba(20,32,42,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0F161B;
+      --surface:#161F26;
+      --surface-2:#1B252D;
+      --ink:#E2E9EE;
+      --ink-soft:#9BADBB;
+      --ink-faint:#6E8190;
+      --rule:#2A3741;
+      --rule-soft:#222E37;
+      --accent:#4FB6BC;
+      --accent-soft:#163336;
+      --crit:#F08479;
+      --high:#E0A45A;
+      --med:#CBB463;
+      --low:#9BADBB;
+      --ok:#6DC395;
+      --crit-bg:#2C1815;
+      --high-bg:#2B1F11;
+      --med-bg:#28230F;
+      --low-bg:#1E2830;
+      --ok-bg:#132821;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F161B; --surface:#161F26; --surface-2:#1B252D;
+    --ink:#E2E9EE; --ink-soft:#9BADBB; --ink-faint:#6E8190;
+    --rule:#2A3741; --rule-soft:#222E37;
+    --accent:#4FB6BC; --accent-soft:#163336;
+    --crit:#F08479; --high:#E0A45A; --med:#CBB463; --low:#9BADBB; --ok:#6DC395;
+    --crit-bg:#2C1815; --high-bg:#2B1F11; --med-bg:#28230F; --low-bg:#1E2830; --ok-bg:#132821;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 22px -14px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  img{max-width:100%}
+  body{
+    direction:rtl;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  code,kbd,.mono,.id{font-family:"IBM Plex Mono","Cascadia Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  h1,h2,h3{font-family:Rubik,"IBM Plex Sans Arabic",sans-serif;font-weight:700;text-wrap:balance;margin:0}
+  a{color:var(--accent)}
+  a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+
+  /* ---- masthead: the ledger header, not a hero ---- */
+  .mast{
+    border-bottom:1px solid var(--rule);
+    background:var(--surface);
+    margin:0 -24px 0;
+    padding:28px 24px 22px;
+  }
+  .mast-in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between}
+  .eyebrow{
+    font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin-bottom:6px;
+    font-family:"IBM Plex Mono",monospace;
+  }
+  h1{font-size:clamp(26px,3.4vw,38px);line-height:1.2;letter-spacing:-.01em}
+  .sub{color:var(--ink-soft);margin-top:8px;max-width:58ch;font-size:14.5px}
+  .stamp{display:flex;gap:26px;flex-wrap:wrap}
+  .stamp div{display:flex;flex-direction:column;gap:2px}
+  .stamp dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace}
+  .stamp dd{margin:0;font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;color:var(--ink)}
+
+  section{margin-top:44px}
+  .shead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+  .shead h2{font-size:20px;letter-spacing:-.005em}
+  .snum{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-faint);letter-spacing:.08em}
+  .snote{color:var(--ink-soft);font-size:14px;max-width:74ch;margin:6px 0 18px}
+
+  /* ---- health meters ---- */
+  .health{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:2px;background:var(--rule-soft);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+  .hx{background:var(--surface);padding:13px 15px 14px;display:flex;flex-direction:column;gap:7px}
+  .hx-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .hx-name{font-size:13.5px;font-weight:500}
+  .hx-val{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .bar{height:5px;border-radius:99px;background:var(--rule-soft);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px}
+  .g4 i{background:var(--crit)} .g6 i{background:var(--high)} .g8 i{background:var(--med)} .g10 i{background:var(--ok)}
+  .g4 .hx-val{color:var(--crit)} .g6 .hx-val{color:var(--high)} .g8 .hx-val{color:var(--med)} .g10 .hx-val{color:var(--ok)}
+
+  /* ---- the pattern: wiring strip ---- */
+  .pattern{border:1px solid var(--rule);border-radius:6px;background:var(--surface);overflow:hidden}
+  .pattern-claim{
+    padding:18px 20px;background:var(--accent-soft);border-bottom:1px solid var(--rule);
+    font-family:Rubik,sans-serif;font-weight:500;font-size:16.5px;line-height:1.5;
+  }
+  .wire{width:100%;border-collapse:collapse;font-size:14px}
+  .wire th{
+    text-align:right;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;font-weight:400;
+    padding:9px 14px;border-bottom:1px solid var(--rule);background:var(--surface-2);white-space:nowrap;
+  }
+  .wire td{padding:10px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:middle}
+  .wire tr:last-child td{border-bottom:0}
+  .wire .cap{font-weight:500}
+  .wire .cap small{display:block;color:var(--ink-faint);font-size:12px;font-weight:400;font-family:"IBM Plex Mono",monospace;margin-top:1px}
+  .pin{display:inline-block;width:20px;text-align:center;font-family:"IBM Plex Mono",monospace;font-weight:600}
+  .pin.on{color:var(--ok)} .pin.off{color:var(--crit)}
+  .fixed td{background:var(--ok-bg)}
+  .fixed .cap{color:var(--ink-soft)}
+
+  /* ---- filters ---- */
+  .filters{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+  .filters span.lbl{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;margin-inline-end:4px}
+  .chip{
+    font:inherit;font-size:13px;cursor:pointer;
+    border:1px solid var(--rule);background:var(--surface);color:var(--ink-soft);
+    padding:4px 11px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;
+    transition:background .12s,border-color .12s,color .12s;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+  :root[data-theme="dark"] .chip[aria-pressed="true"],
+  .chip[aria-pressed="true"]{color:#fff}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#08181A}}
+  .chip .n{font-family:"IBM Plex Mono",monospace;font-size:11.5px;opacity:.75}
+  .count{margin-inline-start:auto;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-faint)}
+
+  /* ---- register table ---- */
+  .scroller{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+  table.reg{width:100%;min-width:760px;border-collapse:collapse;font-size:14px}
+  table.reg th{
+    text-align:right;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;font-weight:400;
+    padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--rule);white-space:nowrap;position:sticky;top:0;
+  }
+  table.reg td{padding:11px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+  table.reg tr:last-child td{border-bottom:0}
+  table.reg tbody tr:hover td{background:var(--surface-2)}
+  .id{font-size:12.5px;font-weight:600;color:var(--ink-soft);white-space:nowrap}
+  .sev{
+    display:inline-block;font-size:11px;font-family:"IBM Plex Mono",monospace;font-weight:600;
+    letter-spacing:.05em;padding:2px 8px;border-radius:3px;white-space:nowrap;
+  }
+  .s-crit{background:var(--crit-bg);color:var(--crit)}
+  .s-high{background:var(--high-bg);color:var(--high)}
+  .s-med{background:var(--med-bg);color:var(--med)}
+  .s-low{background:var(--low-bg);color:var(--low)}
+  td.stripe{border-inline-start:3px solid transparent;padding-inline-start:11px}
+  tr[data-sev="crit"] td.stripe{border-inline-start-color:var(--crit)}
+  tr[data-sev="high"] td.stripe{border-inline-start-color:var(--high)}
+  tr[data-sev="med"] td.stripe{border-inline-start-color:var(--med)}
+  tr[data-sev="low"] td.stripe{border-inline-start-color:var(--low)}
+  .what{font-weight:500;line-height:1.45}
+  .what em{display:block;font-style:normal;font-weight:400;color:var(--ink-soft);font-size:13px;margin-top:3px}
+  .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:1px 6px;border:1px solid var(--rule);border-radius:3px;color:var(--ink-faint);white-space:nowrap}
+  .tag.new{border-color:var(--accent);color:var(--accent)}
+  .feat{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-soft);white-space:nowrap}
+
+  /* ---- feature grid ---- */
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:2px;background:var(--rule-soft);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+  .f{background:var(--surface);padding:9px 12px;display:flex;gap:9px;align-items:flex-start;min-height:56px}
+  .f .dot{flex:0 0 auto;width:9px;height:9px;border-radius:99px;margin-top:7px}
+  .d-live{background:var(--ok)} .d-part{background:var(--high)} .d-db{background:var(--crit)} .d-dorm{background:var(--ink-faint)}
+  .f-body{min-width:0}
+  .f-id{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-faint);letter-spacing:.04em}
+  .f-name{font-size:13.5px;line-height:1.35;font-weight:500}
+  .f-mod{font-size:11px;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);margin:0 0 14px}
+  .legend b{display:inline-flex;align-items:center;gap:6px;font-weight:400}
+  .legend i{width:9px;height:9px;border-radius:99px;display:inline-block}
+
+  /* ---- collision callout ---- */
+  .collide{border:1px solid var(--crit);border-radius:6px;overflow:hidden;background:var(--surface)}
+  .collide-h{background:var(--crit-bg);color:var(--crit);padding:11px 16px;font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;border-bottom:1px solid var(--crit)}
+  .collide table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .collide td{padding:11px 16px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+  .collide tr:last-child td{border-bottom:0}
+  .collide td:first-child{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-soft);white-space:nowrap;width:1%}
+  .collide td:last-child{font-family:"IBM Plex Mono",monospace;font-size:12.5px;white-space:nowrap;width:1%;color:var(--crit);font-weight:600}
+
+  /* ---- docs index ---- */
+  .docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:12px}
+  .doc{
+    background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+    padding:12px 14px;display:flex;gap:11px;align-items:flex-start;
+    text-decoration:none;color:inherit;transition:border-color .12s,box-shadow .12s;
+  }
+  .doc:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+  .doc .dn{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--accent);flex:0 0 auto;padding-top:1px}
+  .doc .dt{font-size:14px;font-weight:500;line-height:1.35}
+  .doc .dd{font-size:12.5px;color:var(--ink-soft);margin-top:3px;line-height:1.45}
+
+  /* ---- blockers ---- */
+  .blockers{border:1px solid var(--rule);border-radius:6px;background:var(--surface);overflow:hidden}
+  .blockers li{display:flex;gap:14px;padding:12px 16px;border-bottom:1px solid var(--rule-soft);align-items:flex-start}
+  .blockers li:last-child{border-bottom:0}
+  .blockers ol,.blockers ul{margin:0;padding:0;list-style:none}
+  .oq{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;color:var(--accent);flex:0 0 58px;padding-top:2px}
+  .oq-q{font-weight:500;line-height:1.45}
+  .oq-w{font-size:13px;color:var(--ink-soft);margin-top:2px;line-height:1.5}
+
+  footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--rule);color:var(--ink-faint);font-size:13px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+  footer .mono{font-size:12px}
+
+  .toggle{
+    position:fixed;inset-inline-end:16px;inset-block-start:16px;z-index:20;
+    font:inherit;font-size:12px;font-family:"IBM Plex Mono",monospace;cursor:pointer;
+    background:var(--surface);color:var(--ink-soft);border:1px solid var(--rule);
+    border-radius:99px;padding:5px 12px;box-shadow:var(--shadow);
+  }
+  .toggle:hover{color:var(--ink);border-color:var(--accent)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media (max-width:640px){
+    .wrap{padding:0 14px 72px} .mast{margin:0 -14px;padding:22px 14px 18px}
+    .stamp{gap:18px} .stamp dd{font-size:16px}
+  }
+</style>
+
+<button class="toggle" id="tt" type="button" aria-label="تبديل السمة">◐ سمة</button>
+
+<header class="mast">
+  <div class="mast-in">
+    <div>
+      <p class="eyebrow">System discovery &amp; feature inventory</p>
+      <h1>سجل استكشاف النظام</h1>
+      <p class="sub">جردٌ كامل لما هو <strong>موجود فعلًا</strong> في منصّة Hand By Hand — مقروءٌ من الكود لا من الوثائق.
+      مرحلةُ فهمٍ لا تطوير: <strong>لم يُصلَح شيء.</strong></p>
+    </div>
+    <dl class="stamp">
+      <div><dt>آخر هجرة</dt><dd>0129</dd></div>
+      <div><dt>تاريخ المسح</dt><dd>2026-09-12</dd></div>
+      <div><dt>الميزات</dt><dd>44</dd></div>
+      <div><dt>التعارضات</dt><dd>31</dd></div>
+      <div><dt>أسئلة معلَّقة</dt><dd>65</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- =================== THE PATTERN =================== -->
+  <section aria-labelledby="h-pattern">
+    <div class="shead"><span class="snum">الخلاصة</span><h2 id="h-pattern">نمطٌ واحد، ستّ صور</h2></div>
+    <p class="snote">لم يتبيَّن الخلل موزَّعًا بل مكرَّرًا: قدرةٌ كاملة في القاعدة، مختبَرةٌ بمجموعة قبولٍ تنادي دالّتها
+    مباشرةً — <strong>وصفر منادٍ فوقها</strong>. ثلاثٌ من هذه أُصلحت بالفعل، فالنمط معروفٌ ومكلَّف؛ والباقي مفتوح.</p>
+
+    <div class="pattern">
+      <p class="pattern-claim">«الميزة كانت كاملة وغير قابلة للوصول. وهذا يستحقّ أن يُسمَّى، لأن كل ما دونها اختُبر أخضر:
+      السكيما، والـAPI، وشاشة البوّابة، و١١٥٠ فحصَ قبول. <strong>ولم يسأل أحد السؤال الوحيد الذي يهمّ — هل يستطيع أحدٌ
+      إنشاء الصفّ.</strong>» <span style="color:var(--ink-soft);font-size:13.5px;font-family:'IBM Plex Mono',monospace">— رأس الهجرة 0127</span></p>
+      <div class="scroller" style="border:0;border-radius:0">
+      <table class="wire">
+        <thead><tr>
+          <th scope="col">القدرة</th><th scope="col">جداول ودوالّ</th><th scope="col">مجموعة قبول</th>
+          <th scope="col">مسار API</th><th scope="col">شاشة</th><th scope="col">الحالة</th>
+        </tr></thead>
+        <tbody>
+          <tr class="fixed"><td class="cap">انتهاء الباقات<small>expire_packages</small></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span></td><td>حاوية صيانة</td><td>—</td><td><span class="sev s-low">أُصلحت</span></td></tr>
+          <tr class="fixed"><td class="cap">منح حساب البوّابة<small>grant_portal_access</small></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span></td><td>ضمن التحويل</td><td>—</td><td><span class="sev s-low">نصفها 0125</span></td></tr>
+          <tr class="fixed"><td class="cap">فتحات أونلاين<small>available_slots</small></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span></td><td><span class="sev s-low">أُصلحت 0127</span></td></tr>
+          <tr><td class="cap">خصم رصيد الباقة<small>consume_package_session</small></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span> p6</td><td><span class="pin off">✗</span></td><td><span class="pin off">✗</span></td><td><span class="sev s-crit">C-01</span></td></tr>
+          <tr><td class="cap">التقييمات<small>record_assessment · publish_assessment</small></td><td><span class="pin on">✓</span> ٤ جداول</td><td><span class="pin on">✓</span> p11 · p14</td><td><span class="pin off">✗</span></td><td><span class="pin off">✗</span></td><td><span class="sev s-high">M-01</span></td></tr>
+          <tr><td class="cap">قائمة الانتظار<small>add_to_waiting_list · offer_slot · accept_offer</small></td><td><span class="pin on">✓</span> ٧ دوالّ</td><td><span class="pin on">✓</span> p11</td><td><span class="pin off">✗</span></td><td><span class="pin off">✗</span></td><td><span class="sev s-high">M-02</span></td></tr>
+          <tr><td class="cap">الحجز المتكرّر<small>book_recurring</small></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span> p11</td><td><span class="pin off">✗</span></td><td><span class="pin off">✗</span></td><td><span class="sev s-high">M-03</span></td></tr>
+          <tr><td class="cap">المرفقات<small>attach_file · publish_attachment</small></td><td><span class="pin on">✓</span></td><td><span class="pin on">✓</span> p11</td><td>الصورة فقط</td><td>الكارت فقط</td><td><span class="sev s-high">M-04</span></td></tr>
+          <tr><td class="cap">إجازات المركز<small>schedule_blocks</small></td><td><span class="pin on">✓</span> تُقرأ</td><td><span class="pin on">✓</span> p8</td><td><span class="pin off">✗</span></td><td><span class="pin off">✗</span></td><td><span class="sev s-high">M-05</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== HEALTH =================== -->
+  <section aria-labelledby="h-health">
+    <div class="shead"><span class="snum">٢٢</span><h2 id="h-health">صحّة النظام</h2></div>
+    <p class="snote">تقييمٌ على تسعة محاور. القاعدة أقوى ما في النظام؛ والخلل في التوصيل وفي الحوكمة لا في البناء.</p>
+    <div class="health">
+      <div class="hx g10"><div class="hx-top"><span class="hx-name">اتّساق المعمار</span><span class="hx-val">9 / 10</span></div><div class="bar"><i style="width:90%"></i></div></div>
+      <div class="hx g10"><div class="hx-top"><span class="hx-name">جودة التوثيق</span><span class="hx-val">10 / 10</span></div><div class="bar"><i style="width:100%"></i></div></div>
+      <div class="hx g10"><div class="hx-top"><span class="hx-name">مستوى إعادة الاستعمال</span><span class="hx-val">9 / 10</span></div><div class="bar"><i style="width:90%"></i></div></div>
+      <div class="hx g8"><div class="hx-top"><span class="hx-name">خطر التكرار</span><span class="hx-val">8 / 10</span></div><div class="bar"><i style="width:80%"></i></div></div>
+      <div class="hx g6"><div class="hx-top"><span class="hx-name">الخطر الأمنيّ</span><span class="hx-val">6 / 10</span></div><div class="bar"><i style="width:60%"></i></div></div>
+      <div class="hx g6"><div class="hx-top"><span class="hx-name">توافق الواجهة والخادم</span><span class="hx-val">6 / 10</span></div><div class="bar"><i style="width:60%"></i></div></div>
+      <div class="hx g6"><div class="hx-top"><span class="hx-name">اتّساق الفلو</span><span class="hx-val">5 / 10</span></div><div class="bar"><i style="width:50%"></i></div></div>
+      <div class="hx g6"><div class="hx-top"><span class="hx-name">الدين التقني</span><span class="hx-val">5 / 10</span></div><div class="bar"><i style="width:50%"></i></div></div>
+      <div class="hx g4"><div class="hx-top"><span class="hx-name">خطر سلامة البيانات</span><span class="hx-val">4 / 10</span></div><div class="bar"><i style="width:40%"></i></div></div>
+    </div>
+  </section>
+
+  <!-- =================== CONFLICT REGISTER =================== -->
+  <section aria-labelledby="h-reg">
+    <div class="shead"><span class="snum">١٨</span><h2 id="h-reg">سجل التعارضات</h2></div>
+    <p class="snote">٣١ بندًا، كلٌّ منها مُثبت بموضعٍ في الكود. <span class="tag new">جديد</span> = غير مسجَّل في الباكلوج
+    ولا الروادماب ولا وثائق تحليل الأعمال.</p>
+    <div class="filters" role="group" aria-label="تصفية بالخطورة">
+      <span class="lbl">الخطورة</span>
+      <button class="chip" type="button" data-f="all" aria-pressed="true">الكل <span class="n">31</span></button>
+      <button class="chip" type="button" data-f="crit" aria-pressed="false">حرج <span class="n">5</span></button>
+      <button class="chip" type="button" data-f="high" aria-pressed="false">عالٍ <span class="n">11</span></button>
+      <button class="chip" type="button" data-f="med" aria-pressed="false">متوسّط <span class="n">10</span></button>
+      <button class="chip" type="button" data-f="low" aria-pressed="false">منخفض <span class="n">5</span></button>
+      <span class="count" id="regcount">٣١ بندًا معروضًا</span>
+    </div>
+    <div class="scroller">
+      <table class="reg" id="regtable">
+        <thead><tr>
+          <th scope="col">الرمز</th><th scope="col">الخطورة</th><th scope="col">البند</th>
+          <th scope="col">الميزة</th><th scope="col">التسجيل</th>
+        </tr></thead>
+        <tbody>
+          <tr data-sev="crit"><td class="stripe id">C-01</td><td><span class="sev s-crit">حرج</span></td><td class="what">رصيد الباقة لا يُخصَم أبدًا<em>الدالّة ممنوحة ومختبَرة وبلا منادٍ في أي طبقة — والدفتر الذي يُفترَض أن يُجيب «أين ذهبت جلساتي» فارغ</em></td><td class="feat">F-35 · F-25</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="crit"><td class="stripe id">C-02</td><td><span class="sev s-crit">حرج</span></td><td class="what">منحة REPORT.WRITE تضيع على قاعدة معاد بناؤها<em>هجرة 0091 تُدرج صفوفًا تقرأ hbh.roles — وهي فارغة وقت الهجرة، فلا تُدرج شيئًا وتُبلغ عن النجاح</em></td><td class="feat">F-32</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="crit"><td class="stripe id">C-03</td><td><span class="sev s-crit">حرج</span></td><td class="what">أعمدة الأصل بلا كاتب للأمام<em>registration_source و origin_source مبنيّة بأثر رجعي، ولا دالّة تختمها — فكل صفّ جديد يحمل NULL</em></td><td class="feat">F-09 · F-12</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="crit"><td class="stripe id">C-04</td><td><span class="sev s-crit">حرج</span></td><td class="what">HB240 يحمل قاعدتين مختلفتين<em>«لا يجوز قراءة دفتر الحجز» و«الأصل لا يُغيَّر» — وكلتاهما تُجاب 403، والثانية بالكلمة الخطأ</em></td><td class="feat">F-19 · F-10</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="crit"><td class="stripe id">C-05</td><td><span class="sev s-crit">حرج</span></td><td class="what">صيغة الجوال في الواجهة تحجب ميزةً مقبولة في القاعدة<em>ثلاث نسخ من ^01[0-9]{9}$ في web/ مقابل نمطٍ دوليّ في sys_params — ومجموعة p15 خضراء</em></td><td class="feat">F-01 · F-08</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-06</td><td><span class="sev s-high">عالٍ</span></td><td class="what">رفع أصول الموقع يكتب داخل شجرة git وداخل مجلّد مزامنة<em>SITE_ASSETS_DIR مربوطٌ بـ site/assets المتعقَّب — وصورةٌ لم تُنشَر بعد تدخل التاريخ ولا تُسحَب منه</em></td><td class="feat">F-42</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-07</td><td><span class="sev s-high">عالٍ</span></td><td class="what">guardians.mobile بلا قيد تفرّد<em>صفّان بنفس الرقم مقبولان، والتصادم يُكتشَف متأخّرًا عند منح الحساب — وأحدهما مربوطٌ بأطفال</em></td><td class="feat">F-12</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-08</td><td><span class="sev s-high">عالٍ</span></td><td class="what">guardians.user_id قابل للكتابة من مسار CRUD عامّ<em>لا قيد على مستوى العمود، فمن يملك GUARDIAN.MANAGE يعيد توجيه صفّ أسرة إلى حساب آخر</em></td><td class="feat">F-07 · F-12</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-09</td><td><span class="sev s-high">عالٍ</span></td><td class="what">طفلٌ واحد بطلبين يصير طفلين<em>convert_enrolment تُعيد استعمال وليّ الأمر بالجوال وتُدرج الطفل دائمًا جديدًا — والحماية الوحيدة ملاحظةُ موظّف</em></td><td class="feat">F-09</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-10</td><td><span class="sev s-high">عالٍ</span></td><td class="what">أرشفة وليّ الأمر لا تمسّ حسابه<em>SoftDelete جملةٌ على جدولٍ واحد، فأسرةٌ مؤرشَفة تبقى قادرة على الدخول</em></td><td class="feat">F-12</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-11</td><td><span class="sev s-high">عالٍ</span></td><td class="what">meetings بلا آلة حالة ولا جدول تاريخ<em>خرقٌ للقاعدة ٥ على أحدث جدول حالة — و PENDING و FAILED قيمتان بلا كاتب</em></td><td class="feat">F-36</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-12</td><td><span class="sev s-high">عالٍ</span></td><td class="what">ck_meetings_provider يسمح بمزوّد لا تعرفه الخدمة<em>DAILY في القيد ولا وجود له في حزمة meeting — قيمةٌ لو كُتبت استحال توقيعها</em></td><td class="feat">F-36</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-13</td><td><span class="sev s-high">عالٍ</span></td><td class="what">حارسا مسارٍ يذكران صلاحيةً غير التي تطلبها القاعدة<em>settings و satisfaction بـ CATALOG.MANAGE، والقاعدة تطلب SETTINGS.MANAGE و NPS.MANAGE</em></td><td class="feat">F-41 · F-43</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-14</td><td><span class="sev s-high">عالٍ</span></td><td class="what">خمسة أنواع إشعار معرَّفة ولا يرسلها شيء<em>وأربعةٌ منها كلّ ما يُفترض أن يبلّغ الموظّف بعملٍ جديد وصل: التحاقٌ جديد، طلبٌ جديد، إلغاءٌ، خطةٌ اعتُمدت</em></td><td class="feat">F-37</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-15</td><td><span class="sev s-high">عالٍ</span></td><td class="what">الصيانة مُجدَّلة بطريقين بلا قفل<em>cron على المضيف وحاوية compose معًا — و run_maintenance بلا قفل استشاري</em></td><td class="feat">F-44</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="high"><td class="stripe id">C-16</td><td><span class="sev s-high">عالٍ</span></td><td class="what">ثلاثة عروض صحّة بلا قارئ<em>v_backup_health و v_maintenance_health و v_sms_health — فالتوقّف الصامت يظهر في مكان لا يفتحه أحد</em></td><td class="feat">F-44</td><td><span class="tag">مسجَّل</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-17</td><td><span class="sev s-med">متوسّط</span></td><td class="what">حالات الكيانات الأساسية بلا آلة<em>users و children و therapists و plan_goals — CHECK وحده، فـ GRADUATED ← ACTIVE مسموح بلا سبب</em></td><td class="feat">F-10 · F-16</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-18</td><td><span class="sev s-med">متوسّط</span></td><td class="what">«مقيَّدة بجدول تاريخ» تنطبق على ٢ من ١٢<em>الباقي يعتمد audit_log العامّ — وهو يحمل الصفّ كاملًا لا from_status ← to_status ولا reason</em></td><td class="feat">القاعدة ٥</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-19</td><td><span class="sev s-med">متوسّط</span></td><td class="what">تعليق مسارٍ ينقض الكود الذي يحمله<em>«no endpoint of any kind» فوق شاشةٍ تنادي تسعة مسارات — ومن يقرأ من أعلى يصطدم بالجملة القديمة أوّلًا</em></td><td class="feat">F-05</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-20</td><td><span class="sev s-med">متوسّط</span></td><td class="what">حارس ‎/access‎ أوسع من أفعاله<em>PORTAL.VIEW يملكه كل دور، والأفعال تطلب USER.MANAGE و STAFF.PII</em></td><td class="feat">F-05</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-21</td><td><span class="sev s-med">متوسّط</span></td><td class="what">هجرتان بلا ملفّ تراجع<em>0122 و 0126 — الوحيدتان من ١٢٩، وكلتاهما تُصلح ثغرة، والغياب غير مسجَّل بسببه</em></td><td class="feat">—</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-22</td><td><span class="sev s-med">متوسّط</span></td><td class="what">أربعة عروض أخرى بلا قارئ<em>ومنها v_guardian_portal_status — العرض الذي يجيب حرفيًّا «هل هذه الأسرة تملك حسابًا؟»</em></td><td class="feat">F-07 · F-44</td><td><span class="tag">جزئيًّا</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-23</td><td><span class="sev s-med">متوسّط</span></td><td class="what">قاعدة اعتماد الخطة أُسقطت ولم تُستبدَل<em>0088 أضافت HB210 و 0090 أسقطتها — فالتنشيط اليوم بلا اشتراط معتمِد</em></td><td class="feat">F-28</td><td><span class="tag">مسجَّل</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-24</td><td><span class="sev s-med">متوسّط</span></td><td class="what">قاعدة مكتوبة في ملفّ لا يعمل<em>hbh.nginx.conf يحمل قاعدة العزل، والعامل هو site.native.mjs — «القاعدة تُكتب حيث تُنفَّذ»</em></td><td class="feat">النشر</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-25</td><td><span class="sev s-med">متوسّط</span></td><td class="what">p00 حمراء وجولة القبول الكاملة لم تُعَد<em>«١٦٧٥ فحصًا · ٠ فشل» قياسٌ من 2026-09-03، ومنذها نزلت ٩٩ هجرة</em></td><td class="feat">كل شيء</td><td><span class="tag">مسجَّل</span></td></tr>
+          <tr data-sev="med"><td class="stripe id">C-26</td><td><span class="sev s-med">متوسّط</span></td><td class="what">web/ops بلا اختبار وحدة · و ng test يخرج بصفر بلا متصفّح<em>٢٨ شاشة و٧٦ كيلوبايت من المعالِجات — واقرأ عدد ما نُفِّذ لا كود الخروج</em></td><td class="feat">الواجهة</td><td><span class="tag">مسجَّل</span></td></tr>
+          <tr data-sev="low"><td class="stripe id">C-27</td><td><span class="sev s-low">منخفض</span></td><td class="what">الروادماب متأخّر ٤٩ هجرة<em>آخر تحديث 2026-09-10 ويصف حتى 0080 — والوثيقة نفسها تحمل السبب: «وثيقة حالة بلا موعد تحديث تشيخ بصمت»</em></td><td class="feat">الحوكمة</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="low"><td class="stripe id">C-28</td><td><span class="sev s-low">منخفض</span></td><td class="what">رمزان موثَّقان لم يُرفَعا قطّ<em>HB062 و HB070 في رؤوس الهجرات ولا RAISE يستعملهما — وعدٌ يقرؤه اللاحق مأخوذًا أو حرًّا</em></td><td class="feat">—</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="low"><td class="stripe id">C-29</td><td><span class="sev s-low">منخفض</span></td><td class="what">useFixtures: true افتراضًا وتعليقه متقادم<em>«while the API is not built yet» — والـAPI مبنيّ. والأثر صفر لأن التطبيقين يكتبانه false</em></td><td class="feat">الواجهة</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="low"><td class="stripe id">C-30</td><td><span class="sev s-low">منخفض</span></td><td class="what">مورد بستّة مسارات بلا شاشة<em>therapist-qualifications في Resources ولا Spec ولا شاشة</em></td><td class="feat">F-16</td><td><span class="tag new">جديد</span></td></tr>
+          <tr data-sev="low"><td class="stripe id">C-31</td><td><span class="sev s-low">منخفض</span></td><td class="what">حالة الطلب معرَّفة في مكانين<em>ck_req_status و lookup_values.REQUEST_STATUS — والثاني لا يقيّد شيئًا فيفترق يوم يُضاف إلى أحدهما</em></td><td class="feat">F-40</td><td><span class="tag new">جديد</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =================== HB240 COLLISION =================== -->
+  <section aria-labelledby="h-collide">
+    <div class="shead"><span class="snum">٠٩</span><h2 id="h-collide">تصادم رمز الرفض</h2></div>
+    <p class="snote">٩٩ رمزًا في السكيما، وكلٌّ يسمّي قاعدةً واحدة — إلّا واحدًا. ورأس الهجرة 0129 يقول حرفيًّا
+    <code>Error classes added here: HB240</code>، وكانت 0100 قد أخذته قبله بتسع وعشرين هجرة.</p>
+    <div class="collide">
+      <div class="collide-h">SQLSTATE ‎'HB240'‎ ← قاعدتان · ترجمةٌ واحدة</div>
+      <table>
+        <tbody>
+          <tr><td>0100 · 0127</td><td>«لا يجوز لك قراءة دفتر الحجز» — نقص APPOINTMENT.BOOK</td><td>403</td></tr>
+          <tr><td>0129</td><td>«الأصل لا يُغيَّر بعد تسجيله» — عدم قابلية تغيير</td><td>403 ✗</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="snote" style="margin-top:14px">والمشروع كتب هذا الدرس بنفسه في رأس الهجرة 0052:
+    «<strong>HB061 مأخوذ بالفعل… ورقمٌ مُعاد استعماله أسوأ من رقم مفقود: القراءة الثانية واثقةٌ وخاطئة.</strong>»
+    ووقع نفسه بعد ٧٧ هجرة، لأن الحارس القائم يفحص <em>وجود</em> الرمز لا <em>تفرّده</em>.</p>
+  </section>
+
+  <!-- =================== FEATURES =================== -->
+  <section aria-labelledby="h-feat">
+    <div class="shead"><span class="snum">٠٢</span><h2 id="h-feat">جرد الميزات</h2></div>
+    <p class="snote">٤٤ ميزة، مصنَّفةً بمدى توصيلها من القاعدة إلى الشاشة.</p>
+    <div class="legend">
+      <b><i class="d-live"></i> موصولة ومُشيت — ٣٠</b>
+      <b><i class="d-part"></i> ناقصةٌ نصفًا محدَّدًا — ١٠</b>
+      <b><i class="d-db"></i> القاعدة كاملة · صفر مسار — ٤</b>
+      
+    </div>
+    <div class="filters" role="group" aria-label="تصفية بحالة التوصيل">
+      <span class="lbl">التوصيل</span>
+      <button class="chip" type="button" data-g="all" aria-pressed="true">الكل <span class="n">44</span></button>
+      <button class="chip" type="button" data-g="live" aria-pressed="false">موصولة <span class="n">30</span></button>
+      <button class="chip" type="button" data-g="part" aria-pressed="false">ناقصة <span class="n">10</span></button>
+      <button class="chip" type="button" data-g="db" aria-pressed="false">قاعدة فقط <span class="n">4</span></button>
+      
+      <span class="count" id="fcount">٤٤ ميزة معروضة</span>
+    </div>
+    <div class="fgrid" id="fgrid">
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-01</div><div class="f-name">دخول وليّ الأمر برمز OTP</div><div class="f-mod">Identity</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-02</div><div class="f-name">دخول الموظّف بكلمة مرور</div><div class="f-mod">Identity</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-03</div><div class="f-name">تهيئة كلمة المرور برابط</div><div class="f-mod">Identity</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-04</div><div class="f-name">تغيير كلمة المرور الذاتية</div><div class="f-mod">Identity</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-05</div><div class="f-name">إدارة المستخدمين والأدوار</div><div class="f-mod">Access</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-06</div><div class="f-name">كتابة صلاحيات الأدوار</div><div class="f-mod">Access</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-07</div><div class="f-name">منح حساب البوّابة للأسرة</div><div class="f-mod">Access</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-08</div><div class="f-name">طلب الالتحاق — عامّ</div><div class="f-mod">Intake</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-09</div><div class="f-name">بتّ الطلب وتحويله</div><div class="f-mod">Intake</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-10</div><div class="f-name">ملفّ الطفل وكارته</div><div class="f-mod">Child</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-11</div><div class="f-name">صورة الطفل وموافقتها</div><div class="f-mod">Child</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-12</div><div class="f-name">أولياء الأمور وربطهم بالأطفال</div><div class="f-mod">Family</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-13</div><div class="f-name">بيانات التواصل الذاتية</div><div class="f-mod">Family</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-14</div><div class="f-name">الموافقات المسجَّلة</div><div class="f-mod">Consent</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-15</div><div class="f-name">الكتالوج — بلا بذور إنتاج</div><div class="f-mod">Catalog</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-16</div><div class="f-name">الأخصائيون وساعاتهم</div><div class="f-mod">Staff</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-17</div><div class="f-name">ملفّ الأخصائي العامّ ونشره</div><div class="f-mod">Staff</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-18</div><div class="f-name">الإسناد — بلا قواعد</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-19</div><div class="f-name">الفتحات المتاحة والتحقّق</div><div class="f-mod">Scheduling</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-20</div><div class="f-name">حجز موعد</div><div class="f-mod">Scheduling</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-21</div><div class="f-name">انتقالات حالة الموعد</div><div class="f-mod">Scheduling</div></div></div>
+      <div class="f" data-g="db"><span class="dot d-db"></span><div class="f-body"><div class="f-id">F-22</div><div class="f-name">الحجز المتكرّر — كورس</div><div class="f-mod">Scheduling</div></div></div>
+      <div class="f" data-g="db"><span class="dot d-db"></span><div class="f-body"><div class="f-id">F-23</div><div class="f-name">قائمة الانتظار والعرض</div><div class="f-mod">Scheduling</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-24</div><div class="f-name">إغلاق الجدول — تُقرأ ولا تُكتب</div><div class="f-mod">Scheduling</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-25</div><div class="f-name">بدء الجلسة وإغلاقها</div><div class="f-mod">Session</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-26</div><div class="f-name">ملاحظة الجلسة ونشرها</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-27</div><div class="f-name">البثّ المباشر</div><div class="f-mod">Live</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-28</div><div class="f-name">الخطة العلاجية والأهداف</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-29</div><div class="f-name">قياسات التقدّم</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-30</div><div class="f-name">البرنامج المنزلي وتسجيله</div><div class="f-mod">Home</div></div></div>
+      <div class="f" data-g="db"><span class="dot d-db"></span><div class="f-body"><div class="f-id">F-31</div><div class="f-name">التقييمات</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-32</div><div class="f-name">تقارير التقدّم</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="db"><span class="dot d-db"></span><div class="f-body"><div class="f-id">F-33</div><div class="f-name">المرفقات</div><div class="f-mod">Clinical</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-34</div><div class="f-name">الفواتير والبنود والدفعات</div><div class="f-mod">Billing</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-35</div><div class="f-name">الباقات — البيع بلا خصم</div><div class="f-mod">Billing</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-36</div><div class="f-name">الاستشارة الأونلاين</div><div class="f-mod">Consultation</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-37</div><div class="f-name">الإشعارات — ١١ من ١٦</div><div class="f-mod">Comms</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-38</div><div class="f-name">رسائل الأسرة</div><div class="f-mod">Comms</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-39</div><div class="f-name">صندوق صادر SMS وواتساب</div><div class="f-mod">Comms</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-40</div><div class="f-name">طلبات وليّ الأمر</div><div class="f-mod">Requests</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-41</div><div class="f-name">استبيان الرضا</div><div class="f-mod">Satisfaction</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-42</div><div class="f-name">محتوى الموقع ونشره</div><div class="f-mod">Site</div></div></div>
+      <div class="f" data-g="live"><span class="dot d-live"></span><div class="f-body"><div class="f-id">F-43</div><div class="f-name">إعدادات المركز وبارامتراته</div><div class="f-mod">Settings</div></div></div>
+      <div class="f" data-g="part"><span class="dot d-part"></span><div class="f-body"><div class="f-id">F-44</div><div class="f-name">التشغيل والتدقيق والنسخ</div><div class="f-mod">Ops</div></div></div>
+      
+    </div>
+  </section>
+
+  <!-- =================== BLOCKING QUESTIONS =================== -->
+  <section aria-labelledby="h-oq">
+    <div class="shead"><span class="snum">٢٢</span><h2 id="h-oq">أسئلة حاجزة</h2></div>
+    <p class="snote">من ٦٥ سؤالًا مفتوحًا، هذه التي لا يمكن العمل بلا جوابها. ولم يُقرَّر عن أيٍّ منها.</p>
+    <div class="blockers">
+      <ul>
+        <li><span class="oq">OQ-02</span><div><div class="oq-q">متى يُخصَم رصيد الباقة؟ وهل الجلسة المُوقفة تُخصَم؟</div><div class="oq-w">كل تنفيذٍ آخر يكون تخمينًا في مال الأسرة. يحجب الإصلاح X-07 والخطر R-01.</div></div></li>
+        <li><span class="oq">OQ-34</span><div><div class="oq-q">هل يُدفَع أونلاين؟</div><div class="oq-w">لا بوّابة دفع في الشجرة، و payments سجلٌّ يدويّ — والاستشارة الأونلاين مدفوعة بحسب الوصف.</div></div></li>
+        <li><span class="oq">OQ-43</span><div><div class="oq-q">هل يجوز لجوّال واحد أن يخدم وليَّي أمر؟</div><div class="oq-w">يقرّر هل يوجد قيد تفرّد أصلًا. وإن كان الجواب نعم، فالتكرار الحقيقي غير قابل للكشف بالجوال.</div></div></li>
+        <li><span class="oq">OQ-48</span><div><div class="oq-q">بأي معيار يُقال إن طفلين واحد؟</div><div class="oq-w">الرقم القومي بفهرس جزئي لأن كثيرًا من الأطفال الصغار في مصر بلا رقم — وهذا صحيحٌ ومقصود، ولا يمسك الحالة الشائعة.</div></div></li>
+        <li><span class="oq">OQ-45</span><div><div class="oq-q">من يمنح حساب البوّابة لأسرة أُدخلت من المركز؟</div><div class="oq-w">لا مسار ولا زرّ. والعرض الذي يجيب «هل هذه الأسرة تملك حسابًا؟» بلا قارئ.</div></div></li>
+        <li><span class="oq">OQ-08</span><div><div class="oq-q">قبول طلب نقل موعد — نقلٌ تلقائي أم يدوي؟</div><div class="oq-w">يقرّر إن كانت parent_requests نصفَ ميزة أم كاملة.</div></div></li>
+        <li><span class="oq">OQ-09</span><div><div class="oq-q">هل يجوز إلغاء موعد مؤكَّد بعد الدفع؟ وما أثره على الاسترداد؟</div><div class="oq-w">لا جدول أقساط ولا مفهوم استرداد في السكيما.</div></div></li>
+        <li><span class="oq">OQ-33</span><div><div class="oq-q">القناة: SMS أم واتساب؟</div><div class="oq-w">اعتماد واتساب وقوالبه أسابيع وقد يُرفض — ولذلك كُتب الساحب بقناة قابلة للاستبدال.</div></div></li>
+        <li><span class="oq">OQ-49</span><div><div class="oq-q">ما إجراء المحو الامتثالي لبيانات طفل؟</div><div class="oq-w">السكيما مُعدَّة له (ON DELETE SET NULL على الإشعارات) والإجراء غير موصوف في أي مكان.</div></div></li>
+        <li><span class="oq">OQ-30</span><div><div class="oq-q">أنواع الإشعار الخمسة الميّتة: تُوصَل أم تُحذف من القيد؟</div><div class="oq-w">تركها يجعل كل تخطيطٍ لاحق يقرؤها كقدرة قائمة.</div></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- =================== DOC INDEX =================== -->
+  <section aria-labelledby="h-docs">
+    <div class="shead"><span class="snum">الملفّات</span><h2 id="h-docs">الوثائق الثلاث والعشرون</h2></div>
+    <p class="snote">في <code>docs/system-discovery/</code> — ٦٦٠٠ سطر، وكل ملفّ يحمل خرائط Mermaid وأسئلته المفتوحة.</p>
+    <div class="docs">
+      <a class="doc" href="00-README.md"><span class="dn">00</span><div><div class="dt">الفهرس والمنهج</div><div class="dd">قالب PRE-DEVELOPMENT ANALYSIS والمسار الواجب لأي متطلَّب</div></div></a>
+      <a class="doc" href="01-system-overview.md"><span class="dn">01</span><div><div class="dt">نظرة عامّة</div><div class="dd">الستاك · الطبقات · الأرقام · القواعد الخمس</div></div></a>
+      <a class="doc" href="02-master-feature-inventory.md"><span class="dn">02</span><div><div class="dt">جرد الميزات</div><div class="dd">٤٤ ميزة بكل حقولها: الفاعلون · الشاشات · المسارات · الجداول · الحالات</div></div></a>
+      <a class="doc" href="03-master-business-flow-map.md"><span class="dn">03</span><div><div class="dt">خريطة الفلوهات</div><div class="dd">١٤ فلو بخرائطها، والمقطوع منها مرسومٌ متقطّعًا</div></div></a>
+      <a class="doc" href="04-role-permission-matrix.md"><span class="dn">04</span><div><div class="dt">مصفوفة الأدوار</div><div class="dd">٤ أدوار × ٣٥ صلاحية · والحجوبات المقصودة بأسبابها</div></div></a>
+      <a class="doc" href="05-status-inventory.md"><span class="dn">05</span><div><div class="dt">جرد الحالات</div><div class="dd">٢١ عمود حالة · ٨ آلات · والحالات التي لا يمكن الوصول إليها</div></div></a>
+      <a class="doc" href="06-frontend-screen-inventory.md"><span class="dn">06</span><div><div class="dt">جرد الشاشات</div><div class="dd">٥٦ شاشة في ثلاثة أسطح · ودرس CSP على Angular</div></div></a>
+      <a class="doc" href="07-api-inventory.md"><span class="dn">07</span><div><div class="dt">جرد المسارات</div><div class="dd">١١٨ مسارًا صريحًا + ١٧٨ من CRUD · وترجمة الرفض إلى HTTP</div></div></a>
+      <a class="doc" href="08-database-entity-map.md"><span class="dn">08</span><div><div class="dt">خريطة الكيانات</div><div class="dd">٨٦ جدولًا · ١٥ عرضًا · ١٧٠ دالّة · وفخاخ المحرّك المسجَّلة</div></div></a>
+      <a class="doc" href="09-business-rule-inventory.md"><span class="dn">09</span><div><div class="dt">جرد قواعد العمل</div><div class="dd">٩٩ رمز رفض · والقواعد بلا رمز · وأين تُفرض كل واحدة</div></div></a>
+      <a class="doc" href="10-notification-inventory.md"><span class="dn">10</span><div><div class="dt">جرد الإشعارات</div><div class="dd">١٦ نوعًا · القنوات · الموافقة · وأيّها ميّت</div></div></a>
+      <a class="doc" href="11-integration-inventory.md"><span class="dn">11</span><div><div class="dt">جرد التكاملات</div><div class="dd">٨ تكاملات · وما ليس موجودًا وقد يُفترَض</div></div></a>
+      <a class="doc" href="12-background-job-inventory.md"><span class="dn">12</span><div><div class="dt">المهامّ الخلفيّة</div><div class="dd">٧ مهامّ في الصيانة + ساحب الصادر · وما لا مهمّة له</div></div></a>
+      <a class="doc" href="13-feature-dependency-map.md"><span class="dn">13</span><div><div class="dt">خريطة الاعتماد</div><div class="dd">من يعتمد على من · والعقد الحرجة · والأوراق الميّتة</div></div></a>
+      <a class="doc" href="14-feature-impact-matrix.md"><span class="dn">14</span><div><div class="dt">مصفوفة الأثر</div><div class="dd">أي طبقة تتأثّر · وأي مجموعة قبول تُعاد · وأربعة أمثلة محسوبة</div></div></a>
+      <a class="doc" href="15-parent-lifecycle.md"><span class="dn">15</span><div><div class="dt">دورة حياة وليّ الأمر</div><div class="dd">مصادر الإنشاء · منع التكرار وحدوده · والحلقة المقطوعة</div></div></a>
+      <a class="doc" href="16-beneficiary-lifecycle.md"><span class="dn">16</span><div><div class="dt">دورة حياة الطفل</div><div class="dd">الأصل · التكرار · وإجراء المحو غير الموصوف</div></div></a>
+      <a class="doc" href="17-appointment-session-lifecycle.md"><span class="dn">17</span><div><div class="dt">الموعد والجلسة</div><div class="dd">الفرق بين خمسة مفاهيم تتداخل · ومتى يُخلَق كلٌّ منها</div></div></a>
+      <a class="doc" href="18-system-conflict-report.md"><span class="dn">18</span><div><div class="dt">تقرير التعارضات</div><div class="dd">٣١ بندًا بأدلّتها · وقائمة النتائج السلبية</div></div></a>
+      <a class="doc" href="19-duplication-report.md"><span class="dn">19</span><div><div class="dt">تقرير التكرار</div><div class="dd">١٢ بندًا · والأنماط التي تستحقّ أن تُقلَّد</div></div></a>
+      <a class="doc" href="20-missing-incomplete-flow-report.md"><span class="dn">20</span><div><div class="dt">الفلو الناقص</div><div class="dd">٢٠ بندًا · وأثر كلٍّ على المستخدم مرتَّبًا</div></div></a>
+      <a class="doc" href="21-technical-debt-legacy.md"><span class="dn">21</span><div><div class="dt">الدين والإرث</div><div class="dd">٣٩ بندًا · وما ليس دينًا وقد يُقرأ كذلك</div></div></a>
+      <a class="doc" href="22-recommendations.md"><span class="dn">22</span><div><div class="dt">التوصيات والصحّة</div><div class="dd">TOP 10 RISKS · TOP 10 FIXES · وما يستحقّ أن يبقى كما هو</div></div></a>
+    </div>
+  </section>
+
+  <footer>
+    <span>مرحلة <strong>فهمٍ</strong> لا تطوير — لم يُصلَح شيء، وكل بندٍ ينتظر مراجعة.</span>
+    <span class="mono">docs/system-discovery · 0129 · 2026-09-12</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, t=document.getElementById('tt');
+  t.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    if(!cur){cur=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    root.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  });
+
+  var ar=['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  function toAr(n){return String(n).split('').map(function(d){return ar[+d];}).join('');}
+
+  function wire(opts){
+    var chips=[].slice.call(document.querySelectorAll(opts.chips));
+    var rows=[].slice.call(document.querySelectorAll(opts.rows));
+    var out=document.getElementById(opts.count);
+    function apply(val){
+      var shown=0;
+      rows.forEach(function(r){
+        var on = (val==='all') || (r.getAttribute(opts.rowAttr)===val);
+        r.hidden = !on;
+        if(on){shown++;}
+      });
+      out.textContent = toAr(shown)+' '+opts.word;
+      chips.forEach(function(c){
+        c.setAttribute('aria-pressed', String(c.getAttribute(opts.chipAttr)===val));
+      });
+    }
+    chips.forEach(function(c){
+      c.addEventListener('click',function(){ apply(c.getAttribute(opts.chipAttr)); });
+    });
+  }
+
+  wire({chips:'.filters [data-f]', chipAttr:'data-f', rows:'#regtable tbody tr',
+        rowAttr:'data-sev', count:'regcount', word:'بندًا معروضًا'});
+  wire({chips:'.filters [data-g]', chipAttr:'data-g', rows:'#fgrid .f',
+        rowAttr:'data-g', count:'fcount', word:'ميزة معروضة'});
+})();
+</script>

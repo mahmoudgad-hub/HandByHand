@@ -130,16 +130,24 @@ export class ChildApi {
   createReport(input: {
     child_id: number; title_ar: string; period_start: string; period_end: string;
     plan_id?: number | null; summary_ar?: string | null;
-  }): Observable<{ report_id: number }> {
-    return this.http.post<{ report_id: number }>(`${this.base}/reports`, input);
+  }): Observable<{ report_id: number; version: string }> {
+    return this.http.post<{ report_id: number; version: string }>(`${this.base}/reports`, input);
   }
 
-  /** Edits a draft. Any field left out is left alone. */
+  /**
+   * Edits a draft. Any field left out is left alone.
+   *
+   * expected_version is the version this editor opened, sent back
+   * exactly as the service gave it. A colleague's save in between is
+   * refused as REPORT_CHANGED rather than overwritten (migration 0141),
+   * and the answer carries the new version for the next save.
+   */
   updateReport(reportId: number, patch: {
+    expected_version: string | null;
     title_ar?: string; summary_ar?: string;
     period_start?: string; period_end?: string; plan_id?: number | null;
-  }): Observable<void> {
-    return this.http.patch<void>(`${this.base}/reports/${reportId}`, patch);
+  }): Observable<{ version: string }> {
+    return this.http.patch<{ version: string }>(`${this.base}/reports/${reportId}`, patch);
   }
 
   report(reportId: number): Observable<Row> {

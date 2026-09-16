@@ -8,11 +8,9 @@
     </div>
   </div>
   <div class="hbh-pagehead__actions dashboard-toolbar" (keydown.escape)="toolbarPanel.set(null)">
-    <div class="dashboard-date"><hbh-icon name="ic-calendar" /><time>{{ today() }}</time></div>
-    <button class="hbh-iconbtn toolbar-bell" type="button" aria-label="الإشعارات" title="الإشعارات" [attr.aria-expanded]="toolbarPanel() === 'alerts'" aria-controls="dashboard-toolbar-panel" (click)="toggleToolbar('alerts')"><hbh-icon name="ic-bell" />@if(alerts().length){<span class="toolbar-count">{{ alerts().length }}</span>}</button>
     <button class="hbh-iconbtn" type="button" aria-label="المساعدة" title="المساعدة" [attr.aria-expanded]="toolbarPanel() === 'help'" aria-controls="dashboard-toolbar-panel" (click)="toggleToolbar('help')"><hbh-icon name="ic-help" /></button>
     @if(toolbarPanel()) { <section id="dashboard-toolbar-panel" class="toolbar-panel" aria-live="polite"><div class="toolbar-panel-head"><strong>{{ toolbarPanel() === 'alerts' ? 'الإشعارات والمتابعة' : 'مساعدة لوحة التحكم' }}</strong><button class="hbh-iconbtn" type="button" aria-label="إغلاق" (click)="toolbarPanel.set(null)"><hbh-icon name="ic-x" /></button></div>
-    @if(toolbarPanel() === 'alerts') { @for(tile of alerts();track tile.key){<a [routerLink]="tile.link" [queryParams]="tile.linkQuery ?? null">{{tile.labelKey | t}} <b>{{countOf(tile)}}</b></a>} @empty {<p>لا توجد عناصر معلّقة ظاهرة حاليًا.</p>} }
+    @if(toolbarPanel() === 'alerts') { @for(task of taskPreview();track task.id){@if(task.primaryAction.drawer){<button type="button" (click)="openTask(task)">{{ task.titleKey | t }} · {{ task.entityDisplayName }}</button>}@else{<a [routerLink]="task.primaryAction.link" [queryParams]="task.primaryAction.query ?? null">{{ task.titleKey | t }} · {{ task.entityDisplayName }}</a>}} @empty {<p>{{ 'dash.noTasks' | t }}</p>} <a routerLink="/tasks">{{ 'dash.allTasks' | t }}</a> }
     @else {<p>اضغط على أي كارت لفتح قائمته، وعلى التنبيه لمتابعة العناصر المعلّقة. زر تحديث يعيد تحميل بيانات لوحة التحكم.</p>}
     </section> }
 
@@ -73,21 +71,26 @@
      and the schema starts a session from CHECKED_IN alone - offering it
      would produce NOT_CHECKED_IN every time. -->
 </div>}
-@if(startFailed()){<p class="my-day__err">تعذّر بدء الجلسة. حدّث الصفحة وحاول مرة أخرى.</p>}
 @else {<p>لا توجد مواعيد متبقية لك اليوم.</p>}
+@if(startFailed()){<p class="my-day__err">تعذّر بدء الجلسة. حدّث الصفحة وحاول مرة أخرى.</p>}
 <!-- Only when the day HAS appointments. "0 من 0" on a day off is a line
      that says nothing and still asks to be read. And the phrasing avoids
      an Arabic plural: 1/2/3-10/11+ take four different forms, and a
      template is the wrong place to decide which. -->
 @if(myDayState()==='ready' && myDay().length){<p class="my-day__rest">متبقٍ لك اليوم: {{ format.count(remaining()) }} من {{ format.count(myDay().length) }}</p>}
-<a routerLink="/my-day">فتح يومك ←</a></section>}
+<a routerLink="/appointments" [queryParams]="{ view: 'mine' }">فتح يومك ←</a></section>}
 @if(auth.can('APPOINTMENT.BOOK')) {<section class="dash-panel"><h2>نظرة على جدول اليوم</h2><div class="agenda-body">@if(agendaFailed()){<p>تعذر تحميل ملخص اليوم.</p>} @else if(agendaCount() < agendaParts.length){<p>جارٍ تحميل ملخص اليوم…</p>} @else {<div class="agenda-ring" [style.background]="ring()"><div><b>{{agendaTotal()}}</b><small>الإجمالي</small></div></div><ul>@for(part of agendaParts;track part.key){<li><i [style.background]="part.color"></i>{{part.label}}<b>{{agenda()[part.key] || 0}}</b></li>}</ul>}</div><a routerLink="/appointments">عرض الجدول الكامل ←</a></section>}
 <!-- Absent, not apologetic. An account without CATALOG.MANAGE was shown a
      panel whose entire content was "room data is not available for this
      account" - a permanent sentence about a screen they will never need,
      taking the place a useful panel could have had. -->
 @if(roomsState()!=='denied') {<section class="dash-panel"><h2>غرف المركز</h2><div class="dashboard-rooms">@for(room of rooms();track room['room_id']){<a routerLink="/rooms"><hbh-icon name="ic-door"/><b>{{room['name_ar']}}</b><small>{{room['room_type'] || 'غرفة بالمركز'}}</small></a>} @empty {<p>{{roomsState() === 'loading' ? 'جارٍ التحميل…' : roomsState() === 'ready' ? 'لا توجد غرف مسجلة.' : 'تعذر تحميل بيانات الغرف.'}}</p>}</div>@if(roomsState()==='ready'){<a routerLink="/rooms">عرض كل الغرف ←</a>}</section>}
-<section class="dash-panel"><h2>التنبيهات والمتابعة</h2><div class="dashboard-alerts">@for(tile of alerts();track tile.key){<a [routerLink]="tile.link" [queryParams]="tile.linkQuery ?? null"><hbh-icon [name]="tile.icon"/><span>{{tile.labelKey | t}}</span><b>{{countOf(tile)}}</b><span>عرض</span></a>} @empty {<p>لا توجد عناصر معلّقة ظاهرة حاليًا.</p>}</div></section>
+<!-- The first five tasks, from the same read the task inbox draws. One
+     source: a preview that counted its own way would be a second place for
+     the same rows to be right or wrong. -->
+<!-- An appointment or an invoice opens in the record drawer, here, with
+     the step proposed; the rest navigate to the screen that owns the row. -->
+<section class="dash-panel"><h2>{{ 'dash.tasksPreview' | t }} @if(tasks.loadedAt() && tasks.count()){<span class="hbh-badge hbh-badge--progress">{{ tasks.count() }}</span>}</h2><div class="dashboard-alerts">@for(task of taskPreview();track task.id){@if(task.primaryAction.drawer){<button type="button" class="dashboard-alerts__task" (click)="openTask(task)" [class.is-urgent]="task.priority === 'urgent'"><hbh-icon [name]="taskIcon(task)"/><span>{{ task.titleKey | t }} · {{ task.entityDisplayName }}</span><b>{{ task.descriptionKey | t }}</b><span>{{ task.primaryAction.labelKey | t }}</span></button>}@else{<a [routerLink]="task.primaryAction.link" [queryParams]="task.primaryAction.query ?? null" [class.is-urgent]="task.priority === 'urgent'"><hbh-icon [name]="taskIcon(task)"/><span>{{ task.titleKey | t }} · {{ task.entityDisplayName }}</span><b>{{ task.descriptionKey | t }}</b><span>{{ task.primaryAction.labelKey | t }}</span></a>}} @empty {<p>{{ (tasks.loadedAt() ? 'dash.noTasks' : 'action.loading') | t }}</p>}</div><a routerLink="/tasks">{{ 'dash.allTasks' | t }} ←</a></section>
 </div>
 
 <div class="dashboard-bottom">

@@ -10,11 +10,14 @@ import { ActivatedRoute } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { PortalApi } from '../../core/api/portal-api';
+import { HBH_CONFIG } from '@hbh/shared/config/app-config';
+import { ChildContextService } from '../../core/auth/child-context.service';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
 import { FormatService } from '@hbh/shared/format/format.service';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
-import { ParentRequest, RequestKind } from '../../core/models/portal.models';
+import { DateParts } from '@hbh/shared/ui/date-parts';
+import { AppointmentSummary, ParentRequest, RequestKind } from '../../core/models/portal.models';
 import { Icon, IconName } from '@hbh/shared/icon/icon';
 import { ToastService } from '@hbh/shared/toast/toast.service';
 import { EmptyState } from '@hbh/shared/ui/empty-state';
@@ -35,13 +38,15 @@ import { StatusBadge } from '../../shared/ui/status-badge';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule, Icon, TranslatePipe, StatusBadge,
-    Skeleton, EmptyState, ErrorNote,
+    Skeleton, EmptyState, ErrorNote, DateParts,
   ],
   templateUrl: './requests.html',
   styleUrl: './requests.css',
 })
 export class Requests {
   private readonly api = inject(PortalApi);
+  private readonly childContext = inject(ChildContextService);
+  private readonly config = inject(HBH_CONFIG);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
@@ -65,6 +70,13 @@ export class Requests {
   protected readonly drafting = signal<RequestKind | null>(null);
   protected readonly sending = signal(false);
   protected readonly note = new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] });
+  protected readonly appointments = signal<readonly AppointmentSummary[]>([]);
+  protected readonly appointmentsLoading = signal(true);
+  protected readonly appointmentsFailed = signal(false);
+  protected readonly appointmentId = new FormControl('', { nonNullable: true });
+  protected readonly alternativeDate = new FormControl('', { nonNullable: true });
+  protected readonly alternativeTime = new FormControl('', { nonNullable: true });
+  protected readonly today = this.centreNow().slice(0, 10);
 
   constructor() {
     // Arrive with a kind already chosen, when the screen that sent you here
@@ -80,6 +92,45 @@ export class Requests {
       this.drafting.set(wanted as RequestKind);
     }
     this.load();
+    this.loadAppointments();
+  }
+
+  protected loadAppointments(): void {
+    this.appointmentsLoading.set(true);
+    this.appointmentsFailed.set(false);
+    this.api.appointments(this.childContext.requireId(), 'upcoming')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: items => {
+          this.appointments.set(items.filter(a => ['BOOKED', 'CONFIRMED'].includes(a.status)));
+          const wanted = this.route.snapshot.queryParamMap.get('appointment');
+          if (wanted && this.appointments().some(a => a.id === wanted)) this.appointmentId.setValue(wanted);
+          this.appointmentsLoading.set(false);
+        },
+        error: () => { this.appointmentsLoading.set(false); this.appointmentsFailed.set(true); },
+      });
+  }
+
+  protected validDraft(): boolean {
+    const kind = this.drafting();
+    if (!kind || this.note.invalid || this.sending()) return false;
+    if (kind === 'CALLBACK') return true;
+    if (this.appointmentsLoading() || this.appointmentsFailed()
+      || !this.appointments().some(a => a.id === this.appointmentId.value)) return false;
+    if (kind === 'CANCEL') return true;
+    const date = this.alternativeDate.value;
+    const time = this.alternativeTime.value;
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) && /^\d{2}:\d{2}$/.test(time)
+      && `${date}T${time}` > this.centreNow();
+  }
+
+  private centreNow(): string {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: this.config.timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date());
+    const value = (type: string) => parts.find(part => part.type === type)?.value;
+    return `${value('year')}-${value('month')}-${value('day')}T${value('hour')}:${value('minute')}`;
   }
 
   protected load(): void {
@@ -108,6 +159,8 @@ export class Requests {
     if (this.drafting() === kind) { this.cancelDraft(); return; }
     this.drafting.set(kind);
     this.note.setValue('');
+    this.alternativeDate.setValue('');
+    this.alternativeTime.setValue('');
   }
 
   protected cancelDraft(): void {
@@ -117,14 +170,20 @@ export class Requests {
 
   protected submit(): void {
     const kind = this.drafting();
-    if (!kind || this.sending() || this.note.invalid) {
+    if (!kind || !this.validDraft()) {
       return;
     }
     this.sending.set(true);
     this.api.submitRequest({
+      childId: this.childContext.requireId(),
       kind,
-      appointmentId: null,
-      note: this.note.value.trim() || this.i18n.translate(`requests.kind.${kind}`),
+      appointmentId: kind === 'CALLBACK' ? null : this.appointmentId.value,
+      note: [
+        kind === 'RESCHEDULE' ? this.i18n.translate('requests.alternativeSummary', {
+          date: this.alternativeDate.value, time: this.alternativeTime.value,
+        }) : '',
+        this.note.value.trim(),
+      ].filter(Boolean).join('\n') || this.i18n.translate(`requests.kind.${kind}`),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

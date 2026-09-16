@@ -1,57 +1,100 @@
-<div class="hbh-shell">
-
+<div class="hbh-shell" [class.ops-sidebar-collapsed]="sidebarCollapsed()">
   <a class="hbh-skip" href="#opsMain">{{ 'a11y.skipToContent' | t }}</a>
-
-  <!-- The sidebar. Its entries are whatever the server said this account may
-       reach; an account with two permissions sees two entries. -->
-  <aside class="hbh-side">
-    <a class="hbh-side__brand" routerLink="/dashboard">
-      <img class="hbh-logo hbh-side__full-logo" src="assets/brand/staff-logo-white.png" width="2172" height="724" [attr.alt]="'app.name' | t">
-    </a>
-
+  <header class="ops-topbar ops-mobilebar">
+    <button type="button" class="ops-menu-button ops-desktop-trigger" (click)="toggleSidebar()" aria-controls="opsSidebar" [attr.aria-expanded]="!sidebarCollapsed()" [attr.aria-label]="(sidebarCollapsed() ? 'nav.expandSidebar' : 'nav.collapseSidebar') | t" [attr.title]="(sidebarCollapsed() ? 'nav.expandSidebar' : 'nav.collapseSidebar') | t"><hbh-icon name="ic-menu" /></button>
+    <button type="button" class="ops-menu-button ops-mobile-trigger" [attr.aria-label]="'nav.openMenu' | t" (click)="accountMenu.hidePopover(); menuOpen.set(true)" aria-haspopup="dialog" [attr.aria-expanded]="menuOpen()"><hbh-icon name="ic-menu" /><span>{{ 'nav.openMenu' | t }}</span></button>
+    <div class="ops-heading"><span class="ops-topbar__title">{{ (title() || 'app.name') | t }}</span><small>{{ auth.me()?.centerName }}</small></div>
+    @if (favoriteEntry(); as entry) {
+      <button type="button" class="ops-favorite-toggle" [class.is-favorite]="favorites.has(entry.key)"
+        [attr.aria-pressed]="favorites.has(entry.key)" (click)="favorites.toggle(entry.key)"
+        [attr.aria-label]="((favorites.has(entry.key) ? 'favorites.remove' : 'favorites.add') | t) + ': ' + (entry.labelKey | t)"
+        [attr.title]="(favorites.has(entry.key) ? 'favorites.remove' : 'favorites.add') | t"><hbh-icon name="ic-star" /></button>
+    }
+    <div class="ops-quick-links">@for(entry of quickLinks();track entry.key){
+      <button type="button" class="ops-quick-link" [attr.popovertarget]="'quick-' + entry.key" [attr.aria-controls]="'quick-' + entry.key" [attr.aria-expanded]="quickOpen()===entry.key" (click)="positionQuick($event)" [attr.aria-label]="entry.labelKey | t" [attr.title]="entry.labelKey | t"><hbh-icon [name]="entry.icon" />@if(badgeOf(entry);as count){<b>{{count}}</b>}</button>
+      <section #quickPanel class="ops-quick-panel" popover="auto" [id]="'quick-' + entry.key" [style.left.px]="quickLeft()" (toggle)="quickOpen.set($any($event).newState === 'open' ? entry.key : '')" [attr.aria-label]="entry.labelKey | t">
+        <header><strong>{{ entry.labelKey | t }}</strong><span>{{ (entry.key==='tasks' ? 'nav.pendingTasks' : 'nav.unreadOnly') | t }}</span></header>
+        <div class="ops-quick-list">
+        @if(entry.key==='tasks'){
+          @for(task of tasks.tasks().slice(0,5);track task.id){<a [routerLink]="task.primaryAction.link" [queryParams]="task.primaryAction.query" (click)="quickPanel.hidePopover()"><span class="ops-preview-icon"><hbh-icon name="ic-check-circle" /></span><span><strong>{{task.titleKey | t}}</strong><small>{{task.entityDisplayName}}</small></span></a>}@empty{<p>{{ (tasks.loadedAt() ? 'nav.noPendingTasks' : 'nav.previewLoading') | t }}</p>}
+        }@else{
+          @for(item of unreadPreview();track item.id){<a [queryParams]="item.targetQuery" [routerLink]="item.target || ['/notifications']" (click)="readPreview(item); quickPanel.hidePopover()"><span class="ops-preview-icon"><hbh-icon name="ic-bell" /></span><span><strong>{{item.title}} @if(item.kind==='CHAT_MESSAGE'){<span class="hbh-badge">{{'chat.notification' | t}}</span>}</strong><small>{{item.body}}</small></span><i class="ops-preview-dot"></i></a>}@empty{<p>{{ (unread() === null ? 'nav.previewLoading' : 'nav.noUnread') | t }}</p>}
+        }
+        </div>
+        <a class="ops-quick-all" [routerLink]="pathOf(entry)" (click)="quickPanel.hidePopover()">{{ 'nav.viewAll' | t }} <span aria-hidden="true">←</span></a>
+      </section>
+    }</div>
+    <button type="button" class="ops-account-trigger" popovertarget="opsAccountMenu" aria-controls="opsAccountMenu" [attr.aria-expanded]="accountOpen()">
+      <span class="ops-account-avatar"><hbh-user-avatar [userId]="auth.me()?.userId" [name]="auth.me()?.fullName ?? ''" /></span>
+      <span class="ops-account-copy">
+        <span class="ops-account-name">
+          {{ auth.me()?.fullName }}
+          @if (accountRole()) { <span class="ops-account-role">— {{ accountRole() }}</span> }
+        </span>
+      </span>
+      <hbh-icon name="ic-chev-down" />
+    </button>
+    <div #accountMenu id="opsAccountMenu" class="ops-account-menu" popover="auto" (toggle)="accountOpen.set($any($event).newState === 'open')">
+      <div class="ops-account-details"><b>{{ auth.me()?.fullName }}</b><small>{{ auth.me()?.centerName }}</small></div>
+      <button type="button" class="ops-account-profile" (click)="accountMenu.hidePopover(); profileOpen.set(true)"><hbh-icon name="ic-user" /><span>{{ 'profile.title' | t }}</span></button>
+      <button type="button" class="ops-account-logout" (click)="accountMenu.hidePopover(); signOut()"><hbh-icon name="ic-door" /><span>{{ 'action.signOut' | t }}</span></button>
+    </div>
+  </header>
+  <aside class="hbh-side" id="opsSidebar">
+    <a class="hbh-side__brand" routerLink="/dashboard"><img class="ops-brand-mark" src="assets/brand/hbh-logo-mark.png" width="48" height="48" alt=""><img class="hbh-logo hbh-side__full-logo" src="assets/brand/staff-logo-white.png" width="2172" height="724" [attr.alt]="'app.name' | t"></a>
+    <button type="button" class="ops-rail-search" (click)="sidebarCollapsed.set(false)" [attr.aria-label]="'nav.search' | t" [attr.title]="'nav.search' | t"><hbh-icon name="ic-search" /></button>
+    <ng-container *ngTemplateOutlet="navigation; context: {$implicit: 'desktop'}" />
+    <button class="ops-sidebar-footer" type="button" (click)="toggleSidebar()" [attr.aria-label]="(sidebarCollapsed() ? 'nav.expandSidebar' : 'nav.collapseSidebar') | t"><hbh-icon name="ic-menu" /><span>{{ 'nav.collapseSidebar' | t }}</span></button>
+  </aside>
+  <main class="hbh-main" id="opsMain" tabindex="-1">@if (favorites.storageFailed()) { <p role="status">{{ 'favorites.storageFailed' | t }}</p> }<router-outlet /></main>
+  @if (profileOpen()) { <hbh-account-dialog (closed)="profileOpen.set(false)" /> }
+  <hbh-action-dialog-host />
+  <hbh-record-drawer-host />
+  @if (menuOpen()) {
+    <dialog hbhModal class="ops-menu-dialog" aria-labelledby="opsMenuTitle" (dismissed)="closeMenu()" (click)="dismissBackdrop($event)">
+      <header class="ops-menu-dialog__head"><img src="assets/brand/staff-logo-white.png" width="2172" height="724" [alt]="'app.name' | t"><h2 id="opsMenuTitle" class="ops-visually-hidden">{{ 'nav.primary' | t }}</h2><button type="button" class="ops-menu-button" (click)="closeMenu()" [attr.aria-label]="'nav.closeMenu' | t"><hbh-icon name="ic-x" /></button></header>
+      <ng-container *ngTemplateOutlet="navigation; context: {$implicit: 'mobile'}" />
+      <footer class="ops-drawer-account"><div><hbh-icon name="ic-user" /><span><b>{{ auth.me()?.fullName }}</b><small>{{ auth.me()?.centerName }}</small></span></div><button type="button" (click)="closeMenu(); signOut()"><hbh-icon name="ic-door" /><span>{{ 'action.signOut' | t }}</span></button></footer>
+    </dialog>
+  }
+  <ng-template #navigation let-surface>
+    <div class="ops-nav-search"><hbh-icon name="ic-search" />
+      <input type="search" [id]="'navSearch-' + surface" [value]="search()" [attr.aria-label]="'nav.search' | t" [placeholder]="'nav.search' | t" autocomplete="off" (input)="search.set($any($event.target).value)">
+      @if (search()) { <button type="button" (click)="search.set('')" [attr.aria-label]="'nav.clearSearch' | t"><hbh-icon name="ic-x" /></button> }
+    </div>
     <nav class="hbh-nav" [attr.aria-label]="'nav.primary' | t">
-      @for (entry of nav(); track entry.key) {
-        <!-- title, because below 900px the CSS hides the <span> and leaves
-             eighteen icons in a scrolling strip. The text stays in the DOM so
-             a screen reader still reads it, but a person using a mouse had
-             nothing at all - no tooltip, no label, eighteen shapes to guess
-             between. The same string the icon replaces. -->
-        <a class="hbh-nav__item" [class.is-active]="active() === entry.key"
-           [routerLink]="entry.path"
-           [attr.title]="entry.labelKey | t"
-           [attr.aria-current]="active() === entry.key ? 'page' : null">
-          <hbh-icon [name]="entry.icon" />
-          <span>{{ entry.labelKey | t }}</span>
-        </a>
+      @for (group of filteredGroups(); track group.key) {
+        <section class="hbh-nav__group" [class.hbh-nav__group--top]="!group.labelKey" (mouseleave)="hideRail(group, surface)">
+          @if (group.labelKey) {
+            <button class="ops-nav-heading" [class.has-active-page]="groupActive(group)" type="button" (click)="activateGroup(group, surface, $event)" (mouseenter)="showRail(group, surface, $event)" [disabled]="!!search().trim()" [attr.aria-label]="group.labelKey | t" [attr.aria-expanded]="surface === 'desktop' && sidebarCollapsed() ? railOpen() === group.key : expanded(group)" [attr.aria-controls]="surface + '-nav-' + group.key"><hbh-icon class="ops-group-icon" [name]="groupIcon(group)" /><span>{{ group.labelKey | t }}</span><hbh-icon name="ic-chev-down" [class.is-folded]="!expanded(group)" /></button>
+          }
+          <div class="ops-nav-links" [id]="surface + '-nav-' + group.key" [attr.popover]="group.labelKey && surface === 'desktop' && sidebarCollapsed() ? 'auto' : null" [class.ops-rail-panel]="group.labelKey && surface === 'desktop' && sidebarCollapsed()" [style.--rail-top]="railTop() + 'px'" [style.--rail-left]="railLeft() + 'px'" (toggle)="railToggled(group, $event)" [hidden]="group.labelKey && !expanded(group) && !(surface === 'desktop' && sidebarCollapsed())">
+            @if (group.labelKey && surface === 'desktop' && sidebarCollapsed()) { <strong class="ops-rail-title">{{ group.labelKey | t }}</strong> }
+            @for (entry of group.entries; track entry.key) {
+              <a class="hbh-nav__item" [class.is-active]="active() === entry.key" (click)="followLink()" [attr.aria-label]="entry.labelKey | t" [attr.title]="entry.labelKey | t" [routerLink]="pathOf(entry)" [queryParams]="queryOf(entry)" [attr.aria-current]="active() === entry.key ? 'page' : null"><hbh-icon [name]="entry.icon" /><span>{{ entry.labelKey | t }}</span>
+                @if (badgeOf(entry); as count) { @if (count > 0) { <b class="hbh-nav__badge">{{ count }}</b> } }
+              </a>
+            }
+          </div>
+        </section>
+      } @empty {
+        <div class="ops-nav-empty" role="status"><hbh-icon name="ic-search" /><p>{{ 'nav.noResults' | t }}</p><button type="button" class="ops-menu-button" (click)="search.set('')">{{ 'nav.clearSearch' | t }}</button></div>
       }
     </nav>
-
-    <div class="hbh-side__user">
-      <span class="hbh-avatar hbh-side__ph"><hbh-icon name="ic-user" /></span>
-      <div>
-        <b>{{ auth.me()?.fullName }}</b>
-        <small>{{ auth.me()?.centerName }}</small>
-        <span class="hbh-side__status"><i></i> {{ 'status.online' | t }}</span>
-      </div>
-      <!-- Icon only, and only on the narrow strip where the labelled row
-           below has no room. Never the sole way out on a desktop: a bare
-           padlock in a corner is not something anyone finds. -->
-      <button class="hbh-side__out" type="button"
-              [attr.aria-label]="'action.signOut' | t" (click)="signOut()">
-        <hbh-icon name="ic-door" />
-      </button>
-    </div>
-
-    <!-- Signing out is written, not implied. On a shared reception desk it is
-         the last thing done on every shift, so it says what it is. -->
-    <button class="hbh-side__signout" type="button" (click)="signOut()">
-      <hbh-icon name="ic-door" />
-      <span>{{ 'action.signOut' | t }}</span>
-    </button>
-  </aside>
-
-  <main class="hbh-main" id="opsMain" tabindex="-1">
-    <router-outlet />
-  </main>
-
+  </ng-template>
 </div>
+
+@if(newItems()){
+<aside class="ops-new-alert" aria-label="{{ 'nav.newActivity' | t }}">
+  <header class="ops-alert-head"><span class="ops-alert-kicker"><span class="ops-alert-dot"></span>{{ 'nav.activityUpdate' | t }}</span><button type="button" class="ops-alert-close" (click)="dismissNew()" [attr.aria-label]="'nav.dismissActivity' | t" [attr.title]="'nav.dismissActivity' | t"><hbh-icon name="ic-x" /></button></header>
+  <div class="ops-alert-items" role="status" aria-live="polite" aria-atomic="true">
+    @for(entry of popupItems().slice(0,3);track entry.key){
+      <button class="ops-alert-item" type="button" [disabled]="popupOpening()" (click)="openNew(entry.task,entry.notification)">
+        <span class="ops-alert-icon"><hbh-icon [name]="entry.task?'ic-check-circle':'ic-bell'" /></span>
+        <span class="ops-alert-copy"><strong>{{entry.task?(entry.task.titleKey | t):entry.notification?.title}}</strong><small>{{entry.task?.entityDisplayName??entry.notification?.body}}</small></span>
+      </button>
+    }
+    @if(popupError()){<p role="alert">{{popupError()}}</p>}
+  </div>
+  <footer class="ops-alert-footer"><span>{{ 'nav.activityHint' | t }}</span><button type="button" (click)="dismissNew()">{{ 'nav.dismissActivity' | t }}</button></footer>
+</aside>}

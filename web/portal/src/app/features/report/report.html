@@ -8,7 +8,23 @@
                     [retryLabel]="'action.retry' | t" (retry)="load()" />
   } @else if (data(); as report) {
 
+    <!-- Print, or save as PDF (#23). One button, because the browser's print
+         dialog is where "save as PDF" lives on every phone and laptop, and a
+         second button that produced the same dialog would be a promise of a
+         different file. Hidden on the printed page itself. -->
+    <div class="rep__tools no-print">
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="print()">
+        <hbh-icon name="ic-file" /> {{ 'report.print' | t }}
+      </button>
+      <small class="hbh-muted">{{ 'report.printHint' | t }}</small>
+    </div>
+
     <article class="rep">
+      <!-- The printed page has no shell to say whose report this is. -->
+      <p class="rep__printhead print-only">
+        <strong>{{ childName() }}</strong>
+        <span>{{ 'report.printedFrom' | t: { app: ('app.name' | t) } }}</span>
+      </p>
       <h1 class="rep__t">{{ report.title }}</h1>
 
       <p class="rep__meta">

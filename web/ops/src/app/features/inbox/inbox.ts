@@ -114,7 +114,7 @@ export class Inbox {
   protected open(item: InboxItem): void {
     this.markRead(item);
     if (item.target) {
-      void this.router.navigate(item.target as string[]);
+      void this.router.navigate(item.target as string[],{queryParams:item.targetQuery});
     }
   }
 
@@ -144,6 +144,7 @@ export class Inbox {
    */
   protected icon(item: InboxItem): IconName {
     const byKind: Record<string, IconName> = {
+      CHAT_MESSAGE:'ic-chat',
       STAFF_CHILD_ASSIGNED: 'ic-user',
       STAFF_APPOINTMENT_BOOKED: 'ic-calendar',
       STAFF_REQUEST_NEW: 'ic-chat',

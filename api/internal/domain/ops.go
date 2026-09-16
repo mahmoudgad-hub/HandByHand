@@ -126,8 +126,14 @@ type SlotCheck struct {
 // confirm with CHILD_BUSY. "Free" here means free for the therapist and the
 // room, which is what the receptionist is choosing between.
 type Slot struct {
-	StartsAt   time.Time `json:"starts_at"`
-	EndsAt     time.Time `json:"ends_at"`
-	RoomID     int       `json:"room_id"`
-	RoomNameAr string    `json:"room_name_ar"`
+	StartsAt time.Time `json:"starts_at"`
+	EndsAt   time.Time `json:"ends_at"`
+
+	// BOTH NULLABLE, because a slot for an online consultation has no room
+	// and never will. Pointers rather than a zero int and an empty string:
+	// room 0 does not exist, and a screen that read it as one would show a
+	// receptionist a room number nobody can walk into. `null` is a fact the
+	// client can branch on; 0 is a fact it has to guess about.
+	RoomID     *int    `json:"room_id"`
+	RoomNameAr *string `json:"room_name_ar"`
 }

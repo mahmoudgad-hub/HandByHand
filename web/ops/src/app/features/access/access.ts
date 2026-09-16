@@ -1,3 +1,5 @@
+import { ArchiveSwitch } from '@hbh/shared/ui/archive-switch';
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -14,13 +16,14 @@ import { FormatService } from '@hbh/shared/format/format.service';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon } from '@hbh/shared/icon/icon';
+import { UserAvatar, UserAvatars } from '@hbh/shared/ui/user-avatar';
 import { ToastService } from '@hbh/shared/toast/toast.service';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { DateParts } from '@hbh/shared/ui/date-parts';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 
 import { Row } from '../../core/api/ops-api';
-import { readRefusal, refusalKey } from '../../core/api/ops-error';
+import { readRefusal, refusalKey, refusalSentence } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
 import { OPS_NAV } from '../../layout/shell/nav';
 
@@ -38,6 +41,8 @@ interface UserRole {
 
 interface UserRow {
   readonly user_id: number;
+  readonly center_name: string;
+  readonly time_zone: string;
   readonly username: string;
   readonly full_name_ar: string;
   readonly user_type: string;
@@ -92,11 +97,12 @@ type Tab = 'people' | 'roles' | 'screens';
 @Component({
   selector: 'hbh-access',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
+  imports: [ArchiveSwitch, TablePages, 
     RouterLink, ReactiveFormsModule, ModalDialog, Icon, TranslatePipe,
-    Skeleton, ErrorNote, DateParts,
+    Skeleton, ErrorNote, DateParts, UserAvatar,
   ],
   templateUrl: './access.html',
+  styleUrl: './access.css',
 })
 export class Access {
   private readonly http = inject(HttpClient);
@@ -165,11 +171,26 @@ export class Access {
     return user.active_flg ? `access.status.${user.status}` : 'status.archived';
   }
 
+  protected readonly userCategory = signal<'STAFF' | 'GUARDIAN' | 'ALL'>('STAFF');
+
+  protected changeUserCategory(value: string): void {
+    if (value !== 'STAFF' && value !== 'GUARDIAN' && value !== 'ALL') return;
+    this.userCategory.set(value);
+    if (!this.shownUsers().some(user => user.user_id === this.selectedUserId())) {
+      this.selectedUserId.set(null);
+      this.syncDraft();
+      this.buildPiiForm();
+    }
+  }
+
   protected readonly shownUsers = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
+    const category = this.userCategory();
+    const categoryRows = this.users().filter(user => category === 'ALL'
+      || (category === 'STAFF' ? ['STAFF', 'THERAPIST'].includes(user.user_type) : user.user_type === 'GUARDIAN'));
     const rows = this.onlyInactive()
-      ? this.users().filter((u) => !this.isPlainActive(u))
-      : this.users();
+      ? categoryRows.filter((u) => !this.isPlainActive(u))
+      : categoryRows;
     if (!term) {
       return rows;
     }
@@ -329,6 +350,8 @@ export class Access {
           const me = this.auth.me();
           this.users.set(listed.length || !me ? listed : [{
             user_id: me.userId,
+            center_name: me.centerName,
+            time_zone: me.timeZone,
             username: me.username,
             full_name_ar: me.fullName,
             user_type: me.userType,
@@ -383,7 +406,45 @@ export class Access {
   }
 
   private syncDraft(): void {
+    this.resetAccount();
     this.draftRoles.set((this.selectedUser()?.roles ?? []).map((r) => r.code));
+  }
+
+  protected readonly accountName = new FormControl('', { nonNullable: true });
+  protected readonly accountMobile = new FormControl('', { nonNullable: true });
+  protected readonly accountBusy = signal(false);
+  protected readonly accountError = signal('');
+  protected resetAccount(): void {
+    const user = this.selectedUser();
+    this.accountName.reset(user?.full_name_ar ?? '');
+    this.accountMobile.reset(user?.mobile ?? '');
+    this.accountError.set('');
+  }
+  protected accountDirty(): boolean {
+    const user = this.selectedUser();
+    return !!user && (this.accountName.value.trim() !== user.full_name_ar || this.accountMobile.value.trim() !== (user.mobile ?? ''));
+  }
+  protected saveAccount(): void {
+    const user = this.selectedUser();
+    if (!user || !this.canManage() || this.accountBusy() || !this.accountDirty()) return;
+    const fullName = this.accountName.value.trim(), mobile = this.accountMobile.value.trim();
+    if (!fullName) { this.accountError.set('الاسم الكامل مطلوب.'); return; }
+    const body: Record<string, unknown> = {};
+    if (fullName !== user.full_name_ar) body['full_name_ar'] = fullName;
+    if (mobile !== (user.mobile ?? '')) {
+      if (mobile) body['mobile'] = mobile; else body['clear_mobile'] = true;
+    }
+    this.accountBusy.set(true); this.accountError.set('');
+    this.http.patch(`${this.base}/users/${user.user_id}`, body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.accountBusy.set(false);
+        this.users.update(users => users.map(row => row.user_id === user.user_id ? { ...row, full_name_ar: fullName, mobile: mobile || null } : row));
+        if (this.selectedUserId() === user.user_id) this.resetAccount();
+        this.toast.show('تم حفظ بيانات المستخدم.');
+        if (this.auth.me()?.userId === user.user_id) this.auth.loadIdentity().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({error: () => {}});
+      },
+      error: error => { this.accountBusy.set(false); this.accountError.set(refusalSentence(this.i18n,error)); },
+    });
   }
 
   protected hasRole(code: string): boolean {
@@ -421,7 +482,7 @@ export class Access {
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }
@@ -518,7 +579,7 @@ export class Access {
         },
         error: (error: unknown) => {
           this.issuing.set(false);
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }
@@ -574,15 +635,60 @@ export class Access {
       controls[name] = new FormControl(value, { nonNullable: true });
       controls[name].valueChanges
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(() => this.piiDirty.set(true));
+        .subscribe((next) => {
+          this.piiDirty.set(true);
+          if (name === 'national_id') {
+            this.piiNidValue.set(next);
+          }
+          // Editing the refused box clears its complaint. Leaving it lit
+          // while somebody corrects it says the correction is also wrong.
+          if (this.piiBadField() === name) {
+            this.piiBadField.set(null);
+            this.piiError.set(null);
+          }
+        });
     }
+    this.piiNidValue.set(controls['national_id'].value);
     this.pii.set(controls);
     this.piiDirty.set(false);
   }
 
   protected cancelPii(): void {
+    this.piiBadField.set(null);
+    this.piiError.set(null);
     this.buildPiiForm();
   }
+
+  /**
+   * Which input the service refused, and what it said about it.
+   *
+   * This card had neither. A refusal arrived as a toast reading "the value
+   * is not in the correct format" over a form with three inputs, and then
+   * the toast went away - so the correction had to be guessed, and the
+   * sentence explaining it was no longer on the screen to re-read. The
+   * owner met exactly this with a national id of thirteen digits.
+   *
+   * The sentence is held, not the key: it carries the length the SERVICE
+   * sent, and there is no way to pass a value through a `| t` pipe.
+   */
+  protected readonly piiBadField = signal<string | null>(null);
+  protected readonly piiError = signal<string | null>(null);
+
+  /**
+   * How many digits are in the identity box right now.
+   *
+   * Shown beside the field at all times, because "it must be fourteen" is
+   * only half an answer to somebody who has not counted what they typed -
+   * and a fourteen-digit number is not countable at a glance. Digits only:
+   * a space or a dash is not a digit, and the rule counts digits.
+   */
+  protected readonly nidDigits = computed(() => {
+    const raw = this.piiNidValue();
+    return (raw.match(/[0-9]/g) ?? []).length;
+  });
+
+  /** The identity box's live value, as a signal the count can depend on. */
+  private readonly piiNidValue = signal('');
 
   protected savePii(): void {
     const user = this.selectedUser();
@@ -601,6 +707,8 @@ export class Access {
 
     const existing = this.profile();
     this.saving.set(true);
+    this.piiBadField.set(null);
+    this.piiError.set(null);
     const call = existing
       ? this.http.patch(`${this.base}/staff-profiles/${existing['profile_id']}`, body)
       : this.http.post(`${this.base}/staff-profiles`, { ...body, user_id: user.user_id });
@@ -614,7 +722,13 @@ export class Access {
       },
       error: (error: unknown) => {
         this.saving.set(false);
-        this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+        const sentence = refusalSentence(this.i18n, error);
+        // Beside the input AND in the toast. The toast is what a person
+        // looking elsewhere notices; the line under the box is what is
+        // still there when they look back.
+        this.piiBadField.set(readRefusal(error).field);
+        this.piiError.set(sentence);
+        this.toast.error(sentence);
       },
     });
   }
@@ -648,7 +762,7 @@ export class Access {
         },
         error: (error: unknown) => {
           this.uploadingDoc.set(false);
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }
@@ -662,7 +776,7 @@ export class Access {
           this.load();
         },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -694,7 +808,7 @@ export class Access {
           setTimeout(() => URL.revokeObjectURL(url), 60_000);
         },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -705,38 +819,16 @@ export class Access {
    * person's face while the next one loads - which on a screen full of
    * identity numbers would be worse than showing nothing.
    */
-  protected readonly photoUrl = signal<string | null>(null);
-  private photoObjectUrl: string | null = null;
+  private readonly avatars = inject(UserAvatars);
+  protected readonly photoUrl = computed(() => {
+    const id = this.selectedUserId();
+    return id ? this.avatars.urls()[id] ?? null : null;
+  });
   protected readonly loadingPhoto = signal(false);
 
   private loadPhoto(): void {
-    this.releasePhoto();
     const user = this.selectedUser();
-    if (!user || !this.canSeePii()) {
-      return;
-    }
-    this.loadingPhoto.set(true);
-    this.http.get(`${this.base}/users/${user.user_id}/photo`, { responseType: 'blob' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (blob) => {
-          this.loadingPhoto.set(false);
-          this.photoObjectUrl = URL.createObjectURL(blob);
-          this.photoUrl.set(this.photoObjectUrl);
-        },
-        // 404 is the ordinary answer for somebody with no photograph, and
-        // for somebody whose photograph this caller may not see. Neither is
-        // an error worth a message.
-        error: () => this.loadingPhoto.set(false),
-      });
-  }
-
-  private releasePhoto(): void {
-    if (this.photoObjectUrl) {
-      URL.revokeObjectURL(this.photoObjectUrl);
-      this.photoObjectUrl = null;
-    }
-    this.photoUrl.set(null);
+    if (user) this.avatars.load(user.user_id, true);
   }
 
   protected onPickStaffPhoto(event: Event): void {
@@ -747,19 +839,18 @@ export class Access {
     if (!file || !user) {
       return;
     }
-    const form = new FormData();
-    form.append('file', file);
     this.loadingPhoto.set(true);
-    this.http.post(`${this.base}/users/${user.user_id}/photo`, form)
+    this.avatars.save(user.user_id, file)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.loadingPhoto.set(false);
           this.toast.show(this.i18n.translate('access.photoSaved'));
-          this.loadPhoto();
+          this.load();
         },
         error: (error: unknown) => {
           this.loadingPhoto.set(false);
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }
@@ -772,17 +863,18 @@ export class Access {
     // The FILE stays. Nothing else points at it, but reaping unreferenced
     // files is its own job with its own decision - and a delete that runs
     // from a screen is the one that eventually deletes the wrong thing.
+    const photoUserId = Number(existing['user_id']);
     this.http.patch(`${this.base}/staff-profiles/${existing['profile_id']}`,
       { photo_path: null })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.releasePhoto();
+          this.avatars.clear(photoUserId);
           this.toast.show(this.i18n.translate('team.removed'));
           this.load();
         },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -882,7 +974,7 @@ export class Access {
           this.load();
         },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -897,7 +989,7 @@ export class Access {
           this.load();
         },
         error: (error: unknown) =>
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error)))),
+          this.toast.error(refusalSentence(this.i18n, error)),
       });
   }
 
@@ -981,7 +1073,7 @@ export class Access {
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+          this.toast.error(refusalSentence(this.i18n, error));
         },
       });
   }
@@ -1011,6 +1103,42 @@ export class Access {
     return user.roles.length
       ? this.i18n.list(user.roles.map((r) => r.name_ar))
       : this.i18n.translate('access.noRoles');
+  }
+
+  protected userTypeKey(user: UserRow): string {
+    if (user.roles.length > 0) {
+      const roleCodes = new Set(user.roles.map((role) => role.code));
+      if (roleCodes.has('CENTER_ADMIN')) {
+        return 'role.CENTER_ADMIN';
+      }
+      if (roleCodes.has('THERAPIST')) {
+        return 'role.THERAPIST';
+      }
+      if (roleCodes.has('RECEPTION')) {
+        return 'role.RECEPTION';
+      }
+      if (roleCodes.has('GUARDIAN')) {
+        return 'role.GUARDIAN';
+      }
+    }
+
+    switch (user.user_type) {
+      case 'THERAPIST':
+        return 'role.THERAPIST';
+      case 'GUARDIAN':
+        return 'role.GUARDIAN';
+      case 'ADMIN':
+        return 'role.ADMIN';
+      case 'STAFF':
+        if (user.roles.some((role) => role.code === 'CENTER_ADMIN' || role.code === 'RECEPTION')) {
+          return user.roles.some((role) => role.code === 'CENTER_ADMIN')
+            ? 'role.CENTER_ADMIN'
+            : 'role.RECEPTION';
+        }
+        return 'role.RECEPTION';
+      default:
+        return `access.type.${user.user_type}`;
+    }
   }
 
   protected count(value: number): string {

@@ -46,7 +46,20 @@ start() {
   export LOG_LEVEL="${LOG_LEVEL:-info}"
   export CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:8091}"
   export OTP_ECHO="${OTP_ECHO:-true}"
-  export TRUST_PROXY="false"
+  # nginx is in front of this process and sets X-Forwarded-For
+  # (hbh.nginx.conf). Without this the limiter counts every family into one
+  # bucket - so a single attacker locks out the whole centre - and every
+  # audit row records 127.0.0.1, which is nginx, not whoever called.
+  #
+  # Safe only because of the two conditions in Server.clientIP: the peer must
+  # be in TRUSTED_PROXIES (loopback by default, and this service binds to
+  # 127.0.0.1 so nothing off-host can be the peer), and the address is taken
+  # from the END of the header, where nginx writes it.
+  #
+  # deploy/compose keeps this false: there is no proxy in that topology, and
+  # a true here would let anything reaching the published port write its own
+  # address into the audit log.
+  export TRUST_PROXY="true"
   export AUTH_RATE_PER_MINUTE="${AUTH_RATE_PER_MINUTE:-60}"
   export TZ=UTC
 

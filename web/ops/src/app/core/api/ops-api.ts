@@ -99,6 +99,10 @@ export interface ListQuery {
  */
 @Injectable({ providedIn: 'root' })
 export class OpsApi {
+  chatContacts(): Observable<readonly Row[]> {
+    return this.http.get<{rows:Row[]}>(this.base+'/chat-contacts').pipe(map(response=>response.rows));
+  }
+
   private readonly http = inject(HttpClient);
   private readonly base = `${inject(HBH_CONFIG).apiBaseUrl}/api/v1`;
 

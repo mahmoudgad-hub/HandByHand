@@ -35,6 +35,18 @@ export interface Child {
   readonly childNo: string;
   /** Date of birth. The age is derived for display and never stored. */
   readonly birthDate: Utc;
+  /**
+   * 'M', 'F', or '' when the centre has not recorded it.
+   *
+   * Carried ONLY so the card can draw the right stand-in picture. It is
+   * not shown as a word anywhere and must not be: a family reads their
+   * own child's file, and printing a gender letter beside a name adds
+   * nothing they do not know.
+   *
+   * The empty string is a real third case and not a missing value to be
+   * defaulted away - many files are opened before anybody asks.
+   */
+  readonly gender: 'M' | 'F' | '';
   /** Service names in the child's plan, for the card's second line. */
   readonly services: readonly string[];
   /** Present only while a session of this child is running right now. */
@@ -50,6 +62,20 @@ export interface Child {
    * not turn up was told so by this screen.
    */
   readonly scheduleUnavailable: boolean;
+
+  /**
+   * Sessions attended and missed since the 1st of this month, as the
+   * SERVICE counted them - null when it sent nothing.
+   *
+   * Counts, not a percentage: the portal divides them for display and
+   * decides nothing else. Which statuses count is hbh.child_attendance_month's
+   * rule, and a copy of it here would be the one that drifts.
+   *
+   * Null and {0, 0} are different sentences. Null is "not told"; zero and
+   * zero is "no session has happened yet this month" - and neither of them
+   * is a percentage, which is why the card shows no ring for either.
+   */
+  readonly attendanceMonth: { readonly attended: number; readonly missed: number } | null;
 }
 
 export type ConsentKey = 'live_view' | 'sms_notifications' | 'activity_photos';
@@ -80,11 +106,23 @@ export interface Consent {
 
 export type AppointmentStatus =
   | 'BOOKED'
+  | 'CHECKED_IN'
   | 'CONFIRMED'
   | 'IN_PROGRESS'
   | 'COMPLETED'
   | 'CANCELLED'
   | 'NO_SHOW';
+
+/**
+ * In the centre, or on a video call.
+ *
+ * It is a separate fact from the status, and the two are often confused: a
+ * CONFIRMED appointment may be either, and an ONLINE one is not "a booking
+ * without a room" - it is a booking whose room is a video call. The schema
+ * binds them with a CHECK (ck_appointments_room_mode), so exactly one of
+ * `roomName` and a consultation door is meaningful on any given row.
+ */
+export type DeliveryMode = 'IN_PERSON' | 'ONLINE';
 
 export interface AppointmentSummary {
   readonly id: Uuid;
@@ -99,7 +137,9 @@ export interface AppointmentSummary {
    */
   readonly therapistId: Uuid | null;
   readonly therapistName: string;
+  /** Empty when `deliveryMode` is ONLINE - there is no room to name. */
   readonly roomName: string;
+  readonly deliveryMode: DeliveryMode;
   readonly status: AppointmentStatus;
 }
 
@@ -392,6 +432,7 @@ export interface ParentRequest {
 }
 
 export interface NewRequest {
+  readonly childId: Uuid;
   readonly kind: RequestKind;
   readonly appointmentId: Uuid | null;
   readonly note: string;
@@ -431,6 +472,47 @@ export interface StreamTicket {
   /** UTC. Short-lived by policy; the server, not the portal, enforces it. */
   readonly expiresAt: Utc;
   readonly playbackUrl: string;
+}
+
+/**
+ * Permission to join a consultation - AND, unlike StreamTicket above, the
+ * credential itself.
+ *
+ * Read the two interfaces together, because the difference between them is
+ * the whole of this decision. Watching a session is one-way video the
+ * service can stand in front of: it proxies the media and keeps the
+ * credential in an HttpOnly cookie, so no script in this application can
+ * read it. A consultation is two-way, and real-time media cannot be
+ * proxied - the browser negotiates with the provider directly, so it has to
+ * authenticate to the provider directly. There is no arrangement in which a
+ * conference happens and the page holds nothing.
+ *
+ * What narrows it instead:
+ *   - it expires in minutes, not hours, and there is no renewal. When it
+ *     dies the page asks the door again and the door asks every one of its
+ *     questions again.
+ *   - it names a single room, a single person, and one role.
+ *   - recording, livestreaming and transcription are switched OFF inside
+ *     the signed token, so a host who finds the button cannot make one.
+ *   - it never reaches localStorage, a URL of ours, or a log. It lives in
+ *     one component's memory and dies with the screen.
+ *
+ * Migration 0120 records the decision and the owner who made it.
+ */
+export interface MeetingPass {
+  /** Which company is carrying the call. The page loads its client. */
+  readonly provider: string;
+  /** The host the embedded client is loaded from. */
+  readonly domain: string;
+  /** The room AT THE PROVIDER, which is not the room's own secret. */
+  readonly room: string;
+  /** Empty for a provider that has none. Empty is NOT a refusal. */
+  readonly token: string;
+  /** The name the other side will see, so the family is not left guessing. */
+  readonly displayName: string;
+  /** Whether this pass runs the room. Decides what is drawn, never what is allowed. */
+  readonly moderator: boolean;
+  readonly expiresAt: Utc;
 }
 
 // ---------------------------------------------------------------------------
@@ -504,6 +586,7 @@ export type AttentionKind = 'INVOICE' | 'ACTIVITY' | 'REPORT' | 'REQUEST';
  * not a template literal in an API adapter.
  */
 export interface AttentionItem {
+  readonly childId: Uuid | null;
   readonly kind: AttentionKind;
   readonly titleKey: string;
   /** Set for money. The currency travels with it and is never assumed. */
@@ -544,6 +627,7 @@ export interface PortalNotification {
   readonly read: boolean;
   /** Router path, or null when there is nothing useful to open. */
   readonly target: readonly string[] | null;
+  readonly targetQuery?: Readonly<Record<string, string>>;
 }
 
 export interface NotificationFeed {
@@ -568,4 +652,30 @@ export interface NotificationFeed {
 export interface GuardianContact {
   readonly email: string;
   readonly city: string;
+}
+
+/**
+ * How a family reaches the centre.
+ *
+ * The same row the public website shows, and it is PUBLISHED - anonymous
+ * visitors already read every field of it. Migration 0119 is what lets a
+ * signed-in parent read it too; before that the portal had no phone
+ * number at all and the "help" button raised a toast that said nothing.
+ *
+ * WHATSAPP IS DEFERRED and is deliberately absent from this interface,
+ * even though the column exists. The owner's list defers WhatsApp and SMS
+ * entirely; a field here would invite a button, and the button would be
+ * the feature.
+ */
+export interface CentreContact {
+  readonly phone: string;
+  readonly landline: string;
+  readonly email: string;
+  readonly addressAr: string;
+  /** Either a link or a "lat, lng" pair - the column holds both shapes. */
+  readonly mapUrl: string;
+  readonly hoursAr: string;
+  readonly weekendAr: string;
+  /** How to find the door: intercom, landmarks, which gate. */
+  readonly arrivalAr: string;
 }

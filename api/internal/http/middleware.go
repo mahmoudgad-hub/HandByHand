@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"slices"
 	"strings"
 	"time"
@@ -281,28 +282,87 @@ func withCORS(origins []string) func(http.Handler) http.Handler {
 	}
 }
 
-// clientIP returns the caller's address for the audit log.
+// clientIP returns the caller's address, for the audit log and for the key
+// the rate limiter counts against.
 //
-// X-Forwarded-For is believed only when TRUST_PROXY says a proxy we control
-// sets it. Without that switch the header is client-controlled, and a
-// client-controlled audit trail records whatever the client preferred.
+// TWO CONDITIONS, and the header is believed only when both hold.
+//
+//  1. TRUST_PROXY says a proxy we control sets the header at all.
+//  2. THE PEER IS THAT PROXY. The flag cannot answer who is talking to us
+//     right now, and a caller reaching the socket directly with a header it
+//     wrote itself is indistinguishable from the proxy until somebody looks.
+//     Believing the flag alone hands every caller a pen for the audit trail.
+//
+// AND THE LAST ENTRY, NOT THE FIRST. This is the half that looks like a
+// detail and is the whole defect. nginx sets the header with
+// $proxy_add_x_forwarded_for, which APPENDS the peer it saw to whatever the
+// client sent - so a request arriving with "X-Forwarded-For: 1.2.3.4" leaves
+// nginx as "1.2.3.4, <the real address>". Reading the first entry reads the
+// client's own claim, through a correctly configured proxy, with the flag on
+// and the peer verified. Every other check here passes and the value is
+// still forged.
+//
+// The rightmost entry is the one the trusted proxy wrote, and it is the only
+// entry in the list no client could put there. With one proxy in front - the
+// deployment in deploy/server - it is the caller's real address.
+//
+// Why it matters twice: this value is the limiter's bucket key as well as
+// the audit row. A spoofable address means a caller who rotates the header
+// is never limited, which is the attack the limiter exists for.
 func (s *Server) clientIP(r *http.Request) *string {
-	if s.cfg.TrustProxy {
-		if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-			first := strings.TrimSpace(strings.Split(fwd, ",")[0])
-			if net.ParseIP(first) != nil {
-				return &first
+	socket := socketIP(r)
+
+	if s.cfg.TrustProxy && s.fromTrustedProxy(socket) {
+		fwd := r.Header.Get("X-Forwarded-For")
+		parts := strings.Split(fwd, ",")
+		for i := len(parts) - 1; i >= 0; i-- {
+			candidate := strings.TrimSpace(parts[i])
+			if net.ParseIP(candidate) != nil {
+				return &candidate
 			}
 		}
 	}
+
+	if socket == "" {
+		return nil
+	}
+	return &socket
+}
+
+// socketIP is the address on the other end of the connection - the one fact
+// in this function no header can change.
+func socketIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		host = r.RemoteAddr
 	}
 	if net.ParseIP(host) == nil {
-		return nil
+		return ""
 	}
-	return &host
+	return host
+}
+
+// fromTrustedProxy reports whether the peer is one of the addresses whose
+// forwarding header we agreed to believe.
+//
+// An empty list is not "trust everything". It is "trust nobody" - the same
+// direction the whole schema fails in, and the only safe reading when the
+// operator has said a proxy exists but not where it is.
+func (s *Server) fromTrustedProxy(socket string) bool {
+	if socket == "" || len(s.cfg.TrustedProxies) == 0 {
+		return false
+	}
+	addr, err := netip.ParseAddr(socket)
+	if err != nil {
+		return false
+	}
+	addr = addr.Unmap()
+	for _, p := range s.cfg.TrustedProxies {
+		if p.Contains(addr) {
+			return true
+		}
+	}
+	return false
 }
 
 // bearerToken extracts the session token from the Authorization header.

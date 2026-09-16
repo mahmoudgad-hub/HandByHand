@@ -1,0 +1,120 @@
+@if (offers().length) {
+  <div class="rd__actions">
+    @for (offer of offers(); track offer.key) {
+      <button class="hbh-btn" type="button"
+              [class.hbh-btn--primary]="offer.primary" [class.hbh-btn--ghost]="!offer.primary"
+              (click)="act.emit(offer.step)">
+        <hbh-icon [name]="offer.icon" />
+        {{ offer.labelKey | t }}
+      </button>
+    }
+  </div>
+}
+
+<!-- The three figures a family asks about, side by side and read left to right. -->
+<div class="rd__figures" dir="ltr">
+  <div><small>{{ 'field.total' | t }}</small><b>{{ money(total()) }}</b></div>
+  <div><small>{{ 'field.paid' | t }}</small><b>{{ money(paid()) }}</b></div>
+  <div [class.is-due]="remaining() > 0"><small>{{ 'child.outstanding' | t }}</small><b>{{ money(remaining()) }}</b></div>
+</div>
+
+<dl class="rd__kv">
+  <dt>{{ 'field.child' | t }}</dt>
+  <dd>
+    @if (child(); as c) {
+      @if (c.id) {
+        <a [routerLink]="['/children', c.id]">{{ c.name || ('tasks.openChild' | t) }}</a>
+      } @else {
+        {{ c.name }}
+      }
+      @if (c.no) { <span class="rd__no" dir="ltr">{{ c.no }}</span> }
+    } @else { — }
+  </dd>
+
+  <dt>{{ 'field.guardian' | t }}</dt>
+  <dd>
+    @if (primaryGuardian(); as g) {
+      @if (canOpenGuardian() && g['guardian_id']) {
+        <a [routerLink]="['/guardians', g['guardian_id']]">{{ text(g, 'full_name_ar') }}</a>
+      } @else {
+        {{ text(g, 'full_name_ar') }}
+      }
+      @if (text(g, 'mobile')) {
+        · <a class="rd__tel" dir="ltr" [href]="'tel:' + text(g, 'mobile')">{{ text(g, 'mobile') }}</a>
+      }
+    } @else if (guardiansState() === 'loading') {
+      {{ 'action.loading' | t }}
+    } @else if (guardiansState() === 'ready') {
+      {{ 'drawer.noGuardian' | t }}
+    } @else { — }
+  </dd>
+
+  <dt>{{ 'field.status' | t }}</dt>
+  <dd>
+    <span class="hbh-badge" [class]="'hbh-badge ' + tone()">{{ statusKey() | t }}</span>
+    @if (overdue()) { <span class="hbh-badge hbh-badge--danger">{{ 'drawer.overdue' | t }}</span> }
+  </dd>
+
+  <dt>{{ 'field.issueDate' | t }}</dt>
+  <dd>{{ issueDate() ? format.dayMonthYear(issueDate()) : '—' }}</dd>
+
+  <dt>{{ 'field.dueDate' | t }}</dt>
+  <dd>{{ dueDate() ? format.dayMonthYear(dueDate()) : '—' }}</dd>
+
+  @if (taxAmt() > 0) {
+    <dt>{{ 'drawer.tax' | t }}</dt>
+    <dd dir="ltr">{{ money(taxAmt()) }}</dd>
+  }
+</dl>
+
+<h3 class="rd__h3">{{ 'drawer.lines' | t }} <small>({{ format.number(lines().length) }})</small></h3>
+@if (lines().length) {
+  <hbh-table-pages #tablePage1 [rows]="lines()">
+<div class="hbh-tablewrap"><table class="hbh-table rd__table">
+      <thead><tr><th>{{ 'field.description' | t }}</th><th>{{ 'field.qty' | t }}</th><th>{{ 'field.unitPrice' | t }}</th><th>{{ 'field.amount' | t }}</th></tr></thead>
+      <tbody>
+        @for (line of tablePage1.visible(); track line['line_id']) {
+          <tr>
+            <td>{{ text(line, 'description_ar') }}</td>
+            <td dir="ltr">{{ format.number(num(line, 'qty')) }}</td>
+            <td dir="ltr">{{ money(num(line, 'unit_amt')) }}</td>
+            <td dir="ltr">{{ money(num(line, 'line_amt')) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table></div>
+</hbh-table-pages>
+} @else {
+  <p class="rd__muted">{{ 'drawer.noLines' | t }}</p>
+}
+
+<h3 class="rd__h3">{{ 'drawer.payments' | t }} <small>({{ format.number(payments().length) }})</small></h3>
+@if (payments().length) {
+  <hbh-table-pages #tablePage2 [rows]="payments()">
+<div class="hbh-tablewrap"><table class="hbh-table rd__table">
+      <thead><tr><th>{{ 'field.date' | t }}</th><th>{{ 'field.amount' | t }}</th><th>{{ 'field.method' | t }}</th></tr></thead>
+      <tbody>
+        @for (payment of tablePage2.visible(); track payment['payment_id']) {
+          <tr>
+            <td>{{ text(payment, 'paid_at') ? format.dayMonthYear(text(payment, 'paid_at')) + ' · ' + format.time(text(payment, 'paid_at')) : '—' }}</td>
+            <td dir="ltr">{{ money(num(payment, 'amount')) }}</td>
+            <td>{{ text(payment, 'method_code') ? (('pay.' + text(payment, 'method_code')) | t) : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table></div>
+</hbh-table-pages>
+} @else {
+  <p class="rd__muted">{{ 'drawer.noPayments' | t }}</p>
+}
+
+<div class="rd__links">
+  <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" routerLink="/billing" [queryParams]="{ status: status(), focus: id() }">
+    <hbh-icon name="ic-receipt" /> {{ 'child.openInBilling' | t }}
+  </a>
+  @if (child()?.id; as cid) {
+    <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="['/children', cid]" [queryParams]="{ tab: 'invoices' }">
+      <hbh-icon name="ic-users" /> {{ 'tasks.openChild' | t }}
+    </a>
+  }
+</div>

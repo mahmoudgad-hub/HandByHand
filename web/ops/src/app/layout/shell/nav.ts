@@ -8,6 +8,11 @@ import { IconName } from '@hbh/shared/icon/icon';
  * list and the shell keeps the entries that match. There is no copy of who
  * holds what: that mapping stays in the database, where it is enforced.
  *
+ * GROUPED BY WHAT THE WORK IS ABOUT, not by table and not by status
+ * (docs/UX-TARGET-INFORMATION-ARCHITECTURE.md). A status is a filter on a
+ * screen, never an entry here; a screen that is one tab of another is not
+ * an entry either. The three entries above the groups are the ones every
+ * shift starts from: the numbers, what needs doing, what happened.
  */
 export interface NavEntry {
   readonly key: string;
@@ -16,110 +21,177 @@ export interface NavEntry {
   readonly labelKey: string;
   /** The server permission this screen needs. */
   readonly permission: string;
+  /**
+   * A second permission that also opens it. One screen, two audiences:
+   * the diary is reception's by APPOINTMENT.BOOK and the clinician's own
+   * day by SESSION.START. The route carries the same pair.
+   */
+  readonly altPermission?: string;
+  /** Query parameters the entry opens with (a default view). */
+  readonly query?: Readonly<Record<string, string>>;
+  /** A live count drawn beside the label. */
+  readonly badge?: 'tasks' | 'notifications';
+  /** Drawn only for an account with a therapist profile ("my profile"). */
+  readonly needsTherapist?: boolean;
 }
 
-export const OPS_NAV: readonly NavEntry[] = [
+export interface NavGroup {
+  readonly key: string;
+  /** Absent on the ungrouped entries at the top. */
+  readonly labelKey?: string;
+  readonly entries: readonly NavEntry[];
+}
+
+export const OPS_NAV_GROUPS: readonly NavGroup[] = [
   {
-    // Everybody who signs in has an inbox, so it is gated on the permission
-    // every account holds rather than on a new one. A notification is
-    // addressed to a person by user_id; there is no view of somebody
-    // else's to protect with a separate right.
-    key: 'inbox', path: '/inbox', icon: 'ic-bell',
-    labelKey: 'nav.inbox', permission: 'PORTAL.VIEW',
+    key: 'top',
+    entries: [
+      { key: 'favorites', path: '/favorites', icon: 'ic-star', labelKey: 'nav.favorites', permission: 'PORTAL.VIEW' },
+      {
+        key: 'dashboard', path: '/dashboard', icon: 'ic-grid',
+        labelKey: 'nav.dashboard', permission: 'PORTAL.VIEW',
+      },
+      {
+        // What needs doing, derived from the state of rows everyone can
+        // already see. Gated on the permission every account holds; the
+        // list itself is narrowed by each task's own permission.
+        key: 'tasks', path: '/tasks', icon: 'ic-check-circle',
+        labelKey: 'nav.tasks', permission: 'PORTAL.VIEW', badge: 'tasks',
+      },
+      {
+        // Everybody who signs in has a feed, so it is gated on the
+        // permission every account holds rather than on a new one. A
+        // notification is addressed to a person by user_id; there is no
+        // view of somebody else's to protect with a separate right.
+        key: 'notifications', path: '/notifications', icon: 'ic-bell',
+        labelKey: 'nav.notifications', permission: 'PORTAL.VIEW', badge: 'notifications',
+      },
+    ],
   },
   {
-    key: 'dashboard', path: '/dashboard', icon: 'ic-grid',
-    labelKey: 'nav.dashboard', permission: 'PORTAL.VIEW',
+    key: 'customers', labelKey: 'nav.group.customers',
+    entries: [
+      {
+        key: 'enrolments', path: '/enrolments', icon: 'ic-user-plus',
+        labelKey: 'nav.enrolments', permission: 'ENROLMENT.MANAGE',
+      },
+      {
+        key: 'guardians', path: '/guardians', icon: 'ic-user',
+        labelKey: 'nav.guardians', permission: 'GUARDIAN.MANAGE',
+      },
+      {
+        key: 'children', path: '/children', icon: 'ic-users',
+        labelKey: 'nav.children', permission: 'CHILD.VIEW_ALL',
+      },
+    ],
   },
   {
-    key: 'children', path: '/children', icon: 'ic-users',
-    labelKey: 'nav.children', permission: 'CHILD.VIEW_ALL',
+    key: 'operations', labelKey: 'nav.group.operations',
+    entries: [
+      {
+        key: 'appointments', path: '/appointments', icon: 'ic-calendar',
+        labelKey: 'nav.appointments', permission: 'APPOINTMENT.BOOK', altPermission: 'SESSION.START',
+      },
+      {
+        key: 'sessions', path: '/sessions', icon: 'ic-activity',
+        labelKey: 'nav.sessions', permission: 'SESSION.START',
+      },
+      {
+        key: 'plans', path: '/plans', icon: 'ic-target',
+        labelKey: 'plans.plans', permission: 'PLAN.MANAGE',
+      },
+      {
+        key: 'reports', path: '/reports', icon: 'ic-file',
+        labelKey: 'nav.reports', permission: 'REPORT.VIEW',
+      },
+    ],
   },
   {
-    key: 'appointments', path: '/appointments', icon: 'ic-calendar',
-    labelKey: 'nav.appointments', permission: 'APPOINTMENT.BOOK',
+    key: 'finance', labelKey: 'nav.group.finance',
+    entries: [
+      {
+        key: 'billing', path: '/billing', icon: 'ic-card',
+        labelKey: 'nav.billing', permission: 'BILLING.VIEW',
+      },
+    ],
   },
   {
-    // Above /sessions on purpose: this is where a clinician's day starts,
-    // and /sessions is where it is once it is already running.
-    key: 'my-day', path: '/my-day', icon: 'ic-play',
-    labelKey: 'nav.myDay', permission: 'SESSION.START',
+    key: 'communication', labelKey: 'nav.group.communication',
+    entries: [
+      {
+        key: 'requests', path: '/requests', icon: 'ic-help',
+        labelKey: 'nav.requests', permission: 'REQUEST.MANAGE',
+      },
+      {
+        key: 'communications', path: '/communications', icon: 'ic-chat',
+        labelKey: 'nav.communications', permission: 'PORTAL.VIEW',
+      },
+    ],
   },
   {
-    key: 'sessions', path: '/sessions', icon: 'ic-activity',
-    labelKey: 'nav.sessions', permission: 'SESSION.START',
+    key: 'team', labelKey: 'nav.group.team',
+    entries: [
+      {
+        key: 'therapists', path: '/therapists', icon: 'ic-user-check',
+        labelKey: 'nav.therapists', permission: 'STAFF.MANAGE',
+      },
+      {
+        key: 'site-team', path: '/site/team', icon: 'ic-file',
+        labelKey: 'nav.teamProfiles', permission: 'SITE.EDIT',
+      },
+      {
+        // The clinician's own public profile. The route has no permission
+        // guard (the row decides whose it is); the entry is drawn only for
+        // an account that has a profile to open.
+        key: 'my-profile', path: '/therapists/me/profile', icon: 'ic-user',
+        labelKey: 'nav.myProfile', permission: 'PORTAL.VIEW', needsTherapist: true,
+      },
+      {
+        key: 'users', path: '/users', icon: 'ic-shield',
+        labelKey: 'nav.users', permission: 'USER.MANAGE',
+      },
+    ],
   },
   {
-    key: 'therapists', path: '/therapists', icon: 'ic-user-check',
-    labelKey: 'nav.therapists', permission: 'STAFF.MANAGE',
-  },
-  {
-    key: 'therapist-services', path: '/therapist-services', icon: 'ic-puzzle',
-    labelKey: 'therapistServices.title', permission: 'STAFF.MANAGE',
-  },
-  {
-    key: 'rooms', path: '/rooms', icon: 'ic-video',
-    labelKey: 'nav.rooms', permission: 'CATALOG.MANAGE',
-  },
-  {
-    key: 'plans', path: '/plans', icon: 'ic-target',
-    labelKey: 'plans.plans', permission: 'PLAN.MANAGE',
-  },
-  {
-    key: 'reports', path: '/reports', icon: 'ic-file',
-    labelKey: 'nav.reports', permission: 'REPORT.VIEW',
-  },
-  {
-    key: 'billing', path: '/billing', icon: 'ic-card',
-    labelKey: 'nav.billing', permission: 'BILLING.VIEW',
-  },
-  {
-    key: 'requests', path: '/requests', icon: 'ic-chat',
-    labelKey: 'nav.requests', permission: 'REQUEST.MANAGE',
-  },
-  {key:'communications',path:'/communications',icon:'ic-chat',labelKey:'nav.communications',permission:'REQUEST.MANAGE'},
-  {
-    // Families who have never been here. This is the entry the note below
-    // called "leads": it stayed out of the menu while it had no table, and
-    // migration 0018 gave it one.
-    key: 'enrolments', path: '/enrolments', icon: 'ic-user-plus',
-    labelKey: 'nav.enrolments', permission: 'ENROLMENT.MANAGE',
-  },
-  {
-    key: 'catalog', path: '/catalog', icon: 'ic-tag',
-    labelKey: 'nav.catalog', permission: 'CATALOG.MANAGE',
-  },
-  {
-    key: 'satisfaction', path: '/satisfaction', icon: 'ic-star',
-    labelKey: 'nav.satisfaction', permission: 'CATALOG.MANAGE',
-  },
-  {
-    // The public site's content. SITE.EDIT and not SITE.PUBLISH: this
-    // decides whether the entry is DRAWN, and somebody who may draft but not
-    // publish still needs the screen. The publishing gate is in the
-    // database, where it cannot be got round by a URL.
-    key: 'site', path: '/site', icon: 'ic-globe',
-    labelKey: 'nav.site', permission: 'SITE.EDIT',
-  },
-  {
-    // The team has its own entry because it is its own job: a person, their
-    // qualifications, their certificates, their photograph and their
-    // introduction film are edited together and nothing else on the site
-    // screen is. It was three tabs among eight, and the qualifications tab
-    // was a list of claims with a member_id where a name should be.
-    key: 'team', path: '/site/team', icon: 'ic-users',
-    labelKey: 'site.team', permission: 'SITE.EDIT',
-  },
-  {
-    key: 'opslog', path: '/ops-log', icon: 'ic-db',
-    labelKey: 'nav.opslog', permission: 'OPS.VIEW',
-  },
-  {
-    key: 'access', path: '/access', icon: 'ic-shield',
-    labelKey: 'access.title', permission: 'PORTAL.VIEW',
-  },
-  {
-    key: 'settings', path: '/settings', icon: 'ic-sliders',
-    labelKey: 'nav.settings', permission: 'CATALOG.MANAGE',
+    key: 'settings', labelKey: 'nav.group.settings',
+    entries: [
+      {
+        key: 'catalog', path: '/catalog', icon: 'ic-tag',
+        labelKey: 'nav.catalog', permission: 'CATALOG.MANAGE',
+      },
+      {
+        key: 'rooms', path: '/rooms', icon: 'ic-video',
+        labelKey: 'nav.rooms', permission: 'CATALOG.MANAGE',
+      },
+      {
+        key: 'satisfaction', path: '/satisfaction', icon: 'ic-star',
+        labelKey: 'nav.satisfaction', permission: 'NPS.MANAGE',
+      },
+      {
+        // SITE.EDIT and not SITE.PUBLISH: this decides whether the entry is
+        // DRAWN, and somebody who may draft but not publish still needs the
+        // screen. The publishing gate is in the database.
+        key: 'site', path: '/site', icon: 'ic-globe',
+        labelKey: 'nav.site', permission: 'SITE.EDIT',
+      },
+      {
+        key: 'settings', path: '/settings', icon: 'ic-sliders',
+        labelKey: 'nav.settings', permission: 'SETTINGS.MANAGE',
+      },
+      {
+        key: 'opslog', path: '/ops-log', icon: 'ic-db',
+        labelKey: 'nav.opslog', permission: 'OPS.VIEW',
+      },
+    ],
   },
 ];
+
+/**
+ * The same entries, flat, for the screens that list "which screen needs
+ * which permission" (features/access) and for the route/menu test.
+ * "my-profile" is left out: it is a personal shortcut to a route the test
+ * already exempts, not a screen with a permission of its own.
+ */
+export const OPS_NAV: readonly NavEntry[] = OPS_NAV_GROUPS
+  .flatMap((group) => group.entries)
+  .filter((entry) => !entry.needsTherapist);

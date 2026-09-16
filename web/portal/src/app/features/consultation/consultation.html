@@ -1,0 +1,162 @@
+<section class="scr">
+
+  <!-- ALWAYS IN THE DOM, hidden rather than removed.
+       The provider's client is attached to this element by reference, and
+       the script can resolve from cache in the same tick the pass arrives -
+       before change detection has drawn anything. A container created by an
+       @if would not exist yet at that moment, and the call would silently
+       never start. Hidden, it is already here. -->
+  <div class="stage" #stage [hidden]="!joined()"></div>
+
+  @if (joined()) {
+    <!-- The clock on the pass, said out loud. It is the honest thing to
+         show: the call WILL end when this runs out, and a parent who was
+         not told reads it as the connection breaking. -->
+    <div class="sec stack">
+      @if (endingSoon()) {
+        <div class="note note--warn">
+          <hbh-icon name="ic-clock" />
+          <span>{{ 'consult.endingSoon' | t }}</span>
+        </div>
+      }
+      <div class="note note--info">
+        <hbh-icon name="ic-clock" />
+        <span>{{ 'consult.timeLeft' | t }}</span>
+        <b dir="ltr">{{ timeLeft() }}</b>
+      </div>
+      <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button"
+              (click)="leave()">
+        <hbh-icon name="ic-door" />
+        {{ 'consult.leave' | t }}
+      </button>
+    </div>
+  } @else if (loading() || pass()) {
+    <!-- `pass()` as well as `loading()`, because there are TWO waits here and
+         only one of them is a request. The door answers, and then the
+         provider's script has to arrive before there is a call to show. That
+         second gap rendered the empty refusal card below - an error box with
+         no sentence in it - for as long as the network took. -->
+    <hbh-skeleton [count]="1" shape="card" />
+  } @else if (refusal() !== 'none') {
+
+    <!-- A refusal is shown as something the parent can do next, not a dead
+         end - and WHICH thing differs per refusal. Three of these arrive as
+         409 and collapsing them into one message would hide an unpaid
+         invoice behind a sentence about the time. -->
+    <div class="sec stack">
+
+      @switch (refusal()) {
+
+        @case ('not-confirmed') {
+          <div class="note note--warn">
+            <hbh-icon name="ic-receipt" />
+            <span>{{ 'consult.notConfirmed' | t }}</span>
+          </div>
+          <a class="hbh-btn hbh-btn--primary hbh-btn--block" routerLink="/billing">
+            <hbh-icon name="ic-card" />
+            {{ 'consult.openBilling' | t }}
+          </a>
+        }
+
+        @case ('door-closed') {
+          <div class="note note--info">
+            <hbh-icon name="ic-clock" />
+            <span>{{ 'consult.doorClosed' | t }}</span>
+          </div>
+          <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button"
+                  (click)="enter()">
+            <hbh-icon name="ic-door" />
+            {{ 'consult.tryAgain' | t }}
+          </button>
+        }
+
+        @case ('not-online') {
+          <div class="note note--info">
+            <hbh-icon name="ic-home" />
+            <span>{{ 'consult.notOnline' | t }}</span>
+          </div>
+          <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/schedule">
+            <hbh-icon name="ic-calendar" />
+            {{ 'consult.openSchedule' | t }}
+          </a>
+        }
+
+        @case ('not-found') {
+          <div class="note note--warn">
+            <hbh-icon name="ic-x-circle" />
+            <span>{{ 'consult.notFound' | t }}</span>
+          </div>
+          <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/schedule">
+            <hbh-icon name="ic-calendar" />
+            {{ 'consult.openSchedule' | t }}
+          </a>
+        }
+
+        @case ('unavailable') {
+          <!-- Nothing for a parent to fix, so no retry button: the centre
+               has to change a setting. Pointing them at reception is the
+               only next step that exists. -->
+          <div class="note note--warn">
+            <hbh-icon name="ic-warn" />
+            <span>{{ 'consult.unavailable' | t }}</span>
+          </div>
+          <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/requests">
+            <hbh-icon name="ic-send" />
+            {{ 'consult.contactCentre' | t }}
+          </a>
+        }
+
+        @case ('expired') {
+          <div class="note note--info">
+            <hbh-icon name="ic-clock" />
+            <span>{{ 'consult.expired' | t }}</span>
+          </div>
+          <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="button"
+                  (click)="enter()">
+            <hbh-icon name="ic-door" />
+            {{ 'consult.enterAgain' | t }}
+          </button>
+        }
+
+        @case ('ended') {
+          <div class="note note--ok">
+            <hbh-icon name="ic-check-circle" />
+            <span>{{ 'consult.ended' | t }}</span>
+          </div>
+          <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button"
+                  (click)="enter()">
+            <hbh-icon name="ic-door" />
+            {{ 'consult.enterAgain' | t }}
+          </button>
+          <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/schedule">
+            <hbh-icon name="ic-calendar" />
+            {{ 'consult.openSchedule' | t }}
+          </a>
+        }
+
+        @default {
+          <hbh-error-note [message]="refusalKey() | t" [traceId]="traceId()"
+                          [retryLabel]="'action.retry' | t" (retry)="enter()" />
+        }
+      }
+    </div>
+  }
+
+  <!-- The three promises the centre makes about a consultation, stated on
+       the screen where they apply. The first is the permanent rule from
+       CLAUDE.md, and it is as true of a consultation as of a session. -->
+  <div class="sec stack">
+    <div class="note note--ok">
+      <hbh-icon name="ic-shield" />
+      <span>{{ 'consult.noRecording' | t }}</span>
+    </div>
+    <div class="note note--info">
+      <hbh-icon name="ic-clock" />
+      <span>{{ 'consult.passShort' | t }}</span>
+    </div>
+    <div class="note note--warn">
+      <hbh-icon name="ic-eye" />
+      <span>{{ 'consult.entryLogged' | t }}</span>
+    </div>
+  </div>
+</section>

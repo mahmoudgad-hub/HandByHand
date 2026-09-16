@@ -50,6 +50,7 @@ type Enrolment struct {
 	SubmittedAt      time.Time   `json:"submitted_at"`
 
 	ContactedAt    *time.Time `json:"contacted_at,omitempty"`
+	AssessmentAt   *time.Time `json:"assessment_at,omitempty"`
 	ContactNoteAr  string     `json:"contact_note_ar,omitempty"`
 	DecidedAt      *time.Time `json:"decided_at,omitempty"`
 	DecisionNoteAr string     `json:"decision_note_ar,omitempty"`

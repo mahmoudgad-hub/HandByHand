@@ -17,6 +17,14 @@
 
 \set ON_ERROR_STOP on
 
+-- ONE TRANSACTION - see a3_teardown.sql for the night this was learned.
+-- The invoice DELETE failed on 0142's instalment foreign key after the
+-- guards had been disabled in their own statements, and three stayed off.
+-- DISABLE TRIGGER is transactional: inside BEGIN/COMMIT a failure takes
+-- the disable back with it, so a broken teardown leaves rows, not a
+-- switched-off guarantee.
+BEGIN;
+
 DELETE FROM hbh.notifications n
  USING hbh.users u WHERE u.user_id = n.user_id AND u.username LIKE 'a5\_%';
 
@@ -35,6 +43,18 @@ DELETE FROM hbh.consents cn
 ALTER TABLE hbh.appointment_status_history DISABLE TRIGGER trg_ash_append_only;
 ALTER TABLE hbh.session_status_history     DISABLE TRIGGER trg_ssh_append_only;
 ALTER TABLE hbh.package_ledger             DISABLE TRIGGER trg_led_append_only;
+
+-- FROM 0142: instalments and their append-only history go first, in FK
+-- order, as separate statements. See a3_teardown.sql.
+ALTER TABLE hbh.invoice_installment_status_history DISABLE TRIGGER trg_iish_append_only;
+DELETE FROM hbh.invoice_installment_status_history h
+ USING hbh.invoice_installments ii, hbh.invoices i, hbh.children c
+ WHERE ii.installment_id = h.installment_id AND i.invoice_id = ii.invoice_id
+   AND c.child_id = i.child_id AND c.child_no LIKE 'A5-%';
+DELETE FROM hbh.invoice_installments ii
+ USING hbh.invoices i, hbh.children c
+ WHERE i.invoice_id = ii.invoice_id AND c.child_id = i.child_id AND c.child_no LIKE 'A5-%';
+ALTER TABLE hbh.invoice_installment_status_history ENABLE TRIGGER trg_iish_append_only;
 
 -- Billing: payments, lines and invoices in ONE statement. Deleting a
 -- payment alone fires trg_pay_recalc, which tries to move the invoice
@@ -152,10 +172,14 @@ DECLARE n integer;
 BEGIN
   SELECT count(*) INTO n
   FROM   pg_trigger
-  WHERE  tgname IN ('trg_ash_append_only','trg_ssh_append_only','trg_led_append_only')
+  WHERE  tgname IN ('trg_ash_append_only','trg_ssh_append_only','trg_led_append_only','trg_iish_append_only')
   AND    tgenabled = 'O';
-  IF n <> 3 THEN
-    RAISE EXCEPTION 'teardown left an append-only trigger disabled (% of 3 enabled)', n;
+  IF n <> 4 THEN
+    RAISE EXCEPTION 'teardown left an append-only trigger disabled (% of 4 enabled)', n;
   END IF;
 END
 $restored$;
+
+-- The assertion above ran INSIDE the transaction: if it raised, nothing
+-- here committed, and the guards are exactly as they were before.
+COMMIT;

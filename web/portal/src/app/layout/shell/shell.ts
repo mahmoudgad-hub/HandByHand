@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   inject,
   signal,
@@ -20,6 +19,12 @@ import { PortalApi } from '../../core/api/portal-api';
 import { ChildContextService } from '../../core/auth/child-context.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon } from '@hbh/shared/icon/icon';
+import { PersonAvatar } from '../../shared/ui/person-avatar';
+import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
+import { NotificationBadge } from '../../core/alerts/notification-badge';
+import { Child } from '../../core/models/portal.models';
+import { ChildRouteReuse } from '../../core/auth/child-route-reuse';
+import { HbhAgePipe } from '@hbh/shared/format/format.pipes';
 
 /** What a routed screen tells the shell about its own chrome. */
 interface ScreenChrome {
@@ -40,7 +45,7 @@ const NO_CHROME: ScreenChrome = {
 @Component({
   selector: 'hbh-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, Icon, TranslatePipe],
+  imports: [RouterOutlet, RouterLink, Icon, PersonAvatar, TranslatePipe, ModalDialog, HbhAgePipe],
   templateUrl: './shell.html',
 })
 export class Shell {
@@ -48,11 +53,60 @@ export class Shell {
   private readonly route = inject(ActivatedRoute);
   private readonly child = inject(ChildContextService);
   private readonly api = inject(PortalApi);
-  private readonly destroyRef = inject(DestroyRef);
 
   private readonly chromeState = signal<ScreenChrome>(this.readChrome());
 
   protected readonly chrome = this.chromeState.asReadonly();
+  protected readonly selectedChild = this.child.selected;
+  protected readonly moreOpen = signal(false);
+  protected readonly childPickerOpen = signal(false);
+  protected readonly familyChildren = signal<readonly Child[]>([]);
+  protected readonly switchingChild = signal(false);
+  protected readonly switchFailed = signal(false);
+  protected readonly canSwitchChild = computed(() => this.familyChildren().length > 1);
+  private readonly childRouteReuse = inject(ChildRouteReuse);
+
+  protected openChildPicker(): void {
+    if (!this.canSwitchChild()) return;
+    this.moreOpen.set(false);
+    this.switchFailed.set(false);
+    this.childPickerOpen.set(true);
+  }
+
+  protected async chooseChild(candidate: Child): Promise<void> {
+    if (this.switchingChild()) return;
+    const next = this.familyChildren().find(child => child.id === candidate.id);
+    if (!next) return;
+    const previous = this.selectedChild();
+    if (previous?.id === next.id) { this.childPickerOpen.set(false); return; }
+    this.switchingChild.set(true);
+    this.switchFailed.set(false);
+    this.child.select(next);
+    this.childRouteReuse.refreshingChild = true;
+    // A report/meeting belongs to a specific child; return to its list for the new child.
+    const current = this.router.parseUrl(this.router.url);
+    const path = current.root.children['primary']?.segments.map(segment => segment.path).join('/') ?? '';
+    let target = current;
+    if (path.startsWith('reports/')) target = this.router.createUrlTree(['/progress'], { queryParams: { tab: 'reports' } });
+    else if (path.startsWith('consultation/')) target = this.router.createUrlTree(['/schedule']);
+    else if (path === 'requests') delete target.queryParams['appointment'];
+    try {
+      const navigated = await this.router.navigateByUrl(target, { onSameUrlNavigation: 'reload', replaceUrl: true });
+      if (!navigated) throw new Error('Child navigation cancelled');
+      this.childPickerOpen.set(false);
+    } catch {
+      if (previous) this.child.select(previous); else this.child.clear();
+      this.switchFailed.set(true);
+    } finally {
+      this.childRouteReuse.refreshingChild = false;
+      this.switchingChild.set(false);
+    }
+  }
+  protected readonly pageIntro = computed(() => {
+    const tab = this.chrome().tab;
+    return ['home', 'schedule', 'progress', 'activities', 'billing', 'requests', 'profile', 'notifications'].includes(tab ?? '')
+      ? `portal.intro.${tab}` : '';
+  });
 
   /**
    * The phone's tab bar: five, because a sixth stops being tappable. Account
@@ -77,7 +131,6 @@ export class Shell {
     { key: 'schedule', path: '/schedule', icon: 'ic-calendar', labelKey: 'nav.schedule' },
     { key: 'progress', path: '/progress', icon: 'ic-target', labelKey: 'nav.progress' },
     { key: 'activities', path: '/activities', icon: 'ic-puzzle', labelKey: 'nav.activities' },
-    { key: 'reports', path: '/reports', icon: 'ic-file', labelKey: 'nav.reports' },
     { key: 'billing', path: '/billing', icon: 'ic-receipt', labelKey: 'nav.billing' },
   ] as const;
 
@@ -110,9 +163,13 @@ export class Shell {
    * subscription is the shell's own, and the header renders before it
    * resolves either way.
    */
-  protected readonly unread = signal<number | null>(null);
+  protected readonly unread = inject(NotificationBadge).unread;
 
   constructor() {
+    this.api.family().pipe(takeUntilDestroyed()).subscribe({
+      next: family => this.familyChildren.set(family.children),
+      error: () => this.familyChildren.set([]),
+    });
     this.api.profile()
       .pipe(takeUntilDestroyed())
       .subscribe({
@@ -120,18 +177,13 @@ export class Shell {
         error: () => this.guardianName.set(''),
       });
 
-    this.loadUnread();
-
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       takeUntilDestroyed(),
     ).subscribe(() => {
+      this.moreOpen.set(false);
       this.chromeState.set(this.readChrome());
-      // The count is refreshed on navigation rather than polled. A parent who
-      // has just read three notifications should not carry a badge saying
-      // three around the app - and a timer would keep a request going all
-      // evening on a screen nobody is looking at.
-      this.loadUnread();
+      // The authenticated notification watcher keeps the badge current.
       // Both, because the shell has two shapes and each scrolls a
       // different thing. Below 900px .pa__body is an overflow container
       // inside a fixed-height column and the document does not move; above
@@ -141,23 +193,6 @@ export class Shell {
       document.getElementById("paBody")?.scrollTo({ top: 0 });
       window.scrollTo({ top: 0 });
     });
-  }
-
-  /**
-   * The cheapest possible ask: one row, for the count on the envelope.
-   *
-   * limit=1 rather than the default thirty. The service counts unread over
-   * the WHOLE feed regardless of the page, so a page of one is enough - and
-   * the difference is thirty rows of Arabic on every navigation in the app.
-   */
-  private loadUnread(): void {
-    this.api.notifications(1)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (feed) => this.unread.set(feed.unread),
-        // Unknown, not zero. See the field's own note.
-        error: () => this.unread.set(null),
-      });
   }
 
   /**

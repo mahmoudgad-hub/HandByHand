@@ -1,0 +1,88 @@
+<form class="analytics-filter" (ngSubmit)="load()">
+  <label>{{ 'analytics.from' | t }}<input type="date" name="from" [(ngModel)]="from" required /></label>
+  <label>{{ 'analytics.to' | t }}<input type="date" name="to" [(ngModel)]="to" [min]="from" required /></label>
+  <button type="submit" class="hbh-btn hbh-btn--primary">{{ 'analytics.apply' | t }}</button>
+  <button type="button" class="hbh-btn hbh-btn--ghost" (click)="today()">{{ 'analytics.today' | t }}</button>
+  <small>{{ 'analytics.zone' | t }}: {{ data()?.time_zone }}</small>
+</form>
+@if (invalid()) { <p role="alert" class="analytics-error">{{ 'analytics.invalid' | t }}</p> }
+@if (loading()) { <hbh-skeleton [count]="6" shape="row" /> }
+@else if (failed()) { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="load()" /> }
+@else if (data(); as d) {
+  <p class="analytics-note">{{ 'analytics.range' | t }}: <b dir="ltr">{{ applied().from }} — {{ applied().to }}</b> · {{ 'analytics.click' | t }}</p>
+  <h2>{{ 'analytics.system' | t }}</h2>
+  <div class="analytics-kpis">
+    <button class="analytics-card" type="button" (click)="open('successes', 'analytics.success' )">
+      <span class="analytics-ring" [style.background]="ring(d.successes,d.requests,'#28a887')"><strong>{{ percentage(d.successes,d.requests) }}</strong></span>
+      <b>{{ 'analytics.success' | t }}</b><small>{{ count(d.successes) }} / {{ count(d.requests) }} {{ 'analytics.request' | t }}</small>
+    </button>
+    <button class="analytics-card" type="button" (click)="open('errors', 'analytics.errors' )">
+      <span class="analytics-ring" [style.background]="ring(d.errors,d.requests,'#dc6666')"><strong>{{ percentage(d.errors,d.requests) }}</strong></span>
+      <b>{{ 'analytics.errors' | t }}</b><small>{{ count(d.errors) }} / {{ count(d.requests) }} {{ 'analytics.request' | t }}</small>
+    </button>
+    <button class="analytics-card" type="button" (click)="open('performance', 'analytics.performance' )">
+      <hbh-icon name="ic-activity" /><strong class="analytics-number" dir="ltr">{{ d.p95_ms ?? '—' }} <small>ms</small></strong>
+      <b>{{ 'analytics.performance' | t }}</b><small>{{ 'analytics.p95' | t }}</small><small>P50: {{ d.p50_ms ?? '—' }} ms</small>
+    </button>
+  </div>
+  <p class="analytics-note">{{ 'analytics.systemNote' | t }}</p>
+  <section class="analytics-panel">
+    <h3>{{ 'analytics.routes' | t }}</h3>
+    @for (r of d.performance.slice(0,8); track r.method + r.route) {
+      <button type="button" class="analytics-bar-row" (click)="open('performance', r.method + ' ' + r.route, r.method + ' ' + r.route)">
+        <span class="analytics-bar-label" dir="ltr">{{ r.method }} {{ r.route }}</span><span class="analytics-bar-track"><span [style.width.%]="performanceWidth(r.p95_ms)"></span></span>
+        <b dir="ltr">{{ r.p95_ms }} ms</b><small>{{ count(r.calls) }} {{ 'analytics.request' | t }}</small>
+      </button>
+    } @empty { <p class="analytics-empty">{{ 'analytics.empty' | t }}</p> }
+  </section>
+  <h2>{{ 'analytics.portal' | t }}</h2>
+  <div class="analytics-kpis analytics-kpis--four">
+    <button class="analytics-card" type="button" (click)="open('applications', 'analytics.applications')"><strong class="analytics-number">{{ count(d.applications) }}</strong><b>{{ 'analytics.applications' | t }}</b><small>{{ 'analytics.applicationsNote' | t }}</small></button>
+    <button class="analytics-card" type="button" (click)="open('registrations', 'analytics.registrations' )"><strong class="analytics-number">{{ count(d.registrations) }}</strong><b>{{ 'analytics.registrations' | t }}</b><small>{{ 'analytics.registrationsNote' | t }}</small></button>
+    <button class="analytics-card" type="button" (click)="open('first_logins', 'analytics.firstLogins' )"><strong class="analytics-number">{{ count(d.first_logins) }}</strong><b>{{ 'analytics.firstLogins' | t }}</b></button>
+    <button class="analytics-card" type="button" (click)="open('portal_features', 'analytics.portalUsers' )"><strong class="analytics-number">{{ count(d.portal_users) }}</strong><b>{{ 'analytics.portalUsers' | t }}</b><small>{{ 'analytics.unique' | t }}</small></button>
+  </div>
+  <section class="analytics-panel">
+    <h3>{{ 'analytics.features' | t }}</h3><p class="analytics-note">{{ 'analytics.featureNote' | t }}</p>
+    @let features = portalFeatures(d);
+    @for (r of features; track r.feature) {
+      <button type="button" class="analytics-bar-row" (click)="open('portal_features', featureName(r.feature), r.feature)">
+        <b class="analytics-bar-label">{{ featureName(r.feature) }}</b><span class="analytics-bar-track"><span [style.width.%]="width(r.users,features)"></span></span>
+        <b>{{ count(r.users) }} {{ 'analytics.guardians' | t }}</b><small>{{ count(r.visits) }} {{ 'analytics.visits' | t }} · {{ count(r.actions ?? 0) }} {{ 'analytics.actions' | t }}</small>
+      </button>
+    } @empty { <p class="analytics-empty">{{ 'analytics.empty' | t }}</p> }
+  </section>
+  <h2>{{ 'analytics.staff' | t }}</h2>
+  <div class="analytics-kpis">
+    <button type="button" class="analytics-card" (click)="open('staff_active', 'analytics.staffActive')"><strong class="analytics-number">{{ count(d.staff_active) }}</strong><b>{{ 'analytics.staffActive' | t }}</b><small>{{ 'analytics.unique' | t }}</small></button>
+    <button type="button" class="analytics-card" (click)="open('staff_logins', 'analytics.staffLogins' )"><strong class="analytics-number">{{ count(d.staff_logins) }}</strong><b>{{ 'analytics.staffLogins' | t }}</b><small>{{ 'analytics.unique' | t }}</small></button>
+    <button type="button" class="analytics-card" (click)="open('staff_pages', 'analytics.staffPages' )"><strong class="analytics-number">{{ count(d.staff_pages) }}</strong><b>{{ 'analytics.staffPages' | t }}</b></button>
+  </div>
+  <section class="analytics-panel">
+    <h3>{{ 'analytics.pageVisitors' | t }}</h3>
+    @for (r of d.pages; track r.feature) {
+      <button type="button" class="analytics-bar-row" (click)="open('staff_pages', featureName(r.feature), r.feature)">
+        <b class="analytics-bar-label">{{ featureName(r.feature) }}</b><span class="analytics-bar-track"><span [style.width.%]="width(r.users,d.pages)"></span></span>
+        <b>{{ count(r.users) }} {{ 'analytics.employees' | t }}</b><small>{{ count(r.visits) }} {{ 'analytics.visits' | t }}</small>
+      </button>
+    } @empty { <p class="analytics-empty">{{ 'analytics.empty' | t }}</p> }
+  </section>
+  <p class="analytics-note">{{ 'analytics.trackingNote' | t }} @if (d.tracking_since) { {{ at(d.tracking_since) }} }</p>
+}
+@if (selected(); as selection) {
+  <dialog hbhModal (dismissed)="close()" class="analytics-dialog" aria-labelledby="analytics-detail-title">
+    <header><div><h2 id="analytics-detail-title">{{ selection.title }}</h2><small dir="ltr">{{ applied().from }} — {{ applied().to }}</small></div><button type="button" class="hbh-btn hbh-btn--ghost" (click)="close()" [attr.aria-label]="'action.close' | t"><hbh-icon name="ic-x" /></button></header>
+    @if (detailLoading()) { <hbh-skeleton [count]="4" shape="row" /> }
+    @else if (detailFailed()) { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="fetchDetails()" /> }
+    @else {
+      <p>{{ 'analytics.detailTotal' | t }}: {{ count(details().total) }}</p>
+      <div class="hbh-tablewrap"><table class="hbh-table">
+        <thead><tr><th>{{ 'analytics.name' | t }}</th><th>{{ 'analytics.username' | t }}</th><th>{{ 'analytics.when' | t }}</th><th>{{ 'analytics.feature' | t }}</th><th>{{ 'analytics.action' | t }}</th><th>{{ 'analytics.times' | t }}</th>@if (requestDetails()) {<th>{{ 'analytics.status' | t }}</th><th>{{ 'analytics.duration' | t }}</th>}</tr></thead>
+        <tbody>@for (r of details().rows; track $index) {
+          <tr><td>{{ r.name || ('analytics.anonymous' ) }}</td><td dir="ltr">{{ r.username || '—' }}</td><td>{{ at(r.at) }}</td><td>{{ featureName(r.feature) || '—' }}</td><td>{{ requestDetails() ? r.action : actionName(r.action) }}</td><td>{{ count(r.visits) }}</td>@if (requestDetails()) {<td>{{ r.status }}</td><td dir="ltr">{{ r.duration_ms }} ms</td>}</tr>
+        } @empty {<tr><td [attr.colspan]="requestDetails() ? 8 : 6">{{ 'analytics.empty' | t }}</td></tr>}</tbody>
+      </table></div>
+      <footer><button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="offset() === 0" (click)="changePage(-1)">{{ 'analytics.previous' | t }}</button><span>{{ offset()/50+1 }}</span><button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="offset()+50 >= details().total" (click)="changePage(1)">{{ 'analytics.next' | t }}</button></footer>
+    }
+  </dialog>
+}

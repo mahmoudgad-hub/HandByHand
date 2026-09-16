@@ -446,6 +446,57 @@ CALL hbh_test.chk_empty('index', 'every foreign key has a supporting index',
           WHERE i.indrelid = c.conrelid
             AND (string_to_array(i.indkey::text, ' ')::smallint[])[1] = c.conkey[1]) $q$);
 
+-- ---------------------------------------------------------------------
+-- A POLICY ON A LARGE TABLE CALLS ITS FUNCTIONS ONCE, NOT PER ROW
+--
+-- An RLS predicate is a SECURITY BARRIER, so Postgres will not hoist it
+-- out of the scan the way it hoists an ordinary WHERE clause - even
+-- though hbh.has_permission and friends are all STABLE. So
+--
+--     USING (hbh.current_center_id() IS NOT NULL AND hbh.has_permission('X'))
+--
+-- calls both functions ONCE PER ROW, for an answer that is identical for
+-- every row and has nothing to do with the row being examined. On
+-- hbh.request_log at 34,000 rows that was measured at 5,260 ms; the
+-- same predicate wrapped in scalar subqueries becomes an InitPlan,
+-- evaluated once, and finished in 9 ms.
+--
+--     USING ((SELECT hbh.current_center_id() IS NOT NULL)
+--            AND (SELECT hbh.has_permission('X')))
+--
+-- WHY THIS IS A GUARD AND NOT A SWEEP. The cost is linear in rows
+-- scanned, so today it is invisible: every table in this schema except
+-- request_log and audit_log holds under a thousand rows, and audit_log
+-- has no policies at all - it is owner-only, which is correct.
+-- Rewriting 187 policies now would be 187 chances to change a meaning
+-- for no measurable gain. Instead the rule fires per table, when that
+-- table grows into the band where the cost is real - and cannot be
+-- forgotten, which is the failure mode of a sweep.
+--
+-- reltuples is an estimate maintained by autovacuum; a never-analysed
+-- table reads -1 and is therefore not flagged. That is a deliberate
+-- false negative: this check exists to catch a table that GREW, and a
+-- table nobody has analysed has not been queried enough to hurt.
+CALL hbh_test.chk_empty('index', 'policies on tables past 5000 rows call their functions once',
+  $q$ SELECT c.relname || '.' || pol.polname
+      FROM pg_policy pol
+      JOIN pg_class c     ON c.oid = pol.polrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'hbh'
+        AND c.reltuples > 5000
+        -- TWO lookbehinds, and the first draft had only one - so it
+        -- reported the lifted form as broken too, and reported the same
+        -- count for both forms, which is how a guard says nothing while
+        -- looking busy. Postgres renders a lifted predicate as
+        --   ( SELECT (hbh.current_center_id() IS NOT NULL))
+        -- for a comparison and as
+        --   ( SELECT hbh.has_permission('X'))
+        -- for a bare boolean: sometimes a paren sits between SELECT and
+        -- the call, sometimes not. Both spellings have to be excused.
+        AND (coalesce(pg_get_expr(pol.polqual, pol.polrelid), '') || ' ' ||
+             coalesce(pg_get_expr(pol.polwithcheck, pol.polrelid), ''))
+            ~ '(?<!SELECT )(?<!SELECT \()hbh\.(current_center_id|current_user_id|has_permission|can_access_child)\(' $q$);
+
 -- =====================================================================
 -- 3. ACCESS CONTROL
 -- =====================================================================

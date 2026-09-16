@@ -1,6 +1,8 @@
 package config
 
 import (
+	"net/netip"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -52,6 +54,68 @@ func TestTrustProxyDefaultsOff(t *testing.T) {
 	}
 	if cfg.TrustProxy {
 		t.Fatal("TRUST_PROXY must default to false")
+	}
+	if len(cfg.TrustedProxies) != 0 {
+		t.Fatalf("with the flag off nothing is trusted, got %v", cfg.TrustedProxies)
+	}
+}
+
+// TRUST_PROXY=true with no list names the deployment it was written for:
+// nginx reaching this service over loopback (deploy/server). Leaving the list
+// empty instead would read as "trusting" and behave as "off".
+func TestTrustedProxiesDefaultToLoopbackWhenTrusting(t *testing.T) {
+	cfg, err := loadFrom(env(map[string]string{
+		"DATABASE_URL": "postgres://x/y",
+		"TRUST_PROXY":  "true",
+	}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !cfg.TrustedProxies[0].Contains(netip.MustParseAddr("127.0.0.1")) {
+		t.Fatalf("loopback is not trusted by default: %v", cfg.TrustedProxies)
+	}
+	if slices.ContainsFunc(cfg.TrustedProxies, func(p netip.Prefix) bool {
+		return p.Contains(netip.MustParseAddr("10.0.0.9"))
+	}) {
+		t.Fatalf("the default trusts more than loopback: %v", cfg.TrustedProxies)
+	}
+}
+
+// A CIDR and a bare address are both accepted; a bare address means that
+// host alone and must not widen to its network.
+func TestTrustedProxiesAcceptCIDRAndBareAddress(t *testing.T) {
+	cfg, err := loadFrom(env(map[string]string{
+		"DATABASE_URL":    "postgres://x/y",
+		"TRUST_PROXY":     "true",
+		"TRUSTED_PROXIES": "10.1.0.0/16, 192.168.4.7",
+	}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	in := func(s string) bool {
+		return slices.ContainsFunc(cfg.TrustedProxies, func(p netip.Prefix) bool {
+			return p.Contains(netip.MustParseAddr(s))
+		})
+	}
+	if !in("10.1.9.9") || !in("192.168.4.7") {
+		t.Fatalf("a named proxy is not trusted: %v", cfg.TrustedProxies)
+	}
+	if in("192.168.4.8") {
+		t.Fatal("a bare address widened to its network")
+	}
+}
+
+// A typo that silently narrows the trust list fails closed - which sounds
+// safe, and is also invisible: the operator who wrote it believes the
+// opposite. It is an error instead.
+func TestTrustedProxiesRejectGarbage(t *testing.T) {
+	_, err := loadFrom(env(map[string]string{
+		"DATABASE_URL":    "postgres://x/y",
+		"TRUST_PROXY":     "true",
+		"TRUSTED_PROXIES": "10.1.0.0/16, not-an-address",
+	}))
+	if err == nil || !strings.Contains(err.Error(), "TRUSTED_PROXIES") {
+		t.Fatalf("a bad entry was accepted: %v", err)
 	}
 }
 

@@ -38,6 +38,8 @@ window.HBH_SITE = {
    * what is not yet finished about signing in.
    */
   portalBaseUrl: 'https://portal.hbhskills.com',
+  // Used only when this website runs on localhost or a loopback address.
+  developmentPortalBaseUrl: 'http://localhost:4210',
 
   /**
    * Where the enrolment form lives, when it is published somewhere the

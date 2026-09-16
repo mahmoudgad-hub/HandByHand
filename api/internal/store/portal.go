@@ -76,7 +76,8 @@ func (d *DB) Profile(ctx context.Context, ident string) (domain.Profile, error) 
 // drift into showing different fields for the same child.
 const childColumns = `
 	c.child_id, c.child_no, c.full_name_ar, c.birth_date, c.gender, c.status, c.active_flg,
-	gc.relationship_code, gc.is_primary_flg, gc.can_view_live_flg, gc.can_view_reports_flg`
+	gc.relationship_code, gc.is_primary_flg, gc.can_view_live_flg, gc.can_view_reports_flg,
+	att.attended, att.missed`
 
 // childFrom joins the caller's own link row, when they have one.
 //
@@ -90,7 +91,14 @@ const childFrom = `
 	LEFT JOIN hbh.guardian_children gc
 	       ON gc.child_id = c.child_id
 	      AND gc.guardian_id = (SELECT g.guardian_id FROM hbh.guardians g
-	                             WHERE g.user_id = hbh.current_user_id())`
+	                             WHERE g.user_id = hbh.current_user_id())
+	-- Attendance this month. Counted in hbh.child_attendance_month, not
+	-- here and not in the portal: WHICH statuses count as attended or
+	-- missed is a business rule, and a second copy of it drifts the day a
+	-- status is added. The function runs as the caller, so the appointment
+	-- policy decides what is counted. Always one row - an aggregate with
+	-- no GROUP BY - so this join never drops a child.
+	LEFT JOIN LATERAL hbh.child_attendance_month(c.child_id) att ON true`
 
 // ChildQuery narrows a list of children.
 //
@@ -273,10 +281,19 @@ func scanChild(rows pgx.Rows) (domain.Child, error) {
 		isPrimary      *bool
 		canViewLive    *bool
 		canViewReports *bool
+		attended       *int
+		missed         *int
 	)
 	if err := rows.Scan(&c.ChildID, &c.ChildNo, &c.FullNameAr, &c.BirthDate, &c.Gender, &c.Status,
-		&c.ActiveFlg, &relationship, &isPrimary, &canViewLive, &canViewReports); err != nil {
+		&c.ActiveFlg, &relationship, &isPrimary, &canViewLive, &canViewReports,
+		&attended, &missed); err != nil {
 		return domain.Child{}, err
+	}
+	// Pointers, and nil only if the lateral produced no row at all - which
+	// an aggregate cannot. Kept nil-safe rather than trusted: a zero here
+	// would claim "no sessions" where the truth was "not counted".
+	if attended != nil && missed != nil {
+		c.AttendanceMonth = &domain.Attendance{Attended: *attended, Missed: *missed}
 	}
 	if relationship != nil {
 		c.Link = &domain.GuardianLink{

@@ -1,4 +1,4 @@
-<section class="scr">
+<section class="scr billing-workspace">
 
   @if (loading()) {
     <hbh-skeleton [count]="1" shape="card" />
@@ -23,28 +23,35 @@
         }
       </span>
       @if (overview.dueAmount === null) {
-        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
-          {{ 'action.retry' | t }}
+        <button class="hbh-btn hbh-btn--ghost" type="button"
+                [disabled]="retrying() === 'balance'" (click)="retry('balance')">
+          {{ (retrying() === 'balance' ? 'action.retrying' : 'action.retry') | t }}
         </button>
       } @else {
         <button class="hbh-btn hbh-btn--primary" type="button"
                 (click)="askAboutPayment()">
-          {{ 'billing.paymentMethods' | t }}
+          {{ 'billing.askPayment' | t }}
         </button>
       }
     </div>
 
     @if (overview.packagesUnavailable) {
-      <div class="sec">
+      <div class="sec billing-packages">
         <div class="sec__head"><h2 class="sec__t">{{ 'billing.packages' | t }}</h2></div>
-        <hbh-error-note [message]="'billing.packagesUnavailable' | t"
-                        [retryLabel]="'action.retry' | t" (retry)="load()" />
+        <div class="billing-frame">
+        @if (retrying() === 'packages') {
+          <hbh-skeleton [count]="1" shape="row" />
+        } @else {
+          <hbh-error-note [message]="'billing.packagesUnavailable' | t"
+                          [retryLabel]="'action.retry' | t" (retry)="retry('packages')" />
+        }
+        </div>
       </div>
     }
     @if (overview.packages.length) {
-      <div class="sec">
+      <div class="sec billing-packages">
         <div class="sec__head"><h2 class="sec__t">{{ 'billing.packages' | t }}</h2></div>
-        <div class="stack">
+        <div class="stack billing-frame">
           @for (item of overview.packages; track item.id) {
             <div class="pkg">
               <div class="pkg__h">
@@ -73,13 +80,16 @@
       </div>
     }
 
-    <div class="sec">
+    <div class="sec billing-invoices">
       <div class="sec__head"><h2 class="sec__t">{{ 'billing.invoices' | t }}</h2></div>
-      @if (overview.invoicesUnavailable) {
+      <div class="billing-frame">
+      @if (retrying() === 'invoices') {
+        <hbh-skeleton [count]="2" shape="row" />
+      } @else if (overview.invoicesUnavailable) {
         <!-- "We could not load these" and "you have none" are different
              sentences. This screen used to say the second one for both. -->
         <hbh-error-note [message]="'billing.invoicesUnavailable' | t"
-                        [retryLabel]="'action.retry' | t" (retry)="load()" />
+                        [retryLabel]="'action.retry' | t" (retry)="retry('invoices')" />
       } @else if (overview.invoices.length === 0) {
         <hbh-empty-state icon="ic-receipt" [title]="'billing.emptyInvoices' | t" />
       } @else {
@@ -139,7 +149,8 @@
       }
     </div>
 
-    <div class="sec">
+    </div>
+    <div class="sec billing-note">
       <div class="note note--info">
         <hbh-icon name="ic-info" />
         <span>{{ 'billing.noOnlinePayment' | t }}</span>
