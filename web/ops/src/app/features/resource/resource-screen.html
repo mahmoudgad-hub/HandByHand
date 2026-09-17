@@ -337,6 +337,20 @@
                     <option [value]="option.value">{{ option.labelKey | t }}</option>
                   }
                 </select>
+              } @else if (field.kind === 'combo') {
+                <!-- A box to type in, with the recurring answers offered in
+                     it. The value is whatever is typed: the list is a
+                     spelling aid for the codes that come back, not a rule
+                     about the ones that do not. -->
+                <input [id]="'f-' + field.name" type="text"
+                       [attr.dir]="field.ltr ? 'ltr' : null"
+                       [attr.list]="'dl-' + field.name"
+                       [formControl]="controls()[field.name]">
+                <datalist [id]="'dl-' + field.name">
+                  @for (option of field.options ?? []; track option.value) {
+                    <option [value]="option.value">{{ option.labelKey | t }}</option>
+                  }
+                </datalist>
               } @else if (field.kind === 'textarea') {
                 <!-- Line breaks are the content here, not formatting: the
                      public page renders one line per instruction. An input

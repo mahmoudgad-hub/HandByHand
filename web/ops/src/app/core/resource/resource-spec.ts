@@ -20,8 +20,22 @@ import { OpsResource } from '../api/ops-api';
  * the shape of what they typed and the page would show one run-on
  * sentence.
  */
+/**
+ * `combo` is a box to type in WITH the known answers offered in it, and it is
+ * not a softer `select`. It is for a column where most rows are one of a few
+ * recurring things and the rest are one-offs that cannot be listed in
+ * advance.
+ *
+ * `nps_surveys.code` is the case. Most surveys are the centre's standing
+ * questions - after a session, after a report - and typing those by hand is a
+ * spelling test: PARENT-VISIT and PARENT_VISIT are two surveys under
+ * `uq_nps_code`, and the results screen then reports one question as two. But
+ * a survey also gets raised for one occasion - a release, an outage - and
+ * that code is new every time, so a closed list would make the occasion
+ * itself impossible to ask about.
+ */
 export type FieldKind =
-  'text' | 'textarea' | 'number' | 'date' | 'time' | 'select' | 'switch' | 'ref';
+  'text' | 'textarea' | 'number' | 'date' | 'time' | 'select' | 'combo' | 'switch' | 'ref';
 
 export interface FieldSpec {
   /** The column name, exactly as the service sends and accepts it. */
@@ -541,23 +555,22 @@ const NPS_TRIGGER = [
 ];
 
 /**
- * The survey codes, as a list rather than a box to type in.
+ * The centre's standing questions, offered in the code box - NOT the whole
+ * set of codes it may use.
  *
- * The code is the centre's key for the survey - `uq_nps_code` is unique per
- * centre - and it is the one field on this form written in English. Typed by
- * hand it is a spelling test with no right answer on the screen: PARENT-VISIT
- * and PARENT_VISIT are two surveys, and the results screen then reports one
- * question as two.
+ * These are the purposes that come back: one per audience and moment the
+ * survey is asked at. They are offered so they are spelled the same way every
+ * time, because `uq_nps_code` makes PARENT-VISIT and PARENT_VISIT two surveys
+ * and the results screen then reports one question as two.
  *
- * ONE CODE PER PURPOSE, which is why a closed list fits: the pairs below are
- * the audience and the moment the survey is asked at, and a centre that needs
- * the same purpose twice needs a second wording, not a second code. If a
- * purpose is missing, it is added here - the database constrains the audience
- * and the trigger, not this, so nothing in the schema has to move.
+ * WHAT IS NOT HERE, and why the box is a `combo` and not a `select`: a survey
+ * raised for one occasion - a release, an outage, an apology - carries a code
+ * nobody could have listed in advance, and it is used once. A closed list was
+ * shipped here first and it made exactly that survey impossible to create:
+ * every code on it is already taken by the standing survey that owns it.
  *
- * A row already carrying a code that is not on this list KEEPS it: the editor
- * draws it as its own option. Dropping it would put the select on its first
- * option and rename somebody's survey on the next save, silently.
+ * Adding a purpose here is a line and a label. Asking about an occasion needs
+ * nothing from this file at all.
  */
 const NPS_CODE = [
   { value: 'PARENT_SESSION', labelKey: 'nps.code.PARENT_SESSION' },
@@ -586,7 +599,7 @@ export const NPS_SURVEYS_SPEC: ResourceSpec = {
   searchable: true,
   searchKey: 'search.nps-surveys',
   fields: [
-    { name: 'code', labelKey: 'field.code', kind: 'select', options: NPS_CODE, inList: true, required: true },
+    { name: 'code', labelKey: 'field.code', kind: 'combo', options: NPS_CODE, ltr: true, inList: true, required: true },
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'question_ar', labelKey: 'nps.question', kind: 'text', inList: true, required: true },
     { name: 'followup_question_ar', labelKey: 'nps.followup', kind: 'text' },

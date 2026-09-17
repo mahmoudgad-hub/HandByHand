@@ -58,14 +58,16 @@ describe('search placeholders', () => {
   });
 
   /**
-   * The survey code is picked, not typed: two spellings of one purpose are
-   * two surveys under `uq_nps_code`, and the results screen then reports one
-   * question twice.
+   * The standing questions are offered so they are spelled the same way
+   * every time - two spellings of one purpose are two surveys under
+   * `uq_nps_code`. A survey raised for one occasion is still typed: a closed
+   * list here made that survey impossible, because every code on the list is
+   * already taken by the standing survey that owns it.
    */
-  it('offers the survey codes as a list', () => {
+  it('suggests the survey codes without closing the box', () => {
     const surveys = SPECS.find((s) => s.resource === 'nps-surveys');
     const code = surveys?.fields.find((f) => f.name === 'code');
-    expect(code?.kind).toBe('select');
+    expect(code?.kind).toBe('combo');
     expect(code?.options?.map((o) => o.value)).toContain('PARENT_SESSION');
   });
 
