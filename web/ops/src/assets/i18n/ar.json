@@ -1171,7 +1171,6 @@
   "nps.code.PARENT_REPORT": "رضا وليّ الأمر بعد التقرير — PARENT_REPORT",
   "nps.code.PARENT_INVOICE": "رضا وليّ الأمر بعد الفاتورة — PARENT_INVOICE",
   "nps.code.PARENT_WELCOME": "انطباع وليّ الأمر بعد أول دخول — PARENT_WELCOME",
-  "nps.code.PARENT_LOGIN": "مع كل دخول لوليّ الأمر — PARENT_LOGIN",
   "nps.code.PARENT_PERIODIC": "استبيان دوري لأولياء الأمور — PARENT_PERIODIC",
   "nps.code.STAFF_PERIODIC": "استبيان دوري لفريق المركز — STAFF_PERIODIC",
   "nps.code.CENTER_PERIODIC": "استبيان دوري للجميع — CENTER_PERIODIC",
