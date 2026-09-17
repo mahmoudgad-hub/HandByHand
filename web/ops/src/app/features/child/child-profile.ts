@@ -15,10 +15,13 @@ import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon, childAvatar } from '@hbh/shared/icon/icon';
 import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
+import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
+import { ToastService } from '@hbh/shared/toast/toast.service';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { OpsApi, OpsResource, Row } from '../../core/api/ops-api';
 import { readAllPages } from '../../core/api/read-all-pages';
 import { Balance, ChildApi, ChildPart } from '../../core/api/child-api';
+import { readRefusal, refusalKey } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
 import { ActionDialogService } from '../../core/ops/action-dialog.service';
 import { ActionOutcome } from '../../core/ops/action-request';
@@ -82,7 +85,7 @@ export interface ActivityEvent {
 @Component({
   selector: 'hbh-child-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TablePages, RouterLink, NgTemplateOutlet, Icon, TranslatePipe, HbhPluralPipe, Skeleton, EmptyState, ErrorNote],
+  imports: [TablePages, RouterLink, NgTemplateOutlet, Icon, TranslatePipe, HbhPluralPipe, Skeleton, EmptyState, ErrorNote, ModalDialog],
   templateUrl: './child-profile.html',
   styleUrl: './child-profile.css',
 })
@@ -95,6 +98,7 @@ export class ChildProfile {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly i18n = inject(I18nService);
+  private readonly toast = inject(ToastService);
   protected readonly auth = inject(OpsAuthService);
   protected readonly format = inject(FormatService);
 
@@ -197,6 +201,13 @@ export class ChildProfile {
     }
     if (this.specialistsState() === 'ready' && !(this.specialists() ?? []).length) {
       out.push({ key: 'child.flag.noSpecialist', tone: 'warn' });
+    }
+    // The family cannot sign in (HBH-012). A warning rather than a note: a
+    // family with no account receives no report, no invoice and no message,
+    // and nothing else on this screen would say so - the portal simply stays
+    // silent, and the centre finds out when somebody telephones.
+    if (this.noPortalAccount()) {
+      out.push({ key: 'child.flag.noPortalAccount', tone: 'warn' });
     }
     if (this.plans() && !this.currentPlan()) {
       out.push({ key: 'child.flag.noPlan', tone: 'info' });
@@ -590,6 +601,85 @@ export class ChildProfile {
       .subscribe({
         next: () => { this.publishing.set(null); this.loadPart('notes', true); },
         error: () => this.publishing.set(null),
+      });
+  }
+
+  // =====================================================================
+  // Giving the family a way in (HBH-012).
+  //
+  // THE CONFIRMATION NAMES THE MOBILE, and that is the point of having one.
+  // The account is the mobile: every sign-in code goes to it, so a wrong
+  // number does not fail - it succeeds, for somebody else, and hands a
+  // stranger a live feed of another family's child. The dialogue therefore
+  // shows the number that will be used, exactly as it is stored, and asks.
+  // =====================================================================
+
+  /** The guardian awaiting confirmation, or null. */
+  protected readonly grantFor = signal<Row | null>(null);
+  protected readonly granting = signal(false);
+
+  /**
+   * Whether this family still has no way into the portal.
+   *
+   * Read from the child row the service computed, never worked out here from
+   * the guardian rows - the same rule the badge in the children list obeys,
+   * and for the same reason: the console cannot see the users table, so
+   * anything it deduced would be a guess wearing a fact's clothes. Strictly
+   * false, so a build talking to a service that does not send the field
+   * offers nothing rather than offering to create an account that exists.
+   */
+  protected readonly noPortalAccount = computed(
+    () => this.child()?.['family_has_portal_account'] === false);
+
+  /** Drawn only for somebody who may actually do it; the service decides. */
+  protected canManageGuardians(): boolean {
+    return this.auth.can('GUARDIAN.MANAGE');
+  }
+
+  protected askGrantAccess(row: Row): void {
+    this.grantFor.set(row);
+  }
+
+  protected cancelGrant(): void {
+    if (!this.granting()) {
+      this.grantFor.set(null);
+    }
+  }
+
+  protected confirmGrantAccess(): void {
+    const row = this.grantFor();
+    const guardian = num(row ?? {}, 'guardian_id');
+    if (!row || !guardian || this.granting()) {
+      return;
+    }
+    this.granting.set(true);
+    this.api.grantPortalAccess(guardian)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.granting.set(false);
+          this.grantFor.set(null);
+          // created:false is not a failure - two people working one list is
+          // ordinary. It is said differently so nobody reports having made a
+          // second account for a family that already had one.
+          this.toast.show(this.i18n.translate(
+            result.created ? 'portalAccess.created' : 'portalAccess.existed',
+            { name: text(row, 'full_name_ar') }));
+          this.loadPart('guardians', true);
+          // The child row carries family_has_portal_account, and the badge
+          // on this screen is drawn from it - so it is re-read rather than
+          // corrected locally. A screen that flipped its own flag would show
+          // "has an account" after a call that answered created:false for a
+          // reason it never looked at.
+          this.api.child(this.childId)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (row) => this.child.set(row), error: () => undefined });
+        },
+        error: (error: unknown) => {
+          this.granting.set(false);
+          this.grantFor.set(null);
+          this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+        },
       });
   }
 

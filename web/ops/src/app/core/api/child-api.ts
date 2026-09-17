@@ -38,6 +38,19 @@ export interface Balance {
   readonly paid_amt: string;
 }
 
+/**
+ * What granting a family portal access answers.
+ *
+ * `created` false is a success: the family already had an account, and this
+ * names it. There is deliberately no password field - the family signs in
+ * with a one-time code, so there is nothing here to read out or write down.
+ */
+export interface PortalAccessResult {
+  readonly user_id: number;
+  readonly username: string;
+  readonly created: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChildApi {
   private readonly http = inject(HttpClient);
@@ -90,6 +103,28 @@ export class ChildApi {
   grantConsent(guardianId: number, consentType: string, childId: number): Observable<unknown> {
     return this.http.post(`${this.base}/guardians/${guardianId}/consent`,
       { consent_type: consentType, child_id: childId });
+  }
+
+  /**
+   * Give the family a way in (HBH-012).
+   *
+   * hbh.grant_portal_access decides everything: GUARDIAN.MANAGE, that the
+   * guardian is this centre's, that the mobile is not already a staff account
+   * (HB204) or another guardian's (HB261). None of that is repeated here.
+   *
+   * THE ANSWER IS 200 EVEN WHEN NOTHING WAS CREATED, and `created` is the
+   * field that matters. Two receptionists working the same list is ordinary,
+   * not an error: the second call names the account that already exists and
+   * says created:false. A screen that read the status alone would report
+   * having made a second account for a family that has one.
+   *
+   * NO PASSWORD COMES BACK BECAUSE THERE IS NONE. The family signs in with a
+   * one-time code to their mobile, so there is no credential for this screen
+   * to display, write down, or read out over the phone.
+   */
+  grantPortalAccess(guardianId: number): Observable<PortalAccessResult> {
+    return this.http.post<PortalAccessResult>(
+      `${this.base}/guardians/${guardianId}/portal-access`, {});
   }
 
   /**

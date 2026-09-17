@@ -78,3 +78,12 @@
    behaves like, and it is a button because it navigates nowhere. */
 .cp__linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--hbh-teal-600); cursor: pointer; text-align: start; }
 .cp__linkbtn:hover { text-decoration: underline; }
+
+/* The number the account will belong to, set apart from the sentence around
+   it and large enough to be read back over a phone without squinting. */
+.cp__grant-mobile {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0 10px;
+}

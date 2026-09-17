@@ -156,6 +156,23 @@
                   <a class="hbh-link" [routerLink]="spec().rowLink!(idOf(row))">
                     {{ display(row, field) }}
                   </a>
+                  <!-- "This family cannot sign in" (HBH-084), beside the name
+                       because that is where somebody is already looking.
+
+                       READ, NOT INFERRED. The flag is computed by the service
+                       under the caller's own identity; the console has no
+                       business deciding from a guardian count or an empty
+                       mobile who can sign in. And it is tested for FALSE
+                       exactly: the field is always sent, so an absent one
+                       means a build that does not know - and "unknown" must
+                       not be drawn as "no account", which would send a
+                       receptionist to create an account that already
+                       exists. -->
+                  @if (noPortalAccount(row)) {
+                    <span class="hbh-badge hbh-badge--warn">
+                      {{ 'child.noPortalAccount' | t }}
+                    </span>
+                  }
                 } @else {
                   {{ display(row, field) }}
                 }

@@ -10,6 +10,8 @@ import { ActionDialogService } from '../../core/ops/action-dialog.service';
 import { ActionOutcome, ActionRequest, ResourceRequest } from '../../core/ops/action-request';
 import { DrawerRequest } from '../../core/ops/record-drawer';
 import { RecordDrawerService } from '../../core/ops/record-drawer.service';
+import { I18nService } from '@hbh/shared/i18n/i18n.service';
+import { ToastService } from '@hbh/shared/toast/toast.service';
 import { ChildProfile, EMBEDDED_CHILD_PROFILE } from './child-profile';
 
 /**
@@ -258,5 +260,121 @@ describe('ChildProfile', () => {
     // read is abandoned, not answered.
     expect(balance.cancelled).toBeTrue();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('child.notFound');
+  });
+});
+
+/**
+ * Giving the family a way in (HBH-012).
+ *
+ * The properties held down here are the two that would hurt a real family if
+ * they broke: the confirmation NAMES THE MOBILE the account will belong to -
+ * a wrong number does not fail, it succeeds for a stranger who then receives
+ * this child's reports - and a call that created nothing is not reported as
+ * a new account.
+ */
+describe('ChildProfile portal access', () => {
+  let http: HttpTestingController;
+  let shown: string[];
+
+  const CHILD_NO_ACCOUNT = {
+    child_id: 5, child_no: 'C-0005', full_name_ar: 'عمر خالد', birth_date: '2021-05-20',
+    gender: 'M', status: 'ACTIVE', active_flg: true, family_has_portal_account: false,
+  };
+  const GUARDIAN = {
+    guardians: [{
+      guardian_id: 9, full_name_ar: 'منى سعيد', relationship_code: 'MOTHER',
+      mobile: '+201155667788', is_primary: true, can_view_live: false,
+    }],
+  };
+
+  const mount = (child: Record<string, unknown>) => {
+    shown = [];
+    TestBed.configureTestingModule({
+      imports: [ChildProfile],
+      providers: [
+        { provide: EMBEDDED_CHILD_PROFILE, useValue: null },
+        provideRouter([]), provideHttpClient(), provideHttpClientTesting(),
+        { provide: HBH_CONFIG, useValue: { ...DEFAULT_HBH_CONFIG, apiBaseUrl: '' } },
+        { provide: OpsAuthService, useValue: { can: () => true, me: () => ({}) } },
+        { provide: RecordDrawerService, useValue: { open: () => {}, changed$: of() } },
+        { provide: ToastService, useValue: { show: (t: string) => shown.push(t), error: (t: string) => shown.push(t) } },
+        { provide: I18nService, useValue: { translate: (key: string) => key, plural: (key: string) => key } },
+        {
+          provide: ActionDialogService, useValue: {
+            open: () => of('CANCELLED'), openResource: () => of('CANCELLED'),
+            canCreate: () => false, canWriteResource: () => false, canOffer: () => false,
+          },
+        },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ childId: '5' }), queryParamMap: convertToParamMap({ tab: 'family' }) } } },
+      ],
+    });
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(ChildProfile);
+    fixture.detectChanges();
+    http.expectOne('/api/v1/children/5').flush(child);
+    http.expectOne('/api/v1/children/5/balance').flush(null, { status: 404, statusText: 'none' });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/children/5/guardians').flush(GUARDIAN);
+    http.expectOne('/api/v1/children/5/appointments').flush({ appointments: [] });
+    http.expectOne('/api/v1/children/5/plans').flush({ plans: [] });
+    // The caseload lookup the header does for anybody who may see it. Not
+    // what these tests are about, but an unanswered request is an open
+    // request, and http.verify() is right to say so.
+    http.expectOne((r) => r.url === '/api/v1/caseload').flush({ caseload: [], total: 0, limit: 200, offset: 0 });
+    http.expectOne((r) => r.url === '/api/v1/therapists').flush({ therapists: [], total: 0, limit: 200, offset: 0 });
+    http.expectOne((r) => r.url === '/api/v1/services').flush({ services: [], total: 0, limit: 200, offset: 0 });
+    fixture.detectChanges();
+    return fixture;
+  };
+
+  const grantButton = (fixture: ComponentFixture<ChildProfile>) =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('td button'))
+      .find((b) => b.textContent?.includes('portalAccess.grant'));
+
+  afterEach(() => http.verify());
+
+  it('shows the mobile the account will belong to before anything is sent', () => {
+    const fixture = mount(CHILD_NO_ACCOUNT);
+    grantButton(fixture)!.click();
+    fixture.detectChanges();
+
+    const dialog = (fixture.nativeElement as HTMLElement).querySelector('dialog');
+    expect(dialog).withContext('the confirmation').not.toBeNull();
+    expect(dialog!.textContent).toContain('+201155667788');
+    // Nothing has been sent by opening it - http.verify() in afterEach says so.
+  });
+
+  it('tells the centre when the family already had one, rather than claiming a new account', () => {
+    const fixture = mount(CHILD_NO_ACCOUNT);
+    grantButton(fixture)!.click();
+    fixture.detectChanges();
+    (Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('dialog button'))
+      .find((b) => b.textContent?.includes('portalAccess.grant')))!.click();
+    fixture.detectChanges();
+
+    const sent = http.expectOne('/api/v1/guardians/9/portal-access');
+    expect(sent.request.method).toBe('POST');
+    sent.flush({ user_id: 77, username: '+201155667788', created: false });
+    fixture.detectChanges();
+
+    expect(shown).toEqual(['portalAccess.existed']);
+    // The flag is re-read rather than assumed: the screen asked the service
+    // what is true now instead of flipping its own copy.
+    http.expectOne('/api/v1/children/5/guardians').flush(GUARDIAN);
+    http.expectOne('/api/v1/children/5').flush({ ...CHILD_NO_ACCOUNT, family_has_portal_account: true });
+    fixture.detectChanges();
+    expect(grantButton(fixture)).withContext('offered again after the family has one').toBeUndefined();
+  });
+
+  it('offers nothing to press when the family can already sign in', () => {
+    const fixture = mount({ ...CHILD_NO_ACCOUNT, family_has_portal_account: true });
+    expect(grantButton(fixture)).toBeUndefined();
+  });
+
+  it('offers nothing when the service did not say - unknown is not "no account"', () => {
+    const { family_has_portal_account: _omitted, ...withoutFlag } = CHILD_NO_ACCOUNT;
+    const fixture = mount(withoutFlag);
+    expect(grantButton(fixture)).toBeUndefined();
   });
 });

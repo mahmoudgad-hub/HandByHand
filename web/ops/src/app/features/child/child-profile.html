@@ -184,6 +184,17 @@
                 <td dir="ltr">{{ t(g, 'mobile') }}</td>
                 <td>{{ (g['can_view_live'] === true ? 'answer.yes' : 'answer.no') | t }}</td>
                 <td class="cp__cell-actions">
+                  <!-- Offered while the FAMILY has no account, not while this
+                       guardian has none: one account per family is what the
+                       service grants, and the flag it sends is about the
+                       family. Offering it per guardian would invite a second
+                       press that answers created:false and reads as failure. -->
+                  @if (noPortalAccount() && canManageGuardians()) {
+                    <button type="button" class="hbh-btn hbh-btn--sm hbh-btn--primary"
+                            (click)="askGrantAccess(g)">
+                      {{ 'portalAccess.grant' | t }}
+                    </button>
+                  }
                   <button type="button" class="hbh-btn hbh-btn--sm hbh-btn--ghost" [disabled]="publishing() === n(g, 'guardian_id')" (click)="toggleLiveConsent(g)">
                     {{ (g['can_view_live'] === true ? 'consent.withdraw' : 'consent.grant') | t }}
                   </button>
@@ -474,4 +485,37 @@
       } @else { <hbh-skeleton [count]="3" shape="row" /> }
     }
   }
+}
+
+<!-- Before the account exists, the number it will belong to.
+
+     THIS IS THE WHOLE CONTROL. The account IS the mobile - every sign-in
+     code goes to it - so a wrong number does not fail, it succeeds for
+     somebody else and hands a stranger this child's reports and their live
+     session. The dialogue therefore shows the number exactly as it is
+     stored, left to right, and makes somebody read it before agreeing. -->
+@if (grantFor(); as guardian) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelGrant()"
+          aria-labelledby="grantAccessTitle">
+    <div class="hbh-sheet__box">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="grantAccessTitle">{{ 'portalAccess.confirmTitle' | t }}</h2>
+      </div>
+
+      <p>{{ 'portalAccess.confirmBody' | t: { name: t(guardian, 'full_name_ar') } }}</p>
+      <p class="cp__grant-mobile" dir="ltr">{{ t(guardian, 'mobile') }}</p>
+      <p class="hbh-muted">{{ 'portalAccess.confirmNote' | t }}</p>
+
+      <div class="hbh-sheet__foot">
+        <button type="button" class="hbh-btn hbh-btn--primary"
+                [disabled]="granting()" (click)="confirmGrantAccess()">
+          {{ 'portalAccess.grant' | t }}
+        </button>
+        <button type="button" class="hbh-btn hbh-btn--ghost"
+                [disabled]="granting()" (click)="cancelGrant()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
+    </div>
+  </dialog>
 }

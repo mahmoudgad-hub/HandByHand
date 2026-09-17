@@ -251,6 +251,20 @@ export class ResourceScreen {
    * it. The value is drawn as its own option, unlabelled, exactly as it is
    * stored.
    */
+  /**
+   * Whether this row's family has no way into the portal (HBH-084).
+   *
+   * STRICTLY false, never falsy. The service sends
+   * `family_has_portal_account` on every child, list and single read, and
+   * sends false rather than omitting it - so undefined means this build is
+   * talking to a service that does not compute it. Drawing that as "no
+   * account" would put a warning on every child in the list the day the
+   * field is renamed, and send the centre off creating accounts that exist.
+   */
+  protected noPortalAccount(row: Row): boolean {
+    return row['family_has_portal_account'] === false;
+  }
+
   protected unlistedValue(field: FieldSpec): string {
     const value = this.controls()[field.name]?.value ?? '';
     if (!value || !field.options) {
