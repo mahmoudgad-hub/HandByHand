@@ -104,7 +104,35 @@ const TYPES = {
   '.ttf': 'font/ttf',
   '.map': 'application/json; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
+  // Derived from the schema, not from the page: hbh.site_team_media holds
+  // a VIDEO row waiting to be published, and site/ already carries the
+  // file. Left out of the list, the first publish from that screen would
+  // 404 on the only thing it showed.
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
 };
+
+// THE LIST ABOVE IS THE ALLOW LIST. An extension that is not in it is not
+// served, exactly as if the file were not there.
+//
+// This table used to end in `?? 'application/octet-stream'`, which serves
+// ANY file under the root to anyone who names it. That is how /README.md
+// and /CONTENT-AUDIT.md were handed out on hbhskills.com - the tables
+// behind the site, the publishing permissions, the migration numbers, and
+// any family testimonial withheld for want of consent.
+//
+// It was fixed once, in site.native.mjs, which grew a servable() exactly
+// like this one. But the site is served by THIS file - the apps list in
+// web.native.sh reads `site:8093:8445:site:static` - so the fix went into
+// the file that does not run, and README.md answered 200 again today.
+// That is the lesson in CLAUDE.md about hbh.nginx.conf, repeating with
+// different names: the rule is written where it executes, or not at all.
+//
+// A deny list cannot do this job. Nothing linked to either file, and a
+// name nobody would guess is not a control: README.md.
+function servable(file) {
+  return Object.prototype.hasOwnProperty.call(TYPES, path.extname(file).toLowerCase());
+}
 
 const indexFile = path.join(ROOT, 'index.html');
 
@@ -249,7 +277,10 @@ function sendFile(res, file, isIndex) {
   const immutable = !isIndex && HASHED.test(path.basename(file));
   res.writeHead(200, {
     ...securityHeaders(),
-    'content-type': TYPES[ext] ?? 'application/octet-stream',
+    // No `?? 'application/octet-stream'` fallback: servable() has already
+    // refused anything not in TYPES, and a fallback here would quietly
+    // re-open the hole the moment someone calls sendFile from a new place.
+    'content-type': TYPES[ext],
     // index.html is never stored: it is the one file that names all the
     // others, and a stale copy points at bundles that no longer exist.
     // Everything else unhashed is no-cache, which does not mean "do not
@@ -300,6 +331,15 @@ function handler(req, res) {
 
     fs.stat(target, (err, st) => {
       if (!err && st.isFile()) {
+        // Checked here, where the path is known to be a real file on
+        // disk, and not earlier: a client-side route may carry a dot
+        // ("/child/1.2"), and an extension test in front of the SPA
+        // fallback would answer 404 for a page that works today.
+        if (!servable(target)) {
+          res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' })
+             .end('404 ' + url);
+          return;
+        }
         return sendFile(res, target, url === '/index.html' || url === '/');
       }
       // A directory means its index.html - including "/" itself. The SPA
