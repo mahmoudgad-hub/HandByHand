@@ -1526,6 +1526,36 @@ func businessRefusal(code string) (int, string, bool) {
 	// rather than handed to the caller as a conflict they could resolve.
 	case "HB269":
 		return http.StatusInternalServerError, CodeInternal, true
+
+	// Message templates, migration 0153. The order inside the functions is
+	// the one CLAUDE.md fixes: permission (HB300) before the row is read, so a
+	// caller without MESSAGE_TEMPLATE.EDIT learns nothing about which ids
+	// exist; "no such template" and "another centre's template" are one
+	// answer (HB301).
+	case "HB300":
+		return http.StatusForbidden, "MESSAGE_TEMPLATE_FORBIDDEN", true
+	case "HB301":
+		return http.StatusNotFound, CodeNotFound, true
+	// HB302: the text's placeholders are not exactly {{1}}..{{n}}, or the
+	// text starts or ends with one - Meta would refuse it at submission.
+	case "HB302":
+		return http.StatusUnprocessableEntity, "TEMPLATE_PLACEHOLDERS", true
+	// HB303: DRAFT -> SUBMITTED -> APPROVED | REJECTED, and back to DRAFT only
+	// by an edit. Repeating the request cannot help.
+	case "HB303":
+		return http.StatusConflict, "TEMPLATE_TRANSITION", true
+	// HB304: an AUTHENTICATION template's text is written by Meta, not here.
+	case "HB304":
+		return http.StatusUnprocessableEntity, "TEMPLATE_NOT_EDITABLE", true
+	// HB306: APPROVED needs the ContentSid Meta gave it.
+	case "HB306":
+		return http.StatusUnprocessableEntity, "CONTENT_SID_REQUIRED", true
+	// HB305: a template's key, category or variable count changed. No request
+	// body reaches those columns - the edit functions do not write them - so
+	// this surfacing means a function we wrote is wrong. 500, with HB269, so
+	// the cause is logged instead of handed to the caller as a conflict.
+	case "HB305":
+		return http.StatusInternalServerError, CodeInternal, true
 	}
 
 	// THE FALLBACK USED TO READ "HB0", AND THE SCHEMA GREW PAST IT.

@@ -107,7 +107,6 @@ services:
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
       TWILIO_MESSAGING_SERVICE_SID: ${TWILIO_MESSAGING_SERVICE_SID:-}
-      TWILIO_CONTENT_SIDS: ${TWILIO_CONTENT_SIDS:-}
       TWILIO_STATUS_CALLBACK: ${TWILIO_STATUS_CALLBACK:-}
       # Development only; config.Load refuses to start with it set when
       # APP_ENV is not development.

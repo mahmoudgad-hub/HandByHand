@@ -150,16 +150,15 @@ type Config struct {
 	// Twilio, when SMS_PROVIDER is twilio_whatsapp. The account sid and token
 	// are secrets on the same terms as the bulk-provider account above.
 	//
-	// TwilioContentSIDs maps a template_code to the ContentSid Meta approved
-	// for it, read from TWILIO_CONTENT_<CODE>. It is a map and not four named
-	// fields because the set of templates grows with the centre's messages
-	// and a new one should be an environment line, not a build.
+	// There is no template map here any more. The ContentSid each template was
+	// approved under lives in hbh.message_templates (migration 0150), per
+	// centre, so approving a template is a change in the console and not an
+	// environment line and a restart. TWILIO_CONTENT_SIDS is no longer read.
 	TwilioAccountSID     string
 	TwilioAuthToken      string
 	TwilioWhatsAppFrom   string
 	TwilioMessagingSvc   string
 	TwilioStatusCallback string
-	TwilioContentSIDs    map[string]string
 
 	// TwilioAllowFreeform sends the rendered Arabic when a template code has
 	// no approved ContentSid, instead of refusing. It exists so a developer
@@ -277,9 +276,6 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	cfg.TwilioWhatsAppFrom = strings.TrimSpace(getenv("TWILIO_WHATSAPP_FROM"))
 	cfg.TwilioMessagingSvc = strings.TrimSpace(getenv("TWILIO_MESSAGING_SERVICE_SID"))
 	cfg.TwilioStatusCallback = strings.TrimSpace(getenv("TWILIO_STATUS_CALLBACK"))
-	if cfg.TwilioContentSIDs, err = contentSIDs(getenv("TWILIO_CONTENT_SIDS")); err != nil {
-		errs = append(errs, err)
-	}
 	if cfg.TwilioAllowFreeform, err = boolean(getenv, "TWILIO_ALLOW_FREEFORM", false); err != nil {
 		errs = append(errs, err)
 	}
@@ -389,15 +385,11 @@ func loadFrom(getenv func(string) string) (Config, error) {
 				errs = append(errs, errors.New(
 					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_WHATSAPP_FROM or TWILIO_MESSAGING_SERVICE_SID"))
 			}
-			// A login code is the one message whose absence closes the front
-			// door, so its template is required rather than discovered at the
-			// first attempt. Every other template fails one message; this one
-			// fails every sign-in.
-			if _, ok := cfg.TwilioContentSIDs["OTP_LOGIN"]; !ok {
-				errs = append(errs, errors.New(
-					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_CONTENT_SIDS to map OTP_LOGIN - "+
-						"without it no parent can receive a login code"))
-			}
+			// THE LOGIN-CODE TEMPLATE IS STILL REQUIRED BEFORE PRODUCTION
+			// STARTS, and still refused at startup rather than discovered at a
+			// parent's first sign-in. It is checked in cmd/hbhd once the
+			// database is reachable, because the answer now lives there -
+			// this function reads only the environment.
 		default:
 			errs = append(errs, fmt.Errorf("SMS_PROVIDER must be dev, http or twilio_whatsapp, got %q", cfg.SMSProvider))
 		}
@@ -407,38 +399,6 @@ func loadFrom(getenv func(string) string) (Config, error) {
 		return Config{}, errors.Join(errs...)
 	}
 	return cfg, nil
-}
-
-// contentSIDs parses TWILIO_CONTENT_SIDS: CODE=SID pairs, comma separated.
-//
-// A MALFORMED ENTRY IS AN ERROR AND NOT A SKIP. Dropping the pair somebody
-// mistyped leaves a template unmapped, and an unmapped template is a CONFIG
-// failure at the moment a family was owed a message rather than at startup -
-// the same shape as every other setting this file refuses to guess at.
-func contentSIDs(raw string) (map[string]string, error) {
-	out := map[string]string{}
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return out, nil
-	}
-	for _, pair := range strings.Split(raw, ",") {
-		pair = strings.TrimSpace(pair)
-		if pair == "" {
-			continue
-		}
-		code, sid, ok := strings.Cut(pair, "=")
-		code, sid = strings.TrimSpace(code), strings.TrimSpace(sid)
-		if !ok || code == "" || sid == "" {
-			return nil, fmt.Errorf("TWILIO_CONTENT_SIDS entry %q is not CODE=SID", pair)
-		}
-		if _, dup := out[code]; dup {
-			// Last-wins would make which template a family receives depend on
-			// the order of an environment string.
-			return nil, fmt.Errorf("TWILIO_CONTENT_SIDS names %q twice", code)
-		}
-		out[code] = sid
-	}
-	return out, nil
 }
 
 func str(getenv func(string) string, key, def string) string {

@@ -51,13 +51,12 @@ func TestTwilioAcceptsAMessagingServiceWithoutAFrom(t *testing.T) {
 	}
 }
 
-func newTestTwilio(t *testing.T, content map[string]string) *TwilioWhatsApp {
+func newTestTwilio(t *testing.T) *TwilioWhatsApp {
 	t.Helper()
 	s, err := NewTwilioWhatsApp(TwilioConfig{
-		AccountSID:  "AC00000000000000000000000000000000",
-		AuthToken:   "secret",
-		From:        "+201000000000",
-		ContentSIDs: content,
+		AccountSID: "AC00000000000000000000000000000000",
+		AuthToken:  "secret",
+		From:       "+201000000000",
 	})
 	if err != nil {
 		t.Fatalf("building the test sender: %v", err)
@@ -71,7 +70,7 @@ func newTestTwilio(t *testing.T, content map[string]string) *TwilioWhatsApp {
 // ceiling against a wall and the family still gets nothing. CONFIG is what
 // puts it in front of the person who can add the mapping.
 func TestTwilioRefusesAnUnmappedTemplateAsConfig(t *testing.T) {
-	s := newTestTwilio(t, map[string]string{"OTP": "HX0000000000000000000000000000000"})
+	s := newTestTwilio(t)
 
 	_, err := s.Send(context.Background(), Message{
 		To: "+201012345678", TemplateCode: "APPOINTMENT_CONFIRMED",
@@ -101,7 +100,6 @@ func TestTwilioFreeformFallbackOnlyWhenAllowedAndOnlyWithABody(t *testing.T) {
 			AccountSID:    "AC00000000000000000000000000000000",
 			AuthToken:     "secret",
 			From:          "+201000000000",
-			ContentSIDs:   map[string]string{"OTP": "HX1"},
 			AllowFreeform: allow,
 		})
 		if err != nil {
@@ -141,9 +139,9 @@ func TestTwilioFreeformFallbackOnlyWhenAllowedAndOnlyWithABody(t *testing.T) {
 	// A MAPPED template is never affected by the affordance: it still goes as
 	// a template, so turning this on cannot silently downgrade a message that
 	// had an approval.
-	mapped := Message{To: "+201012345678", TemplateCode: "OTP", Vars: []string{"123456"}, Body: "fallback"}
+	mapped := Message{To: "+201012345678", TemplateCode: "OTP_LOGIN", ContentSID: "HX00000000000000000000000000000001", Vars: []string{"123456"}, Body: "fallback"}
 	if _, err := build(true).Send(context.Background(), mapped); err != nil {
-		if _, detail := ClassOf(err); strings.Contains(detail, "OTP") &&
+		if _, detail := ClassOf(err); strings.Contains(detail, "OTP_LOGIN") &&
 			strings.Contains(detail, "no approved") {
 			t.Fatalf("a mapped template must not be refused: %s", detail)
 		}
@@ -153,7 +151,7 @@ func TestTwilioFreeformFallbackOnlyWhenAllowedAndOnlyWithABody(t *testing.T) {
 // A rendered sentence with no template is what hbh.sms_outbox holds today.
 // It must be refused rather than sent as freeform - see the worker.
 func TestTwilioRefusesAnEmptyMessage(t *testing.T) {
-	s := newTestTwilio(t, nil)
+	s := newTestTwilio(t)
 	// Body alone is ALLOWED to reach the wire: it is a real case inside an
 	// open 24-hour window. What must not happen is a silent template-less
 	// send of a message whose template_code was never mapped, which the test
@@ -168,7 +166,7 @@ func TestTwilioRefusesAnEmptyMessage(t *testing.T) {
 // The destination is checked by the shared E164, so a bad one never reaches a
 // provider and is never billed.
 func TestTwilioRefusesANonEgyptianDestination(t *testing.T) {
-	s := newTestTwilio(t, map[string]string{"OTP": "HX0"})
+	s := newTestTwilio(t)
 	for _, bad := range []string{"", "0101234567", "201012345678", "0191234567a"} {
 		if _, err := s.Send(context.Background(), Message{
 			To: bad, TemplateCode: "OTP", Vars: []string{"123456"},

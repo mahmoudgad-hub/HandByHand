@@ -381,9 +381,24 @@ func (s *Server) deliverOTP(r *http.Request, mobile, code string, centerID, ttlM
 		return
 	}
 
+	// The approved WhatsApp template for a login code in THIS centre, read
+	// from hbh.message_templates (migration 0153). A code is sent inside the
+	// request that asked for it, so there is no retry to fall back on: a
+	// lookup that fails is recorded as TRANSIENT and not sent, which is
+	// honest about whose fault it was, and the parent can ask again once the
+	// resend window passes.
+	sid, lerr := s.db.TemplateSID(ctx, centerID, "OTP_LOGIN")
+	if lerr != nil {
+		s.log.ErrorContext(ctx, "the login-code template could not be looked up", "err", lerr)
+		s.recordOTPDelivery(ctx, centerID, mobile, "", "", string(sms.ClassTransient),
+			"the approved template could not be looked up")
+		return
+	}
+
 	res, serr := s.sender.Send(ctx, sms.Message{
-		To:   mobile,
-		Body: body,
+		ContentSID: sid,
+		To:         mobile,
+		Body:       body,
 		// THE SAME CODE, TWICE, IN TWO SHAPES, because the two transports ask
 		// for different things and neither can use the other's. An SMS
 		// provider takes the sentence SMS_TEMPLATE_OTP produced; WhatsApp

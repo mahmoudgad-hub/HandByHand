@@ -66,11 +66,6 @@ type TwilioConfig struct {
 	// per-country rules with it.
 	MessagingServiceSid string
 
-	// ContentSIDs maps a template_code from hbh.sms_outbox to the ContentSid
-	// Meta approved for it. A code with no entry cannot be sent: guessing
-	// would deliver the wrong template to a family.
-	ContentSIDs map[string]string
-
 	// StatusCallback is where Twilio reports what happened after it accepted
 	// the message. Optional, and nothing in this service reads it yet.
 	StatusCallback string
@@ -135,9 +130,6 @@ func NewTwilioWhatsApp(cfg TwilioConfig) (*TwilioWhatsApp, error) {
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = 10 * time.Second
 	}
-	if cfg.ContentSIDs == nil {
-		cfg.ContentSIDs = map[string]string{}
-	}
 	return &TwilioWhatsApp{cfg: cfg, client: &http.Client{Timeout: cfg.Timeout}}, nil
 }
 
@@ -173,22 +165,15 @@ func (t *TwilioWhatsApp) Send(ctx context.Context, m Message) (Result, error) {
 	// THE TEMPLATE IS THE NORMAL PATH, and the refusal below is the whole
 	// point of the check: a business-initiated WhatsApp message without one
 	// is refused by WhatsApp, not by us, and refused identically every time.
-	// Saying so as CONFIG puts it in front of the operator who can add the
-	// mapping instead of burning SMS_MAX_ATTEMPTS against a wall.
+	// Saying so as CONFIG puts it in front of the operator who can approve the
+	// template instead of burning SMS_MAX_ATTEMPTS against a wall.
+	//
+	// The ContentSID comes on the message, read from hbh.message_templates by
+	// the caller (migration 0150). It used to come from TWILIO_CONTENT_SIDS,
+	// which meant approving a template needed a deploy.
 	switch {
-	case m.TemplateCode != "" && t.cfg.ContentSIDs[m.TemplateCode] == "":
-		// NO TEMPLATE IS MAPPED. Refusing is the right answer everywhere the
-		// 24-hour session is shut, which is everywhere this centre sends -
-		// see AllowFreeform's comment for why the fallback is development
-		// only and what it costs when it is not.
-		if !t.cfg.AllowFreeform || m.Body == "" {
-			return Result{}, Fail(ClassConfig,
-				"no approved WhatsApp template is mapped to "+m.TemplateCode, nil)
-		}
-		form.Set("Body", m.Body)
-	case m.TemplateCode != "":
-		sid := t.cfg.ContentSIDs[m.TemplateCode]
-		form.Set("ContentSid", sid)
+	case m.ContentSID != "":
+		form.Set("ContentSid", m.ContentSID)
 		if len(m.Vars) > 0 {
 			vars := make(map[string]string, len(m.Vars))
 			for i, v := range m.Vars {
@@ -201,6 +186,16 @@ func (t *TwilioWhatsApp) Send(ctx context.Context, m Message) (Result, error) {
 			}
 			form.Set("ContentVariables", string(encoded))
 		}
+	case m.TemplateCode != "":
+		// NO APPROVED TEMPLATE for this code in this centre. Refusing is the
+		// right answer everywhere the 24-hour session is shut, which is
+		// everywhere this centre sends - see AllowFreeform's comment for why
+		// the fallback is development only and what it costs when it is not.
+		if !t.cfg.AllowFreeform || m.Body == "" {
+			return Result{}, Fail(ClassConfig,
+				"no approved WhatsApp template for "+m.TemplateCode, nil)
+		}
+		form.Set("Body", m.Body)
 	case m.Body != "":
 		// Only reachable inside an open 24-hour session. Left in because a
 		// reply to a family who wrote first is a real case; every scheduled

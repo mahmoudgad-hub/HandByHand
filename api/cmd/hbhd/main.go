@@ -102,7 +102,6 @@ func run() error {
 		AuthToken:           cfg.TwilioAuthToken,
 		From:                cfg.TwilioWhatsAppFrom,
 		MessagingServiceSid: cfg.TwilioMessagingSvc,
-		ContentSIDs:         cfg.TwilioContentSIDs,
 		StatusCallback:      cfg.TwilioStatusCallback,
 		AllowFreeform:       cfg.TwilioAllowFreeform,
 	}, cfg.Env)
@@ -121,6 +120,28 @@ func run() error {
 	if cfg.TwilioAllowFreeform {
 		log.Warn("TWILIO_ALLOW_FREEFORM is on - an unmapped template sends its rendered text instead of refusing",
 			"note", "delivered only inside an open 24-hour WhatsApp session, such as the sandbox")
+	}
+
+	// THE LOGIN-CODE TEMPLATE, BEFORE PRODUCTION OPENS THE DOOR. It used to be
+	// checked in config.Load against TWILIO_CONTENT_SIDS; the ContentSid now
+	// lives in hbh.message_templates (migration 0153), so the check waits for
+	// the database. A centre with no approved OTP_LOGIN template cannot send a
+	// parent a login code on WhatsApp - every sign-in there fails - so the
+	// process refuses to start rather than find out at a parent's first try.
+	//
+	// Production only. In development the sandbox and TWILIO_ALLOW_FREEFORM
+	// deliver without an approved template, and a database without 0153 is
+	// the normal state of a developer machine while the migration is held.
+	if cfg.SMSProvider == "twilio_whatsapp" && cfg.Env != "development" {
+		n, err := db.CentresWithoutTemplateSID(startCtx, "OTP_LOGIN")
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			return errors.New("SMS_PROVIDER=twilio_whatsapp: " +
+				"an active centre has no approved OTP_LOGIN template in hbh.message_templates - " +
+				"no parent there could receive a login code")
+		}
 	}
 
 	// The consultation provider, asked to prove itself at startup for the
@@ -228,4 +249,8 @@ func (q smsQueue) RecordSMSSent(ctx context.Context, id int64, provider, msgID s
 
 func (q smsQueue) RecordSMSFailed(ctx context.Context, id int64, class, detail string) (string, error) {
 	return q.db.RecordSMSFailed(ctx, id, class, detail)
+}
+
+func (q smsQueue) TemplateSID(ctx context.Context, id int64) (string, error) {
+	return q.db.SMSTemplateSID(ctx, id)
 }

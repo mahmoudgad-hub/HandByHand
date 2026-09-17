@@ -21,6 +21,64 @@ type fakeQueue struct {
 	nextSt  string
 	claimEr error
 	sentEr  error
+	sid     string
+	sidEr   error
+}
+
+func (q *fakeQueue) TemplateSID(context.Context, int64) (string, error) {
+	return q.sid, q.sidEr
+}
+
+// captureSender accepts every message and keeps what it was handed, so a test
+// can see which ContentSid the worker put on it.
+type captureSender struct {
+	mu  sync.Mutex
+	got []Message
+}
+
+func (c *captureSender) Send(_ context.Context, m Message) (Result, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.got = append(c.got, m)
+	return Result{ProviderMessageID: "cap-1"}, nil
+}
+func (c *captureSender) Code() string  { return "capture" }
+func (c *captureSender) Usable() error { return nil }
+
+// The ContentSid is read per message and travels on it - the owner approves
+// a template and the next message uses it, with no restart.
+func TestWorkerPutsTheApprovedTemplateOnTheMessage(t *testing.T) {
+	q := &fakeQueue{
+		pending: []Claimed{{ID: 3, Destination: "+201500000093", TemplateCode: "APPOINTMENT_BOOKED", Body: "x"}},
+		sid:     "HX00000000000000000000000000000042",
+	}
+	s := &captureSender{}
+	NewWorker(q, s, quiet(), 0, 0).drain(context.Background())
+	if len(s.got) != 1 || s.got[0].ContentSID != q.sid {
+		t.Fatalf("the approved ContentSid did not reach the sender: %+v", s.got)
+	}
+	if len(q.sent) != 1 {
+		t.Fatalf("want the message recorded as sent, got %v", q.sent)
+	}
+}
+
+// A lookup that fails is our database not answering, not a message that
+// cannot be sent. It must go back on the queue as TRANSIENT and must NOT
+// reach the sender - which would refuse it as CONFIG and kill it on the first
+// attempt for a fault that was ours.
+func TestWorkerRetriesWhenTheTemplateLookupFails(t *testing.T) {
+	q := &fakeQueue{
+		pending: []Claimed{{ID: 4, Destination: "+201500000093", TemplateCode: "APPOINTMENT_BOOKED", Body: "x"}},
+		sidEr:   errors.New("database went away"),
+	}
+	s := &captureSender{}
+	NewWorker(q, s, quiet(), 0, 0).drain(context.Background())
+	if len(s.got) != 0 {
+		t.Fatal("a message whose template could not be looked up must not be sent")
+	}
+	if len(q.failed) != 1 || q.failed[0] != string(ClassTransient) {
+		t.Fatalf("want one TRANSIENT failure recorded, got %v", q.failed)
+	}
 }
 
 func (q *fakeQueue) ClaimSMS(context.Context, int, string) ([]Claimed, error) {

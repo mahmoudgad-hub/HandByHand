@@ -81,6 +81,18 @@ type Message struct {
 	// becoming a place where a provider's variable names are written down.
 	TemplateCode string
 	Vars         []string
+
+	// ContentSID is the id Meta approved the template under, looked up in
+	// hbh.message_templates by whoever builds the Message (migration 0150).
+	// Empty means no approved template exists for this code in this centre
+	// yet - which a WhatsApp sender refuses as CONFIG, or sends as free text
+	// inside a sandbox session when that is explicitly allowed.
+	//
+	// It travels on the message rather than living in the sender because the
+	// answer is per centre and changes while the process runs: the owner
+	// approves a template in the console and the next message uses it, with
+	// no deploy and no restart.
+	ContentSID string
 }
 
 // Result is what came back when the provider accepted it.

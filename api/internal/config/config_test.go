@@ -213,29 +213,11 @@ func TestDevelopmentAllowsTheDevelopmentSMSProvider(t *testing.T) {
 	}
 }
 
-func TestContentSIDsParsing(t *testing.T) {
-	got, err := contentSIDs(" OTP = HX1 , APPOINTMENT_CONFIRMED=HX2 ")
-	if err != nil {
-		t.Fatalf("a well-formed list should parse: %v", err)
-	}
-	if got["OTP"] != "HX1" || got["APPOINTMENT_CONFIRMED"] != "HX2" {
-		t.Fatalf("got %v", got)
-	}
-	if empty, err := contentSIDs(""); err != nil || len(empty) != 0 {
-		t.Fatalf("an empty list is not an error: %v %v", empty, err)
-	}
-
-	// A MALFORMED ENTRY IS AN ERROR, NOT A SKIP. Dropping the pair somebody
-	// mistyped turns a typo into a CONFIG failure at the moment a family was
-	// owed a message, instead of at startup where it can be read.
-	for _, bad := range []string{"OTP", "=HX1", "OTP=", "OTP=HX1,OTP=HX2"} {
-		if _, err := contentSIDs(bad); err == nil {
-			t.Fatalf("%q must be refused at startup", bad)
-		}
-	}
-}
-
-func TestProductionRefusesTwilioWithoutAnOTPTemplate(t *testing.T) {
+// The account and a sender are still refused at startup when missing. The
+// login-code TEMPLATE is no longer this function's to check: its ContentSid
+// lives in hbh.message_templates (migration 0153) and cmd/hbhd refuses to
+// start production without it, once the database can be asked.
+func TestProductionRefusesTwilioWithoutAnAccountOrSender(t *testing.T) {
 	base := map[string]string{
 		"DATABASE_URL":         "postgres://x/y",
 		"APP_ENV":              "production",
@@ -244,22 +226,9 @@ func TestProductionRefusesTwilioWithoutAnOTPTemplate(t *testing.T) {
 		"TWILIO_ACCOUNT_SID":   "AC00000000000000000000000000000000",
 		"TWILIO_AUTH_TOKEN":    "secret",
 		"TWILIO_WHATSAPP_FROM": "+201000000000",
-		"TWILIO_CONTENT_SIDS":  "OTP_LOGIN=HX1",
 	}
 	if _, err := loadFrom(env(base)); err != nil {
 		t.Fatalf("a complete twilio configuration should load: %v", err)
-	}
-
-	// A login code is the one message whose absence closes the front door, so
-	// a deployment without its template must not start. Every other missing
-	// template costs one message; this one costs every sign-in.
-	noOTP := make(map[string]string, len(base))
-	for k, v := range base {
-		noOTP[k] = v
-	}
-	noOTP["TWILIO_CONTENT_SIDS"] = "APPOINTMENT_CONFIRMED=HX2"
-	if _, err := loadFrom(env(noOTP)); err == nil {
-		t.Fatal("a production process with no OTP template must not start")
 	}
 
 	for _, cut := range []string{"TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"} {
@@ -300,7 +269,6 @@ func TestFreeformFallbackIsRefusedOutsideDevelopment(t *testing.T) {
 		"TWILIO_ACCOUNT_SID":    "AC00000000000000000000000000000000",
 		"TWILIO_AUTH_TOKEN":     "secret",
 		"TWILIO_WHATSAPP_FROM":  "+201000000000",
-		"TWILIO_CONTENT_SIDS":   "OTP_LOGIN=HX1",
 	}
 
 	dev := make(map[string]string, len(base))
