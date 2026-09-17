@@ -540,6 +540,35 @@ const NPS_TRIGGER = [
   { value: 'PERIOD', labelKey: 'nps.trigger.PERIOD' },
 ];
 
+/**
+ * The survey codes, as a list rather than a box to type in.
+ *
+ * The code is the centre's key for the survey - `uq_nps_code` is unique per
+ * centre - and it is the one field on this form written in English. Typed by
+ * hand it is a spelling test with no right answer on the screen: PARENT-VISIT
+ * and PARENT_VISIT are two surveys, and the results screen then reports one
+ * question as two.
+ *
+ * ONE CODE PER PURPOSE, which is why a closed list fits: the pairs below are
+ * the audience and the moment the survey is asked at, and a centre that needs
+ * the same purpose twice needs a second wording, not a second code. If a
+ * purpose is missing, it is added here - the database constrains the audience
+ * and the trigger, not this, so nothing in the schema has to move.
+ *
+ * A row already carrying a code that is not on this list KEEPS it: the editor
+ * draws it as its own option. Dropping it would put the select on its first
+ * option and rename somebody's survey on the next save, silently.
+ */
+const NPS_CODE = [
+  { value: 'PARENT_SESSION', labelKey: 'nps.code.PARENT_SESSION' },
+  { value: 'PARENT_REPORT', labelKey: 'nps.code.PARENT_REPORT' },
+  { value: 'PARENT_INVOICE', labelKey: 'nps.code.PARENT_INVOICE' },
+  { value: 'PARENT_WELCOME', labelKey: 'nps.code.PARENT_WELCOME' },
+  { value: 'PARENT_PERIODIC', labelKey: 'nps.code.PARENT_PERIODIC' },
+  { value: 'STAFF_PERIODIC', labelKey: 'nps.code.STAFF_PERIODIC' },
+  { value: 'CENTER_PERIODIC', labelKey: 'nps.code.CENTER_PERIODIC' },
+];
+
 const NPS_ACTION = [
   { value: 'SESSION_COMPLETED', labelKey: 'nps.action.SESSION_COMPLETED' },
   { value: 'REPORT_PUBLISHED', labelKey: 'nps.action.REPORT_PUBLISHED' },
@@ -557,7 +586,7 @@ export const NPS_SURVEYS_SPEC: ResourceSpec = {
   searchable: true,
   searchKey: 'search.nps-surveys',
   fields: [
-    { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true, required: true },
+    { name: 'code', labelKey: 'field.code', kind: 'select', options: NPS_CODE, inList: true, required: true },
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'question_ar', labelKey: 'nps.question', kind: 'text', inList: true, required: true },
     { name: 'followup_question_ar', labelKey: 'nps.followup', kind: 'text' },

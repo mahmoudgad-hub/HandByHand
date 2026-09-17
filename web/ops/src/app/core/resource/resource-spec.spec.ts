@@ -37,6 +37,38 @@ describe('search placeholders', () => {
     }
   });
 
+  /**
+   * An option whose label is missing renders as its own key - "nps.code.
+   * PARENT_SESSION" in a box a receptionist picks from. Every list on every
+   * form, checked at once, because the next list added will be added the
+   * same way this one was.
+   */
+  it('has a translated label for every option on every list', () => {
+    const missing: string[] = [];
+    for (const spec of SPECS) {
+      for (const field of spec.fields) {
+        for (const option of field.options ?? []) {
+          if (BUNDLE[option.labelKey] === undefined) {
+            missing.push(`${spec.resource}.${field.name}: ${option.labelKey}`);
+          }
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  /**
+   * The survey code is picked, not typed: two spellings of one purpose are
+   * two surveys under `uq_nps_code`, and the results screen then reports one
+   * question twice.
+   */
+  it('offers the survey codes as a list', () => {
+    const surveys = SPECS.find((s) => s.resource === 'nps-surveys');
+    const code = surveys?.fields.find((f) => f.name === 'code');
+    expect(code?.kind).toBe('select');
+    expect(code?.options?.map((o) => o.value)).toContain('PARENT_SESSION');
+  });
+
   it('never promises a code where none is searched', () => {
     // The generic sentence said "by name or code". Therapists have no code
     // column searched - the case this item was opened for.

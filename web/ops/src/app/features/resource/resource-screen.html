@@ -324,6 +324,15 @@
                 }
               } @else if (field.kind === 'select') {
                 <select [id]="'f-' + field.name" [formControl]="controls()[field.name]">
+                  <!-- A stored value this list does not know, kept as its own
+                       option - the same answer the reference picker above
+                       gives. Without it the box shows nothing while the
+                       control still holds the value, so the form reads as
+                       empty on a row that is not; and the first touch of the
+                       box replaces a value nobody could see. -->
+                  @if (unlistedValue(field); as value) {
+                    <option [value]="value">{{ value }}</option>
+                  }
                   @for (option of field.options ?? []; track option.value) {
                     <option [value]="option.value">{{ option.labelKey | t }}</option>
                   }

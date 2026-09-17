@@ -137,3 +137,30 @@ describe('DateParts', () => {
     expect(Number(values[values.length - 1])).toBe(1920);
   });
 });
+
+/**
+ * The form that OPENS on a date it already has.
+ *
+ * Distinct from the case above, where the value arrives after a render has
+ * already happened: here the parent holds the date from the very first
+ * change detection, which is what an edit dialogue does - it is created
+ * with the row's value already in the control.
+ */
+describe('DateParts opened on an existing date', () => {
+  it('shows the date it was created with', () => {
+    TestBed.configureTestingModule({
+      imports: [DateParts],
+      providers: [
+        { provide: HBH_CONFIG, useValue: DEFAULT_HBH_CONFIG },
+        { provide: I18nService, useClass: StubI18n },
+      ],
+    });
+    const fixture = TestBed.createComponent(DateParts);
+    fixture.componentRef.setInput('value', '2019-08-04');
+    fixture.detectChanges();
+
+    const boxes: HTMLSelectElement[] =
+      Array.from(fixture.nativeElement.querySelectorAll('select'));
+    expect(boxes.map((b) => b.value)).toEqual(['4', '8', '2019']);
+  });
+});

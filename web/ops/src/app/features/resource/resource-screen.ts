@@ -241,6 +241,24 @@ export class ResourceScreen {
     return !!this.refNames()[field.ref!.resource]?.[this.controls()[field.name].value];
   }
 
+  /**
+   * A value held by a select whose list does not offer it, or ''.
+   *
+   * Lists here are written in the console and the column they are written for
+   * is plain text in the database - `nps_surveys.code` is the case this was
+   * added for. So a row can hold something the list has never heard of: one
+   * written before the list existed, or by a centre that had its own name for
+   * it. The value is drawn as its own option, unlabelled, exactly as it is
+   * stored.
+   */
+  protected unlistedValue(field: FieldSpec): string {
+    const value = this.controls()[field.name]?.value ?? '';
+    if (!value || !field.options) {
+      return '';
+    }
+    return field.options.some((option) => option.value === value) ? '' : value;
+  }
+
   protected retryReferences(): void { this.loadRefNames(); }
 
   private loadRefNames(): void {
