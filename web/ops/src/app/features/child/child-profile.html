@@ -171,7 +171,15 @@
     @case ('family') {
       @if (partState('guardians') === 'loading' || partState('guardians') === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
       @else if (partState('guardians') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('guardians', true)" /> }
-      @else if (!rowsOf('guardians').length) { <hbh-empty-state icon="ic-user" [title]="'child.noGuardian' | t" /> }
+      @else if (!rowsOf('guardians').length) {
+        <!-- WHY THERE IS NO BUTTON HERE, said rather than left to be guessed.
+             The account is created on a guardian's mobile, so a child with
+             no guardian on record cannot have one - and the warning in the
+             header would otherwise read as a thing somebody forgot to do on
+             this screen. The note names the only path that exists today. -->
+        <hbh-empty-state icon="ic-user" [title]="'child.noGuardian' | t"
+                         [note]="'child.noGuardianAccountNote' | t" />
+      }
       @else {
         <hbh-table-pages #tablePage1 [rows]="rowsOf('guardians')">
 <div class="hbh-tablewrap"><table class="hbh-table">
