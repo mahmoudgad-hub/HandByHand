@@ -205,7 +205,7 @@
                        [href]="'tel:' + mobile">{{ mobile }}</a>
                   }
                   <span class="nps-answer__band" [style.color]="bandColour(answer)">
-                    <span class="nps-answer__dot" [style.background]="bandColour(answer)"></span>
+                    <span class="nps-answer__dot" [style.background]="bandFill(answer)"></span>
                     {{ bandLabel(answer) }}
                   </span>
                   <!-- The score is a figure on its own: Latin digits, LTR,

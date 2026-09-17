@@ -454,13 +454,29 @@ export class Satisfaction {
    * The colour of one answer's band - the same three the tiles and the
    * doughnut above are drawn in, from the same variables. A fourth green
    * defined here would drift from them the first time the palette moved.
+   *
+   * TWO TOKENS PER BAND, NOT ONE, and the pair is the whole point: the dot
+   * is a FILL and the word beside it is TEXT. The fill tokens are chosen to
+   * sit under things, so `--hbh-danger` as a label colour fails the contrast
+   * floor - which is exactly what tests/web/w1_contrast_verify.sh checks, and
+   * why the system carries an `-ink` twin for every one of them.
    */
   protected bandColour(row: Row): string {
+    switch (text(row, 'band')) {
+      case 'PROMOTER': return 'var(--hbh-success-ink)';
+      case 'PASSIVE': return 'var(--hbh-progress-ink)';
+      case 'DETRACTOR': return 'var(--hbh-danger-ink)';
+      default: return 'var(--hbh-muted)';
+    }
+  }
+
+  /** The dot's fill, which is where the untinted token belongs. */
+  protected bandFill(row: Row): string {
     switch (text(row, 'band')) {
       case 'PROMOTER': return 'var(--hbh-success)';
       case 'PASSIVE': return 'var(--hbh-progress)';
       case 'DETRACTOR': return 'var(--hbh-danger)';
-      default: return 'var(--hbh-muted, #7a8a99)';
+      default: return 'var(--hbh-muted)';
     }
   }
 

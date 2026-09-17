@@ -39,7 +39,7 @@
    ===================================================================== */
 
 .nps-row { cursor: pointer; }
-.nps-row:hover { background: var(--hbh-tint, #f3f8f8); }
+.nps-row:hover { background: var(--hbh-surface-2); }
 
 /* The row's keyboard door. It carries no colour of its own: the name is a
    name, and a blue link here would promise another page. */
@@ -47,7 +47,7 @@
   border: 0; background: none; padding: 0; font: inherit; color: inherit;
   cursor: pointer; text-align: start; min-block-size: 44px;
 }
-.nps-row__open:focus-visible { outline: 2px solid var(--hbh-brand, #0a8f97); outline-offset: 2px; }
+.nps-row__open:focus-visible { outline: 2px solid var(--hbh-teal-600); outline-offset: 2px; }
 
 .nps-answers { max-inline-size: 760px; }
 
@@ -56,17 +56,17 @@
 /* The chosen one is filled rather than merely darker: "pressed" has to be
    readable without comparing two buttons side by side. */
 .nps-chip.is-on {
-  background: var(--hbh-brand, #0a8f97); color: #fff; border-color: transparent;
+  background: var(--hbh-teal-600); color: var(--hbh-on-dark); border-color: transparent;
 }
-.nps-chip.is-on .hbh-badge { background: rgba(255,255,255,.22); color: #fff; }
+.nps-chip.is-on .hbh-badge { background: rgba(255,255,255,.22); color: var(--hbh-on-dark); }
 
 .nps-answers__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 
 .nps-answer {
-  border: 1px solid var(--hbh-line, #e2ecec);
+  border: 1px solid var(--hbh-line);
   border-radius: 10px;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--hbh-surface);
 }
 
 .nps-answer__head {
@@ -86,7 +86,7 @@
   font-size: 1.05rem; font-weight: 600;
 }
 
-.nps-answer__at { font-size: .85rem; color: var(--hbh-muted, #6b7a89); }
+.nps-answer__at { font-size: .85rem; color: var(--hbh-muted); }
 
 .nps-answer__text { margin: 8px 0 0; line-height: 1.7; }
 
