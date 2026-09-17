@@ -286,6 +286,20 @@ export class Satisfaction {
       key: 'skipped', labelKey: 'nps.skipped', ltr: true,
       read: (row) => this.format.number(num(row, 'skipped_cnt')),
     },
+    // What "1 answered" is one OUT OF. Straight from the view (0156), where
+    // the audience predicate is the same function hbh.nps_due asks - so the
+    // denominator on this screen cannot drift from the rule that decides who
+    // is asked.
+    //
+    // "المحتمل" and not "المستهدفون", deliberately. For a campaign the two
+    // are the same, but a survey asked after a session reaches only families
+    // who had one, and this column counts the audience rather than them. A
+    // column named for a target would overstate its own number on half the
+    // rows here.
+    {
+      key: 'audience', labelKey: 'nps.audience', ltr: true,
+      read: (row) => this.format.number(num(row, 'audience_cnt')),
+    },
     {
       key: 'promoters', labelKey: 'nps.promoters', ltr: true,
       read: (row) => this.format.number(num(row, 'promoters')),
