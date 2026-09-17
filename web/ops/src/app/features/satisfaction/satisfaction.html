@@ -106,6 +106,7 @@
   </div>
 
   <h2 class="satisfaction-detail-title">تفاصيل رضا الأسر</h2>
+  <p class="hbh-pagehead__sub">{{ 'nps.answersHint' | t }}</p>
   <hbh-table-pages #tablePage1 [rows]="rows()">
 <div class="hbh-tablewrap"><table class="hbh-table">
       <thead>
@@ -117,11 +118,25 @@
       </thead>
       <tbody>
         @for (row of tablePage1.visible(); track rowKey(row, $index)) {
-          <tr>
+          <!-- The whole row opens the answers behind its numbers, and the
+               name is a real button inside it: a row that only answers the
+               mouse is a feature a keyboard cannot reach. The button stops
+               the click from reaching the row as well - two handlers would
+               be two requests, and each one writes an audit record. -->
+          <tr class="nps-row" (click)="openAnswers(row)">
             @for (column of columns; track column.key) {
               <!-- Counts and scores are figures and read left to right even
                    on an Arabic page. -->
-              <td [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</td>
+              <td [attr.dir]="column.ltr ? 'ltr' : null">
+                @if (column.key === 'name') {
+                  <button type="button" class="nps-row__open"
+                          (click)="$event.stopPropagation(); openAnswers(row)">
+                    {{ cell(row, column) }}
+                  </button>
+                } @else {
+                  {{ cell(row, column) }}
+                }
+              </td>
             }
           </tr>
         }
@@ -132,4 +147,86 @@
   <!-- Said once, rather than left for a reader to infer from two columns that
        disagree: these are two different measures of the same answers. -->
   <p class="hbh-pagehead__sub" style="margin-top:14px">{{ 'nps.note' | t }}</p>
+}
+
+<!-- The answers behind one row.
+
+     WHAT IS BLANK HERE IS BLANK ON PURPOSE. A staff survey arrives with no
+     name, and the mobile is absent for anybody without the permission that
+     guards it on the guardians screen - both decided by the service. The
+     column is drawn empty rather than filled with an explanation nobody
+     asked for; the note at the foot says it once. -->
+@if (answersFor(); as survey) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="closeAnswers()"
+          aria-labelledby="npsAnswersTitle">
+    <div class="hbh-sheet__box hbh-sheet__box--editor nps-answers">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="npsAnswersTitle">
+          {{ 'nps.answers' | t }} — {{ cell(survey, columns[0]) }}
+        </h2>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.close' | t"
+                (click)="closeAnswers()"><hbh-icon name="ic-x" /></button>
+      </div>
+
+      @if (answersLoading()) {
+        <hbh-skeleton [count]="4" shape="row" />
+      } @else if (answersFailed()) {
+        <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
+                        (retry)="loadAnswers()" />
+      } @else {
+        <!-- The three bands, filtered on what the SERVICE called each answer.
+             Same colours as the tiles and the doughnut above, from the same
+             variables. -->
+        <div class="nps-answers__filters" role="group" [attr.aria-label]="'nps.answersAll' | t">
+          @for (filter of bandFilters(); track filter.value) {
+            <button type="button" class="hbh-btn hbh-btn--ghost nps-chip"
+                    [class.is-on]="band() === filter.value"
+                    [attr.aria-pressed]="band() === filter.value"
+                    (click)="band.set(filter.value)">
+              {{ filter.labelKey | t }}
+              <span class="hbh-badge" dir="ltr">{{ format.number(filter.count) }}</span>
+            </button>
+          }
+        </div>
+
+        @if (!shownAnswers().length) {
+          <hbh-empty-state icon="ic-info" [title]="'nps.answersEmpty' | t"
+                           [note]="'nps.answersEmptyNote' | t" />
+        } @else {
+          <ul class="nps-answers__list">
+            @for (answer of shownAnswers(); track answerKey(answer, $index)) {
+              <li class="nps-answer">
+                <div class="nps-answer__head">
+                  <span class="nps-answer__who">
+                    {{ field(answer, 'respondent_name_ar') || ('nps.noName' | t) }}
+                  </span>
+                  @if (field(answer, 'mobile'); as mobile) {
+                    <a class="nps-answer__tel" dir="ltr"
+                       [href]="'tel:' + mobile">{{ mobile }}</a>
+                  }
+                  <span class="nps-answer__band" [style.color]="bandColour(answer)">
+                    <span class="nps-answer__dot" [style.background]="bandColour(answer)"></span>
+                    {{ bandLabel(answer) }}
+                  </span>
+                  <!-- The score is a figure on its own: Latin digits, LTR,
+                       the way every other number on this screen is set. -->
+                  @if (answerScore(answer); as score) {
+                    <span class="nps-answer__score" dir="ltr">{{ score }}</span>
+                  }
+                  <span class="nps-answer__at">
+                    {{ answeredAt(answer) }}
+                  </span>
+                </div>
+                @if (field(answer, 'comment_ar'); as comment) {
+                  <p class="nps-answer__text">{{ comment }}</p>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        <p class="hbh-pagehead__sub nps-answers__note">{{ 'nps.answersNote' | t }}</p>
+      }
+    </div>
+  </dialog>
 }
