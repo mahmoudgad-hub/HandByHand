@@ -564,6 +564,11 @@ const NPS_CODE = [
   { value: 'PARENT_REPORT', labelKey: 'nps.code.PARENT_REPORT' },
   { value: 'PARENT_INVOICE', labelKey: 'nps.code.PARENT_INVOICE' },
   { value: 'PARENT_WELCOME', labelKey: 'nps.code.PARENT_WELCOME' },
+  // Not the same purpose as PARENT_WELCOME above: that one is asked once, at
+  // the first login ever, and this one keeps coming back. The moment is set
+  // by the trigger fields, not by the code - "every period, every 1 day" is
+  // what asks it on the family's first visit of the day.
+  { value: 'PARENT_LOGIN', labelKey: 'nps.code.PARENT_LOGIN' },
   { value: 'PARENT_PERIODIC', labelKey: 'nps.code.PARENT_PERIODIC' },
   { value: 'STAFF_PERIODIC', labelKey: 'nps.code.STAFF_PERIODIC' },
   { value: 'CENTER_PERIODIC', labelKey: 'nps.code.CENTER_PERIODIC' },
