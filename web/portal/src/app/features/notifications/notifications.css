@@ -45,3 +45,14 @@
 
 .nrow:hover { background: #f6f8f9; }
 .nrow:focus-visible { outline: 2px solid #2f6f8f; outline-offset: 2px; }
+
+/* Pushed to the far end of the heading row, so the title and the unread
+   badge stay together and the action does not read as part of the count.
+   44px is the touch size the rest of the portal's controls use - this one
+   sits beside a badge, which is the easiest place to end up with a 28px
+   tap target nobody can hit on a phone. */
+.nlist__all {
+  margin-inline-start: auto;
+  min-block-size: 44px;
+  white-space: nowrap;
+}

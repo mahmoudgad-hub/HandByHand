@@ -641,6 +641,12 @@ export class FixturePortalApi extends PortalApi {
     return this.respond(undefined as void);
   }
 
+  override markAllNotificationsRead(): Observable<number> {
+    const marked = this.feed.filter((row) => !row.read).length;
+    this.feed = this.feed.map((row) => row.read ? row : { ...row, read: true });
+    return this.respond(marked);
+  }
+
   private feed: readonly PortalNotification[] = [
     {
       id: '1', kind: 'REPORT_PUBLISHED', title: 'تقرير تقدّم جديد',

@@ -14,6 +14,16 @@
         @if (feed.unread) { <span class="hbh-badge">{{ feed.unread }}</span> }
       </button>
     }
+    <!-- Only while there is something to mark. A control that would do
+         nothing is worse than an absent one: it invites the click and then
+         reports success at having changed nothing. -->
+    @if (data()?.unread) {
+      <button class="hbh-btn hbh-btn--ghost" type="button"
+              [disabled]="marking()" (click)="markAllRead()">
+        <hbh-icon name="ic-check-circle" />
+        {{ 'inbox.markAll' | t }}
+      </button>
+    }
     <button class="hbh-btn hbh-btn--ghost" type="button"
             [disabled]="loading()" (click)="load()">
       <hbh-icon name="ic-refresh" />

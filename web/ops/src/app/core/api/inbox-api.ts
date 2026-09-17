@@ -82,6 +82,25 @@ export class InboxApi {
   }
 
   /**
+   * Mark the whole feed read. Answers how many rows actually moved.
+   *
+   * IT NAMES NOBODY, and that is the point of the shape. "All" is decided by
+   * hbh.mark_all_notifications_read() from the caller's own identity, so
+   * there is no body and no parameter - an endpoint that took a user id
+   * would be a way to clear somebody else's bell.
+   *
+   * The count is the service's answer, not a number counted here. A feed
+   * shows the newest fifty; the write clears every unread row the person
+   * has, so a screen that reported its own visible count would understate
+   * what it just did.
+   */
+  markAllRead(): Observable<number> {
+    return this.http
+      .post<{ marked?: number }>(`${this.base}/notifications/read-all`, {})
+      .pipe(map((body) => body.marked ?? 0));
+  }
+
+  /**
    * Where an item leads.
    *
    * A notification that names a thing and cannot open it is a to-do list

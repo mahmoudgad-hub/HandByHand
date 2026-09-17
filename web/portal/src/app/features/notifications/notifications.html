@@ -33,6 +33,14 @@
             <span class="hbh-badge hbh-badge--info">
               {{ 'notifications.unread' | t: { count: feed.unread } }}
             </span>
+            <!-- Offered only while there is something to mark. A control
+                 that would do nothing invites the tap and then reports
+                 success at having changed nothing. -->
+            <button class="hbh-btn hbh-btn--ghost nlist__all" type="button"
+                    [disabled]="marking()" (click)="markAllRead()">
+              <hbh-icon name="ic-check-circle" />
+              {{ 'notifications.markAll' | t }}
+            </button>
           }
         </div>
 

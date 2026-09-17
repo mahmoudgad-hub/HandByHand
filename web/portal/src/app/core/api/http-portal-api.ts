@@ -811,6 +811,12 @@ export class HttpPortalApi extends PortalApi {
   markNotificationRead(id: string): Observable<void> {
     return this.http.post<void>(`${this.base}/notifications/${id}/read`, {});
   }
+
+  markAllNotificationsRead(): Observable<number> {
+    return this.http
+      .post<{ marked?: number }>(`${this.base}/notifications/read-all`, {})
+      .pipe(map((body) => body.marked ?? 0));
+  }
 }
 
 // =====================================================================

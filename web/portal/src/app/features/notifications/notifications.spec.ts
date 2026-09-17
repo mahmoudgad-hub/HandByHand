@@ -77,3 +77,74 @@ describe('Notification family context', () => {
     expect(fixture.nativeElement.querySelector('[role=alert]')).not.toBeNull();
   });
 });
+
+/**
+ * "Mark all read" (#24).
+ *
+ * The behaviour worth holding down is not the happy path - it is that this
+ * one is NOT optimistic. The parent is looking at the list while it runs, so
+ * a failure that silently leaves the dots cleared would be the screen
+ * telling them something it knows is untrue.
+ */
+describe('Marking the whole feed read', () => {
+  const unread = (id: string): PortalNotification => ({
+    id, kind: 'REPORT_PUBLISHED', title: 'تقرير', body: null, childId: null,
+    childName: null, createdAt: '2026-09-14T10:00:00Z', read: false,
+    target: null, targetQuery: undefined,
+  } as unknown as PortalNotification);
+
+  let markAll: Subject<number>;
+
+  const start = () => {
+    markAll = new Subject();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(),
+      { provide: HBH_CONFIG, useValue: DEFAULT_HBH_CONFIG },
+      { provide: Router, useValue: { navigate: jasmine.createSpy() } },
+      { provide: ChildContextService, useValue: { select: jasmine.createSpy() } },
+      { provide: PortalApi, useValue: {
+        notifications: () => of({ rows: [unread('1'), unread('2')], unread: 2, total: 2 }),
+        family: () => of({ children: [] }),
+        markNotificationRead: () => of(undefined),
+        markAllNotificationsRead: () => markAll,
+      } },
+    ] });
+    const fixture = TestBed.createComponent(Notifications);
+    fixture.detectChanges();
+    return fixture;
+  };
+
+  const button = (fixture: ReturnType<typeof start>) =>
+    fixture.nativeElement.querySelector('.nlist__all') as HTMLButtonElement;
+
+  it('clears the dots only once the service has answered', () => {
+    const fixture = start();
+    expect(fixture.nativeElement.querySelectorAll('.nrow--unread').length).toBe(2);
+
+    button(fixture).click();
+    fixture.detectChanges();
+    // In flight: nothing has changed on screen yet, and a second tap cannot
+    // be sent.
+    expect(fixture.nativeElement.querySelectorAll('.nrow--unread').length).toBe(2);
+    expect(button(fixture).disabled).toBeTrue();
+
+    markAll.next(2);
+    markAll.complete();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.nrow--unread').length).toBe(0);
+    // The badge and the button go with the count they described.
+    expect(fixture.nativeElement.querySelector('.nlist__all')).toBeNull();
+  });
+
+  it('says so and leaves the feed alone when the write fails', () => {
+    const fixture = start();
+    button(fixture).click();
+    fixture.detectChanges();
+
+    markAll.error(new Error('offline'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.nrow--unread').length).toBe(2);
+    expect(fixture.nativeElement.querySelector('[role=alert]')).not.toBeNull();
+    // Offered again, not left spinning.
+    expect(button(fixture).disabled).toBeFalse();
+  });
+});

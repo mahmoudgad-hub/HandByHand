@@ -57,6 +57,8 @@ export class Notifications {
   protected readonly traceId = signal<string | null>(null);
   protected readonly opening = signal<string | null>(null);
   protected readonly openError = signal('');
+  /** A mark-all in flight. The button says so and refuses a second one. */
+  protected readonly marking = signal(false);
 
   constructor() {
     this.load();
@@ -142,6 +144,48 @@ export class Notifications {
         if (!opened) this.openError.set('notifications.openFailed');
       }, () => this.openError.set('notifications.openFailed'))
       .finally(() => this.opening.set(null));
+  }
+
+  /**
+   * Mark everything read (#24).
+   *
+   * NOT OPTIMISTIC, unlike markRead below, and the difference is where the
+   * parent is standing. Opening an item takes them elsewhere, so a failed
+   * read receipt is invisible and correcting it would interrupt the thing
+   * they actually wanted. Here they stay and watch the list: dots that clear
+   * and come back on the next load, with nothing said, is the screen telling
+   * somebody a thing it knows is untrue while they look at it.
+   *
+   * The rows change when the service says they changed. The failure is said
+   * out loud, in the same place the open failure is said, and the feed is
+   * left exactly as it was so a retry is a retry rather than a repair.
+   */
+  protected markAllRead(): void {
+    const feed = this.data();
+    if (!feed || !feed.unread || this.marking()) {
+      return;
+    }
+    this.marking.set(true);
+    this.openError.set('');
+    this.api.markAllNotificationsRead()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.marking.set(false);
+          const current = this.data();
+          if (current) {
+            this.data.set({
+              ...current,
+              unread: 0,
+              rows: current.rows.map((row) => row.read ? row : { ...row, read: true }),
+            });
+          }
+        },
+        error: () => {
+          this.marking.set(false);
+          this.openError.set('notifications.markAllFailed');
+        },
+      });
   }
 
   protected markRead(item: PortalNotification): void {

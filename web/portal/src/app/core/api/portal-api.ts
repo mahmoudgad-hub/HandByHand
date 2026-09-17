@@ -187,4 +187,17 @@ export abstract class PortalApi {
    * was opened.
    */
   abstract markNotificationRead(id: string): Observable<void>;
+
+  /**
+   * Mark the whole feed read, and answer how many rows moved.
+   *
+   * SAME RULE AS ABOVE, AND THE SAME REASON IT TAKES NOTHING: "all" is the
+   * caller's own feed, decided inside the database from the identity on the
+   * request. There is no body to send and there must never be a parameter -
+   * one would let a family clear somebody else's bell.
+   *
+   * The count comes back rather than being assumed, because the screen holds
+   * the newest fifty and the write clears every unread row there is.
+   */
+  abstract markAllNotificationsRead(): Observable<number>;
 }
