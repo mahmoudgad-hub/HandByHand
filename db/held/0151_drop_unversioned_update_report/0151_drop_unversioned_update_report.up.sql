@@ -1,4 +1,4 @@
--- 0143 - the unversioned update_report goes.
+-- 0151 - the unversioned update_report goes.
 --
 -- Backlog #14, second step. 0141 added hbh.update_report with a required
 -- expected version and left the six-argument original in place because the
@@ -20,4 +20,4 @@ $guard$;
 
 DROP FUNCTION hbh.update_report(integer, text, text, date, date, integer);
 
-INSERT INTO hbh.schema_migrations (version) VALUES ('0143');
+INSERT INTO hbh.schema_migrations (version) VALUES ('0151');

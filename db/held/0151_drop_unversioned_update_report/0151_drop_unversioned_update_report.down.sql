@@ -1,4 +1,4 @@
--- 0143 down. Restores the six-argument update_report exactly as it was live
+-- 0151 down. Restores the six-argument update_report exactly as it was live
 -- before 0141 (from pg_get_functiondef, 2026-09-13). WARNING: while it
 -- exists the version check in 0141 is optional - any caller that picks
 -- this signature overwrites a colleague's draft unseen (#14).
@@ -66,4 +66,4 @@ $function$;
 REVOKE ALL ON FUNCTION hbh.update_report(integer, text, text, date, date, integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION hbh.update_report(integer, text, text, date, date, integer) TO hbh_app;
 
-DELETE FROM hbh.schema_migrations WHERE version = '0143';
+DELETE FROM hbh.schema_migrations WHERE version = '0151';
