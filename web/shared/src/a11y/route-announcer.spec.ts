@@ -98,6 +98,9 @@ describe('RouteAnnouncer and a screen with tabs', () => {
     'file.title': 'ملفّ المستفيد',
     'file.tab.family': 'الأسرة',
     'file.tab.invoices': 'الفواتير',
+    'subject.title': 'الأخصائيون',
+    'nav.therapists': 'الأخصائيون',
+    'therapistServices.title': 'الخدمات التي يقدّمونها',
   };
 
   beforeEach(() => {
@@ -110,9 +113,23 @@ describe('RouteAnnouncer and a screen with tabs', () => {
             children: [
               {
                 path: 'file', component: Blank,
-                data: { titleKey: 'file.title', tabTitlePrefix: 'file.tab.' },
+                data: {
+                  titleKey: 'file.title',
+                  tabTitles: { family: 'file.tab.family', invoices: 'file.tab.invoices' },
+                },
               },
-              // The same screen WITHOUT the prefix: a route that does not say
+              // A screen whose tabs carry keys of their own rather than one
+              // prefix - the resource screen's shape (HBH-102). The announcer
+              // reads ONE map for both; how a route builds it is the route's
+              // business.
+              {
+                path: 'subject', component: Blank,
+                data: {
+                  titleKey: 'subject.title',
+                  tabTitles: { therapists: 'nav.therapists', services: 'therapistServices.title' },
+                },
+              },
+              // The same screen WITHOUT the map: a route that does not say
               // its tabs are in the address bar must not have them guessed.
               { path: 'plain', component: Blank, data: { titleKey: 'file.title' } },
             ],
@@ -152,5 +169,19 @@ describe('RouteAnnouncer and a screen with tabs', () => {
 
   it('leaves a screen that never declared tabs exactly as it was', async () => {
     expect(await titleAt('/plain?tab=family')).toBe('ملفّ المستفيد — هاند باي هاند');
+  });
+
+  /**
+   * HBH-102: the second half of the card, and the reason the mechanism
+   * changed shape rather than gaining a twin.
+   *
+   * The resource screen's tabs are a list of resources followed by a list of
+   * components, and each already owns a title key that other screens use -
+   * there is no prefix to add. Reading one map covers both this screen and
+   * the three detail screens, so nothing here is a special case.
+   */
+  it('names a tab whose key is its own, not a prefix plus its name', async () => {
+    expect(await titleAt('/subject?tab=services'))
+      .toBe('الأخصائيون · الخدمات التي يقدّمونها — هاند باي هاند');
   });
 });

@@ -59,11 +59,22 @@ export class RouteAnnouncer {
    * three words each time and could not tell whether anything had happened.
    *
    * THE TAB'S NAME COMES FROM route.data, NOT FROM THE COMPONENT. A route
-   * says `tabTitlePrefix: 'child.tab.'` and this reads the `tab` query
-   * parameter against it. The component that draws the tabs is not asked and
-   * must not be: this announcer is the one place the title is decided, and a
-   * component that set document.title as well would be a second answer to
-   * one question - the defect this file exists to have removed (HBH-039).
+   * carries `tabTitles`, one map from the `tab` query parameter's value to
+   * the key that names it. The component that draws the tabs is not asked
+   * and must not be: this announcer is the one place the title is decided,
+   * and a component that set document.title as well would be a second answer
+   * to one question - the defect this file exists to have removed (HBH-039).
+   *
+   * ONE MECHANISM, NOT TWO (HBH-102). This first shipped reading a PREFIX -
+   * `tabTitlePrefix: 'child.tab.'` plus the tab's own name - which worked for
+   * the three detail screens and could not express the resource screen at
+   * all: its tabs are a list of resources followed by a list of components,
+   * each already carrying a title key of its own (`site.team`,
+   * `satisfaction.results`) that other screens share. A prefix there would
+   * have meant copying those sentences into `resource.tab.*` twins, and two
+   * copies of a sentence drift the first time somebody edits one. So the map
+   * is the mechanism everywhere; the prefix survives as one way to BUILD a
+   * map, at the route, where it is data and not a second thing to read here.
    *
    * An unknown tab name falls back to the screen alone rather than printing
    * a key: translate() returns what it was given when the bundle has no
@@ -75,16 +86,18 @@ export class RouteAnnouncer {
     while (route.firstChild?.snapshot) {
       route = route.firstChild;
     }
-    const data = route.snapshot.data as { titleKey?: string; tabTitlePrefix?: string };
+    const data = route.snapshot.data as {
+      titleKey?: string; tabTitles?: Readonly<Record<string, string>>;
+    };
     const screen = data.titleKey ? this.i18n.translate(data.titleKey) : '';
-    if (!screen || !data.tabTitlePrefix) {
+    if (!screen || !data.tabTitles) {
       return screen;
     }
     const tab = route.snapshot.queryParamMap.get('tab');
-    if (!tab) {
+    const key = tab ? data.tabTitles[tab] : undefined;
+    if (!key) {
       return screen;
     }
-    const key = `${data.tabTitlePrefix}${tab}`;
     const named = this.i18n.translate(key);
     return named && named !== key ? `${screen} · ${named}` : screen;
   }

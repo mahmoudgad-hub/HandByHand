@@ -100,6 +100,32 @@ function routeProblems(table: readonly Route[], nav: readonly NavEntry[], bundle
       }
     }
 
+    // The tab titles the announcer reads (HBH-039, HBH-102). Same silence as
+    // titleKey and for the same reason - translate() answers a missing key
+    // with the key, so a gap here puts "child.tab.goals" in the browser tab
+    // and in a screen reader's ear. And a tab the map has never heard of is
+    // not a defect: the announcer falls back to the screen's own name, which
+    // is what an old link or a removed tab should get.
+    const tabTitles = d['tabTitles'];
+    if (tabTitles !== undefined) {
+      if (typeof tabTitles !== 'object' || tabTitles === null) {
+        out.push(`${path}: tabTitles is not a map`);
+      } else {
+        for (const [tab, key] of Object.entries(tabTitles as Record<string, unknown>)) {
+          if (typeof key !== 'string' || bundle[key] === undefined) {
+            out.push(`${path}: tab "${tab}" names "${String(key)}", which is not in the bundle`);
+          }
+        }
+      }
+    }
+    // A screen with more than one tab and no map announces one name for all
+    // of them - the defect HBH-039 was opened for.
+    const tabCount = ((d['specs'] as unknown[] | undefined) ?? []).length
+      + ((d['extraTabs'] as unknown[] | undefined) ?? []).length;
+    if (tabCount > 1 && tabTitles === undefined) {
+      out.push(`${path}: ${tabCount} tabs and no tabTitles - every tab would say the screen's name`);
+    }
+
     if (d['navKey'] !== undefined && !navKeys.has(d['navKey'] as string)) {
       out.push(`${path}: navKey "${d['navKey']}" names no menu entry`);
     }
@@ -194,6 +220,15 @@ describe('the checks themselves', () => {
       { path: 'open-door', canActivate: [permissionGuard], loadComponent: load,
         data: { titleKey: 'good.title' } },
       { path: 'no-guard', loadComponent: load, data: { titleKey: 'good.title', permission: 'X' } },
+      // HBH-102: a tab named with a key nobody translated, and a screen with
+      // tabs that declared none - the two halves of "every tab says the
+      // screen's name".
+      { path: 'raw-tab', canActivate: [permissionGuard], loadComponent: load,
+        data: { titleKey: 'good.title', permission: 'X', specs: [{ titleKey: 'spec.ok' }],
+                tabTitles: { family: 'tab.gone' } } },
+      { path: 'unnamed-tabs', canActivate: [permissionGuard], loadComponent: load,
+        data: { titleKey: 'good.title', permission: 'X',
+                specs: [{ titleKey: 'spec.ok' }, { titleKey: 'spec.ok' }] } },
     ]);
     const found = routeProblems(table, nav, bundle).join('\n');
     expect(found).toContain('untitled: no titleKey');
@@ -202,6 +237,8 @@ describe('the checks themselves', () => {
     expect(found).toContain('wrong-nav: navKey "nowhere"');
     expect(found).toContain('open-door: names no permission');
     expect(found).toContain('no-guard: no permissionGuard');
+    expect(found).toContain('raw-tab: tab "family" names "tab.gone"');
+    expect(found).toContain('unnamed-tabs: 2 tabs and no tabTitles');
   });
 
   it('see each silent menu defect', () => {

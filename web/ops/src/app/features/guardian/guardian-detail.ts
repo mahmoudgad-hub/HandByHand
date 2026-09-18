@@ -27,8 +27,9 @@ import {
   ChildAppointment, activityFor, applicationsOf, nextAppointment, num, openApplications, ref,
   requestsOf, text,
 } from './guardian-detail.model';
+import { GUARDIAN_TABS, GuardianTab } from './guardian-tabs';
 
-type Tab = 'overview' | 'beneficiaries' | 'applications' | 'appointments' | 'finance' | 'communication' | 'activity';
+type Tab = GuardianTab;
 
 /**
  * One guardian, on their own page: who they are, their children, their
@@ -70,9 +71,7 @@ export class GuardianDetail {
   protected readonly state = signal<'loading' | 'ready' | 'notFound' | 'denied' | 'failed'>('loading');
   protected readonly notice = signal('');
 
-  protected readonly tabs: readonly Tab[] = [
-    'overview', 'beneficiaries', 'applications', 'appointments', 'finance', 'communication', 'activity',
-  ];
+  protected readonly tabs = GUARDIAN_TABS;
   protected readonly tab = signal<Tab>(this.tabFromUrl());
 
   protected readonly returnUrl: string | null = (() => {

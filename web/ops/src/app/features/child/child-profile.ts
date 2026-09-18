@@ -27,14 +27,10 @@ import { ActionDialogService } from '../../core/ops/action-dialog.service';
 import { ActionOutcome } from '../../core/ops/action-request';
 import { APPOINTMENTS_SPEC, REPORTS_SPEC, SESSIONS_SPEC } from '../../core/ops/day-spec';
 import { RecordDrawerService } from '../../core/ops/record-drawer.service';
+import { CHILD_TABS, ChildTab } from './child-tabs';
 
-type Tab = 'overview' | 'family' | 'appointments' | 'sessions' | 'assessments' | 'plans' | 'goals'
-  | 'reports' | 'packages' | 'invoices' | 'notes' | 'home' | 'activity';
-
-const TABS: readonly Tab[] = [
-  'overview', 'family', 'appointments', 'sessions', 'assessments', 'plans', 'goals',
-  'reports', 'packages', 'invoices', 'notes', 'home', 'activity',
-];
+type Tab = ChildTab;
+const TABS = CHILD_TABS;
 
 /** Which child endpoint feeds a tab. Tabs without one are derived or static. */
 const PART_OF: Partial<Readonly<Record<Tab, ChildPart>>> = {

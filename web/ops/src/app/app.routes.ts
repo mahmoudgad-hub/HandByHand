@@ -21,6 +21,10 @@ import { Satisfaction } from './features/satisfaction/satisfaction';
 import { SiteEditor } from './features/site-editor/site-editor';
 import { TeamScreen } from './features/team/team-screen';
 import { TherapistServices } from './features/therapist-services/therapist-services';
+import { resourceScreen, tabsByPrefix } from './core/ops/tab-titles';
+import { CHILD_TABS } from './features/child/child-tabs';
+import { GUARDIAN_TABS } from './features/guardian/guardian-tabs';
+import { ENROLMENT_TABS } from './features/enrolment/enrolment-tabs';
 
 /**
  * Where a retired route sends its visitors.
@@ -107,11 +111,11 @@ export const routes: Routes = [
         path: 'guardians',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'guardians', titleKey: 'nav.guardians',
           permission: 'GUARDIAN.MANAGE',
           specs: [GUARDIANS_SPEC],
-        },
+        }),
       },
       {
         // One guardian: the family behind the children, their applications,
@@ -123,7 +127,7 @@ export const routes: Routes = [
         // to a screen reader, so the announcer names them (HBH-039).
         data: {
           navKey: 'guardians', titleKey: 'guardian.title', permission: 'GUARDIAN.MANAGE',
-          tabTitlePrefix: 'guardian.tab.',
+          tabTitles: tabsByPrefix('guardian.tab.', GUARDIAN_TABS),
         },
         loadComponent: () =>
           import('./features/guardian/guardian-detail').then((m) => m.GuardianDetail),
@@ -132,11 +136,11 @@ export const routes: Routes = [
         path: 'children',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'children', titleKey: 'nav.children',
           permission: 'CHILD.VIEW_ALL',
           specs: [CHILDREN_SPEC],
-        },
+        }),
       },
       {
         // One child's file. The children list had no way through to anything
@@ -152,12 +156,13 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         // The tabs of this screen live in the address bar, so each of them is
         // its own place as far as the browser tab, a bookmark and a screen
-        // reader are concerned. The announcer reads the `tab` parameter
-        // against this prefix; the component that draws the tabs is not
-        // asked, and must not be (HBH-039).
+        // reader are concerned. The announcer looks the `tab` parameter up in
+        // this map; the component that draws the tabs is not asked, and must
+        // not be (HBH-039). The map is built from the same list the screen
+        // draws from, so a tab cannot be added and left unnamed (HBH-102).
         data: {
           navKey: 'children', titleKey: 'child.title', permission: 'CHILD.VIEW_ALL',
-          tabTitlePrefix: 'child.tab.',
+          tabTitles: tabsByPrefix('child.tab.', CHILD_TABS),
         },
         loadComponent: () =>
           import('./features/child/child-profile').then((m) => m.ChildProfile),
@@ -200,7 +205,7 @@ export const routes: Routes = [
         path: 'therapists',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'therapists', titleKey: 'nav.therapists',
           permission: 'STAFF.MANAGE',
           specs: [THERAPISTS_SPEC, WORKING_HOURS_SPEC, CASELOAD_SPEC],
@@ -210,18 +215,18 @@ export const routes: Routes = [
             key: 'services', titleKey: 'therapistServices.title',
             permission: 'STAFF.MANAGE', component: TherapistServices,
           }],
-        },
+        }),
       },
       { path: 'therapist-services', redirectTo: movedTo('/therapists', { tab: 'services' }) },
       {
         path: 'rooms',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'rooms', titleKey: 'nav.rooms',
           permission: 'CATALOG.MANAGE',
           specs: [ROOMS_SPEC, CAMERAS_SPEC],
-        },
+        }),
       },
       {
         // The clinician's own work: the plan, its goals, the measurements
@@ -231,23 +236,23 @@ export const routes: Routes = [
         path: 'plans',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'plans', titleKey: 'plans.plans',
           permission: 'PLAN.MANAGE',
           specs: [PLANS_SPEC, GOALS_SPEC, MEASUREMENTS_SPEC, CHILD_ACTIVITIES_SPEC],
-        },
+        }),
       },
       {
         path: 'catalog',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'catalog', titleKey: 'nav.catalog',
           permission: 'CATALOG.MANAGE',
           // The satisfaction surveys left for /satisfaction, beside the
           // answers they collect: one subject, one screen.
           specs: [SERVICES_SPEC, PACKAGES_SPEC, ACTIVITY_LIBRARY_SPEC],
-        },
+        }),
       },
       {
         // The public site's words, on one screen with four tabs.
@@ -264,7 +269,7 @@ export const routes: Routes = [
         path: 'site',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'site', titleKey: 'nav.site',
           permission: 'SITE.EDIT',
           // The team's three tabs are gone from here. A qualification means
@@ -281,7 +286,7 @@ export const routes: Routes = [
             key: 'team', titleKey: 'site.team',
             permission: 'SITE.EDIT', component: TeamScreen,
           }],
-        },
+        }),
       },
       {
         path: 'site/team',
@@ -376,7 +381,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: {
           navKey: 'enrolments', titleKey: 'enrolment.title', permission: 'ENROLMENT.MANAGE',
-          tabTitlePrefix: 'enrolment.tab.',
+          tabTitles: tabsByPrefix('enrolment.tab.', ENROLMENT_TABS),
         },
         loadComponent: () =>
           import('./features/enrolment/enrolment-detail').then((m) => m.EnrolmentDetail),
@@ -446,14 +451,14 @@ export const routes: Routes = [
         path: 'satisfaction',
         canActivate: [permissionGuard],
         component: ResourceScreen,
-        data: {
+        data: resourceScreen({
           navKey: 'satisfaction', titleKey: 'nav.satisfaction', permission: 'NPS.MANAGE',
           specs: [NPS_SURVEYS_SPEC],
           extraTabs: [{
             key: 'results', titleKey: 'satisfaction.results',
             permission: 'NPS.MANAGE', component: Satisfaction,
           }],
-        },
+        }),
       },
       {
         // What the service has been doing: one row per finished request,

@@ -24,13 +24,10 @@ import { APPOINTMENTS_SPEC, ENROLMENTS_SPEC, ENROLMENT_NEXT } from '../../core/o
 import {
   activityFor, deepLinkRequest, flagsFor, nextStepFor, num, ref, text,
 } from './enrolment-detail.model';
+import { ENROLMENT_TABS, EnrolmentTab } from './enrolment-tabs';
 
-type Tab = 'overview' | 'beneficiary' | 'family' | 'appointments' | 'assessment'
-  | 'recommendations' | 'notes' | 'activity';
-
-const TABS: readonly Tab[] = [
-  'overview', 'beneficiary', 'family', 'appointments', 'assessment', 'recommendations', 'notes', 'activity',
-];
+type Tab = EnrolmentTab;
+const TABS = ENROLMENT_TABS;
 
 /**
  * One application, on its own page: who the family is, where the request
