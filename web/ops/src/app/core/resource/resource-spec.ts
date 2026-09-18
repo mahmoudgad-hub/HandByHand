@@ -304,6 +304,13 @@ export const CASELOAD_SPEC: ResourceSpec = {
     // child for speech and not for occupational therapy, and starting a
     // session checks all three.
     { name: 'service_id', labelKey: 'field.service', kind: 'ref', ref: { resource: 'services', idColumn: 'service_id', labelColumn: 'name_ar' }, ltr: true, inList: true, required: true },
+    // Who carries this child for this service when more than one therapist
+    // does. It is here because hbh.assign_therapist MOVES it - demoting the
+    // previous holder in one statement and promoting this row in another -
+    // and nothing in the schema enforces one primary per (child, service).
+    // Without the field the one behaviour that makes the new route worth
+    // having is unreachable from the screen (HBH-103).
+    { name: 'is_primary_flg', labelKey: 'field.primaryTherapist', kind: 'switch', inList: true },
   ],
 };
 

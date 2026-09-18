@@ -200,7 +200,7 @@
             </td>
             <td>
               <div class="hbh-pagehead__actions">
-                @if (canWrite() && !isArchived(row)) {
+                @if (canWrite() && !isArchived(row) && canEditRow(row)) {
                   <button class="hbh-iconbtn" type="button"
                           [attr.aria-label]="'action.edit' | t" (click)="startEdit(row)">
                     <hbh-icon name="ic-edit" />

@@ -6,7 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgComponentOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 
 import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
 import { FormatService } from '@hbh/shared/format/format.service';
@@ -725,9 +725,17 @@ if (selected) this.selectedGuardian.set(selected); else this.closeGuardian();
     this.badField.set(null);
 
     const id = current[this.spec().idColumn] as number | undefined;
-    const call = id === undefined
-      ? this.api.create(this.spec().resource, body)
-      : this.api.update(this.spec().resource, id, body);
+    const call: Observable<unknown> = this.spec().resource === 'caseload'
+      // The caseload has two doors and only this one carries the rules; see
+      // OpsApi.assignCaseload. There is no edit branch because the row IS
+      // its three columns - changing one is a different assignment, which
+      // is ended and made again rather than patched (HBH-103).
+      ? this.api.assignCaseload(
+        Number(body['child_id']), Number(body['therapist_id']),
+        Number(body['service_id']), body['is_primary_flg'] === true)
+      : id === undefined
+        ? this.api.create(this.spec().resource, body)
+        : this.api.update(this.spec().resource, id, body);
 
     call.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
@@ -752,7 +760,27 @@ if (selected) this.selectedGuardian.set(selected); else this.closeGuardian();
     });
   }
 
+  /**
+   * Whether this row may be edited in place.
+   *
+   * A caseload row is its three columns - uix_caseload_live is keyed on
+   * (therapist, child, service) - so changing any of them means it was a
+   * different assignment all along. PATCHing one through the generic door
+   * would move the row with none of assign_therapist's rules: the same
+   * defect as the bare insert, only quieter because nothing is created.
+   * End it and assign again (HBH-103).
+   */
+  protected canEditRow(_row: Row): boolean {
+    return this.spec().resource !== 'caseload';
+  }
+
   protected archive(row: Row): void {
+    if (this.spec().resource === 'caseload') {
+      this.write(
+        this.api.endCaseload(Number(row['child_id']), this.idOf(row)),
+        'crud.archived');
+      return;
+    }
     this.write(this.api.archive(this.spec().resource, this.idOf(row)), 'crud.archived');
   }
 
@@ -764,7 +792,7 @@ if (selected) this.selectedGuardian.set(selected); else this.closeGuardian();
     return row[this.spec().idColumn] as number;
   }
 
-  private write(call: ReturnType<OpsApi['archive']>, successKey: string): void {
+  private write(call: Observable<unknown>, successKey: string): void {
     call.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.toast.show(this.i18n.translate(successKey));
