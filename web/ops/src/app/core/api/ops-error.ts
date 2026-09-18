@@ -53,6 +53,12 @@ export type OpsFailure =
   // (migration 0141). Not "try again": the same save fails the same way
   // until the newer text is loaded.
   | 'REPORT_CHANGED'
+  // The three the service named on 2026-09-12 and this console did not
+  // (HBH-050). Each says what is missing, and in two of them a retry is
+  // refused for exactly the same reason as the first attempt.
+  | 'CONSENT_REQUIRED'
+  | 'TEXT_LOCKED'
+  | 'NOT_A_PASSWORD_USER'
   | 'UNKNOWN';
 
 /** Why one field was refused, when the service says which and why. */
@@ -62,6 +68,22 @@ export type FieldConstraint =
   | 'NO_SUCH_REFERENCE'
   | 'FORMAT'
   | 'REFUSED';
+
+/**
+ * THE THREE THAT WERE BEING READ AND NOT NAMED (HBH-050).
+ *
+ * The service stopped answering every HB code with a catch-all on
+ * 2026-09-12 and gave twenty-one of them their own answer. Three of those
+ * arrive here as codes of their own - CONSENT_REQUIRED, TEXT_LOCKED and
+ * NOT_A_PASSWORD_USER - and this console had never been taught them, so
+ * readRefusal filed all three under UNKNOWN and every one of them reached
+ * the person as "an unexpected error occurred, try again".
+ *
+ * Each is the opposite of unexpected: they are the service saying exactly
+ * what is missing, and in two of the three "try again" is advice that
+ * cannot work - the second attempt is refused for the same reason as the
+ * first. Naming them is what lets a screen say the thing to go and do.
+ */
 
 export interface OpsRefusal {
   readonly failure: OpsFailure;
@@ -94,6 +116,7 @@ const FAILURES: readonly OpsFailure[] = [
   'USERNAME_TAKEN', 'NO_SUCH_ROLE', 'SETUP_CODE_INVALID', 'PASSWORD_TOO_SHORT',
   'BAD_CURRENT_PASSWORD', 'PASSWORD_UNCHANGED', 'ACCOUNT_LOCKED',
   'REPORT_CHANGED',
+  'CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER',
 ];
 
 const CONSTRAINTS: readonly FieldConstraint[] = [

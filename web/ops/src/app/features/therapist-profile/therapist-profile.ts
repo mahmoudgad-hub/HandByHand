@@ -286,7 +286,15 @@ export class TherapistProfileEditor {
       return 'error.connection';
     }
     const code = (error as { error?: { error?: { code?: string } } })?.error?.error?.code;
-    if (code === 'CONSENT_REQUIRED' || code === 'NOT_YOUR_CONSENT') {
+    // The consent this screen is about is the THERAPIST'S, and the shared
+    // sentence can no longer say so: the service answers CONSENT_REQUIRED
+    // for a family's live-view consent too (HB081), on a screen where
+    // "the therapist has not agreed" would be simply untrue. Each screen
+    // names its own; the shared key stays general (HBH-050).
+    if (code === 'CONSENT_REQUIRED') {
+      return 'error.CONSENT_REQUIRED.profile';
+    }
+    if (code === 'NOT_YOUR_CONSENT') {
       return `error.${code}`;
     }
     return refusalKey(readRefusal(error));
