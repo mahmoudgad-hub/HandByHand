@@ -175,17 +175,12 @@ export class LiveView implements OnDestroy {
     if (code === 'NOT_LIVE' || code === 'STREAM_UNAVAILABLE') {
       return `error.${code}`;
     }
-    // CONSENT_REQUIRED, from HB081, and the screen must say the thing to go
-    // and DO (HBH-050). The service answers the same code for two different
-    // missing consents - a therapist who has not agreed to publish their
-    // profile, and a family who has not agreed to live viewing - so the
-    // sentence is chosen HERE, where the context is known, rather than in
-    // the shared map which cannot tell them apart. "مرفوض" would send
-    // reception to an administrator; what they need is the family's consent,
-    // and where to record it.
-    if (code === 'CONSENT_REQUIRED') {
-      return 'error.CONSENT_REQUIRED.liveView';
-    }
+    // CONSENT_REQUIRED (HB081) needs no special case here any more. It meant
+    // two things for one day - a family's live-view consent and a therapist's
+    // consent to publish their profile - and this screen had to override the
+    // shared sentence to avoid telling reception that a therapist had not
+    // agreed to a camera. The service split the words on 2026-09-18, so the
+    // shared map carries the right sentence again and the override is gone.
     return refusalKey(readRefusal(error));
   }
 }

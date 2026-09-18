@@ -24,7 +24,7 @@ const refusal = (code: string, status = 409) =>
  */
 describe('Refusal codes the service actually sends', () => {
   it('names the three that used to fall through to UNKNOWN', () => {
-    for (const code of ['CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER']) {
+    for (const code of ['CONSENT_REQUIRED', 'PROFILE_CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER']) {
       expect(readRefusal(refusal(code)).failure)
         .withContext(`${code} is read as itself, not as UNKNOWN`).toBe(code as OpsFailure);
     }
@@ -48,7 +48,7 @@ describe('Refusal codes the service actually sends', () => {
       'NOT_YOUR_OWN_ROLES', 'NOT_YOURSELF', 'USERNAME_TAKEN', 'NO_SUCH_ROLE',
       'SETUP_CODE_INVALID', 'PASSWORD_TOO_SHORT', 'BAD_CURRENT_PASSWORD',
       'PASSWORD_UNCHANGED', 'ACCOUNT_LOCKED', 'REPORT_CHANGED',
-      'CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER', 'UNKNOWN',
+      'CONSENT_REQUIRED', 'PROFILE_CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER', 'UNKNOWN',
     ];
     for (const code of codes) {
       const key = refusalKey(readRefusal(refusal(code)));
@@ -88,5 +88,33 @@ describe('Refusal codes the service actually sends', () => {
     expect(refusalKey(readRefusal(refusal('NOT_FOUND', 404)))).toBe('error.NOT_FOUND');
     expect(refusalKey(readRefusal(refusal('FORBIDDEN', 403)))).toBe('error.FORBIDDEN');
     expect(BUNDLE['error.NOT_FOUND']).not.toBe(BUNDLE['error.FORBIDDEN']);
+  });
+});
+
+/**
+ * Two consents are not one word (2026-09-18).
+ *
+ * For one day the service answered CONSENT_REQUIRED for both a family's
+ * live-view consent (HB081) and a therapist's consent to publish their
+ * profile (HB142), and two screens had to override the shared sentence to
+ * avoid telling somebody that a therapist had not agreed to a camera. The
+ * service split them; these hold the split down from this side, so the day
+ * anybody folds them back the console says so rather than quietly printing
+ * the wrong sentence on one of the two screens.
+ */
+describe('The two consents', () => {
+  it('reads each as itself', () => {
+    expect(readRefusal(refusal('CONSENT_REQUIRED')).failure).toBe('CONSENT_REQUIRED');
+    expect(readRefusal(refusal('PROFILE_CONSENT_REQUIRED')).failure).toBe('PROFILE_CONSENT_REQUIRED');
+  });
+
+  it('says a different thing for each, and says what to do', () => {
+    const family = BUNDLE[refusalKey(readRefusal(refusal('CONSENT_REQUIRED')))];
+    const therapist = BUNDLE[refusalKey(readRefusal(refusal('PROFILE_CONSENT_REQUIRED')))];
+    expect(family).not.toBe(therapist);
+    // Each names WHOSE consent is missing. A sentence that says neither is
+    // the one reception cannot act on.
+    expect(family).toContain('الأسرة');
+    expect(therapist).toContain('الأخصائي');
   });
 });

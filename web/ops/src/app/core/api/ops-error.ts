@@ -56,7 +56,16 @@ export type OpsFailure =
   // The three the service named on 2026-09-12 and this console did not
   // (HBH-050). Each says what is missing, and in two of them a retry is
   // refused for exactly the same reason as the first attempt.
+  //
+  // TWO CONSENTS, TWO WORDS, since the service split them on 2026-09-18.
+  // CONSENT_REQUIRED is the family's live-view gate (HB081) and
+  // PROFILE_CONSENT_REQUIRED is a therapist who has not agreed to publish
+  // their profile (HB142). They were one word for a day, and each screen
+  // had to override the shared sentence to avoid telling somebody that a
+  // therapist had not agreed to a camera. The overrides are gone with the
+  // ambiguity that produced them.
   | 'CONSENT_REQUIRED'
+  | 'PROFILE_CONSENT_REQUIRED'
   | 'TEXT_LOCKED'
   | 'NOT_A_PASSWORD_USER'
   | 'UNKNOWN';
@@ -116,7 +125,7 @@ const FAILURES: readonly OpsFailure[] = [
   'USERNAME_TAKEN', 'NO_SUCH_ROLE', 'SETUP_CODE_INVALID', 'PASSWORD_TOO_SHORT',
   'BAD_CURRENT_PASSWORD', 'PASSWORD_UNCHANGED', 'ACCOUNT_LOCKED',
   'REPORT_CHANGED',
-  'CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER',
+  'CONSENT_REQUIRED', 'PROFILE_CONSENT_REQUIRED', 'TEXT_LOCKED', 'NOT_A_PASSWORD_USER',
 ];
 
 const CONSTRAINTS: readonly FieldConstraint[] = [

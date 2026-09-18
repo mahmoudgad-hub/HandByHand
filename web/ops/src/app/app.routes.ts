@@ -119,7 +119,12 @@ export const routes: Routes = [
         // (docs/UX-DETAIL-PAGES.md section 2).
         path: 'guardians/:guardianId',
         canActivate: [permissionGuard],
-        data: { navKey: 'guardians', titleKey: 'guardian.title', permission: 'GUARDIAN.MANAGE' },
+        // Tabs in the address bar: each is its own place to a bookmark and
+        // to a screen reader, so the announcer names them (HBH-039).
+        data: {
+          navKey: 'guardians', titleKey: 'guardian.title', permission: 'GUARDIAN.MANAGE',
+          tabTitlePrefix: 'guardian.tab.',
+        },
         loadComponent: () =>
           import('./features/guardian/guardian-detail').then((m) => m.GuardianDetail),
       },
@@ -145,7 +150,15 @@ export const routes: Routes = [
         // address bar is a different threat and a different app.
         path: 'children/:childId',
         canActivate: [permissionGuard],
-        data: { navKey: 'children', titleKey: 'child.title', permission: 'CHILD.VIEW_ALL' },
+        // The tabs of this screen live in the address bar, so each of them is
+        // its own place as far as the browser tab, a bookmark and a screen
+        // reader are concerned. The announcer reads the `tab` parameter
+        // against this prefix; the component that draws the tabs is not
+        // asked, and must not be (HBH-039).
+        data: {
+          navKey: 'children', titleKey: 'child.title', permission: 'CHILD.VIEW_ALL',
+          tabTitlePrefix: 'child.tab.',
+        },
         loadComponent: () =>
           import('./features/child/child-profile').then((m) => m.ChildProfile),
       },
@@ -361,7 +374,10 @@ export const routes: Routes = [
         // (docs/UX-DETAIL-PAGES.md section 1). The list stays the queue.
         path: 'enrolments/:applicationId',
         canActivate: [permissionGuard],
-        data: { navKey: 'enrolments', titleKey: 'enrolment.title', permission: 'ENROLMENT.MANAGE' },
+        data: {
+          navKey: 'enrolments', titleKey: 'enrolment.title', permission: 'ENROLMENT.MANAGE',
+          tabTitlePrefix: 'enrolment.tab.',
+        },
         loadComponent: () =>
           import('./features/enrolment/enrolment-detail').then((m) => m.EnrolmentDetail),
       },

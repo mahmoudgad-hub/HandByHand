@@ -78,3 +78,79 @@ describe('RouteAnnouncer', () => {
     expect(tab).toBe('هاند باي هاند');
   });
 });
+
+/**
+ * The tab inside the screen (HBH-039).
+ *
+ * A screen whose tabs live in the address bar is many places wearing one
+ * name: the child's file announced the same three words for all thirteen of
+ * its tabs, so a screen reader user moving between them heard nothing change
+ * and the browser tab said the same thing every time.
+ *
+ * MEASURED FROM document.title AFTER NAVIGATING, which is the card's own
+ * criterion and not an accident of wording: the title is what a bookmark, a
+ * task switcher and a reopened window show, and reading it is the only way
+ * to know it moved.
+ */
+describe('RouteAnnouncer and a screen with tabs', () => {
+  const WORDS_WITH_TABS: Record<string, string> = {
+    'app.name': 'هاند باي هاند',
+    'file.title': 'ملفّ المستفيد',
+    'file.tab.family': 'الأسرة',
+    'file.tab.invoices': 'الفواتير',
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: I18nService, useValue: { translate: (key: string) => WORDS_WITH_TABS[key] ?? key } },
+        provideRouter([
+          {
+            path: '', component: Root,
+            children: [
+              {
+                path: 'file', component: Blank,
+                data: { titleKey: 'file.title', tabTitlePrefix: 'file.tab.' },
+              },
+              // The same screen WITHOUT the prefix: a route that does not say
+              // its tabs are in the address bar must not have them guessed.
+              { path: 'plain', component: Blank, data: { titleKey: 'file.title' } },
+            ],
+          },
+        ]),
+      ],
+    });
+  });
+
+  const titleAt = async (url: string): Promise<string> => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl(url);
+    harness.detectChanges();
+    return document.title;
+  };
+
+  it('names the open tab', async () => {
+    expect(await titleAt('/file?tab=family')).toBe('ملفّ المستفيد · الأسرة — هاند باي هاند');
+  });
+
+  it('and moves with it: a second tab is a second title', async () => {
+    // One harness per test is the framework's rule, so the change of tab is
+    // its own case rather than a second navigation here.
+    expect(await titleAt('/file?tab=invoices')).toBe('ملفّ المستفيد · الفواتير — هاند باي هاند');
+  });
+
+  it('names the screen alone when no tab is open', async () => {
+    expect(await titleAt('/file')).toBe('ملفّ المستفيد — هاند باي هاند');
+  });
+
+  it('does not print a key for a tab the bundle has never heard of', async () => {
+    // An old link, a typed URL, a tab removed in a later build. The screen's
+    // own name is the honest answer; "file.tab.nonsense" in a task switcher
+    // is worse than the vague one.
+    expect(await titleAt('/file?tab=nonsense')).toBe('ملفّ المستفيد — هاند باي هاند');
+  });
+
+  it('leaves a screen that never declared tabs exactly as it was', async () => {
+    expect(await titleAt('/plain?tab=family')).toBe('ملفّ المستفيد — هاند باي هاند');
+  });
+});
