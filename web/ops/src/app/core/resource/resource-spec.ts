@@ -310,6 +310,17 @@ export const CASELOAD_SPEC: ResourceSpec = {
     // and nothing in the schema enforces one primary per (child, service).
     // Without the field the one behaviour that makes the new route worth
     // having is unreachable from the screen (HBH-103).
+    //
+    // ONE LABEL SERVES THE FORM AND THE COLUMN, so it is worded as a flag
+    // and not as a person: the column's values are "نعم / لا", and a header
+    // that named a therapist over a cell reading "yes" is a column nobody
+    // can read.
+    //
+    // AND AN ENDED ASSIGNMENT KEEPS THIS FLAG. The constraint the schema is
+    // getting covers LIVE primary rows only (active_flg AND is_primary_flg),
+    // so a row that was primary and has ended still says yes - correct, and
+    // not something to tidy away. With archived rows shown, that column and
+    // the row's own archived badge are read together.
     { name: 'is_primary_flg', labelKey: 'field.primaryTherapist', kind: 'switch', inList: true },
   ],
 };

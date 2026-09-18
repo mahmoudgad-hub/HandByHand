@@ -498,7 +498,7 @@
   "delivery.ONLINE": "استشارة أونلاين",
   "delivery.EXTERNAL": "خارج المركز",
   "field.therapist": "الأخصائي",
-  "field.primaryTherapist": "الأخصائي المسؤول عن هذه الخدمة",
+  "field.primaryTherapist": "مسؤول عن هذه الخدمة",
   "field.weekday": "اليوم",
   "field.day": "اليوم",
   "field.month": "الشهر",
