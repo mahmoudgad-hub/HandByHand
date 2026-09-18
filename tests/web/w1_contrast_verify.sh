@@ -32,31 +32,89 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TOKENS="$ROOT/html/hbh-shared.css"
 EXEMPT="$(dirname "${BASH_SOURCE[0]}")/contrast-exemptions.tsv"
 
-# The stylesheets the rule covers. html/ is the source; portal.css and
-# ops.css are each app's own layer and are not synced, so they are listed
-# by name rather than globbed - a new app layer must be added here on
-# purpose, not inherited silently.
+# The stylesheets the rule covers.
+#
+# THE HAND-WRITTEN HALF OF THIS LIST IS WHAT LET THE BLIND SPOTS IN
+# (HBH-105). The comment that used to stand here said each app's own layer
+# was named "on purpose, not inherited silently" - and the purpose was
+# real, but the cost landed on the other side: portal.css and ops.css were
+# named, and the ten other stylesheets angular.json ships beside them were
+# not. Nor was web/shared, whose components run in BOTH apps: the messages
+# screen alone carried fifty-four colours no rule here had ever read.
+#
+# It is the same failure the note below records about apply.css, one level
+# up: a file joined the build and did not join the suite, and the suite
+# stayed green. So the app trees are globbed now, and the green means
+# something closer to what a reader assumes it means.
+#
+# html/ stays named. It is the design source, a different tree with a
+# different life, and a file appearing there is a design decision rather
+# than a shipped surface.
 SHEETS=(
   "$ROOT/html/hbh-shared.css"
   "$ROOT/html/hbh-parent.css"
   "$ROOT/html/hbh-admin.css"
   "$ROOT/html/hbh-screens.css"
   "$ROOT/html/app/hbh-app.css"
-  "$ROOT/web/portal/src/styles/portal.css"
-  "$ROOT/web/ops/src/styles/ops.css"
 )
 
-# Component stylesheets too. The list above is hand-written, so a screen
-# that grows its own .css file joined neither the contrast rules nor the
-# no-literal one - which is exactly what happened: apply.css arrived with a
-# dozen hex colours and this suite stayed green.
+# Everything the two applications actually ship: their global layers, their
+# component stylesheets, and the shared library's, which both of them load.
 #
 # globstar into the array, not a command substitution over a file list:
 # this project lives under a path with a space in it, and splitting on
 # whitespace here has bitten before.
+#
+# web/dist is build output and is never read here - it is a copy of these
+# files, and counting it would report every colour twice.
 shopt -s globstar nullglob
+SHEETS+=("$ROOT"/web/*/src/styles/*.css)
+SHEETS+=("$ROOT"/web/*/src/assets/*.css)
 SHEETS+=("$ROOT"/web/*/src/app/**/*.css)
+SHEETS+=("$ROOT"/web/shared/src/**/*.css)
 shopt -u globstar nullglob
+
+# One entry per file. portal.css was named above AND matched by the glob
+# until this list was rebuilt, and a sheet read twice reports each of its
+# colours twice - a count that grows without anything changing is a count
+# nobody trusts for long.
+declare -A _seen=()
+declare -a _unique=()
+for _sheet in "${SHEETS[@]}"; do
+  [ -n "${_seen[$_sheet]:-}" ] && continue
+  _seen["$_sheet"]=1
+  _unique+=("$_sheet")
+done
+SHEETS=("${_unique[@]}")
+unset _seen _unique
+
+# EVERY STYLESHEET THE APPLICATIONS SHIP IS IN THE LIST ABOVE, and this is
+# the check that keeps it true (HBH-105).
+#
+# Widening the globs fixed today's blind spots and nothing more: the next
+# directory somebody puts a .css in would be outside them again, exactly as
+# web/shared and web/*/src/styles were - and the suite would go on printing
+# a pass over the files it happens to know. The four globs above are a
+# guess about where stylesheets live; this is the part that fails when the
+# guess stops being true, and it fails BY NAME so the answer is obvious.
+#
+# web/dist is build output - a copy of these same files - and node_modules
+# is not ours. Neither is a surface anybody styles.
+rule_every_sheet_covered() {
+  local found missing="" f
+  found="$(find "$ROOT/web" -name '*.css' \
+            -not -path '*/node_modules/*' -not -path "$ROOT/web/dist/*" \
+            -print 2>/dev/null)"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case " ${SHEETS[*]} " in *" $f "*) ;; *) missing="$missing $f" ;; esac
+  done <<< "$found"
+  if [ -z "$missing" ]; then
+    chk rule "every shipped stylesheet is covered" 0
+  else
+    chk rule "every shipped stylesheet is covered" 1 "outside the list:$missing"
+  fi
+}
 
 # A named sheet that is not on disk is a rule that silently stops running.
 # The ops.css path lost its prefix in an edit and this suite went on
@@ -244,7 +302,15 @@ rule_no_raw_hex_in_components() {
 # =====================================================================
 main() {
   printf '\nW1 - design system contrast\n'
-  printf '  source: %s\n\n' "${TOKENS#$ROOT/}"
+  printf '  source: %s\n' "${TOKENS#$ROOT/}"
+  # HOW MANY SHEETS THE VERDICT BELOW WAS MEASURED ON.
+  #
+  # Printed because it moved without anybody noticing: the suite covered
+  # thirty-six files and read as if it covered the front end. A number with
+  # no scope beside it is the shape of green that hides things, and the
+  # scope belongs in the result, not in a comment somebody has to go and
+  # find (HBH-105).
+  printf '  sheets: %d\n\n' "${#SHEETS[@]}"
 
   # ---- fixture, asserted by name before anything reads it (rule 3) ----
   if [ -f "$TOKENS" ]; then chk fixture "token stylesheet present" 0
@@ -299,6 +365,7 @@ main() {
   printf '\n'
 
   # ---- structural rules (rule 5) ----
+  rule_every_sheet_covered
   rule_fill_token_as_text
   rule_muted_never_a_fill
   rule_no_raw_hex_in_components
