@@ -108,6 +108,7 @@
   "child.flag.noSpecialist": "بلا أخصائي مسؤول",
   "child.flag.noPortalAccount": "الأسرة بلا حساب",
   "child.noPortalAccount": "الأسرة بلا حساب",
+  "children.withoutAccount": "الأسر بلا حساب فقط",
   "child.noGuardianAccountNote": "حساب البوابة يُنشأ على رقم وليّ الأمر، فلا يمكن تفعيله لطفل غير مرتبط بأحد. والربط اليوم يتمّ عند تحويل طلب التحاق فقط — لا يوجد في الكونسول مسار يربط وليّ أمر بطفل بعد إنشائه.",
   "portalAccess.grant": "تفعيل حساب الأسرة",
   "portalAccess.confirmTitle": "تفعيل حساب الأسرة",

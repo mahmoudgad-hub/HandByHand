@@ -68,6 +68,21 @@
 
 <div class="hbh-filters ops-table-toolbar">
   @if (!spec().fixedRows) { <hbh-archive-switch [checked]="showArchived()" [disabled]="loading()" (changed)="toggleArchived()" /> }
+  <!-- Only where the service computes the flag (HBH-101). Drawn anywhere
+       else it would send a parameter nothing reads and answer "none". -->
+  @if (canFilterWithoutAccount()) {
+    <!-- On/off shown with the system's OWN pair of button styles rather than
+         a new colour: they are the two the contrast suite already measures.
+         aria-pressed carries the same state to a screen reader, which no
+         amount of colour would. -->
+    <button type="button" class="hbh-btn" data-test="without-account"
+            [class.hbh-btn--primary]="onlyWithoutAccount()"
+            [class.hbh-btn--ghost]="!onlyWithoutAccount()"
+            [attr.aria-pressed]="onlyWithoutAccount()"
+            [disabled]="loading()" (click)="toggleWithoutAccount()">
+      <hbh-icon name="ic-warn" /> {{ 'children.withoutAccount' | t }}
+    </button>
+  }
   @if (spec().searchable) {
     <div class="hbh-field hbh-field--grow">
       <hbh-icon name="ic-search" />

@@ -317,6 +317,27 @@ export class ResourceScreen {
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   protected readonly showArchived = signal(false);
+
+  /**
+   * "Only the families who cannot sign in" (HBH-101).
+   *
+   * IT IS A QUESTION FOR THE SERVICE. The obvious version of this - keep the
+   * rows and hide the ones whose flag is true - reads the page the browser
+   * happens to hold, so a centre with ninety children would be shown the
+   * twenty on screen and told that was all of them. On the one screen whose
+   * whole purpose is finding a family nobody noticed, that is the worst
+   * possible way to be wrong. So the parameter goes back to the service,
+   * which filters in the query and makes the count and the pages follow.
+   *
+   * The service computes it from the same expression it computes the badge
+   * from, under the caller's identity - so the filter agrees with the badge
+   * beside it and cannot reach a family the policy would hide.
+   */
+  protected readonly onlyWithoutAccount = signal(false);
+
+  /** Whether this list is one the service can answer that question about. */
+  protected readonly canFilterWithoutAccount = computed(
+    () => this.spec().resource === 'children');
   protected readonly search = new FormControl('', { nonNullable: true });
 
   /** The row being edited; an empty object means creating. Null means closed. */
@@ -427,6 +448,7 @@ export class ResourceScreen {
     this.editing.set(null);
     this.search.setValue('');
     this.showArchived.set(false);
+    this.onlyWithoutAccount.set(false);
     this.page.set(1);
     this.buildControls();
     this.load();
@@ -459,6 +481,8 @@ export class ResourceScreen {
       guardian_id: this.spec().resource === 'children' && this.selectedGuardian() ? Number(this.selectedGuardian()!['guardian_id']) : undefined,
       q: term || undefined,
       archived: this.showArchived() || undefined,
+      without_portal_account:
+        this.canFilterWithoutAccount() && this.onlyWithoutAccount() ? true : undefined,
       // Pages start at 1, not 0 - the service's own convention.
       page: this.page() > 1 ? this.page() : undefined,
       limit: this.pageSize(),
@@ -493,6 +517,16 @@ if (selected) this.selectedGuardian.set(selected); else this.closeGuardian();
     this.showArchived.update((value) => !value);
     // Any filter change starts at the first page. Staying on page 4 of a
     // narrower result shows an empty table that looks like "nothing found".
+    this.page.set(1);
+    this.load();
+  }
+
+  protected toggleWithoutAccount(): void {
+    this.onlyWithoutAccount.update((value) => !value);
+    // Same reason as above, and it bites harder here: this filter is the one
+    // that makes a long list short, so page 4 is very likely to be past the
+    // end - and an empty table on the screen for finding forgotten families
+    // reads as "there are none".
     this.page.set(1);
     this.load();
   }
