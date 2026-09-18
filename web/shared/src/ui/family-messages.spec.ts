@@ -4,6 +4,8 @@ import {provideHttpClientTesting, HttpTestingController} from '@angular/common/h
 import {FamilyMessages} from './family-messages';
 import {UserAvatars} from './user-avatar';
 import {HBH_CONFIG} from '../config/app-config';
+import {ActivatedRoute, convertToParamMap} from '@angular/router';
+import {of} from 'rxjs';
 
 describe('Family message background refresh',()=>{
  const contact={guardian_id:1,name:'Family',can_send:true,can_manage:true,unread:0};
@@ -108,5 +110,96 @@ describe('Guardian recipient scope',()=>{
   expect(c.visibleContacts()).toEqual([]);c.openRole('therapist');expect(c.bulkRecipients().length).toBe(2);
   c.recipients.set([-1]);c.allStaff.set(true);c.bulkBody.set('test');c.sendBulk();
   h.expectNone('/api/v1/chat-broadcast');f.destroy();h.verify();
+ });
+});
+
+/**
+ * CH-05 in this screen: the refusal is SAID, and it is said the same way
+ * for an account that is hidden and one that does not exist.
+ *
+ * The service answers a conversation you may not see with an empty list and
+ * a send to it with 403, on purpose - a 404 would need an existence check,
+ * and the existence check IS the leak: anybody trying user_id numbers would
+ * learn which are real, which are in their centre, and which are parents.
+ *
+ * That silence is right in the service and wrong on the screen. A link
+ * carrying ?peer=<someone else> did nothing at all here: no conversation
+ * opened, no sentence appeared, and the person was left looking at a contact
+ * list wondering whether the link was broken. And a send that came back 403
+ * read "could not confirm - you may retry", which is advice that cannot
+ * work: the second attempt is refused for exactly the same reason as the
+ * first. Same family as HBH-050.
+ */
+describe('A conversation you may not have (CH-05)',()=>{
+ const contact={guardian_id:-7,user_id:7,kind:'staff',name:'Colleague',can_send:true,can_manage:false,unread:0};
+ const withPeer=(peer:string)=>{
+  TestBed.configureTestingModule({imports:[FamilyMessages],providers:[
+   provideHttpClient(),provideHttpClientTesting(),{provide:HBH_CONFIG,useValue:{apiBaseUrl:''}},
+   {provide:ActivatedRoute,useValue:{queryParamMap:of(convertToParamMap({peer}))}},
+  ]});
+  TestBed.overrideComponent(FamilyMessages,{set:{template:'',imports:[],styles:[],styleUrl:undefined}});
+ };
+ beforeEach(()=>{TestBed.resetTestingModule();spyOnProperty(document,'visibilityState','get').and.returnValue('visible');});
+
+ it('says why a linked conversation did not open, instead of ignoring the link',()=>{
+  withPeer('999');
+  const f=TestBed.createComponent(FamilyMessages),c=f.componentInstance as any,h=TestBed.inject(HttpTestingController);
+  h.expectOne('/api/v1/chat-contacts?q=').flush({rows:[contact],more:false});
+  h.expectOne('/api/v1/users/7/photo').flush(new Blob(['avatar'],{type:'image/jpeg'}));
+  expect(c.selected()).toBeNull();
+  expect(c.error()).toBe('chat.cannotMessage');
+  // And nothing was asked about 999. A request to its thread would be the
+  // existence check the service refuses to perform.
+  h.expectNone('/api/v1/direct-messages/999');
+  f.destroy();h.verify();
+ });
+
+ /**
+  * The acceptance half. A refusal test with no acceptance beside it proves
+  * the door is shut, not that it opens - and a `peer` that stopped working
+  * for everybody would keep the test above green.
+  */
+ it('still opens the conversation when the link names one you do have',()=>{
+  withPeer('7');
+  const f=TestBed.createComponent(FamilyMessages),c=f.componentInstance as any,h=TestBed.inject(HttpTestingController);
+  h.expectOne('/api/v1/chat-contacts?q=').flush({rows:[contact],more:false});
+  h.expectOne('/api/v1/users/7/photo').flush(new Blob(['avatar'],{type:'image/jpeg'}));
+  h.expectOne('/api/v1/direct-messages/7').flush({rows:[],more:false});
+  expect(c.selected()?.user_id).toBe(7);
+  expect(c.error()).toBe('');
+  f.destroy();h.verify();
+ });
+
+ it('does not offer a retry for a send the service refused',()=>{
+  withPeer('7');
+  const f=TestBed.createComponent(FamilyMessages),c=f.componentInstance as any,h=TestBed.inject(HttpTestingController);
+  h.expectOne('/api/v1/chat-contacts?q=').flush({rows:[contact],more:false});
+  h.expectOne('/api/v1/users/7/photo').flush(new Blob(['avatar'],{type:'image/jpeg'}));
+  h.expectOne('/api/v1/direct-messages/7').flush({rows:[],more:false});
+  c.draft.set('test only');c.send();
+  h.expectOne('/api/v1/direct-messages/7').flush({},{status:403,statusText:'Forbidden'});
+  expect(c.error()).toBe('chat.cannotMessage');
+  // The draft is NOT thrown away. The sentence says this account cannot be
+  // written to; the words the person typed are still theirs.
+  expect(c.draft()).toBe('test only');
+  f.destroy();h.verify();
+ });
+
+ /**
+  * A transient failure is a different thing and keeps its own sentence:
+  * "could not confirm, it is saved here, try again" is true of a dropped
+  * connection and false of a refusal.
+  */
+ it('keeps the retry sentence for a failure that a retry could fix',()=>{
+  withPeer('7');
+  const f=TestBed.createComponent(FamilyMessages),c=f.componentInstance as any,h=TestBed.inject(HttpTestingController);
+  h.expectOne('/api/v1/chat-contacts?q=').flush({rows:[contact],more:false});
+  h.expectOne('/api/v1/users/7/photo').flush(new Blob(['avatar'],{type:'image/jpeg'}));
+  h.expectOne('/api/v1/direct-messages/7').flush({rows:[],more:false});
+  c.draft.set('test only');c.send();
+  h.expectOne('/api/v1/direct-messages/7').flush({},{status:503,statusText:'Unavailable'});
+  expect(c.error()).not.toBe('chat.cannotMessage');
+  expect(c.error()).toBeTruthy();
+  f.destroy();h.verify();
  });
 });
