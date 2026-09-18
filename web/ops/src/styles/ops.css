@@ -422,7 +422,7 @@ hbh-login {
   display: inline-block;
   margin-inline-start: 6px;
   font-size: 11px;
-  color: var(--hbh-progress);
+  color: var(--hbh-progress-ink);
 }
 
 /* ---- team profile: portrait, chips, drop zone, media grid ---------- */
