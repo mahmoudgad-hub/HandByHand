@@ -4,6 +4,7 @@ import { UserAvatars } from '@hbh/shared/ui/user-avatar';
 import { Observable, tap } from 'rxjs';
 
 import { AuthApi, AuthSession, OtpChallenge, OtpFailure, OtpRefusal } from './auth-api';
+import { ChildContextService } from './child-context.service';
 
 const TOKEN_KEY = 'hbh.portal.session';
 
@@ -28,6 +29,13 @@ export class AuthService {
   private readonly api = inject(AuthApi);
   private readonly router = inject(Router);
   private readonly avatars = inject(UserAvatars);
+  /**
+   * Cleared alongside the token. The selected child grants nothing - the
+   * server re-checks the guardian's link on every request - but a key that
+   * outlives the session it belonged to is still somebody's leftover on a
+   * device the next person uses (SEC-016).
+   */
+  private readonly childContext = inject(ChildContextService);
 
   private readonly session = signal<AuthSession | null>(this.restore());
   private readonly challenge = signal<OtpChallenge | null>(null);
@@ -143,6 +151,7 @@ export class AuthService {
     this.session.set(null);
     this.abandonChallenge();
     sessionStorage.removeItem(TOKEN_KEY);
+    this.childContext.clear();
     this.api.logout().subscribe({
       error: () => undefined,
       complete: () => undefined,
@@ -155,6 +164,7 @@ export class AuthService {
     this.avatars.reset(null);
     this.session.set(null);
     sessionStorage.removeItem(TOKEN_KEY);
+    this.childContext.clear();
     void this.router.navigate(['/login'], { queryParams: { reason: 'expired' } });
   }
 

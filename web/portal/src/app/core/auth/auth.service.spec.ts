@@ -84,3 +84,60 @@ describe('AuthService.readRefusal', () => {
     expect(auth.pendingChallenge()).toBeNull();
   }));
 });
+
+/**
+ * What signing out leaves behind on the device (SEC-016 P3).
+ *
+ * The selected child's identifier is written to sessionStorage so a reload
+ * does not throw a guardian back to the picker mid-task. It grants nothing -
+ * the child is fetched again and the server re-checks the guardian's link on
+ * every request, so a stale or tampered value resolves to nothing.
+ *
+ * IT STILL MUST NOT SURVIVE SIGNING OUT. Same tab, second guardian: the key
+ * from the first one was still there. Nothing could be read with it, but
+ * "reads as somebody else's leftover" is what a person on a shared device is
+ * entitled not to find - and a value that outlives the session it belonged
+ * to is the shape of the defect, whether or not this one has teeth.
+ */
+describe('AuthService.signOut and the device', () => {
+  let auth: AuthService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthApi, useClass: FixtureAuthApi },
+        AuthService,
+      ],
+    });
+    auth = TestBed.inject(AuthService);
+  });
+
+  const keys = () => ({
+    token: sessionStorage.getItem('hbh.portal.session'),
+    child: sessionStorage.getItem('hbh.portal.child'),
+  });
+
+  it('takes the selected child with the token', () => {
+    sessionStorage.setItem('hbh.portal.session', 'a-token');
+    sessionStorage.setItem('hbh.portal.child', 'child-uuid');
+    // The control: both are there before, so "null after" says something.
+    expect(keys().token).not.toBeNull();
+    expect(keys().child).not.toBeNull();
+
+    auth.signOut();
+
+    expect(keys().token).toBeNull();
+    expect(keys().child).toBeNull();
+  });
+
+  it('takes it on an expired session too, which is the same device', () => {
+    sessionStorage.setItem('hbh.portal.session', 'a-token');
+    sessionStorage.setItem('hbh.portal.child', 'child-uuid');
+
+    auth.sessionExpired();
+
+    expect(keys().token).toBeNull();
+    expect(keys().child).toBeNull();
+  });
+});
