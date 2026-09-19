@@ -89,9 +89,13 @@
       يستورده طبقات قابلة للتحرير. أو افتحه في تبويب، <code>Ctrl+U</code>، ثم انسخ النصّ.
     </p>
     <p class="sub" style="margin:14px 0 0">
-      الصناديق الكوراليّة الثلاثة حلقات مقطوعة فعلًا: القاعدة مبنيّة ومختبَرة،
-      والمسار الذي يصلها بالشاشة غير موجود. التفصيل في
-      <code>docs/architect/02-new-child-flow.md</code>.
+      <strong>قِيس 2026-09-19.</strong> كانت ثلاثة صناديق كوراليّة، فبقي واحد:
+      حساب دخول الأسرة أُغلق (<code>0125</code> · <code>0126</code>)، والإسناد والخطط
+      صار لهما مسار CRUD، و<strong>التقييم وقائمة الانتظار وحدهما</strong> ما زالا مبنيّين
+      في القاعدة بصفر مسار. ومرحلة «٢ — التأسيس» نفسها ستتغيّر: الهجرة <code>0154</code>
+      (HBH-058) نزلت وتنقل ميلاد الأسرة إلى لحظة الإرسال، لكنّ مفتاحها
+      <code>ENROLMENT_REQUIRE_VERIFICATION</code> مطفأ ولا مسار يُصدر إثبات جوال —
+      فالمرسوم هنا هو الحيّ اليوم.
     </p>
   </section>
 
@@ -134,13 +138,26 @@ const DIAGRAMS = [
     sub: 'خريطة الملاحة كما هي في <code>web/portal/src/app/app.routes.ts</code> — ولا مسار فيها يحمل معرّف طفل',
     src: String.raw`%% بوّابة وليّ الأمر — خريطة الملاحة
 %% المصدر: web/portal/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% ١٦ شاشة. والعدّ — لأنّ رقمًا بلا تعريفه لا يُعاد قياسه: قيم path: في
+%% app.routes.ts، مطروحًا منها كل إدخال فيه redirectTo، وpath: '**'، وpath: ''.
+%% وlogin/otp تُعدّ إطارًا مستقلًّا، والتبويبات داخل الشاشات لا تُعدّ.
+%% ---
 %% لا مسار في هذا التطبيق يحمل معرّف طفل: الطفل المختار يعيش في ChildContextService،
 %% لأنّ تعديل شريط العنوان لا يجوز أن يوحي بأنّه يغيّر ما يُرى — الخادم هو من يقرّر.
+%% والاستثناءان يؤكّدان القاعدة: الأخصائي عضو طاقم والخدمة تُخفي على الصفّ، والموعد
+%% تُعيد authorize_meeting_entry السؤال عن صاحبه في كل نداء فيُجاب الغريب 404.
+%% ---
+%% تنبيه لمن يعدّل: لا تترك سطر تعليق فارغًا (%% وحده) — Mermaid 11 يقرؤه موجّهًا فيفشل.
+%% وبعد كل تعديل هنا: bash scripts/sync-figma-preview.sh (preview.html ناتج بناء).
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart TB
   classDef public fill:#EDF1E5,stroke:#ADC793,color:#22333A
   classDef auth   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
   classDef tab    fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
   classDef guard  fill:#FBF0DA,stroke:#F0DCB4,color:#8A5A0E
+  classDef moved  fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
 
   SITE["الموقع التعريفي العام<br/>site/ — بلا مصادقة ولا API"]:::public
   APPLY["/apply<br/>الطريق الوحيد بلا حارس<br/>الكتابة الوحيدة بلا مصادقة في الخدمة"]:::public
@@ -155,43 +172,62 @@ flowchart TB
 
   HOME["/home<br/>تبويب"]:::tab
   SCHED["/schedule<br/>تبويب"]:::tab
-  PROG["/progress<br/>تبويب"]:::tab
+  PROG["/progress — ProgressHub<br/>تبويب · ابتلع التقارير والملاحظات"]:::tab
   ACT["/activities<br/>تبويب — البرنامج المنزلي"]:::tab
   LIVE["/live<br/>بثّ الجلسة — عودة إلى /home"]:::auth
-  REPS["/reports<br/>تبويب"]:::tab
-  REP["/reports/:reportId<br/>عودة إلى /reports لا إلى /home"]:::auth
+  REP["/reports/:reportId<br/>تقرير مفتوح — والقائمة تبويب في /progress"]:::auth
+  CONS["/consultation/:appointmentId<br/>الاستشارة الأونلاين — بلا childSelectedGuard<br/>الموعد يسمّي طفله"]:::auth
   BILL["/billing<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
-  REQ["/requests<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
+  REQ["/requests — RequestsHub<br/>تبويب · ابتلع المحادثة · requestChildGuard"]:::tab
   THER["/therapists/:therapistId<br/>المعرّف في المسار — عضو طاقم لا بيانات طفل"]:::auth
+  NOTIF["/notifications<br/>موجَّه إلى شخص لا إلى طفل<br/>بلا childSelectedGuard عمدًا"]:::auth
   PROF["/profile<br/>تبويب"]:::tab
-  COMM["/communications<br/>تبويب — محادثة الأسرة والمركز<br/>لا يحتاج طفلًا مختارًا"]:::tab
 
   SITE -->|"portalBaseUrl في site/config.js"| APPLY
   APPLY -->|"بعد القبول والتحويل"| LOGIN
   LOGIN --> OTP --> G1 --> WELCOME
   WELCOME -->|"اختيار طفل"| G2
   G2 --> SHELL
-  SHELL --> HOME & SCHED & PROG & ACT & BILL & REQ & COMM & PROF
+  SHELL --> HOME & SCHED & PROG & ACT & BILL & REQ & NOTIF & PROF
   HOME --> LIVE
-  HOME --> REPS --> REP
-  SCHED -->|"نقر اسم الأخصائي"| THER`
+  PROG -->|"تبويب التقارير"| REP
+  SCHED -->|"نقر اسم الأخصائي"| THER
+  SCHED -->|"موعد أونلاين"| CONS
+
+  subgraph MOVED["تحويلات — عناوين تقاعدت وروابطها حيّة خارج البناء"]
+    direction TB
+    M1["/otp ← /login/otp"]:::moved
+    M2["/reports ← /progress?tab=reports"]:::moved
+    M3["/communications ← /requests?tab=messages"]:::moved
+  end`
   },
   {
     el: 's3', title: '٣ — تطبيق المركز', file: 'flow/src/03-ops-console.mmd',
     sub: 'كل شاشة تعلن صلاحيتها — <code>web/ops/src/app/app.routes.ts</code>. والحارس يمنع الرسم، والرفض نفسه في سياسة RLS تحت الاستعلام',
     src: String.raw`%% تطبيق المركز (ops) — خريطة الملاحة والصلاحيات
 %% المصدر: web/ops/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% ٣٤ شاشة. والعدّ — لأنّ رقمًا بلا تعريفه لا يُعاد قياسه: قيم path: في
+%% app.routes.ts، مطروحًا منها كل إدخال فيه redirectTo (نصًّا أو دالّة movedTo)،
+%% وpath: '**'، وpath: ''. والتبويبات داخل الشاشات لا تُعدّ إطارًا.
+%% ---
 %% كل شاشة تعلن الصلاحية التي تحتاجها. الحارس يمنع رسم شاشة سيرفضها الخادم —
 %% وليس هو الرفض نفسه، فالرفض في سياسة RLS تحت الاستعلام.
-%% الشاشات تنقسم إلى نوعين مدفوعين بوصفين: ResourceScreen للموارد التي تُنشأ وتُعدَّل،
-%% وDayScreen للقراءات المفهرسة بالمركز — صفوف تتحرّك عبر آلات الحالة لا بتعديل عمود.
+%% والشاشات ثلاثة أنواع: ResourceScreen للموارد التي تُنشأ وتُعدَّل، وDayScreen
+%% للقراءات المفهرسة بالمركز — صفوف تتحرّك عبر آلات الحالة لا بتعديل عمود — وخاصّة لغيرهما.
+%% ---
 %% LR لا TB: بـTB يتفرّع الهيكل إلى اثنتي عشرة شاشة جنبًا إلى جنب،
 %% فيصير المخطّط ٣٧٩٥px عرضًا و٦٢٠px ارتفاعًا — لا يُقرأ على أي شاشة.
+%% وتنبيه: لا تترك سطر تعليق فارغًا (%% وحده) — Mermaid 11 يقرؤه موجّهًا فيفشل.
+%% وبعد كل تعديل هنا: bash scripts/sync-figma-preview.sh (preview.html ناتج بناء).
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart LR
   classDef res  fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
   classDef day  fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
   classDef one  fill:#EDF1E5,stroke:#ADC793,color:#22333A
   classDef sys  fill:#F1ECE1,stroke:#E3DCCD,color:#4A5F68
+  classDef moved fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
 
   LOGIN["/login<br/>opsGuestGuard"]:::one
   SHELL["الهيكل — القائمة الجانبية<br/>opsAuthGuard"]:::one
@@ -199,19 +235,21 @@ flowchart LR
 
   LOGIN --> SHELL --> DASH
 
-  subgraph R["ResourceScreen — ثمانية وعشرون موردًا CRUD في ست شاشات"]
+  subgraph R["ResourceScreen — الموارد التي تُنشأ وتُعدَّل وتُؤرشَف"]
     direction TB
-    CH["/children<br/>CHILD.VIEW_ALL<br/>أولياء الأمور + الأطفال"]:::res
-    TH["/therapists<br/>STAFF.MANAGE<br/>الأخصائيون + ساعات العمل + caseload"]:::res
+    GU["/guardians<br/>GUARDIAN.MANAGE<br/>لهم شاشتهم الآن"]:::res
+    CH["/children<br/>CHILD.VIEW_ALL<br/>الأطفال وحدهم"]:::res
+    TH["/therapists<br/>STAFF.MANAGE<br/>أخصائيون + ساعات + caseload + مصفوفة الخدمات"]:::res
     RM["/rooms<br/>CATALOG.MANAGE<br/>الغرف + الكاميرات"]:::res
     PL["/plans<br/>PLAN.MANAGE<br/>خطط + أهداف + قياسات + أنشطة الطفل"]:::res
-    CT["/catalog<br/>CATALOG.MANAGE<br/>خدمات + باقات + مكتبة أنشطة + استبيانات"]:::res
-    ST["/site<br/>SITE.EDIT<br/>كلمات الموقع — خمسة تبويبات"]:::res
+    CT["/catalog<br/>CATALOG.MANAGE<br/>خدمات + باقات + مكتبة أنشطة"]:::res
+    ST["/site<br/>SITE.EDIT<br/>ستّة أوصاف + نصوص الموقع + الفريق"]:::res
+    NPS["/satisfaction<br/>NPS.MANAGE<br/>الاستبيانات وإجاباتها معًا"]:::res
   end
 
-  subgraph D["DayScreen — القراءات المفهرسة بالمركز"]
+  subgraph D["DayScreen — صفوف تتحرّك عبر آلات الحالة"]
     direction TB
-    AP["/appointments<br/>APPOINTMENT.BOOK"]:::day
+    AP["/appointments<br/>APPOINTMENT.BOOK أو SESSION.START<br/>ويوم الأخصائي ?view=mine"]:::day
     SE["/sessions<br/>SESSION.START"]:::day
     RP["/reports<br/>REPORT.VIEW"]:::day
     BL["/billing<br/>BILLING.VIEW"]:::day
@@ -219,36 +257,57 @@ flowchart LR
     EN["/enrolments<br/>ENROLMENT.MANAGE<br/>ما كانت تسمّيه التصاميم leads"]:::day
   end
 
-  SHELL --> CH & TH & RM & PL & CT & ST
+  SHELL --> GU & CH & TH & RM & PL & CT & ST & NPS
   SHELL --> AP & SE & RP & BL & RQ & EN
 
+  GUD["/guardians/:guardianId<br/>الأسرة خلف الأطفال — تبويبات في شريط العنوان"]:::one
   CHILD["/children/:childId<br/>ملفّ الطفل — المعرّف في المسار"]:::one
+  RNEW["/children/:childId/reports/new<br/>REPORT.WRITE — تقرير فارغ، لا معرّف له بعد"]:::one
+  REDIT["/children/:childId/reports/:reportId<br/>REPORT.WRITE — بعد حفظ المسوّدة"]:::one
   CARD["/children/:childId/card<br/>بطاقة تُطبع — بلا رقم قومي ولا عنوان"]:::one
   TPROF["/therapists/:therapistId/profile<br/>بلا حارس صلاحية عمدًا:<br/>السؤال عن الصفّ لا عن الشخص"]:::one
-  TSVC["/therapist-services<br/>STAFF.MANAGE<br/>بدونها لا يُحجز موعد — THERAPIST_SERVICE_MISMATCH"]:::one
   TEAM["/site/team<br/>SITE.EDIT — رئيس وتفصيل"]:::one
   LIVEV["/sessions/:sessionId/live<br/>LIVE.VIEW — بثّ فقط، لا تسجيل"]:::one
+  END["/enrolments/:applicationId<br/>طلب واحد في مكان واحد — والقائمة تبقى الطابور"]:::one
 
-  CH --> CHILD --> CARD
+  GU --> GUD
+  CH --> CHILD
+  CHILD --> RNEW & REDIT & CARD
   TH --> TPROF
-  TH --> TSVC
   ST --> TEAM
   SE --> LIVEV
+  EN --> END
 
-  ACC["/access<br/>PORTAL.VIEW<br/>أي شاشة تحتاج أي صلاحية — ليست إدارة مستخدمين"]:::sys
-  NPS["/satisfaction<br/>CATALOG.MANAGE"]:::sys
+  PROF["/profile<br/>من قائمة الحساب لا القائمة الجانبية<br/>بلا حارس — كل حساب له واحد"]:::sys
+  FAV["/favorites<br/>PORTAL.VIEW"]:::sys
+  TASKS["/tasks<br/>PORTAL.VIEW — مشتقّ من حالة صفوف أخرى<br/>لا جدول ولا كتابة"]:::sys
+  NOTIF["/notifications<br/>PORTAL.VIEW — كانت inbox<br/>الاسم وعدَ بقائمة مهامّ لم يكنها"]:::sys
+  USERS["/users<br/>USER.MANAGE — الحسابات والأدوار<br/>ومعها جدول الصلاحيات الذي بدأت به"]:::sys
   LOG["/ops-log<br/>OPS.VIEW"]:::sys
-  SET["/settings<br/>CATALOG.MANAGE<br/>قابلة للتحرير — guard_center_settings"]:::sys
-  COMM["/communications<br/>محادثة الأسرة — نفس مكوّن البوّابة"]:::sys
+  SET["/settings<br/>SETTINGS.MANAGE — قابلة للتحرير"]:::sys
+  COMM["/communications<br/>PORTAL.VIEW — نفس مكوّن البوّابة"]:::sys
   DEN["/denied"]:::sys
 
-  SHELL --> ACC & NPS & LOG & SET & COMM
-  SHELL -.->|"الحارس يرفض"| DEN`
+  SHELL --> PROF & FAV & TASKS & NOTIF & USERS & LOG & SET & COMM
+  SHELL -.->|"الحارس يرفض"| DEN
+
+  subgraph MOVED["تحويلات — عناوين تقاعدت وروابطها حيّة في إشعارات ورسائل وإشارات مرجعية"]
+    direction TB
+    M1["/inbox ← /notifications"]:::moved
+    M2["/access ← /users"]:::moved
+    M3["/my-day ← /appointments?view=mine"]:::moved
+    M4["/therapist-services ← /therapists?tab=services"]:::moved
+  end`
   },
   {
     el: 's4', title: '٤ — آلات الحالة', file: 'flow/src/04-state-machines.mmd',
     sub: 'ثماني آلات محروسة بدوال <code>legal_*_transition</code> — أيّ انتقال غير مرسوم فيها ترفضه القاعدة بالكود المذكور. ويليها ثمانية أعمدة حالة <strong>بلا دالة انتقال</strong>، يحرسها <code>CHECK</code> وحده: تقبل أيّ قيمة من قائمتها، فلا تصمّم عليها قاعدةً لا يفرضها أحد',
-    src: String.raw`%% آلات الحالة الثماني المحروسة — مستخرَجة حرفيًا من دوال legal_*_transition في db/migrations/
+    src: String.raw`%% آلات الحالة الإحدى عشرة المحروسة — مستخرَجة حرفيًا من دوال legal_*_transition في db/migrations/
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% مراجعة 2026-09-19: كانت «الثماني» صحيحة يوم كُتبت، وصارت إحدى عشرة — نزلت
+%% legal_payment_plan_transition و legal_installment_transition (0142)
+%% و legal_message_template_transition (0153). والعدد يُقاس هكذا، لا من الذاكرة:
+%%   grep -rhoE "legal_[a-z_]+_transition" db/migrations/*.up.sql | sort -u
 %% القاعدة ٥: الحالات آلات حالة. لا تحديث حرّ لعمود حالة، ولا من مدير المركز.
 %% أي انتقال غير مذكور هنا يرفضه المشغّل في القاعدة بالكود المذكور على كل صندوق.
 %% ---
@@ -262,6 +321,8 @@ flowchart LR
 %% وكانت غائبة عن هذا المخطّط تمامًا. أُضيفت في المجموعة الأخيرة بلون مختلف:
 %% الفرق ليس شكليًّا — المحروسة ترفض الانتقال غير الشرعي، وغير المحروسة تقبل أي
 %% قيمة من قائمتها. مَن يصمّم شاشة على الثانية يصمّم على قاعدة لا يفرضها أحد.
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart LR
   classDef start fill:#EDF1E5,stroke:#ADC793,color:#22333A
   classDef mid   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
@@ -353,6 +414,46 @@ flowchart LR
     r2["ACCEPTED"]:::good
     r3["REJECTED"]:::bad
     r1 --> r2 & r3
+  end
+
+  subgraph PP["خطة التقسيط — 0142"]
+    direction LR
+    q1["DRAFT"]:::start
+    q2["ACTIVE"]:::mid
+    q3["RETIRED"]:::bad
+    q1 --> q2 & q3
+    q2 --> q3
+  end
+
+  subgraph INST["القسط — 0142"]
+    direction LR
+    n1["PENDING"]:::start
+    n2["DUE"]:::mid
+    n3["OVERDUE"]:::mid
+    n4["PAID"]:::good
+    n5["CANCELLED"]:::bad
+    n6["SUPERSEDED"]:::bad
+    n1 --> n2 & n4
+    n2 --> n4 & n3
+    n3 --> n4
+    n4 -->|"دفعة أُلغيت — الجدول يتبع المال"| n1
+    n4 --> n2
+    n1 --> n5 & n6
+    n2 --> n5 & n6
+    n3 --> n5 & n6
+  end
+
+  subgraph MT["قالب الرسائل — 0153"]
+    direction LR
+    g1["DRAFT"]:::start
+    g2["SUBMITTED"]:::mid
+    g3["APPROVED"]:::good
+    g4["REJECTED"]:::bad
+    g1 --> g2
+    g2 --> g3 & g4
+    g2 -->|"تعديل يُرجعه مسوّدة"| g1
+    g3 --> g1
+    g4 --> g1
   end
 
   subgraph FREE["أعمدة حالة بلا دالة انتقال — CHECK وحده يحرسها"]

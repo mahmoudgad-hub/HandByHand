@@ -1,11 +1,24 @@
 %% رحلة الطفل — من طلب الالتحاق إلى التقرير والفاتورة
-%% المصدر: docs/architect/02-new-child-flow.md + db/migrations/0005,0018 + api/internal/http/server.go
-%% العُقد الكورالية الثلاث = الحلقات المقطوعة: مبنيّة في القاعدة، بلا مسار API.
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% المصدر: db/migrations/0005,0018,0125,0154 · api/internal/http/server.go (١٣٤ مسارًا)
+%% ---
+%% ما تغيّر عن النسخة السابقة: كانت ثلاث عُقد كوراليّة تقول «حلقات مقطوعة».
+%% اثنتان أُغلقتا وبقيت واحدة — والقياس لكل واحدة مكتوب على عقدتها.
+%% ---
+%% وأهمّ من ذلك: الهجرة 0154 (HBH-058) نزلت وغيّرت لحظة ميلاد الأسرة —
+%% لكن مفتاحها ENROLMENT_REQUIRE_VERIFICATION = false ولا مسار يُصدر إثبات جوال،
+%% فالمسار الحيّ اليوم هو v1 سطرًا بسطر. المخطّط يرسم الحيّ، ويُظهر الفرع النائم.
+%% ---
+%% تنبيه: لا تترك سطر تعليق فارغًا (%% وحده) — Mermaid 11 يقرؤه موجّهًا فيفشل.
+%% وبعد كل تعديل: bash scripts/sync-figma-preview.sh (preview.html ناتج بناء).
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart TB
   classDef stage  fill:#FFFFFF,stroke:#E8E1D4,stroke-width:1px,color:#22333A
   classDef entry  fill:#EDF1E5,stroke:#ADC793,stroke-width:1px,color:#22333A
   classDef broken fill:#FBE6E1,stroke:#EB7866,stroke-width:2px,color:#C4543F
   classDef money  fill:#DEEEF0,stroke:#C6E0E7,stroke-width:1px,color:#22333A
+  classDef asleep fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
 
   subgraph S1["١ — الالتحاق"]
     direction RL
@@ -19,12 +32,22 @@ flowchart TB
 
   subgraph S2["٢ — التأسيس"]
     direction RL
-    B1["ملفّ طفل + وليّ أمر<br/>hbh.convert_enrolment<br/>رقم طفل من next_number"]
-    B2["حساب دخول للأسرة<br/>لا مسار — الحلقة ١"]
-    B3["إسناد لأخصائي — caseload<br/>لا مسار — الحلقة ٢"]
-    B4["خطة وأهداف<br/>قراءة فقط — الحلقة ٣"]
+    B1["ملفّ طفل + وليّ أمر + حساب دخول<br/>convert_enrolment → grant_portal_access<br/>معاملة واحدة — 0125 · 0126"]
+    B2["إسناد لأخصائي<br/>caseload — مسار CRUD موجود<br/>ودالّة محروسة ناقصة: HBH-049"]
+    B3["خطة وأهداف<br/>plans · goals · measurements<br/>قيد ck_plans_active_approved أُسقط في 0090"]
+    B4["التقييم وقائمة الانتظار<br/>مبنيّان في القاعدة: 0022 · 0023<br/>صفر مسار في server.go"]
     B1 --> B2 --> B3 --> B4
   end
+
+  subgraph V2["الفرع النائم — 0154 نزلت والمفتاح مطفأ · يبدّل هذه المرحلة وحدها"]
+    direction RL
+    W1["إثبات الجوال<br/>verify_mobile — 0131<br/>لا مسار يُصدره بعد: EN-07"]
+    W2["الإرسال يُنشئ الأسرة<br/>submit_enrolment v2 — OD-01<br/>الكيانات تولد هنا لا عند التحويل"]
+    W3["التحويل يؤكّد فقط<br/>convert_enrolment v3<br/>لا يُنشئ شيئًا لطلب مرتبط"]
+    W1 --> W2 --> W3
+  end
+
+  W3 -.->|"حين يصير ENROLMENT_REQUIRE_VERIFICATION = true"| B1
 
   subgraph S3["٣ — التشغيل اليومي"]
     direction RL
@@ -32,7 +55,7 @@ flowchart TB
     C2["الحجز<br/>POST /appointments<br/>BOOKED"]
     C3["تأكيد ثم حضور<br/>PATCH /appointments/{id}/status<br/>CONFIRMED → CHECKED_IN"]
     C4["بدء الجلسة<br/>POST /appointments/{id}/session<br/>IN_PROGRESS"]
-    C5["بثّ مباشر<br/>POST /sessions/{id}/stream<br/>بموافقة LIVE_VIEW فقط"]
+    C5["بثّ مباشر أو استشارة أونلاين<br/>POST /sessions/{id}/stream — LIVE_VIEW<br/>أو meetings — 0120"]
     C1 --> C2 --> C3 --> C4 --> C5
   end
 
@@ -49,18 +72,19 @@ flowchart TB
   subgraph S5["٥ — المال والرضا"]
     direction RL
     E1["بيع باقة<br/>POST /children/{id}/packages<br/>ACTIVE"]
-    E2["فاتورة<br/>create_invoice → add_line → issue<br/>DRAFT → ISSUED"]
+    E2["فاتورة<br/>create_invoice → add_line → issue<br/>DRAFT → ISSUED · HB050"]
     E3["دفعة<br/>PARTIALLY_PAID → PAID"]
     E4["استبيان الرضا<br/>GET /nps/due · POST /nps/{id}/response"]
     E1 --> E2 --> E3 --> E4
   end
 
   A4 --> B1
-  B4 --> C1
+  B3 --> C1
   C5 --> D1
   D5 --> E1
 
   class A1 entry
-  class A2,A3,A4,B1,C1,C2,C3,C4,C5,D1,D2,D3,D4,D5 stage
-  class B2,B3,B4 broken
+  class A2,A3,A4,B1,B2,B3,C1,C2,C3,C4,C5,D1,D2,D3,D4,D5 stage
+  class B4 broken
   class E1,E2,E3,E4 money
+  class W1,W2,W3 asleep
