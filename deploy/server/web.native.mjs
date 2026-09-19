@@ -136,6 +136,23 @@ function servable(file) {
 
 const indexFile = path.join(ROOT, 'index.html');
 
+// A URL path may not carry a control byte. `%00` decodes to a NUL - it does
+// NOT throw in decodeURIComponent - and fs.stat() then throws synchronously
+// on a path containing it, killing an unsupervised process.
+//
+// Written as codepoints, not a regex with the literal bytes in the source.
+// The byte form works, but it turns the file binary to grep, and an editor,
+// a reformat, or a heredoc copy can swallow the bytes with NO visible change
+// in review - leaving a guard that is present in shape and matches nothing,
+// and the process dies again. charCodeAt against 0x20 is plain ASCII and
+// survives any copy; there is nothing here for a tool to eat.
+function hasControlByte(s) {
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) < 0x20) return true;
+  }
+  return false;
+}
+
 function proxy(req, res) {
   const upstream = http.request(
     { host: '127.0.0.1', port: API, path: req.url, method: req.method, headers: req.headers },
@@ -292,7 +309,18 @@ function sendFile(res, file, isIndex) {
         ? 'public, max-age=31536000, immutable'
         : 'no-cache',
   });
-  fs.createReadStream(file).pipe(res);
+  // An unhandled 'error' on a read stream throws, and a throw from this
+  // async callback reaches nothing above it - it becomes an uncaught
+  // exception and ends the process. The file can vanish between the stat
+  // that found it and this read, or be unreadable; on any such error the
+  // headers are already sent, so the only honest close is to end the
+  // response, not to write a 500 body on top of a 200.
+  const stream = fs.createReadStream(file);
+  stream.on('error', (e) => {
+    console.error('read failed after stat:', file, e && e.code);
+    res.destroy();
+  });
+  stream.pipe(res);
 }
 
 function handler(req, res) {
@@ -345,7 +373,7 @@ function handler(req, res) {
     let target;
     try {
       const decoded = decodeURIComponent(url);
-      if (/[ -]/.test(decoded)) {
+      if (hasControlByte(decoded)) {
         res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' })
            .end('400 bad request');
         return;
@@ -400,7 +428,42 @@ function handler(req, res) {
     });
 }
 
-http.createServer(handler).listen(PORT, HTTP_BIND, () => {
+// The whole handler behind a guard, not any single statement in it. Three
+// separate throws in this one function have taken the process down -
+// decodeURIComponent on a bad escape, fs.stat on a NUL byte, a read stream
+// erroring after the stat - and each was fixed at its own site while the
+// NEXT one waited. This catches the synchronous class wherever it lands:
+// nothing this handler throws should end a process that has no supervisor
+// to restart it.
+function safeHandler(req, res) {
+  try {
+    handler(req, res);
+  } catch (e) {
+    console.error('handler threw:', e && e.stack ? e.stack : e);
+    try {
+      if (!res.headersSent) {
+        res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+      }
+      res.end('500');
+    } catch { /* response already gone */ }
+  }
+}
+
+// And the process-level backstop, because the async half - a throw inside a
+// callback or a timer - never reaches the try above, and there is no
+// supervisor (HBH-113 criterion 3, still the owner's call). For a static
+// file server holding no shared mutable state between requests, staying up
+// on an unforeseen error is safer than dying under nohup. It is logged, not
+// swallowed silently, so the fault is still visible in the log.
+process.on('uncaughtException', (e) => {
+  console.error('uncaughtException (kept alive, no supervisor):',
+    e && e.stack ? e.stack : e);
+});
+process.on('unhandledRejection', (e) => {
+  console.error('unhandledRejection (kept alive):', e && e.stack ? e.stack : e);
+});
+
+http.createServer(safeHandler).listen(PORT, HTTP_BIND, () => {
   console.log(`http  ${HTTP_BIND}:${PORT}  ${ROOT}  /api -> 127.0.0.1:${API}`);
   if (PUBLIC_HTTP) {
     console.log('      PUBLIC IN THE CLEAR - login codes and tokens are readable on the wire');
@@ -411,7 +474,7 @@ http.createServer(handler).listen(PORT, HTTP_BIND, () => {
 if (PUBLIC_TLS) {
   const cert = fs.readFileSync(path.join(TLS_DIR, 'cert.pem'));
   const key = fs.readFileSync(path.join(TLS_DIR, 'key.pem'));
-  https.createServer({ cert, key }, handler).listen(TLS_PORT, '0.0.0.0', () => {
+  https.createServer({ cert, key }, safeHandler).listen(TLS_PORT, '0.0.0.0', () => {
     console.log(`https 0.0.0.0:${TLS_PORT} PUBLIC - reachable from the internet`);
   });
 }
