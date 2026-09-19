@@ -333,9 +333,24 @@ function handler(req, res) {
     // It is one request, from anyone, needing no account and no knowledge
     // of the system. site.native.mjs guards the identical call; this file
     // did not, and this file is the one serving all four origins.
+    // Wrapping decodeURIComponent was not enough. `%E0%A4%A` throws in the
+    // decode and the catch handles it - but `%00` does NOT throw: it
+    // decodes to a NUL byte, sails past this try, and then fs.stat() below
+    // throws SYNCHRONOUSLY on a path containing \0 and takes the process
+    // down anyway. Enumerating throwers is a losing game - the next one
+    // throws in a third place. So the decoded path is checked against an
+    // ALLOW rule and rejected before it is used at all: no NUL, no control
+    // byte. What a URL path may legitimately contain is the small set;
+    // what can crash a downstream call is open-ended.
     let target;
     try {
-      target = path.resolve(ROOT, '.' + decodeURIComponent(url));
+      const decoded = decodeURIComponent(url);
+      if (/[ -]/.test(decoded)) {
+        res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' })
+           .end('400 bad request');
+        return;
+      }
+      target = path.resolve(ROOT, '.' + decoded);
     } catch {
       res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' })
          .end('400 bad request');
