@@ -107,7 +107,11 @@
 .fld__hint, .fld__err { font-size: 14px; line-height: 1.7; margin-top: 8px; }
 .fld__hint { color: #456773; }
 .fld__err { color: #a72e29; }
-.hbh-btn--primary { min-height: 54px; border-radius: 12px; background: #007e87; border-color: #007e87; font-size: 16px; gap: 10px; margin-top: 18px; }
+/* Shape only. The fill and the text colour come from .hbh-btn--primary in
+   hbh-shared.css: a screen that repaints the primary button gives the
+   portal a second teal, and this journey had grown two on consecutive
+   steps. */
+.hbh-btn--primary { min-height: 54px; border-radius: 12px; font-size: 16px; gap: 10px; margin-top: 18px; }
 .hbh-signin__or { margin: 16px 0; color: #526c74; }
 .hbh-signin__join { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 66px; border: 1px solid #83b7b9; border-radius: 12px; background: #f7fbfa; color: #075963; font-size: 15px; }
 .hbh-signin__join > span { flex: 1; }

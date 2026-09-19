@@ -44,7 +44,9 @@
 .portal-redesign .seg__i.is-on { background:#fff; color:#087886; font-weight:700; box-shadow:0 2px 6px #173c4910; }
 .portal-redesign :is(.hbh-btn,.request-toggle) { min-height:46px; font-size:14px; }
 .portal-redesign :is(a,button,input,select,textarea):focus-visible { outline:3px solid #148998; outline-offset:3px; }
-.portal-redesign .hbh-btn--primary { background:#087e89; border-color:#087e89; }
+/* The primary button's fill is --hbh-teal-600 and is asked for once, in
+   hbh-shared.css. The rule that stood here repainted it a third teal for
+   every screen inside the shell. */
 .portal-redesign .hbh-btn--ghost { background:#fff; border-color:#cbdcde; color:#255866; }
 .portal-redesign .schedule-workspace { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,310px); gap:24px; align-items:start; }
 .portal-redesign .schedule-content > .grp { font-size:14px; font-weight:700; color:#496872; margin:24px 0 12px; }
