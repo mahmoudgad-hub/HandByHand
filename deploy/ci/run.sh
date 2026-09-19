@@ -365,6 +365,46 @@ EOF
     done
   done
 
+  # SOME FILES MUST BE SERVED, SO THE QUESTION BECOMES WHAT IS IN THEM.
+  #
+  # Asking only "is this path answered?" cannot see the worst thing that
+  # has been published here. config.js is served BY NECESSITY - it carries
+  # the portal's address, which is why the page works - so no allow list
+  # and no 404 rule will ever hide it. What mattered was its contents: six
+  # mentions of OTP_ECHO and a sentence stating that
+  # POST /api/v1/auth/otp/request returns the login code in its body, and
+  # that anyone knowing a mobile number can sign in as its owner.
+  #
+  # The explanation is not a secret in itself; it is a map. It saves its
+  # reader the single question that separates someone who knows from
+  # someone who does not. So it is checked by content, and a green run
+  # after the 404 rules pass no longer implies the surface is clean.
+  local -a CONTENT=(
+    '/config.js|OTP_ECHO'
+    '/config.js|dev_code'
+    '/index.html|OTP_ECHO'
+  )
+  local entry cpath cpat body hits
+  for origin in $origins; do
+    for entry in "${CONTENT[@]}"; do
+      cpath="${entry%%|*}"; cpat="${entry##*|}"
+      body="$(curl -s -m 15 "$origin$cpath" 2>/dev/null)"
+      if [ -z "$body" ]; then
+        printf '  OK       %-42s %-28s -> not served\n' "$origin" "$cpath" >>"$log"
+        continue
+      fi
+      hits="$(printf '%s' "$body" | grep -c "$cpat" || true)"
+      if [ "$hits" -gt 0 ]; then
+        printf '  ANSWERED %-42s %-28s -> served, %s mention(s) of %s\n' \
+               "$origin" "$cpath" "$hits" "$cpat" >>"$log"
+        bad_count=$((bad_count + 1))
+      else
+        printf '  OK       %-42s %-28s -> served, no %s\n' \
+               "$origin" "$cpath" "$cpat" >>"$log"
+      fi
+    done
+  done
+
   cat "$log"
   local probes; probes="$(count_probes <"$log")"
   info "executed: $probes probe(s)"
