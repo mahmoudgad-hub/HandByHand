@@ -26,11 +26,15 @@
   <rect width="1440" height="1160" fill="#FAF6EE"/>
 
   <!-- ============ العنوان ============ -->
-  <text class="h" x="1392" y="66" text-anchor="end" font-size="27" fill="#22333A">Hand By Hand — رحلة الطفل</text>
-  <text x="1392" y="96" text-anchor="end" font-size="13" fill="#4C6069">من طلب الالتحاق إلى التقرير والفاتورة — خمس مراحل، وحلقةٌ واحدة باقية مقطوعة</text>
-  <text x="1392" y="116" text-anchor="end" font-size="10.5" fill="#4C6069"
+  <text class="h" x="1392" y="58" text-anchor="end" font-size="27" fill="#22333A">Hand By Hand — رحلة الطفل</text>
+  <text x="1392" y="86" text-anchor="end" font-size="13" fill="#4C6069">من طلب الالتحاق إلى التقرير والفاتورة — خمس مراحل، وحلقةٌ واحدة باقية مقطوعة</text>
+  <text x="1392" y="104" text-anchor="end" font-size="10.5" fill="#4C6069"
         font-family="ui-monospace,'Cascadia Mono','Consolas',monospace">
     2026-09-19  ·  162 *.up.sql on disk (max 0162, not the applied ledger)  ·  134 API routes  ·  لا يحرسه فحص: دقيقٌ لحظةَ قياسه لا بعدها
+  </text>
+  <text x="1392" y="122" text-anchor="end" font-size="10.5" fill="#6B5836"
+        font-family="ui-monospace,'Cascadia Mono','Consolas',monospace">
+    الفرع المتقطّع مبنيٌّ ومُطفأ — لا غير مبنيّ:  sys_params.ENROLMENT_REQUIRE_VERIFICATION = false
   </text>
 
   <!-- ============ ١ — الالتحاق ============ -->
@@ -72,7 +76,7 @@
   <!-- ============ ٢ — التأسيس ============ -->
   <rect x="32" y="318" width="1376" height="146" rx="20" fill="#FBF7F0" stroke="#E8E1D4"/>
   <text class="h band" x="1392" y="344" text-anchor="end">٢ — التأسيس</text>
-  <text class="n" x="1140" y="344" text-anchor="end">حلقتان أُغلقتا وواحدة باقية · والهجرة 0154 غيّرت هذه المرحلة ومفتاحها مطفأ</text>
+  <text class="n" x="1140" y="344" text-anchor="end">حلقتان أُغلقتا وواحدة باقية · و0154 تبدّل هذه المرحلة كلَّها، مبنيّةً ومُطفأة بالراية أعلاه</text>
 
   <g filter="url(#cardShadow)">
     <rect x="1092" y="358" width="300" height="92" rx="14" fill="#FFFFFF" stroke="#E8E1D4"/>
@@ -227,6 +231,6 @@
     db/migrations/0005,0018,0125,0154  ·  api/internal/http/server.go  ·  docs/business-analysis/10-FEAT §7
   </text>
   <text x="1392" y="1116" text-anchor="end" font-size="10.5" fill="#6B5836">
-    والفرع النائم: 0154 نزلت وغيّرت لحظة ميلاد الأسرة — ENROLMENT_REQUIRE_VERIFICATION = false ولا مسار يُصدر إثبات جوال، فالحيّ اليوم هو v1
+    0154 تنقل ميلاد الأسرة إلى لحظة الإرسال، ولا مسار يُصدر إثبات جوال بعد (EN-07) — فالحيّ اليوم v1
   </text>
 </svg>
