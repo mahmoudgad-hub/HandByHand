@@ -43,7 +43,7 @@ fi
 
 run "database container"        bash scripts/db.sh up
 run "migrations"                bash scripts/db.sh migrate
-run "schema-wide conventions"   bash scripts/db.sh verify p00
+run "schema-wide conventions"   bash scripts/db.sh verify 00
 run "build the API image"       bash scripts/api.sh build
 run "start the API"             bash scripts/api.sh up
 

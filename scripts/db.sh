@@ -296,7 +296,7 @@ ledger_pin() {
 
 cmd_verify() {
   wait_healthy
-  local want="${1:-}" failed=0 phase
+  local want="${1:-}" failed=0 phase ran=0
   # A glob into an array - see the note in cmd_reset about $(ls).
   local suites=("$ROOT"/tests/db/p*_verify.sql)
   local f
@@ -339,6 +339,7 @@ cmd_verify() {
     fi
 
     echo "=================== phase $phase ==================="
+    ran=$((ran + 1))
     run_suite "$f" "$phase" || failed=1
   done
 
@@ -347,6 +348,28 @@ cmd_verify() {
   if [ "$current" != "$pinned" ]; then
     echo "*** RUN VOID - the schema moved during the final suite" >&2
     echo "    schema pinned: ${pinned} / now ${current:-<unreadable>}" >&2
+    return 2
+  fi
+
+  # RAN NOTHING IS NOT A PASS. bring-up.sh called this with "p00" while the
+  # phase derived from p00_verify.sql is "00" - so `want` matched no file,
+  # the loop skipped every suite, `failed` stayed 0, and the schema-wide
+  # conventions gate - the only guard over rules 3 and 4 - printed OK on
+  # every deploy having run zero checks. It sat that way a week. Same
+  # family as ng test returning 0 with no browser: the exit code alone does
+  # not say anything ran.
+  if [ "$ran" -eq 0 ]; then
+    if [ -n "$want" ]; then
+      echo "*** phase '$want' matched no suite - it ran nothing, which is not a pass" >&2
+      printf '    available phases:' >&2
+      for f in "${suites[@]}"; do
+        [ -e "$f" ] && printf ' %s' \
+          "$(basename "$f" | sed 's/^p\([0-9a-z]*\)_verify\.sql$/\1/')" >&2
+      done
+      echo >&2
+    else
+      echo "*** no p*_verify.sql suites under tests/db - nothing to run" >&2
+    fi
     return 2
   fi
 

@@ -571,7 +571,7 @@ cmd_verify() {
   echo "verify: pinned to image ${pinned#sha256:}"
   echo "verify: pinned to schema ${pinned_schema} (migrations|highest)"
 
-  local want="${1:-}" status=0 batch
+  local want="${1:-}" status=0 batch ran=0
 
   # A glob into an array and an index. Never $(ls): this project lives
   # under a path containing a space - "سطح المكتب" - and command
@@ -638,8 +638,29 @@ cmd_verify() {
     # An explicit assignment, never "${rc:-1}". A `local out rc=0`
     # swallows the exit code of the command on the same line, which
     # reads a failure as a pass - a bug this project already paid for.
+    ran=$((ran + 1))
     API_BASE="http://127.0.0.1:$API_PORT" bash "$f" || status=1
   done
+
+  # RAN NOTHING IS NOT A PASS - the same guard db.sh verify needed. A
+  # `want` that matches no suite ("a1" against batches named "1") skips
+  # every one, leaves status 0, and returns success having tested
+  # nothing. Refused here too, with the batch names that would have
+  # matched, so a typo in a phase argument fails loudly instead of green.
+  if [ "$ran" -eq 0 ]; then
+    if [ -n "$want" ]; then
+      echo "*** batch '$want' matched no suite - it ran nothing, which is not a pass" >&2
+      printf '    available batches:' >&2
+      for ((i = 0; i < ${#suites[@]}; i++)); do
+        [ -e "${suites[i]}" ] && printf ' %s' \
+          "$(basename "${suites[i]}" | sed 's/^a\([0-9]*\)_verify\.sh$/\1/')" >&2
+      done
+      echo >&2
+    else
+      echo "*** no a*_verify.sh suites under tests/api - nothing to run" >&2
+    fi
+    return 1
+  fi
 
   # And once at the end: the last suite could have been the one that was
   # overtaken, and a check that only runs BEFORE each suite would miss it.
