@@ -69,7 +69,7 @@ cmd_fmt()  { go_in_container 'gofmt -w . && gofmt -l .' && cmd_lint; }
 #
 # The pattern deliberately matches only the two writers this service
 # answers through. Anything else is somebody's loop counter.
-cmd_lint() {
+cmd_status_codes() {
   local hits
   hits="$(grep -rnE 'write(Error|ErrorFields|JSON)\(w, r?e?q?,? *[0-9]{3},' \
             "$ROOT/api/internal" 2>/dev/null | grep -v '^\s*//' | grep -v '// ' || true)"
@@ -79,7 +79,36 @@ cmd_lint() {
     return 1
   fi
   echo 'lint: no raw status codes'
-  cmd_doc_drift && cmd_search_drift && cmd_like_escape && cmd_code_drift && cmd_route_coverage
+}
+
+# EVERY GUARD RUNS, AND EVERY ONE THAT FALLS IS NAMED.
+#
+# This chain was written as `a && b && c && d && e`, which stops at the
+# first failure - so a guard behind a failing one reports NOTHING, and
+# reads exactly like a guard that passed. route-coverage sat last in
+# that chain while doc-drift was red, and four live routes went
+# unmeasured for days without a single line saying so.
+#
+# It is the same shape this project has already paid for twice: a suite
+# that dies before its verdict is read as a success, and `ng test`
+# returning zero with no browser. A check that cannot report is not a
+# check, and one hidden behind another cannot report.
+#
+# So the failures are COLLECTED, not short-circuited, and the summary
+# names each guard that fell. Ordering stops mattering, which is the
+# point: nobody has to remember to keep the important one first.
+cmd_lint() {
+  local guards=(cmd_status_codes cmd_doc_drift cmd_search_drift
+                cmd_like_escape cmd_code_drift cmd_route_coverage)
+  local g failed=()
+  for g in "${guards[@]}"; do
+    "$g" || failed+=("${g#cmd_}")
+  done
+  if [ ${#failed[@]} -gt 0 ]; then
+    echo "lint: ${#failed[@]} guard(s) failed: ${failed[*]}" >&2
+    return 1
+  fi
+  echo "lint: all ${#guards[@]} guards passed"
 }
 
 # cmd_like_escape refuses a LIKE pattern that obeys what somebody typed.
