@@ -323,8 +323,30 @@ function handler(req, res) {
 
     // Resolve inside ROOT and verify it stayed there: a path of
     // ../../.env would otherwise be served to anyone who asks.
-    const target = path.resolve(ROOT, '.' + decodeURIComponent(url));
-    if (!target.startsWith(ROOT)) {
+    // decodeURIComponent THROWS on a malformed escape, and an exception
+    // thrown inside this handler is not caught by anything: node prints
+    // the stack and the PROCESS EXITS. `GET /%E0%A4%A` - eleven bytes -
+    // takes down whichever origin receives it, and these run under nohup
+    // with nothing to restart them. Reproduced in a container: the server
+    // answered 200, then the malformed request, then nothing at all.
+    //
+    // It is one request, from anyone, needing no account and no knowledge
+    // of the system. site.native.mjs guards the identical call; this file
+    // did not, and this file is the one serving all four origins.
+    let target;
+    try {
+      target = path.resolve(ROOT, '.' + decodeURIComponent(url));
+    } catch {
+      res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' })
+         .end('400 bad request');
+      return;
+    }
+    // ROOT + separator, not ROOT alone: a bare prefix test also accepts a
+    // sibling whose name merely STARTS with the root's - "/srv/site-old"
+    // passes `startsWith("/srv/site")` - so it would serve a directory
+    // nobody meant to publish. Equality is allowed separately because the
+    // root itself is a legitimate target.
+    if (target !== ROOT && !target.startsWith(ROOT + path.sep)) {
       res.writeHead(403).end('forbidden');
       return;
     }
