@@ -1,0 +1,90 @@
+/* =====================================================================
+   The drop-downs hung off the top bar: alerts, the account menu, the
+   quick links and their previews, and the drawer's account block.
+
+   Three features, ONE shape - a panel anchored to a control in the bar,
+   sharing its placement, its height and the way it closes. That shared
+   shape is why they are one file and not three. If any one of them
+   outgrows ~3 kB on its own, it leaves with its own file.
+   ===================================================================== */
+.ops-quick-links{display:flex;gap:14px}
+.ops-quick-link{position:relative;width:48px;height:48px;display:grid;place-items:center;border:1px solid #dce9ee;border-radius:16px;color:inherit;text-decoration:none}
+.ops-quick-link b{position:absolute;top:-5px;inset-inline-end:-4px;background:#d94343;color:white;border:2px solid white;border-radius:20px;font-size:10px;min-width:19px;text-align:center;padding:2px}
+.ops-account-trigger{margin:0;background:#fffaf5;color:var(--hbh-ink);border:1px solid #eee1d5;border-radius:18px;min-height:60px;max-width:280px}
+.ops-account-avatar{background:white;border:1px solid #e0e9ed;width:40px;height:40px}
+.ops-account-copy{min-width:0}
+.ops-account-name{display:block;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ops-account-role{margin-inline-start:4px;color:var(--hbh-muted);font-weight:600}
+.ops-account-copy small{display:block;font-size:11px;color:#78909b;margin-top:4px}
+.ops-account-menu{top:84px;left:24px;width:280px;border-radius:20px;padding:12px;box-shadow:0 16px 36px #073f5915}
+@media(max-width:1100px){
+  .ops-quick-links{gap:6px}
+  .ops-account-trigger{max-width:210px}
+}
+@media(max-width:900px){
+  .ops-account-trigger{margin-inline-start:auto;min-height:48px;max-width:230px}
+  .ops-account-menu{top:66px;left:12px}
+  .ops-quick-link{width:44px;height:44px}
+  .ops-quick-links{gap:8px}
+}
+@media(max-width:520px){
+  .ops-account-copy{display:none}
+  .ops-account-trigger{min-width:60px;gap:4px}
+  .ops-quick-links{gap:5px}
+}
+.ops-new-alert{position:fixed;bottom:24px;left:24px;z-index:80;width:380px;max-width:calc(100vw - 32px);box-sizing:border-box;background:#fff;border:1px solid #d5e7e9;border-top:4px solid #008b99;border-radius:20px;box-shadow:0 16px 48px #073f5930;color:#073f59;overflow:hidden;animation:ops-alert-enter .2s ease-out}
+.ops-alert-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f3faf9}
+.ops-alert-kicker{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#52737b}
+.ops-alert-dot{width:7px;height:7px;background:#009a8e;border-radius:50%}
+.ops-alert-close{display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:9px;background:transparent;color:#5b7880;cursor:pointer}
+.ops-alert-items{padding:8px 12px}
+.ops-alert-item{display:flex;align-items:center;gap:12px;padding:14px 8px;color:inherit;text-decoration:none;border-radius:12px}
+.ops-alert-item+.ops-alert-item{border-top:1px solid #e9f0f1}
+.ops-alert-item:hover{background:#f1f9f9}
+.ops-alert-icon{width:46px;height:46px;flex:none;display:grid;place-items:center;border-radius:14px;background:#e4f5f6;color:#008b99}
+.ops-alert-icon--task{background:#fff2db;color:#aa700c}
+.ops-alert-copy{flex:1;min-width:0}
+.ops-alert-copy strong{display:block;font-size:17px;line-height:1.6}
+.ops-alert-copy small{display:block;font-size:12px;color:#68828a;margin-top:3px}
+.ops-alert-count{min-width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:#eaf6f5;color:#087782;font-size:13px;padding-inline:4px}
+.ops-alert-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid #e5eff0;background:#fbfdfd}
+.ops-alert-footer span{font-size:11px;color:#6d858b}
+.ops-alert-footer button{font:inherit;font-size:12px;font-weight:700;min-height:38px;padding:8px 14px;border:1px solid #cfe5e7;background:#eaf6f5;color:#087782;border-radius:10px;cursor:pointer}
+.ops-alert-close:hover,.ops-alert-footer button:hover{background:#dcefee}
+.ops-new-alert a:focus-visible,.ops-new-alert button:focus-visible{outline:2px solid #008b99;outline-offset:2px}
+@keyframes ops-alert-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:520px){
+  .ops-new-alert{left:16px;bottom:max(16px,env(safe-area-inset-bottom));width:calc(100vw - 32px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .ops-new-alert{animation:none}
+}
+button.ops-quick-link{background:white;cursor:pointer}
+.ops-quick-panel{position:fixed;inset:82px auto auto 16px;margin:0;padding:0;width:360px;max-width:calc(100vw - 32px);border:1px solid #d8e8eb;border-radius:18px;background:white;color:#073f59;box-shadow:0 18px 48px #073f5926;overflow:hidden}
+.ops-quick-panel header{padding:18px;background:#f0f9f8;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ops-quick-panel header span{font-size:11px;color:#69828b}
+.ops-quick-list{max-height:min(380px,55vh);overflow:auto}
+.ops-quick-list>a{display:flex;gap:12px;align-items:center;padding:16px;text-decoration:none;color:inherit;border-bottom:1px solid #edf2f3}
+.ops-quick-list>a:hover{background:#f5fafb}
+.ops-quick-list strong{display:block;font-size:13px;line-height:1.7}
+.ops-quick-list small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#748b93;font-size:12px;margin-top:4px}
+.ops-preview-icon{display:grid;place-items:center;width:36px;height:36px;flex:none;border-radius:11px;background:#e8f5f5;color:#008994}
+.ops-preview-dot{width:7px;height:7px;border-radius:50%;background:#008b99;flex:none;margin-inline-start:auto}
+.ops-quick-list p{padding:26px 18px;text-align:center;color:#748b93;font-size:13px}
+.ops-quick-all{display:flex;justify-content:center;gap:14px;padding:15px;color:#007e89;text-decoration:none;font-weight:700;font-size:13px;background:#f7fbfb}
+.ops-quick-panel a:focus-visible{outline:2px solid #008b99;outline-offset:-3px}
+@media(max-width:900px){
+  .ops-quick-panel{top:66px}
+}
+.ops-drawer-account { flex:none; margin:14px -16px 0; padding:14px 16px max(14px,env(safe-area-inset-bottom)); background:#fafdfe; color:#104a64; border-radius:24px 24px 0 0; }
+.ops-drawer-account > div,.ops-drawer-account > button { display:flex; align-items:center; gap:12px; width:100%; padding:12px; border:1px solid #e0ecef; border-radius:13px; box-sizing:border-box; }
+.ops-drawer-account b { font-size:13px; overflow-wrap:anywhere; }
+.ops-drawer-account small { display:block; font-size:11px; color:#648395; margin-top:3px; }
+.ops-drawer-account button { margin-top:8px; min-height:46px; background:#eff7f9; color:inherit; font:inherit; font-size:13px; cursor:pointer; }
+@media(max-width:380px){
+  .ops-account-trigger { min-width:48px; padding:3px; }
+  .ops-account-trigger > hbh-icon { display:none; }
+}
+.ops-sidebar-footer:focus-visible,.ops-drawer-account button:focus-visible { outline:2px solid #39b8c4; outline-offset:-3px; }
+button.ops-alert-item{width:100%;text-align:start;font:inherit;cursor:pointer}
+button.ops-alert-item:disabled{cursor:wait;opacity:.7}

@@ -42,7 +42,17 @@ import { NavEntry, NavGroup, OPS_NAV, OPS_NAV_GROUPS } from './nav';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AccountDialog, RouterOutlet, RouterLink, Icon, TranslatePipe, NgTemplateOutlet, ModalDialog, ActionDialogHost, RecordDrawerHost, UserAvatar],
   templateUrl: './shell.html',
-  styleUrls: ['./shell.css', './shell-controls.css'],
+  // Order is load-bearing and is NOT alphabetical: frame -> topbar ->
+  // panels -> nav is the order these rules stood in shell-controls.css
+  // before it was split (HBH-129). Same rules in another order is a
+  // different screen.
+  styleUrls: [
+    './shell.css',
+    './shell-frame.css',
+    './shell-topbar.css',
+    './shell-panels.css',
+    './shell-nav.css',
+  ],
 })
 export class Shell {
   private readonly router = inject(Router);
