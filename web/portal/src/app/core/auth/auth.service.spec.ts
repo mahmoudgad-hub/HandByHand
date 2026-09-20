@@ -141,3 +141,69 @@ describe('AuthService.signOut and the device', () => {
     expect(keys().child).toBeNull();
   });
 });
+
+/**
+ * The masked number answers ONE question - "is that the number you meant?" -
+ * and it can only answer it with the part that tells two numbers apart.
+ *
+ * It used to take the first three characters of what the service was given,
+ * and the service is given the canonical international form. So every
+ * Egyptian parent was shown `+20 **** 3838`: a prefix that every Egyptian
+ * number has, hiding the operator prefix (010/011/012/015) that is the one
+ * thing distinguishing them. The template's own comment said no country code
+ * should appear there; the code had stopped agreeing with it.
+ *
+ * The root is the one CLAUDE.md already names for the database: a value
+ * normalised on the way in blinds every read of it that still expects the
+ * form the user typed. There it made comparisons match zero rows. Here it
+ * blinded a display - quieter, because nothing returns empty and nobody
+ * greps a screen.
+ */
+describe('AuthService.maskedMobile', () => {
+  let auth: AuthService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthApi, useClass: FixtureAuthApi },
+        AuthService,
+      ],
+    });
+    auth = TestBed.inject(AuthService);
+  });
+
+  it('masks the number as the parent writes it, not as the service stores it', fakeAsync(() => {
+    auth.requestOtp('+201225283838', '01225283838').subscribe();
+    tick(400);
+
+    expect(auth.maskedMobile()).toBe('012 **** 3838');
+  }));
+
+  it('keeps the last four, so the digits a parent checks are the ones shown', fakeAsync(() => {
+    auth.requestOtp('+201095006478', '01095006478').subscribe();
+    tick(400);
+
+    expect(auth.maskedMobile()).toBe('010 **** 6478');
+  }));
+
+  it('works for a country with no trunk zero', fakeAsync(() => {
+    // Kuwait: the table gives it an empty national prefix, so the national
+    // form has no leading 0 and the meaningful head is simply its first three.
+    auth.requestOtp('+96551234567', '51234567').subscribe();
+    tick(400);
+
+    expect(auth.maskedMobile()).toBe('512 **** 4567');
+  }));
+
+  it('is empty before a number is outstanding, and empty again after', fakeAsync(() => {
+    expect(auth.maskedMobile()).toBe('');
+
+    auth.requestOtp('+201225283838', '01225283838').subscribe();
+    tick(400);
+    expect(auth.maskedMobile()).not.toBe('');
+
+    auth.abandonChallenge();
+    expect(auth.maskedMobile()).toBe('');
+  }));
+});

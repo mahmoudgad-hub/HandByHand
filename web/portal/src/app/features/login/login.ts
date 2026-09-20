@@ -184,7 +184,11 @@ export class Login implements AfterViewInit {
     this.failed.set(false);
     this.noCode.set('');
     const mobile = this.buildMobile(this.phone.value);
-    this.auth.requestOtp(mobile).subscribe({
+    // Both forms go over: the canonical one the service verifies against, and
+    // the national one, which is the only one worth showing back. This screen
+    // is where the national form still exists - once buildMobile has run,
+    // nothing downstream can rebuild it without knowing the country.
+    this.auth.requestOtp(mobile, this.buildNational(this.phone.value)).subscribe({
       next: (challenge) => {
         this.busy.set(false);
         if (challenge.outcome !== 'SENT') {
@@ -223,6 +227,21 @@ export class Login implements AfterViewInit {
     const local = country.prefix && trimmed.startsWith(country.prefix)
       ? trimmed.slice(country.prefix.length) : trimmed;
     return `${country.code}${local}`;
+  }
+
+  /**
+   * The number as this country writes it at home, for showing back to the
+   * parent. It is buildMobile's mirror and reads the same two fields, so a
+   * country with no trunk prefix keeps its number unchanged - and pasting an
+   * international number still produces the national form, because the box
+   * has already stripped the calling code by then.
+   */
+  private buildNational(rawPhone: string): string {
+    const country = this.selectedCountry();
+    const trimmed = this.normalizeDigits(rawPhone).replace(/\D/g, '');
+    return country.prefix && !trimmed.startsWith(country.prefix)
+      ? `${country.prefix}${trimmed}`
+      : trimmed;
   }
 
   private normalizeDigits(value: string): string {

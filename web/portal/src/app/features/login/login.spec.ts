@@ -49,14 +49,16 @@ describe('Login country and mobile input', () => {
     expect(element('#phoneCountry').textContent?.trim()).toBe('+20');
     input('#phone', '01012345678');
     submit();
-    expect(requestOtp).toHaveBeenCalledOnceWith('+201012345678');
+    expect(requestOtp).toHaveBeenCalledOnceWith('+201012345678', '01012345678');
   });
 
   it('accepts a pasted international number and Arabic digits without duplication or truncation', () => {
     input('#phone', '+٢٠ ١٠ ١٢٣٤ ٥٦٧٨');
     expect(element<HTMLInputElement>('#phone').value).toBe('1012345678');
     submit();
-    expect(requestOtp).toHaveBeenCalledOnceWith('+201012345678');
+    // The national form is rebuilt for the display line, so a pasted
+    // international number is still shown back the way Egypt writes it.
+    expect(requestOtp).toHaveBeenCalledOnceWith('+201012345678', '01012345678');
   });
 
   it('filters calling codes by prefix in either digit script and clears the search on reopening', () => {
@@ -78,7 +80,7 @@ describe('Login country and mobile input', () => {
     choose('+966');
     input('#phone', '0501234567');
     submit();
-    expect(requestOtp).toHaveBeenCalledOnceWith('+966501234567');
+    expect(requestOtp).toHaveBeenCalledOnceWith('+966501234567', '0501234567');
   });
 
 
@@ -115,7 +117,7 @@ describe('Login country and mobile input', () => {
     choose('+965');
     input('#phone', '51234567');
     submit();
-    expect(requestOtp).toHaveBeenCalledOnceWith('+96551234567');
+    expect(requestOtp).toHaveBeenCalledOnceWith('+96551234567', '51234567');
   });
 
   it('offers exactly the countries the database stores mobiles for', () => {
