@@ -453,14 +453,23 @@ function safeHandler(req, res) {
 // callback or a timer - never reaches the try above, and there is no
 // supervisor (HBH-113 criterion 3, still the owner's call). For a static
 // file server holding no shared mutable state between requests, staying up
-// on an unforeseen error is safer than dying under nohup. It is logged, not
-// swallowed silently, so the fault is still visible in the log.
+// on an unforeseen error is safer than dying under nohup.
+//
+// Every hit is COUNTED and printed with a fixed prefix. The real danger of
+// keep-alive is not the exception, it is what it becomes: "the site answers
+// sometimes" reads as a bug somewhere unrelated and burns weeks. `UNCAUGHT`
+// turns that into a number anyone can ask for - `grep -c UNCAUGHT log`. And
+// a count that stays 0 (the expectation, after the three guards above) is
+// itself the evidence to hand the owner with criterion 3: the backstop was
+// never reached, so the supervisor loop is an improvement, not a rescue.
+let uncaughtCount = 0;
 process.on('uncaughtException', (e) => {
-  console.error('uncaughtException (kept alive, no supervisor):',
+  console.error(`UNCAUGHT #${++uncaughtCount} exception (kept alive, no supervisor):`,
     e && e.stack ? e.stack : e);
 });
 process.on('unhandledRejection', (e) => {
-  console.error('unhandledRejection (kept alive):', e && e.stack ? e.stack : e);
+  console.error(`UNCAUGHT #${++uncaughtCount} rejection (kept alive):`,
+    e && e.stack ? e.stack : e);
 });
 
 http.createServer(safeHandler).listen(PORT, HTTP_BIND, () => {
