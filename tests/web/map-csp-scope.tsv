@@ -1,0 +1,20 @@
+# W4 scope: the policy blocks that decide whether the contact map can draw.
+#
+# file <TAB> anchor <TAB> why this block serves the site
+#
+# The ANCHOR is a literal line fragment that opens the policy block. It is
+# how this file names a block without naming a line number - numbers drift
+# with every edit above them, and a scan that follows a drifted number
+# reads whatever moved into it.
+#
+# A missing file or a missing anchor is an ABORT, not a pass: a renamed
+# constant would otherwise leave this suite measuring nothing and printing
+# green, which is the failure this project has paid for more than once.
+#
+# NOT IN SCOPE, and deliberately: the `const CSP = [` block in
+# web.native.mjs. That is the policy for the portal and the console, which
+# show no map and have no business reaching a tile server. Widening it to
+# satisfy this suite would hand the two origins that carry the whole API a
+# permission they have no use for.
+deploy/server/site.native.mjs	'content-security-policy': [	serves site/ on 8093 via site.native.sh
+deploy/server/web.native.mjs	const CSP_STATIC = [	serves site/ on 8093 via web.native.sh (site:8093:8445:site:static)
