@@ -73,6 +73,19 @@ eq family 'Z-14 and issues no code' '' "$(jstr "$BODY" dev_code)"
 # =====================================================================
 # Z-09..Z-13  triage, one statement per transition
 # =====================================================================
+# Z-11a - WHILE THE ROW IS STILL 'NEW'.
+#
+# The refusal for a hand-typed ENROLLED has two shapes and the start
+# state picks which: from NEW the transition itself is not in
+# hbh.legal_enrolment_transition, so the state machine answers first
+# (HB090 -> 409). From ASSESSMENT_BOOKED the transition IS legal - it is
+# the move conversion makes - and what refuses is ck_enr_converted
+# (23514 -> 400). Both are asked, in the only order that can ask them.
+req PATCH "/api/v1/enrolments/$APP" '{"status":"ENROLLED"}' "$RECEPTION" >/dev/null
+eq triage 'Z-11a from NEW the state machine refuses the jump' 'ILLEGAL_TRANSITION' "$(jstr "$BODY" code)"
+eq triage 'Z-11a and the application is untouched' 'NEW' \
+  "$(psqlq "SELECT status FROM hbh.enrolment_applications WHERE application_id=$APP")"
+
 eq triage 'Z-09 reception records the call' '204' \
   "$(req PATCH "/api/v1/enrolments/$APP" '{"status":"CONTACTED","note_ar":"تم الاتصال"}' "$RECEPTION")"
 # ASSESSMENT_BOOKED without a time is refused, and that is the handler
@@ -101,8 +114,8 @@ eq triage 'Z-10 the row really moved' 'ASSESSMENT_BOOKED' \
 # what conversion leaves behind. A status screen that could set it would
 # mark a family enrolled with no child and no guardian row anywhere.
 req PATCH "/api/v1/enrolments/$APP" '{"status":"ENROLLED"}' "$RECEPTION" >/dev/null
-eq triage 'Z-11 ENROLLED cannot be typed, only converted into' 'VALIDATION' "$(jstr "$BODY" code)"
-eq triage 'Z-11 and the application did not move' 'ASSESSMENT_BOOKED' \
+eq triage 'Z-11b from ASSESSMENT_BOOKED the CHECK refuses it' 'VALIDATION' "$(jstr "$BODY" code)"
+eq triage 'Z-11b and the application did not move' 'ASSESSMENT_BOOKED' \
   "$(psqlq "SELECT status FROM hbh.enrolment_applications WHERE application_id=$APP")"
 
 eq triage 'Z-12 the application becomes a family' '201' \
