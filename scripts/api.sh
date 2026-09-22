@@ -308,8 +308,26 @@ cmd_doc_drift() {
   local doc="$ROOT/docs/02-api-contract.md" tmp missing
   tmp="$(mktemp -d)"
 
-  grep -oE '"/api/v1/[^"]*"' "$ROOT/api/internal/http/server.go" \
+  # Comment lines are stripped BEFORE the capture. This guard reads a
+  # quoted "/api/v1/..." as a registered route, and a comment that merely
+  # names a path - a note explaining the rate limiter, say - is not one. A
+  # perfectly correct file went red that way, and a guard that cries wolf
+  # on a sound tree teaches people to stop reading it. Only full comment
+  # lines (^\s*//) are dropped; a real registration never lives on one.
+  grep -vE '^[[:space:]]*//' "$ROOT/api/internal/http/server.go" \
+    | grep -oE '"/api/v1/[^"]*"' \
     | tr -d '"' | sed 's/{[a-z_]*}/{}/g' | sort -u > "$tmp/routes"
+
+  # Zero routes is a failure, not a pass. If this ever reads nothing - the
+  # file moved, the pattern rotted, server.go was renamed - the guard has
+  # gone blind, and "all 0 routes appear in the contract" is the greenest
+  # possible lie. Same family as cmd_like_escape refusing an empty read.
+  if [ ! -s "$tmp/routes" ]; then
+    echo 'doc-drift: read ZERO routes from server.go - the guard is blind, not clean' >&2
+    echo "  -> api/internal/http/server.go" >&2
+    rm -rf "$tmp"
+    return 1
+  fi
   grep -oE '(…)?/api/v1/[a-z0-9/{}_-]+|…/[a-z0-9/{}_-]+' "$doc" \
     | sed 's/{[a-z_]*}/{}/g' | sed 's:/$::' | sort -u > "$tmp/doc"
 
