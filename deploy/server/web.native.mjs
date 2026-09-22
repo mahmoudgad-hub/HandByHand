@@ -270,12 +270,21 @@ const CSP = [
 // stricter policy it already had in nginx. Widening it to match the
 // portal would hand the one origin that faces the internet permissions
 // it has no use for.
+//
+// The one exception is img-src: the contact page draws a map from
+// OpenStreetMap tiles, so that host - and only that host - is allowed as
+// an image source. site.native.mjs already permits it; this file serves
+// the same site/ directory and did not, so every tile was blocked and the
+// map came up empty on the published domain while the console's map field
+// looked fine. The tile host is named here to match site/contact-map.js;
+// the SPA policy above (CSP) is deliberately NOT widened - the portal and
+// console have no map and no reason to reach OpenStreetMap.
 const CSP_STATIC = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   'font-src https://fonts.gstatic.com',
-  "img-src 'self' data:",
+  "img-src 'self' data: https://tile.openstreetmap.org",
   "frame-ancestors 'none'",
   "form-action 'self'",
 ].join('; ');
