@@ -71,7 +71,7 @@
 @if (lines().length) {
   <hbh-table-pages #tablePage1 [rows]="lines()">
 <div class="hbh-tablewrap"><table class="hbh-table rd__table">
-      <thead><tr><th>{{ 'field.description' | t }}</th><th>{{ 'field.qty' | t }}</th><th>{{ 'field.unitPrice' | t }}</th><th>{{ 'field.amount' | t }}</th></tr></thead>
+      <thead><tr><th>{{ 'field.description' | t }}</th><th>{{ 'field.qty' | t }}</th><th>{{ 'field.unitPrice' | t }}</th><th>{{ 'field.amount' | t }}</th>@if (canRemoveLines()) {<th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th>}</tr></thead>
       <tbody>
         @for (line of tablePage1.visible(); track line['line_id']) {
           <tr>
@@ -79,6 +79,10 @@
             <td dir="ltr">{{ format.number(num(line, 'qty')) }}</td>
             <td dir="ltr">{{ money(num(line, 'unit_amt')) }}</td>
             <td dir="ltr">{{ money(num(line, 'line_amt')) }}</td>
+            @if (canRemoveLines()) {
+              <!-- A draft's line can go; the service refuses once issued. -->
+              <td><button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="askRemove(line)"><hbh-icon name="ic-trash" /> {{ 'drawer.removeLine' | t }}</button></td>
+            }
           </tr>
         }
       </tbody>
@@ -118,3 +122,33 @@
     </a>
   }
 </div>
+
+<!-- Removing a line is the one destructive verb in this drawer, so it is
+     asked twice: the line is named, and the confirm is its own dialog
+     above the drawer (Escape closes only this). -->
+@if (removing(); as line) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelRemove()" aria-labelledby="removeLineTitle">
+    <div class="hbh-sheet__box">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="removeLineTitle">{{ 'drawer.removeLine' | t }}</h2>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.cancel' | t" (click)="cancelRemove()">
+          <hbh-icon name="ic-x" />
+        </button>
+      </div>
+      <div class="hbh-sheet__body">
+        <p>{{ 'drawer.removeLineConfirm' | t: { name: text(line, 'description_ar') } }}</p>
+        @if (removeError()) {
+          <p class="hbh-signin__err" role="alert"><hbh-icon name="ic-warn" /><span>{{ removeError() | t }}</span></p>
+        }
+      </div>
+      <div class="hbh-sheet__foot">
+        <button class="hbh-btn hbh-btn--primary" type="button" [disabled]="removeBusy()" (click)="confirmRemove()">
+          {{ (removeBusy() ? 'action.saving' : 'drawer.removeLine') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="removeBusy()" (click)="cancelRemove()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
+    </div>
+  </dialog>
+}

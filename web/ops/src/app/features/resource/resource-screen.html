@@ -20,7 +20,7 @@
 } @else {
 @if (spec().resource === 'guardians') {
 <div class="family-top ops-family-template"><div class="hbh-pagehead"><div class="hbh-pagehead__left"><div><h1 class="hbh-pagehead__title">{{ spec().titleKey | t }}</h1><p class="hbh-pagehead__sub">{{ spec().subKey | t }}</p></div></div><div class="hbh-pagehead__actions"><button type="button" class="hbh-btn hbh-btn--primary" (click)="startCreate()" [disabled]="!canWrite()"><hbh-icon name="ic-plus" /> {{ 'action.add' | t }}</button></div></div>
-<div class="family-tools"><div class="hbh-filters"><div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" [attr.aria-label]="'search.guardians' | t" [attr.placeholder]="'search.guardians' | t" [formControl]="search" (keyup.enter)="searchNow()"></div><button type="button" class="hbh-btn hbh-btn--ghost" (click)="search.setValue(''); searchNow()">مسح <hbh-icon name="ic-refresh" /></button><button type="button" class="hbh-btn hbh-btn--ghost" (click)="searchNow()">بحث</button>
+<div class="family-tools"><div class="hbh-filters"><div class="hbh-field hbh-field--grow"><hbh-icon name="ic-search" /><input type="search" [attr.aria-label]="'search.guardians' | t" [attr.placeholder]="'search.guardians' | t" [formControl]="search" (keyup.enter)="searchNow()"></div><button type="button" class="hbh-btn hbh-btn--ghost" (click)="search.setValue(''); searchNow()">{{ 'action.clear' | t }} <hbh-icon name="ic-refresh" /></button><button type="button" class="hbh-btn hbh-btn--ghost" (click)="searchNow()">{{ 'action.search' | t }}</button>
 <div class="family-filterline"><hbh-archive-switch [checked]="showArchived()" [disabled]="loading()" (changed)="toggleArchived()" /><label class="family-page-size ops-page-size"><span>{{ 'table.rowsPerPage' | t }}</span><select [attr.aria-label]="'table.rowsPerPage' | t" [value]="pageSize()" (change)="changePageSize($any($event.target).value)" [disabled]="loading()">@for(size of [10,20,30,50];track size){<option [value]="size">{{size}}</option>}</select></label></div></div></div></div>
 } @else {
 <div class="hbh-pagehead">
@@ -32,8 +32,8 @@
   </div>
   <div class="hbh-pagehead__actions">
     @if (spec().resource === 'rooms' || spec().resource === 'cameras') {
-      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()" [disabled]="loading()">تحديث</button>
-      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="roomCards.set(!roomCards())">عرض الكروت / الجدول</button>
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()" [disabled]="loading()">{{ 'action.refresh' | t }}</button>
+      <button class="hbh-btn hbh-btn--ghost" type="button" (click)="roomCards.set(!roomCards())">{{ 'rooms.toggleCards' | t }}</button>
     }
     @if (canWrite()) {
 
@@ -131,17 +131,17 @@
         @if (spec().resource === 'rooms') {
           <p>{{ cell(row, 'code') }}</p><p>{{ cell(row, 'notes_ar') }}</p>
           @if (roomSessions()[cell(row, 'room_id')]; as session) {
-            <span class="hbh-badge hbh-badge--success">جلسة جارية اليوم</span>
+            <span class="hbh-badge hbh-badge--success">{{ 'rooms.liveNow' | t }}</span>
             <p>{{ nestedName(session, 'child') }} · {{ nestedName(session, 'therapist') }}</p>
-            @if (auth.can('LIVE.VIEW')) {<a class="hbh-btn hbh-btn--ghost" [routerLink]="['/sessions', session['session_id'], 'live']">عرض الجلسة</a>}
-          } @else {<p>{{ roomSessions()[cell(row, 'room_id')] === null ? 'لا توجد جلسة جارية ضمن مواعيد اليوم' : (!auth.can('SESSION.START') || roomsFailed()[cell(row, 'room_id')] ? 'حالة الجلسات غير متاحة' : 'جارٍ تحميل حالة الجلسات…') }}</p>}
-        } @else {<p>رقم الغرفة: {{ cell(row, 'room_id') }}</p><p><span class="hbh-badge" [class.hbh-badge--success]="row['status'] === 'ONLINE'">الحالة المسجلة: {{ cameraStatus(row) }}</span></p><p>آخر اتصال: {{ row['last_seen_at'] ? format.shortDate(cell(row,'last_seen_at')) + ' · ' + format.time(cell(row,'last_seen_at')) : 'لم يُسجل اتصال' }}</p>}
-        @if (canWrite() && !isArchived(row)) {<button class="hbh-btn hbh-btn--ghost" type="button" (click)="startEdit(row)"><hbh-icon name="ic-edit" /> تعديل البيانات</button>}
+            @if (auth.can('LIVE.VIEW')) {<a class="hbh-btn hbh-btn--ghost" [routerLink]="['/sessions', session['session_id'], 'live']">{{ 'rooms.openSession' | t }}</a>}
+          } @else {<p>{{ (roomSessions()[cell(row, 'room_id')] === null ? 'rooms.noLiveSession' : (!auth.can('SESSION.START') || roomsFailed()[cell(row, 'room_id')] ? 'rooms.sessionsUnavailable' : 'rooms.sessionsLoading')) | t }}</p>}
+        } @else {<p>{{ 'cameras.roomNo' | t }}: {{ cell(row, 'room_id') }}</p><p><span class="hbh-badge" [class.hbh-badge--success]="row['status'] === 'ONLINE'">{{ 'cameras.recordedStatus' | t }}: {{ cameraStatus(row) }}</span></p><p>{{ 'cameras.lastSeen' | t }}: {{ row['last_seen_at'] ? format.shortDate(cell(row,'last_seen_at')) + ' · ' + format.time(cell(row,'last_seen_at')) : ('cameras.neverSeen' | t) }}</p>}
+        @if (canWrite() && !isArchived(row)) {<button class="hbh-btn hbh-btn--ghost" type="button" (click)="startEdit(row)"><hbh-icon name="ic-edit" /> {{ 'guardian.edit' | t }}</button>}
       </article>
     }
   </div>
 } @else if (spec().resource === 'guardians') {
-<div class="hbh-tablewrap family-master"><table class="hbh-table"><thead><tr><th>#</th><th>اسم ولي الأمر</th><th>رقم الهوية</th><th>رقم الجوال</th><th>البريد الإلكتروني</th><th>نوع العلاقة</th><th>عدد الأبناء</th><th>المدينة</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>
+<div class="hbh-tablewrap family-master"><table class="hbh-table"><thead><tr><th>#</th><th>{{ 'family.colName' | t }}</th><th>{{ 'field.nationalId' | t }}</th><th>{{ 'field.mobile' | t }}</th><th>{{ 'field.email' | t }}</th><th>{{ 'field.relationship' | t }}</th><th>{{ 'family.colChildren' | t }}</th><th>{{ 'field.city' | t }}</th><th>{{ 'field.status' | t }}</th><th>{{ 'field.actions' | t }}</th></tr></thead><tbody>
 @for (row of rows(); track row['guardian_id']; let i=$index) {<tr [class.family-selected]="selectedGuardian()?.['guardian_id'] === row['guardian_id']"><td>{{ (page()-1)*limit()+i+1 }}</td><td><a class="family-name" [routerLink]="['/guardians', row['guardian_id']]">{{ cell(row,'full_name_ar') }}</a></td><td dir="ltr">{{ cell(row,'national_id') || '—' }}</td><td dir="ltr">{{ cell(row,'mobile') || '—' }}</td><td dir="ltr">{{ cell(row,'email') || '—' }}</td><td>{{ cell(row,'relationship') || '—' }}</td><td>{{ guardianCounts()[cell(row,'guardian_id')] ?? '—' }}</td><td>{{ cell(row,'city') || '—' }}</td><td><span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span></td><td><div class="family-row-actions"><button class="family-view" type="button" (click)="openGuardian(row)"><hbh-icon name="ic-eye" /> عرض</button> @if (canWrite() && !isArchived(row)) { <button class="family-view" type="button" aria-label="تعديل بيانات ولي الأمر" title="تعديل البيانات" (click)="startEdit(row)"><hbh-icon name="ic-edit" /></button> }</div></td></tr>}
 </tbody></table></div>
 } @else {
@@ -268,10 +268,10 @@
   @if (selectedGuardian(); as guardian) {
     <dialog class="family-dialog" [class.family-dialog--profile]="familyChild()" hbhModal (dismissed)="familyChild() ? familyChild.set(null) : closeGuardian()" aria-labelledby="familyDialogTitle">
       <header class="family-dialog__head">
-        <h2 id="familyDialogTitle">@if(familyChild(); as selectedChild) { ملف الطفل — {{ cell(selectedChild.row, 'full_name_ar') }} } @else { أبناء ولي الأمر — {{ cell(guardian, 'full_name_ar') }} }</h2>
-        <button class="hbh-iconbtn" type="button" aria-label="إغلاق" (click)="familyChild() ? familyChild.set(null) : closeGuardian()"><hbh-icon name="ic-x" /></button>
+        <h2 id="familyDialogTitle">@if(familyChild(); as selectedChild) { {{ 'family.childFile' | t: { name: cell(selectedChild.row, 'full_name_ar') } }} } @else { {{ 'family.childrenOf' | t: { name: cell(guardian, 'full_name_ar') } }} }</h2>
+        <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.close' | t" (click)="familyChild() ? familyChild.set(null) : closeGuardian()"><hbh-icon name="ic-x" /></button>
       </header>
-    <section class="family-detail" aria-label="تفاصيل ولي الأمر">
+    <section class="family-detail" [attr.aria-label]="'family.detailLabel' | t">
       @if(familyChild(); as selectedChild) {
         <ng-container *ngComponentOutlet="childProfileComponent; injector: selectedChild.injector" />
       } @else {
@@ -279,10 +279,10 @@
       @else if (familyFailed()) { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadFamily()" /> }
       @else {
         <div class="hbh-tablewrap"><table class="hbh-table family-children">
-          <thead><tr><th>الاسم</th><th>كود الحالة</th><th>تاريخ الميلاد</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+          <thead><tr><th>{{ 'field.name' | t }}</th><th>{{ 'field.childNo' | t }}</th><th>{{ 'field.birthDate' | t }}</th><th>{{ 'field.status' | t }}</th><th>{{ 'field.actions' | t }}</th></tr></thead>
           <tbody>@for (child of familyChildren(); track child['child_id']) {
             <tr><td>@if(auth.can('CHILD.VIEW_ALL')) {<button type="button" class="family-name" (click)="openFamilyChild(child)">{{ cell(child, 'full_name_ar') }}</button>} @else {{{ cell(child, 'full_name_ar') }}}</td><td dir="ltr">{{ cell(child, 'child_no') }}</td><td dir="ltr">{{ cell(child, 'birth_date') || '—' }}</td><td><span class="hbh-badge">{{ cell(child, 'status') === 'ACTIVE' ? 'نشط' : cell(child, 'status') }}</span></td><td>@if(auth.can('CHILD.VIEW_ALL')) {<button type="button" class="hbh-btn hbh-btn--ghost" (click)="openFamilyChild(child)">عرض الملف <hbh-icon name="ic-chevron" /></button>}</td></tr>
-          } @empty { <tr><td colspan="5">لا يوجد أطفال مرتبطون بولي الأمر.</td></tr> }</tbody>
+          } @empty { <tr><td colspan="5">{{ 'family.noChildren' | t }}</td></tr> }</tbody>
         </table></div>
       }
       }
@@ -414,8 +414,8 @@
         }
 
         @if (editing(); as guardian) {
-          @if (spec().resource === 'guardians') { <div class="hbh-fld"><label class="hbh-fld__l" for="guardian-child-count">عدد الأبناء (محسوب تلقائيًا)</label><div class="hbh-fld__box"><input id="guardian-child-count" readonly [value]="guardianCounts()[cell(guardian, 'guardian_id')] ?? (isNew() ? 0 : '—')"></div></div>
-          <div class="hbh-fld"><label class="hbh-fld__l" for="guardian-record-status">الحالة</label><div class="hbh-fld__box"><input id="guardian-record-status" readonly [value]="statusKey(guardian) | t"></div></div>
+          @if (spec().resource === 'guardians') { <div class="hbh-fld"><label class="hbh-fld__l" for="guardian-child-count">{{ 'family.childCountAuto' | t }}</label><div class="hbh-fld__box"><input id="guardian-child-count" readonly [value]="guardianCounts()[cell(guardian, 'guardian_id')] ?? (isNew() ? 0 : '—')"></div></div>
+          <div class="hbh-fld"><label class="hbh-fld__l" for="guardian-record-status">{{ 'field.status' | t }}</label><div class="hbh-fld__box"><input id="guardian-record-status" readonly [value]="statusKey(guardian) | t"></div></div>
         }
         }
         @if (formError()) {

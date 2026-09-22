@@ -43,32 +43,8 @@
                     (retry)="load()" />
   } @else if (data(); as summary) {
 
-    @if (summary.attention.length) {
-      <div class="sec welcome-attention">
-        <div class="sec__head">
-          <h2 class="sec__t">{{ 'welcome.attention' | t }}</h2>
-        </div>
-        <div class="stack">
-          @for (item of summary.attention; track item.kind + item.childId) {
-            <button class="row" type="button" (click)="openAttention(item)">
-              <span class="row__ic" [class]="attentionTint(item)">
-                <hbh-icon [name]="attentionIcon(item)" />
-              </span>
-              <span class="row__b">
-                <span class="row__t">{{ item.titleKey | t }}</span>
-                <span class="row__s">
-                  @if (item.childName) {
-                    {{ item.childName }} <s>&middot;</s>
-                  }
-                  <!-- Worded and formatted here, where the app's one money
-                       formatter and its translations live. -->
-                  {{ attentionDetail(item) }}
-                </span></span></button>
-          }
-        </div>
-      </div>
-    }
-
+    <!-- "What needs your attention" lives on the front page now, for every
+         child at once: this screen is the door, not a dashboard. -->
     <div class="sec__head">
       <h2 class="sec__t">{{ 'welcome.children' | t }}</h2>
       <span class="hbh-muted">{{ 'welcome.childrenHint' | t }}</span>

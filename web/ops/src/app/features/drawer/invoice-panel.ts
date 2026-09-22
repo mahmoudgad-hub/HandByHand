@@ -1,8 +1,13 @@
 import { TablePages } from '@hbh/shared/ui/table-pages';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
 import { FormatService } from '@hbh/shared/format/format.service';
+import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
+import { I18nService } from '@hbh/shared/i18n/i18n.service';
+import { ToastService } from '@hbh/shared/toast/toast.service';
+import { DayApi } from '../../core/ops/day-api';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon, IconName } from '@hbh/shared/icon/icon';
 import { Row } from '../../core/api/ops-api';
@@ -35,7 +40,7 @@ interface Offer {
 @Component({
   selector: 'hbh-invoice-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TablePages, RouterLink, Icon, TranslatePipe],
+  imports: [TablePages, RouterLink, Icon, TranslatePipe, ModalDialog],
   templateUrl: './invoice-panel.html',
   styleUrl: './record-panel.css',
 })
@@ -45,8 +50,14 @@ export class InvoicePanel {
   readonly guardians = input<readonly Row[] | null>(null);
   readonly guardiansState = input<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   readonly act = output<DrawerStep>();
+  /** Fires after a line was removed here, so the host re-reads the invoice and tells the screen behind. */
+  readonly changed = output<void>();
 
   private readonly dialogs = inject(ActionDialogService);
+  private readonly day = inject(DayApi);
+  private readonly toast = inject(ToastService);
+  private readonly i18n = inject(I18nService);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(OpsAuthService);
   protected readonly format = inject(FormatService);
 
@@ -96,6 +107,54 @@ export class InvoicePanel {
     }
     return out;
   });
+
+  // ---- removing a line: the one verb the billing list never drew ----
+  //
+  // DayApi.removeInvoiceLine has existed as long as the invoice has; no
+  // screen offered it (docs/UX-DETAIL-PAGES.md §5). It is drawn here for
+  // BILLING.MANAGE on a DRAFT only - the same two conditions "add a line"
+  // carries - and the service still decides: an issued invoice refuses it.
+
+  protected readonly canRemoveLines = computed(
+    () => this.status() === 'DRAFT' && this.auth.can('BILLING.MANAGE'));
+  /** The line whose removal is being confirmed, or null. */
+  protected readonly removing = signal<Row | null>(null);
+  protected readonly removeBusy = signal(false);
+  protected readonly removeError = signal('');
+
+  protected askRemove(line: Row): void {
+    this.removeError.set('');
+    this.removing.set(line);
+  }
+
+  protected cancelRemove(): void {
+    if (!this.removeBusy()) {
+      this.removing.set(null);
+    }
+  }
+
+  protected confirmRemove(): void {
+    const line = this.removing();
+    if (!line || this.removeBusy()) {
+      return;
+    }
+    this.removeBusy.set(true);
+    this.removeError.set('');
+    this.day.removeInvoiceLine(this.id(), Number(line['line_id']))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.removeBusy.set(false);
+          this.removing.set(null);
+          this.toast.show(this.i18n.translate('drawer.lineRemoved'));
+          this.changed.emit();
+        },
+        error: () => {
+          this.removeBusy.set(false);
+          this.removeError.set('drawer.removeLineFailed');
+        },
+      });
+  }
 
   protected money(value: number): string {
     return this.format.money(value, this.currency());

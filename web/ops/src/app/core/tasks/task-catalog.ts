@@ -184,11 +184,17 @@ const appointmentTask = (
     const view: Record<string, string> =
       type === 'SESSION_START' && ctx.therapistId !== undefined ? { view: 'mine' } : {};
     const action = APPOINTMENT_TASK_ACTION[type];
+    // A confirmed appointment whose hour has passed with nobody checked in
+    // is still this desk's to settle - attended late, or a no-show - so the
+    // card stays; what it asks changes, because "about to start" would be
+    // false. The state is the same (CONFIRMED); the wording is the clock's.
+    const overdue = type === 'APPOINTMENT_CHECK_IN'
+      && Date.parse(text(row, 'ends_at') || text(row, 'starts_at')) < ctx.now.getTime();
     return {
       id: `${type}:${id}`,
       taskType: type,
       titleKey: `tasks.type.${type}.title`,
-      descriptionKey: `tasks.type.${type}.action`,
+      descriptionKey: overdue ? `tasks.type.${type}.actionPast` : `tasks.type.${type}.action`,
       entityType: 'APPOINTMENT',
       entityId: id,
       entityNo: text(row, 'appointment_no'),

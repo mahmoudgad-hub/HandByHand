@@ -1,17 +1,17 @@
 <div class="hbh-pagehead report-head">
   <div class="hbh-pagehead__left ops-report-identity">
     <button type="button" class="hbh-btn hbh-btn--ghost" (click)="back()">
-      <hbh-icon name="ic-back" /> رجوع لملفّ الطفل
+      <hbh-icon name="ic-back" /> {{ 'report.backToChild' | t }}
     </button>
     <div class="hbh-pagehead__title">
-      {{ reportId() ? 'تعديل التقرير' : 'تقرير تقدّم جديد' }}
+      {{ (reportId() ? 'report.edit' : 'report.new') | t }}
     </div>
     <div class="hbh-pagehead__sub report-context">
       <span><hbh-icon name="ic-user" /> {{ childName() || '—' }}</span>
       @if (reportNo()) { <span dir="ltr" class="mono">{{ reportNo() }}</span> }
       <span class="hbh-badge" [class.hbh-badge--success]="published()"
             [class.hbh-badge--info]="!published()">
-        {{ published() ? 'منشور' : 'مسودّة' }}
+        {{ (published() ? 'status.report.PUBLISHED' : 'status.report.DRAFT') | t }}
       </span>
     </div>
   </div>
@@ -19,7 +19,7 @@
   @if (!loading() && !failed()) {
     <div class="hbh-pagehead__actions">
       <button type="button" class="hbh-btn hbh-btn--ghost" (click)="togglePreview()">
-        <hbh-icon name="ic-eye" /> {{ preview() ? 'عودة للتحرير' : 'معاينة' }}
+        <hbh-icon name="ic-eye" /> {{ (preview() ? 'report.backToEditing' : 'report.preview') | t }}
       </button>
 
     </div>
@@ -59,7 +59,7 @@
   @if (published()) {
     <p class="report-locked">
       <hbh-icon name="ic-lock" />
-      هذا التقرير منشور ووليّ الأمر قد قرأه، فلا يقبل التعديل. لو كان فيه خطأ، اكتب تقريرًا جديدًا يصحّحه.
+      {{ 'report.lockedNote' | t }}
     </p>
   }
 
@@ -69,19 +69,19 @@
          plainly: a preview that looked published would be a promise the
          family has not been given yet. -->
     <article class="report-preview">
-      @if (!published()) { <p class="report-preview__flag">مسودّة — لم تُنشر بعد ولا يراها وليّ الأمر</p> }
-      <h1>{{ title.value || 'بلا عنوان' }}</h1>
+      @if (!published()) { <p class="report-preview__flag">{{ 'report.draftFlag' | t }}</p> }
+      <h1>{{ title.value || ('report.untitled' | t) }}</h1>
       <p class="report-preview__meta">
-        {{ childName() }} · من {{ from.value ? format.dayMonthYear(from.value) : '—' }} إلى {{ to.value ? format.dayMonthYear(to.value) : '—' }}
+        {{ childName() }} · {{ 'report.periodFromTo' | t: { from: from.value ? format.dayMonthYear(from.value) : '—', to: to.value ? format.dayMonthYear(to.value) : '—' } }}
       </p>
-      <div class="report-preview__body">{{ summary.value || 'لا يوجد نص بعد.' }}</div>
+      <div class="report-preview__body">{{ summary.value || ('report.noText' | t) }}</div>
     </article>
   } @else {
     <form class="report-form" (ngSubmit)="save()">
       <label class="hbh-field-block">
-        <span>عنوان التقرير <b aria-hidden="true">*</b></span>
+        <span>{{ 'report.titleLabel' | t }} <b aria-hidden="true">*</b></span>
         <input type="text" [formControl]="title" [attr.aria-required]="true"
-               [readOnly]="published()" placeholder="مثال: تقرير التقدّم — أغسطس ٢٠٢٦">
+               [readOnly]="published()" [attr.placeholder]="'report.titlePlaceholder' | t">
       </label>
 
       <!-- The period in three named parts, not <input type="date">: on an
@@ -91,7 +91,7 @@
            pick on a report that cannot change. -->
       <div class="report-period">
         <div class="hbh-field-block">
-          <label for="report-from">من <b aria-hidden="true">*</b></label>
+          <label for="report-from">{{ 'field.from' | t }} <b aria-hidden="true">*</b></label>
           @if (published()) {
             <p id="report-from">{{ from.value ? format.dayMonthYear(from.value) : '—' }}</p>
           } @else {
@@ -100,7 +100,7 @@
           }
         </div>
         <div class="hbh-field-block">
-          <label for="report-to">إلى <b aria-hidden="true">*</b></label>
+          <label for="report-to">{{ 'field.to' | t }} <b aria-hidden="true">*</b></label>
           @if (published()) {
             <p id="report-to">{{ to.value ? format.dayMonthYear(to.value) : '—' }}</p>
           } @else {
@@ -111,14 +111,14 @@
       </div>
 
       <label class="hbh-field-block">
-        <span>ملخّص التقدّم</span>
+        <span>{{ 'report.summary' | t }}</span>
         <!-- dir="rtl" and start-aligned: a paragraph of clinical Arabic is
              read, not displayed, and centring long-form text makes every
              line start somewhere different. -->
         <textarea [formControl]="summary" rows="14" dir="rtl"
                   [readOnly]="published()"
-                  placeholder="اكتب ما تغيّر خلال الفترة، وما يوصى به في البيت. هذا هو النص الذي يقرأه وليّ الأمر."></textarea>
-        <small>يُحفظ كمسودّة بأي قدر من النص. الملخّص مطلوب عند النشر فقط.</small>
+                  [attr.placeholder]="'report.summaryPlaceholder' | t"></textarea>
+        <small>{{ 'report.summaryHint' | t }}</small>
       </label>
     </form>
   }
@@ -127,12 +127,12 @@
 @if (!loading() && !failed() && !published()) {
   <footer class="ops-form-actions report-actions">
         <button type="button" class="hbh-btn" [class.hbh-btn--primary]="!reportId() || !auth.can('REPORT.PUBLISH')" [disabled]="saving() || changed()" (click)="save()">
-          <hbh-icon name="ic-check" /> {{ saving() ? 'جارٍ الحفظ…' : 'حفظ كمسودّة' }}
+          <hbh-icon name="ic-check" /> {{ (saving() ? 'action.saving' : 'report.saveDraft') | t }}
         </button>
         @if (reportId() && auth.can('REPORT.PUBLISH')) {
           <button type="button" class="hbh-btn hbh-btn--primary"
                   [disabled]="publishing() || dirty()" (click)="publish()">
-            <hbh-icon name="ic-check-circle" /> {{ publishing() ? 'جارٍ النشر…' : 'نشر لوليّ الأمر' }}
+            <hbh-icon name="ic-check-circle" /> {{ (publishing() ? 'report.publishing' : 'report.publishToFamily') | t }}
           </button>
         }
         <button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="saving() || publishing()" (click)="back()">

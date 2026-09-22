@@ -46,7 +46,7 @@
             @if (record(); as row) {
               @if (open.target.entity === 'invoice') {
                 <hbh-invoice-panel [row]="row" [child]="child()" [guardians]="guardians()"
-                                   [guardiansState]="guardiansState()" (act)="run($event)" />
+                                   [guardiansState]="guardiansState()" (act)="run($event)" (changed)="onChanged()" />
               } @else {
                 <hbh-appointment-panel [row]="row" [child]="child()" [guardians]="guardians()"
                                        [guardiansState]="guardiansState()" (act)="run($event)" />

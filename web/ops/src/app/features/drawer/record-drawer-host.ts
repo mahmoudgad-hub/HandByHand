@@ -319,6 +319,15 @@ export class RecordDrawerHost {
     this.run(step);
   }
 
+  /** A panel changed the record itself (a line removed): say so behind, and read it again. */
+  protected onChanged(): void {
+    const state = this.svc.active();
+    if (state) {
+      this.svc.notifyChanged(state.target);
+      this.reload();
+    }
+  }
+
   protected run(step: DrawerStep): void {
     const state = this.svc.active();
     const row = this.record();

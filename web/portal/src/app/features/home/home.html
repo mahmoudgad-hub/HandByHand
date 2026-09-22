@@ -21,6 +21,34 @@
   <div class="hbh-pgrid">
   <div class="hbh-pcol">
 
+    <!-- WHAT NEEDS THE PARENT, for every child in the family. Moved here
+         from the welcome screen (UX-5): that screen is the door and is
+         seen once; this one is opened every day. Each row leads where the
+         thing is dealt with, choosing the child first when the screen is
+         about one child. Drawn only when something is waiting. -->
+    @if (attention().length) {
+      <div class="sec home-attention">
+        <div class="sec__head"><h2 class="sec__t">{{ 'welcome.attention' | t }}</h2></div>
+        <div class="stack">
+          @for (item of attention(); track item.kind + item.childId) {
+            <button class="row" type="button" (click)="openAttention(item)">
+              <span class="row__ic" [class]="'row__ic ' + attentionTint(item)">
+                <hbh-icon [name]="attentionIcon(item)" />
+              </span>
+              <span class="row__b">
+                <span class="row__t">{{ item.titleKey | t }}</span>
+                <span class="row__s">
+                  @if (item.childName) { {{ item.childName }} <s>&middot;</s> }
+                  {{ attentionDetail(item) }}
+                </span>
+              </span>
+              <span class="row__e"><hbh-icon name="ic-chevron" class="row__go" /></span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
     <!-- Next session -->
     <div class="sec">
       @if (summary.nextAppointment; as next) {

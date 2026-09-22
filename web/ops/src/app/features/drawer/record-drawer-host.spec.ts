@@ -314,4 +314,47 @@ describe('RecordDrawerHost', () => {
     fixture.detectChanges();
     expect(el(fixture).querySelector('dialog')).toBeNull();
   });
+  it('removes a line from a draft after a named confirmation, then re-reads the invoice and tells the screen behind', async () => {
+    const fixture = await mount('/billing');
+    const changed: DrawerTarget[] = [];
+    svc.changed$.subscribe((target) => changed.push(target));
+    svc.open({ entity: 'invoice', id: 13, row: { invoice_id: 13, status: 'DRAFT', child: APPT.child }, source: 'LIST' });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/invoices/13').flush({ ...INVOICE, invoice_id: 13, status: 'DRAFT', paid_amt: '0', payments: [] });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/children/5/guardians').flush(GUARDIANS);
+    fixture.detectChanges();
+    const remove = Array.from(el(fixture).querySelectorAll('button')).find((b) => b.textContent?.includes('drawer.removeLine')) as HTMLButtonElement;
+    expect(remove).withContext('a draft line can be removed').toBeDefined();
+    remove.click();
+    fixture.detectChanges();
+    expect(el(fixture).textContent).toContain('drawer.removeLineConfirm');
+    http.expectNone((r) => r.method === 'DELETE');
+    const confirm = Array.from(el(fixture).querySelectorAll('dialog.hbh-sheet button')).find((b) => b.textContent?.includes('drawer.removeLine')) as HTMLButtonElement;
+    confirm.click();
+    http.expectOne((r) => r.method === 'DELETE' && r.url === '/api/v1/invoices/13/lines/1').flush(null);
+    fixture.detectChanges();
+    expect(changed).toEqual([{ entity: 'invoice', id: 13 }]);
+    // Re-read without the handed row: the invoice, then the ledger page that
+    // names its child (the single read carries none), then the guardians.
+    http.expectOne('/api/v1/invoices/13').flush({ ...INVOICE, invoice_id: 13, status: 'DRAFT', paid_amt: '0', payments: [], lines: [] });
+    fixture.detectChanges();
+    http.expectOne((r) => r.url === '/api/v1/invoices').flush({ invoices: [{ invoice_id: 13, status: 'DRAFT', child: APPT.child }], total: 1 });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/children/5/guardians').flush(GUARDIANS);
+    fixture.detectChanges();
+    expect(el(fixture).textContent).toContain('drawer.noLines');
+  });
+
+  it('draws no remove button on an issued invoice, nor for BILLING.VIEW alone', async () => {
+    held = new Set(['CHILD.VIEW_ALL', 'BILLING.VIEW']);
+    const fixture = await mount('/billing');
+    svc.open({ entity: 'invoice', id: 13, row: { invoice_id: 13, status: 'DRAFT', child: APPT.child }, source: 'LIST' });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/invoices/13').flush({ ...INVOICE, invoice_id: 13, status: 'DRAFT' });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/children/5/guardians').flush(GUARDIANS);
+    fixture.detectChanges();
+    expect(el(fixture).textContent).not.toContain('drawer.removeLine');
+  });
 });

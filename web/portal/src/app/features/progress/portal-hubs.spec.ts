@@ -24,13 +24,17 @@ describe('Portal phone more menu', () => {
     ] });
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
-    fixture.nativeElement.querySelector('.pa__head button[aria-haspopup="dialog"]').click();
+    // "More" is the fifth tab now, and the phone header carries the bell.
+    expect(fixture.nativeElement.querySelector('.pa__head a[href="/notifications"]')).not.toBeNull();
+    fixture.nativeElement.querySelector('.pa__tabs button[aria-haspopup="dialog"]').click();
     fixture.detectChanges();
     await fixture.whenStable();
     const modal = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     expect(modal.open).toBeTrue();
     expect(modal.querySelector('a[href="/billing"]')).not.toBeNull();
     expect(modal.querySelector('a[href="/notifications"]')).not.toBeNull();
+    expect(modal.querySelector('a[href="/profile"]')).not.toBeNull();
+    expect(modal.querySelector('a[href="/requests?tab=messages"]')).not.toBeNull();
     modal.dispatchEvent(new Event('cancel', { cancelable: true }));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('dialog')).toBeNull();

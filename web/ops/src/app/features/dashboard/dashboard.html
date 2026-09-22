@@ -8,10 +8,10 @@
     </div>
   </div>
   <div class="hbh-pagehead__actions dashboard-toolbar" (keydown.escape)="toolbarPanel.set(null)">
-    <button class="hbh-iconbtn" type="button" aria-label="المساعدة" title="المساعدة" [attr.aria-expanded]="toolbarPanel() === 'help'" aria-controls="dashboard-toolbar-panel" (click)="toggleToolbar('help')"><hbh-icon name="ic-help" /></button>
-    @if(toolbarPanel()) { <section id="dashboard-toolbar-panel" class="toolbar-panel" aria-live="polite"><div class="toolbar-panel-head"><strong>{{ toolbarPanel() === 'alerts' ? 'الإشعارات والمتابعة' : 'مساعدة لوحة التحكم' }}</strong><button class="hbh-iconbtn" type="button" aria-label="إغلاق" (click)="toolbarPanel.set(null)"><hbh-icon name="ic-x" /></button></div>
+    <button class="hbh-iconbtn" type="button" [attr.aria-label]="'dash.help' | t" [attr.title]="'dash.help' | t" [attr.aria-expanded]="toolbarPanel() === 'help'" aria-controls="dashboard-toolbar-panel" (click)="toggleToolbar('help')"><hbh-icon name="ic-help" /></button>
+    @if(toolbarPanel()) { <section id="dashboard-toolbar-panel" class="toolbar-panel" aria-live="polite"><div class="toolbar-panel-head"><strong>{{ (toolbarPanel() === 'alerts' ? 'dash.alertsPanel' : 'dash.helpPanel') | t }}</strong><button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.close' | t" (click)="toolbarPanel.set(null)"><hbh-icon name="ic-x" /></button></div>
     @if(toolbarPanel() === 'alerts') { @for(task of taskPreview();track task.id){@if(task.primaryAction.drawer){<button type="button" (click)="openTask(task)">{{ task.titleKey | t }} · {{ task.entityDisplayName }}</button>}@else{<a [routerLink]="task.primaryAction.link" [queryParams]="task.primaryAction.query ?? null">{{ task.titleKey | t }} · {{ task.entityDisplayName }}</a>}} @empty {<p>{{ 'dash.noTasks' | t }}</p>} <a routerLink="/tasks">{{ 'dash.allTasks' | t }}</a> }
-    @else {<p>اضغط على أي كارت لفتح قائمته، وعلى التنبيه لمتابعة العناصر المعلّقة. زر تحديث يعيد تحميل بيانات لوحة التحكم.</p>}
+    @else {<p>{{ 'dash.helpText' | t }}</p>}
     </section> }
 
     <button class="hbh-btn hbh-btn--ghost" type="button" (click)="load()">
@@ -58,33 +58,33 @@
      panel saying "not available" and nothing about the work they signed in
      to do. It links to /my-day rather than repeating the list: a second
      place for the same rows is a second place for them to be wrong. -->
-@if(isClinician()) {<section class="dash-panel my-day"><h2>يومك</h2>
-@if(myDayState()==='loading'){<p>جارٍ تحميل جدولك…</p>}
-@else if(myDayState()==='failed'){<p>تعذر تحميل جدولك اليوم.</p>}
-@else if(inProgress(); as row){<div class="my-day__now"><span class="my-day__tag">{{ row['session_id'] ? 'جلسة جارية' : 'الطفل حضر' }}</span><b>{{childName(row) || 'موعد'}}</b><small>{{format.time($any(row['starts_at']))}} — {{format.time($any(row['ends_at']))}}</small>
+@if(isClinician()) {<section class="dash-panel my-day"><h2>{{ 'dash.myDay' | t }}</h2>
+@if(myDayState()==='loading'){<p>{{ 'dash.myDayLoading' | t }}</p>}
+@else if(myDayState()==='failed'){<p>{{ 'dash.myDayFailed' | t }}</p>}
+@else if(inProgress(); as row){<div class="my-day__now"><span class="my-day__tag">{{ (row['session_id'] ? 'dash.sessionRunning' : 'dash.childArrived') | t }}</span><b>{{childName(row) || ('dash.appointment' | t)}}</b><small>{{format.time($any(row['starts_at']))}} — {{format.time($any(row['ends_at']))}}</small>
 <!-- The same three conditions day-spec uses, and for the same reason: this
      is a shortcut to that operation, not a second version of it. -->
 @if(canStart(row)){<button class="hbh-btn hbh-btn--primary my-day__go" type="button" [disabled]="starting() !== null" (click)="startNow(row)"><hbh-icon name="ic-play"/>{{ 'sessions.start' | t }}</button>}
-@else if(row['session_id']){<a class="hbh-btn hbh-btn--ghost my-day__go" routerLink="/sessions"><hbh-icon name="ic-play"/>افتح الجلسة</a>}</div>}
-@else if(nextUp(); as row){<div class="my-day__now"><span class="my-day__tag">التالي</span><b>{{childName(row) || 'موعد'}}</b><small>{{format.time($any(row['starts_at']))}} — {{format.time($any(row['ends_at']))}} · {{statusLabel(row)}}</small>
+@else if(row['session_id']){<a class="hbh-btn hbh-btn--ghost my-day__go" routerLink="/sessions"><hbh-icon name="ic-play"/>{{ 'dash.openSession' | t }}</a>}</div>}
+@else if(nextUp(); as row){<div class="my-day__now"><span class="my-day__tag">{{ 'dash.next' | t }}</span><b>{{childName(row) || ('dash.appointment' | t)}}</b><small>{{format.time($any(row['starts_at']))}} — {{format.time($any(row['ends_at']))}} · {{statusLabel(row)}}</small>
 <!-- No start button here on purpose. The child has not been checked in,
      and the schema starts a session from CHECKED_IN alone - offering it
      would produce NOT_CHECKED_IN every time. -->
 </div>}
-@else {<p>لا توجد مواعيد متبقية لك اليوم.</p>}
-@if(startFailed()){<p class="my-day__err">تعذّر بدء الجلسة. حدّث الصفحة وحاول مرة أخرى.</p>}
+@else {<p>{{ 'dash.noneLeft' | t }}</p>}
+@if(startFailed()){<p class="my-day__err">{{ 'dash.startFailed' | t }}</p>}
 <!-- Only when the day HAS appointments. "0 من 0" on a day off is a line
      that says nothing and still asks to be read. And the phrasing avoids
      an Arabic plural: 1/2/3-10/11+ take four different forms, and a
      template is the wrong place to decide which. -->
-@if(myDayState()==='ready' && myDay().length){<p class="my-day__rest">متبقٍ لك اليوم: {{ format.count(remaining()) }} من {{ format.count(myDay().length) }}</p>}
-<a routerLink="/appointments" [queryParams]="{ view: 'mine' }">فتح يومك ←</a></section>}
-@if(auth.can('APPOINTMENT.BOOK')) {<section class="dash-panel"><h2>نظرة على جدول اليوم</h2><div class="agenda-body">@if(agendaFailed()){<p>تعذر تحميل ملخص اليوم.</p>} @else if(agendaCount() < agendaParts.length){<p>جارٍ تحميل ملخص اليوم…</p>} @else {<div class="agenda-ring" [style.background]="ring()"><div><b>{{agendaTotal()}}</b><small>الإجمالي</small></div></div><ul>@for(part of agendaParts;track part.key){<li><i [style.background]="part.color"></i>{{part.label}}<b>{{agenda()[part.key] || 0}}</b></li>}</ul>}</div><a routerLink="/appointments">عرض الجدول الكامل ←</a></section>}
+@if(myDayState()==='ready' && myDay().length){<p class="my-day__rest">{{ 'dash.remaining' | t: { left: format.count(remaining()), total: format.count(myDay().length) } }}</p>}
+<a routerLink="/appointments" [queryParams]="{ view: 'mine' }">{{ 'dash.openMyDay' | t }} ←</a></section>}
+@if(auth.can('APPOINTMENT.BOOK')) {<section class="dash-panel"><h2>{{ 'dash.agenda' | t }}</h2><div class="agenda-body">@if(agendaFailed()){<p>{{ 'dash.agendaFailed' | t }}</p>} @else if(agendaCount() < agendaParts.length){<p>{{ 'dash.agendaLoading' | t }}</p>} @else {<div class="agenda-ring" [style.background]="ring()"><div><b>{{agendaTotal()}}</b><small>{{ 'dash.total' | t }}</small></div></div><ul>@for(part of agendaParts;track part.key){<li><i [style.background]="part.color"></i>{{ part.labelKey | t }}<b>{{agenda()[part.key] || 0}}</b></li>}</ul>}</div><a routerLink="/appointments">{{ 'dash.openDiary' | t }} ←</a></section>}
 <!-- Absent, not apologetic. An account without CATALOG.MANAGE was shown a
      panel whose entire content was "room data is not available for this
      account" - a permanent sentence about a screen they will never need,
      taking the place a useful panel could have had. -->
-@if(roomsState()!=='denied') {<section class="dash-panel"><h2>غرف المركز</h2><div class="dashboard-rooms">@for(room of rooms();track room['room_id']){<a routerLink="/rooms"><hbh-icon name="ic-door"/><b>{{room['name_ar']}}</b><small>{{room['room_type'] || 'غرفة بالمركز'}}</small></a>} @empty {<p>{{roomsState() === 'loading' ? 'جارٍ التحميل…' : roomsState() === 'ready' ? 'لا توجد غرف مسجلة.' : 'تعذر تحميل بيانات الغرف.'}}</p>}</div>@if(roomsState()==='ready'){<a routerLink="/rooms">عرض كل الغرف ←</a>}</section>}
+@if(roomsState()!=='denied') {<section class="dash-panel"><h2>{{ 'dash.rooms' | t }}</h2><div class="dashboard-rooms">@for(room of rooms();track room['room_id']){<a routerLink="/rooms"><hbh-icon name="ic-door"/><b>{{room['name_ar']}}</b><small>{{room['room_type'] || ('dash.roomDefault' | t)}}</small></a>} @empty {<p>{{ (roomsState() === 'loading' ? 'action.loading' : roomsState() === 'ready' ? 'dash.roomsEmpty' : 'dash.roomsFailed') | t }}</p>}</div>@if(roomsState()==='ready'){<a routerLink="/rooms">{{ 'dash.allRooms' | t }} ←</a>}</section>}
 <!-- The first five tasks, from the same read the task inbox draws. One
      source: a preview that counted its own way would be a second place for
      the same rows to be right or wrong. -->
@@ -94,8 +94,8 @@
 </div>
 
 <div class="dashboard-bottom">
-@if(auth.can('APPOINTMENT.BOOK')) {<div class="bottom-metric"><hbh-icon name="ic-check-circle"/><span>نسبة الحضور</span><b>{{rate('attended')}}</b><small>من المواعيد المحسومة هذا الشهر</small></div><div class="bottom-metric"><hbh-icon name="ic-x-circle"/><span>نسبة عدم الحضور</span><b>{{rate('absent')}}</b><small>من المواعيد المحسومة هذا الشهر</small></div>}
-@if(auth.can('NPS.MANAGE')){<a class="bottom-metric" routerLink="/satisfaction"><hbh-icon name="ic-star"/><span>رضا أولياء الأمور</span><b>{{metrics()?.satisfaction?.mean == null ? '—' : format.number(metrics().satisfaction.mean)}} <em>/ 5</em></b><small>{{metrics()?.satisfaction?.count ?? '—'}} تقييم</small></a>}
-@if(auth.can('ENROLMENT.MANAGE')){<a class="bottom-metric" routerLink="/enrolments"><hbh-icon name="ic-user-plus"/><span>طلبات الالتحاق (هذا الشهر)</span><b>{{metrics()?.leads ?? '—'}}</b><small>طلبات مسجلة جديدة</small></a>}
-@if(auth.can('BILLING.VIEW')){<a class="bottom-metric" routerLink="/billing"><hbh-icon name="ic-receipt"/><span>مدفوعات معلّقة</span>@for(balance of metrics()?.outstanding ?? [];track balance.currency_code){<b>{{format.money(+balance.amount,balance.currency_code)}}</b><small>{{balance.invoices}} فاتورة</small>} @empty{<b>{{metrics() ? '0' : '—'}}</b><small>الفواتير الصادرة وغير المكتملة السداد</small>}</a>}
+@if(auth.can('APPOINTMENT.BOOK')) {<div class="bottom-metric"><hbh-icon name="ic-check-circle"/><span>{{ 'dash.attendance' | t }}</span><b>{{rate('attended')}}</b><small>{{ 'dash.ofDecided' | t }}</small></div><div class="bottom-metric"><hbh-icon name="ic-x-circle"/><span>{{ 'dash.absence' | t }}</span><b>{{rate('absent')}}</b><small>{{ 'dash.ofDecided' | t }}</small></div>}
+@if(auth.can('NPS.MANAGE')){<a class="bottom-metric" routerLink="/satisfaction"><hbh-icon name="ic-star"/><span>{{ 'dash.satisfaction' | t }}</span><b>{{metrics()?.satisfaction?.mean == null ? '—' : format.number(metrics().satisfaction.mean)}} <em>/ 5</em></b><small>{{ 'dash.ratings' | t: { count: metrics()?.satisfaction?.count ?? '—' } }}</small></a>}
+@if(auth.can('ENROLMENT.MANAGE')){<a class="bottom-metric" routerLink="/enrolments"><hbh-icon name="ic-user-plus"/><span>{{ 'dash.leads' | t }}</span><b>{{metrics()?.leads ?? '—'}}</b><small>{{ 'dash.leadsNote' | t }}</small></a>}
+@if(auth.can('BILLING.VIEW')){<a class="bottom-metric" routerLink="/billing"><hbh-icon name="ic-receipt"/><span>{{ 'dash.pending' | t }}</span>@for(balance of metrics()?.outstanding ?? [];track balance.currency_code){<b>{{format.money(+balance.amount,balance.currency_code)}}</b><small>{{ 'dash.invoicesCount' | t: { count: balance.invoices } }}</small>} @empty{<b>{{metrics() ? '0' : '—'}}</b><small>{{ 'dash.pendingNote' | t }}</small>}</a>}
 </div>

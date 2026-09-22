@@ -48,12 +48,21 @@
       @switch (refusal()) {
 
         @case ('not-confirmed') {
+          <!-- Unpaid, and there is no paying here: the portal takes no
+               money (UX-5). The honest next step is asking the centre,
+               which is a callback request - not the billing screen, which
+               can only show the figure again. -->
           <div class="note note--warn">
             <hbh-icon name="ic-receipt" />
             <span>{{ 'consult.notConfirmed' | t }}</span>
           </div>
-          <a class="hbh-btn hbh-btn--primary hbh-btn--block" routerLink="/billing">
-            <hbh-icon name="ic-card" />
+          <a class="hbh-btn hbh-btn--primary hbh-btn--block" routerLink="/requests"
+             [queryParams]="{ kind: 'CALLBACK' }">
+            <hbh-icon name="ic-phone" />
+            {{ 'consult.contactCentre' | t }}
+          </a>
+          <a class="hbh-btn hbh-btn--ghost hbh-btn--block" routerLink="/billing">
+            <hbh-icon name="ic-receipt" />
             {{ 'consult.openBilling' | t }}
           </a>
         }

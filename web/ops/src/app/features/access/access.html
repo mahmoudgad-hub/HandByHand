@@ -57,10 +57,10 @@
              this the restore button sits on a row nobody can reach. -->
         <div class="user-list-filters">
           <hbh-archive-switch [checked]="showArchived()" (changed)="toggleArchived()" />
-          <select class="user-category-filter" aria-label="نوع المستخدم" [value]="userCategory()" (change)="changeUserCategory($any($event.target).value)">
+          <select class="user-category-filter" [attr.aria-label]="'access.userTypeFilter' | t" [value]="userCategory()" (change)="changeUserCategory($any($event.target).value)">
             <option value="STAFF">{{ 'role.RECEPTION' | t }}</option>
-            <option value="GUARDIAN">ولي أمر</option>
-            <option value="ALL">الكل</option>
+            <option value="GUARDIAN">{{ 'access.guardianType' | t }}</option>
+            <option value="ALL">{{ 'access.allTypes' | t }}</option>
           </select>
         </div>
         <!-- "Who is suspended?" in one press. It filters what is ALREADY
@@ -131,11 +131,11 @@
             <form class="user-account-form" (submit)="$event.preventDefault(); saveAccount()">
               <div class="user-fields-grid">
                 <label class="user-field" for="account-name"><span>{{ 'profile.fullName' | t }}</span><input id="account-name" autocomplete="name" [formControl]="accountName" [readOnly]="!canManage() || accountBusy()" required></label>
-                <label class="user-field" for="account-mobile"><span>رقم الموبايل</span><input id="account-mobile" type="tel" dir="ltr" autocomplete="tel" [formControl]="accountMobile" [readOnly]="!canManage() || accountBusy()" placeholder="+20…"></label>
-                <label class="user-field" for="account-username"><span>{{ 'profile.username' | t }}</span><input id="account-username" [value]="user.username" readonly dir="auto"><small>اسم الدخول ثابت للحفاظ على سجل الحساب.</small></label>
+                <label class="user-field" for="account-mobile"><span>{{ 'field.mobile' | t }}</span><input id="account-mobile" type="tel" dir="ltr" autocomplete="tel" [formControl]="accountMobile" [readOnly]="!canManage() || accountBusy()" placeholder="+20…"></label>
+                <label class="user-field" for="account-username"><span>{{ 'profile.username' | t }}</span><input id="account-username" [value]="user.username" readonly dir="auto"><small>{{ 'access.usernameFixed' | t }}</small></label>
                 <label class="user-field" for="account-type"><span>{{ 'access.userType' | t }}</span><input id="account-type" [value]="userTypeKey(user) | t" readonly></label>
                 <label class="user-field" for="account-center"><span>{{ 'profile.center' | t }}</span><input id="account-center" [value]="user.center_name" readonly></label>
-                <label class="user-field" for="account-zone"><span>{{ 'profile.timeZone' | t }}</span><input id="account-zone" [value]="user.time_zone" readonly dir="auto"><small>تُدار من إعدادات المركز.</small></label>
+                <label class="user-field" for="account-zone"><span>{{ 'profile.timeZone' | t }}</span><input id="account-zone" [value]="user.time_zone" readonly dir="auto"><small>{{ 'access.zoneManaged' | t }}</small></label>
               </div>
               @if(accountError()) { <p class="user-account-error" role="alert">{{ accountError() }}</p> }
               @if(canManage()) { <footer class="user-form-actions"><button type="submit" class="hbh-btn hbh-btn--primary" [disabled]="!accountDirty() || accountBusy()">{{ (accountBusy() ? 'action.saving' : 'action.save') | t }}</button><button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="!accountDirty() || accountBusy()" (click)="resetAccount()">{{ 'action.cancel' | t }}</button></footer> }

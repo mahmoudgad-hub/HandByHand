@@ -14,7 +14,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
 import { FormatService } from '@hbh/shared/format/format.service';
-import { HbhNumberPipe } from '@hbh/shared/format/format.pipes';
+import { HbhNumberPipe, HbhPluralPipe } from '@hbh/shared/format/format.pipes';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon } from '@hbh/shared/icon/icon';
@@ -59,7 +59,7 @@ interface OpenAction {
 @Component({
   selector: 'hbh-day-screen',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ArchiveSwitch, BillingLedger, BillingOverview, NgTemplateOutlet, RouterLink, Icon, TranslatePipe, HbhNumberPipe, Skeleton, EmptyState, ErrorNote, ModalDialog],
+  imports: [ArchiveSwitch, BillingLedger, BillingOverview, NgTemplateOutlet, RouterLink, Icon, TranslatePipe, HbhNumberPipe, HbhPluralPipe, Skeleton, EmptyState, ErrorNote, ModalDialog],
   templateUrl: './day-screen.html',
   styleUrl: './day-screen.css',
 })
@@ -553,7 +553,7 @@ export class DayScreen {
       return (count > 1 ? forkJoin(Array.from({length: count - 1}, (_, n) => this.api.list('invoices', {...query, page: n + 2}))) : of([]))
         .pipe(map(rest => [first, ...rest].flatMap(p => p.rows)));
     }), takeUntilDestroyed(this.destroyRef)).subscribe({next: rows => {this.downloadCSV(rows, 'invoices-filtered.csv'); this.exporting.set(false);},
-      error: () => {this.exporting.set(false); this.exportError.set('تعذر تصدير الفواتير. حاول مرة أخرى.');}});
+      error: () => {this.exporting.set(false); this.exportError.set('billing.exportFailed');}});
   }
   protected readonly billingTab = signal('invoices');
   protected readonly appointmentAttention = signal<readonly Row[]>([]);

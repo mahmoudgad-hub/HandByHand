@@ -48,6 +48,20 @@
           } @else {
             <div hbhAppointmentRow [appointment]="appointment"></div>
           }
+          <!-- ASKING ABOUT THIS APPOINTMENT, from its own row (UX-5). The
+               request opens already bound to this appointment and to the
+               child on show; the old path went to a form that guessed
+               both. Only while the appointment is still ahead and still
+               live - a request about a finished one is a different
+               conversation. -->
+          @if (scope() === 'upcoming' && (appointment.status === 'BOOKED' || appointment.status === 'CONFIRMED')) {
+            <div class="schedule-row-actions">
+              <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" routerLink="/requests"
+                 [queryParams]="{ kind: 'RESCHEDULE', appointment: appointment.id }">
+                <hbh-icon name="ic-send" /> {{ 'home.requestChange' | t }}
+              </a>
+            </div>
+          }
         }
       </div>
     }

@@ -46,11 +46,10 @@
                     (click)="toggleMute()">
               <hbh-icon name="ic-volume" />
             </button>
-            <button class="player__mark" type="button" [disabled]="!playing()"
-                    (click)="markMoment()">
-              <hbh-icon name="ic-flag" />
-              {{ 'live.markMoment' | t }}
-            </button>
+            <!-- "Mark a moment" is gone from this screen (UX-5): the service
+                 has no endpoint for it, so the button could only ever fail.
+                 A moment is a clinical note the therapist writes; nothing
+                 here is recorded for a parent to point into. -->
             <button class="player__btn" type="button" [disabled]="!playing()"
                     [attr.aria-label]="'live.fullscreen' | t"
                     (click)="toggleFullscreen(player)">

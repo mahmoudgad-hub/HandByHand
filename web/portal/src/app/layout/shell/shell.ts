@@ -109,16 +109,21 @@ export class Shell {
   });
 
   /**
-   * The phone's tab bar: five, because a sixth stops being tappable. Account
-   * is one of them, since a phone has nowhere else to put it.
+   * The phone's tab bar: four screens and "more", because a sixth tab
+   * stops being tappable. The account moved into "more" with billing, the
+   * requests, the centre's messages and the notifications (UX-5): the four
+   * that stay are the ones a parent opens every day.
    */
   protected readonly tabs = [
     { key: 'home', path: '/home', icon: 'ic-home', labelKey: 'nav.home' },
     { key: 'schedule', path: '/schedule', icon: 'ic-calendar', labelKey: 'nav.schedule' },
     { key: 'progress', path: '/progress', icon: 'ic-target', labelKey: 'nav.progress' },
     { key: 'activities', path: '/activities', icon: 'ic-puzzle', labelKey: 'nav.activities' },
-    { key: 'profile', path: '/profile', icon: 'ic-user', labelKey: 'nav.profile' },
   ] as const;
+
+  /** "More" is lit while one of the screens it holds is on show. */
+  protected readonly moreTabOn = computed(
+    () => ['billing', 'requests', 'notifications', 'profile'].includes(this.chrome().tab ?? ''));
 
   /**
    * The wide screen's top bar. It carries two more than the phone can -

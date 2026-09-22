@@ -170,22 +170,6 @@ export class Live implements OnDestroy {
     }
   }
 
-  /**
-   * A moment the parent wants the therapist to look at. It is a note with a
-   * time on it - there is no recording for it to point into.
-   */
-  protected markMoment(): void {
-    const session = this.session();
-    if (!session) {
-      return;
-    }
-    this.api.markMoment(session.sessionId, this.i18n.translate('live.momentNote'))
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.toast.show(this.i18n.translate('live.momentSaved')),
-        error: () => this.toast.error(this.i18n.translate('error.saveFailed')),
-      });
-  }
 
   /** The message key for whatever the screen is currently refusing to play. */
   protected refusalKey(): string {

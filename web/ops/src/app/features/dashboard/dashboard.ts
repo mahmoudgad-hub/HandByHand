@@ -7,6 +7,7 @@ import { HBH_CONFIG } from '@hbh/shared/config/app-config';
 import { Router, RouterLink } from '@angular/router';
 
 import { FormatService } from '@hbh/shared/format/format.service';
+import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon } from '@hbh/shared/icon/icon';
 import { OpsApi, Row } from '../../core/api/ops-api';
@@ -48,6 +49,7 @@ export class Dashboard {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly drawer = inject(RecordDrawerService);
+  private readonly i18n = inject(I18nService);
   protected readonly auth = inject(OpsAuthService);
   protected readonly format = inject(FormatService);
 
@@ -92,7 +94,7 @@ export class Dashboard {
   }
   protected readonly agenda = signal<Record<string, number>>({});
   protected readonly agendaFailed = signal(false);
-  protected readonly agendaParts = [{key:'COMPLETED',label:'مكتملة',color:'#2eaa88'},{key:'CHECKED_IN',label:'حضروا',color:'#e0a326'},{key:'BOOKED',label:'محجوزة',color:'#288797'},{key:'CONFIRMED',label:'مؤكدة',color:'#76b7cb'},{key:'CANCELLED',label:'ملغاة',color:'#d66562'},{key:'NO_SHOW',label:'لم يحضروا',color:'#9279ba'}];
+  protected readonly agendaParts = [{key:'COMPLETED',labelKey:'status.appointment.COMPLETED',color:'#2eaa88'},{key:'CHECKED_IN',labelKey:'status.appointment.CHECKED_IN',color:'#e0a326'},{key:'BOOKED',labelKey:'status.appointment.BOOKED',color:'#288797'},{key:'CONFIRMED',labelKey:'status.appointment.CONFIRMED',color:'#76b7cb'},{key:'CANCELLED',labelKey:'status.appointment.CANCELLED',color:'#d66562'},{key:'NO_SHOW',labelKey:'status.appointment.NO_SHOW',color:'#9279ba'}];
   protected readonly agendaCount = computed(() => Object.keys(this.agenda()).length);
   protected readonly agendaTotal = computed(() => Object.values(this.agenda()).reduce((a,b)=>a+b,0));
   protected readonly ring = computed(() => { let offset=0;const total=this.agendaTotal();if(!total)return '#e8eff1';return 'conic-gradient('+this.agendaParts.map(p=>{const start=offset;offset+=(this.agenda()[p.key]||0)/total*100;return p.color+' '+start+'% '+offset+'%'}).join(',')+')'; });
@@ -212,7 +214,8 @@ export class Dashboard {
    */
   protected statusLabel(row: Row | null): string {
     const code = String(row?.['status'] ?? '');
-    return this.agendaParts.find((part) => part.key === code)?.label ?? code;
+    const part = this.agendaParts.find((item) => item.key === code);
+    return part ? this.i18n.translate(part.labelKey) : code;
   }
 
   protected readonly toolbarPanel = signal<'alerts' | 'help' | null>(null);

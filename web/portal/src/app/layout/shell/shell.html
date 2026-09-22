@@ -114,10 +114,16 @@
       }
     </div>
 
-    <!-- Same on the phone: requests, and named as requests. No dot here
-         either - it was counting the home screen's attention items. -->
-    <button class="pa__act" type="button" (click)="moreOpen.set(true)" aria-haspopup="dialog"
-            [attr.aria-label]="'nav.more' | t"><hbh-icon name="ic-menu" /></button>
+    <!-- THE BELL, on the phone too (UX-5). It opens the notifications feed
+         and its dot is the unread count and nothing else - absent when the
+         count is unknown, as on the wide bar. "More" moved down to the tab
+         bar, where a thumb reaches it. -->
+    <a class="pa__act" routerLink="/notifications"
+       [attr.aria-label]="'notifications.title' | t"
+       [attr.aria-current]="chrome().tab === 'notifications' ? 'page' : null">
+      <hbh-icon name="ic-bell" />
+      @if (unread(); as n) { @if (n > 0) { <i aria-hidden="true"></i> } }
+    </a>
   </header>
 
   <!-- The scroll container on the phone; an ordinary block on a laptop. -->
@@ -171,6 +177,16 @@
         {{ tab.labelKey | t }}
       </a>
     }
+    <!-- The fifth tab is "more": the family's other screens - billing,
+         requests, the centre's messages, notifications, the account - in
+         one sheet under the thumb, instead of five tabs hiding six screens
+         (UX-5, target IA §2). It is lit when one of those screens is on. -->
+    <button class="pa__tab" type="button" aria-haspopup="dialog"
+            [class.is-on]="moreTabOn()" [attr.aria-expanded]="moreOpen()"
+            (click)="moreOpen.set(true)">
+      <hbh-icon name="ic-menu" />
+      {{ 'nav.more' | t }}
+    </button>
   </nav>
 
   @if (moreOpen()) {
@@ -178,8 +194,10 @@
       <h2 id="portalMoreTitle">{{ 'nav.more' | t }}</h2>
       <nav [attr.aria-label]="'nav.more' | t">
         <a routerLink="/billing" (click)="moreOpen.set(false)">{{ 'nav.billing' | t }}</a>
-        <a routerLink="/requests" (click)="moreOpen.set(false)">{{ 'nav.requests' | t }}</a>
+        <a routerLink="/requests" [queryParams]="{ tab: 'requests' }" (click)="moreOpen.set(false)">{{ 'nav.requests' | t }}</a>
+        <a routerLink="/requests" [queryParams]="{ tab: 'messages' }" (click)="moreOpen.set(false)">{{ 'requests.tabMessages' | t }}</a>
         <a routerLink="/notifications" (click)="moreOpen.set(false)">{{ 'notifications.title' | t }}</a>
+        <a routerLink="/profile" (click)="moreOpen.set(false)">{{ 'nav.profile' | t }}</a>
         @if (canSwitchChild()) {
           <button type="button" (click)="openChildPicker()">{{ 'action.switchChild' | t }}</button>
         }
