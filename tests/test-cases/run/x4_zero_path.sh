@@ -28,9 +28,23 @@ CANON='+201500000440'
 echo '=================== X4 - the path from zero ==================='
 echo "base: $API_BASE"
 
+# THE GROUND IS THREE THINGS, NOT TWO - and the third was learned here.
+#
+# Image id and migration ledger are the pair `scripts/api.sh verify`
+# pins. They are not enough: this suite ran twice while another session
+# was restarting the service, and both runs came back red - one with 000
+# (the request never completed) and one with four failures no second run
+# could reproduce. THE IMAGE ID WAS THE SAME AT BOTH ENDS, because a
+# restart onto the same image moves nothing the pair can see.
+#
+# StartedAt does see it. A run that spans a restart is not a measurement
+# of anything, and its red is worse than no number at all: it sends
+# somebody looking for a defect in the product.
+API_STARTED="$(docker inspect hbh-api --format '{{.State.StartedAt}}' 2>/dev/null)"
 IMAGE="$(docker inspect hbh-api --format '{{.Image}}' 2>/dev/null | cut -c8-19)"
 LEDGER="$(psqlq "SELECT count(*) || '|' || max(version) FROM hbh.schema_migrations")"
-printf 'ground: image %s  ·  ledger %s\n\n' "${IMAGE:-?}" "${LEDGER:-?}"
+printf 'ground: image %s  ·  ledger %s  ·  service up since %s\n\n' \
+       "${IMAGE:-?}" "${LEDGER:-?}" "${API_STARTED:-?}"
 
 # --- the staff room ------------------------------------------------------
 psqlf tests/fixtures/x4_teardown.sql >/dev/null 2>&1
@@ -268,12 +282,15 @@ eq cleanup 'Z-32 the staff room is gone too' '0' \
 # --- the ground did not move under the run -------------------------------
 LEDGER2="$(psqlq "SELECT count(*) || '|' || max(version) FROM hbh.schema_migrations")"
 IMAGE2="$(docker inspect hbh-api --format '{{.Image}}' 2>/dev/null | cut -c8-19)"
-if [ "$LEDGER" != "$LEDGER2" ] || [ "$IMAGE" != "$IMAGE2" ]; then
-  printf '\n  *** RUN VOID - the ground moved under this run\n'
-  printf '      start: image %s · ledger %s\n' "$IMAGE" "$LEDGER"
-  printf '      end:   image %s · ledger %s\n\n' "$IMAGE2" "$LEDGER2"
+API_STARTED2="$(docker inspect hbh-api --format '{{.State.StartedAt}}' 2>/dev/null)"
+if [ "$LEDGER" != "$LEDGER2" ] || [ "$IMAGE" != "$IMAGE2" ] || [ "$API_STARTED" != "$API_STARTED2" ]; then
+  printf '\n  *** RUN VOID - the ground moved under this run. No verdict.\n'
+  printf '      start: image %s · ledger %s · up since %s\n' "$IMAGE"  "$LEDGER"  "$API_STARTED"
+  printf '      end:   image %s · ledger %s · up since %s\n' "$IMAGE2" "$LEDGER2" "$API_STARTED2"
+  printf '      Re-run when the service is still. A red run that spans a\n'
+  printf '      restart sends somebody hunting a defect that is not there.\n\n'
   exit 1
 fi
-printf '\nground: image %s  ·  ledger %s\n' "$IMAGE2" "$LEDGER2"
+printf '\nground: image %s  ·  ledger %s  ·  service up since %s\n' "$IMAGE2" "$LEDGER2" "$API_STARTED2"
 
 verdict 'X4'
