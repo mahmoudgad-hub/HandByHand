@@ -548,6 +548,25 @@ schema_state() {
     2>/dev/null | tr -d '\r'
 }
 
+# api_started is the THIRD ground, and the only one this function moves
+# itself: `dc restart api` before every suite bumps it. So it is NOT
+# pinned once like image and schema - it is a per-suite window (read after
+# verify's own restart, checked again after the suite). It catches an
+# EXTERNAL restart landing mid-suite, which leaves image and ledger
+# untouched and split a7 into two service lifetimes this morning - the
+# 000s that read as NOT ACCEPTED.
+#
+# NOT RestartCount: measured, it stays 0 across a manual `docker restart`;
+# it counts only what the daemon restarts under its own policy. StartedAt
+# is the wall-clock the current process began, and it moves for whoever
+# caused the restart.
+api_started() {
+  local cid
+  cid="$(dc ps -q api 2>/dev/null)"
+  [ -n "$cid" ] || return 1
+  docker inspect -f '{{.State.StartedAt}}' "$cid" 2>/dev/null
+}
+
 # cmd_verify pins the whole run to ONE image and refuses to report a
 # number that spans two.
 #
@@ -676,10 +695,42 @@ cmd_verify() {
       return 1
     fi
 
-    # An explicit assignment, never "${rc:-1}". A `local out rc=0`
-    # swallows the exit code of the command on the same line, which
-    # reads a failure as a pass - a bug this project already paid for.
-    API_BASE="http://127.0.0.1:$API_PORT" bash "$f" || status=1
+    # The StartedAt window. Baseline read HERE - after this suite's own
+    # `dc restart api; wait_healthy` above, so verify's restart is inside
+    # the baseline and not measured as a split. The suite's output is HELD,
+    # not streamed, because a split suite must print no verdict at all: a
+    # red "PHASE 7 NOT ACCEPTED" about a run that was restarted mid-flight
+    # sends its reader hunting a fault that is not there.
+    local suite_started out rc after_started
+    suite_started="$(api_started)" || true
+    # `if` protects the capture from set -e (a NOT-ACCEPTED suite exits
+    # non-zero and must not abort the loop), and records the real code -
+    # never "${rc:-1}", the swallow this project has already paid for.
+    if out="$(API_BASE="http://127.0.0.1:$API_PORT" bash "$f" 2>&1)"; then
+      rc=0
+    else
+      rc=$?
+    fi
+    after_started="$(api_started)" || true
+
+    # Empty must not read as "unchanged" - the grep -q trap in another
+    # costume - so an unreadable start time at either end voids too.
+    if [ -z "$suite_started" ] || [ "$after_started" != "$suite_started" ]; then
+      echo >&2
+      echo "*** RUN VOID - the service restarted during suite a$batch" >&2
+      echo "    started at entry: ${suite_started:-<unreadable>}" >&2
+      echo "    started at exit:  ${after_started:-<unreadable>}" >&2
+      echo "    Its verdict is withheld, not printed: the suite measured two" >&2
+      echo "    service lifetimes, and neither ACCEPTED nor NOT ACCEPTED about" >&2
+      echo "    it would be true. Nothing above it is reportable either." >&2
+      echo "    Re-run when nobody is restarting the API." >&2
+      return 1
+    fi
+
+    # Clean: the service held still for the whole suite. Replay its output
+    # verbatim and let a real failure mark the run.
+    printf '%s\n' "$out"
+    [ "$rc" = 0 ] || status=1
   done
 
   # And once at the end: the last suite could have been the one that was
