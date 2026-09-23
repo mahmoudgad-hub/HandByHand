@@ -95,8 +95,18 @@
 .ops-account-avatar { color: inherit; }
 .ops-rail-search { display:none; }
 @media (min-width: 901px) {
-  .hbh-shell { grid-template-columns:276px minmax(0,1fr); }
-  .hbh-shell .hbh-side { width:276px; transition:width 240ms ease; }
+  /* ONE MEASUREMENT, ONE PLACE. This block owns the whole collapse machine -
+     open width, collapsed width and the transition between them - so the
+     open width belongs here beside the collapsed one it is paired with.
+     shell-controls.css used to restate the open width (252px) and leave the
+     collapsed one to this block: a HALF override, where which value wins is
+     decided by file order. Nothing was broken by it, and that is what made
+     it dangerous - the first person to move the order would have found it
+     on the screen rather than in review, and splitting this sheet was
+     exactly that move. 252px is kept because it is the value that was
+     winning, so the screen does not change to settle a duplicate. */
+  .hbh-shell { grid-template-columns:252px minmax(0,1fr); }
+  .hbh-shell .hbh-side { width:252px; transition:width 240ms ease; }
   .hbh-shell.ops-sidebar-collapsed { grid-template-columns:84px minmax(0,1fr); }
   .hbh-shell.ops-sidebar-collapsed .hbh-side { width:84px; padding-inline:10px; }
   .ops-sidebar-collapsed .hbh-side .hbh-side__brand,
