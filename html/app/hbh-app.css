@@ -739,6 +739,29 @@
   .stg__nav, .stg__hint{ display:none; }
 }
 
+/* THE PRINTED REPORT (#23). A parent prints or saves a progress report as
+   PDF from the browser's own dialog; this makes what comes out a document
+   rather than a screenshot of the app: no bars, no tabs, no buttons, black
+   on white, and the page free to flow onto a second sheet - the mobile
+   shell pins its height to the viewport and hides overflow, which would
+   cut a long report at the bottom of page one. */
+.print-only{ display:none; }
+.rep__tools{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+@media print{
+  .no-print, .hbh-webhead, .pa__head, .pa__tabs, .portal-page-heading, .hbh-skip,
+  .rep .priv, .portal-more, .portal-child-picker{ display:none !important; }
+  .print-only{ display:block; }
+  .pa, .portal-redesign, .pa__body{ display:block !important; height:auto !important;
+    overflow:visible !important; padding:0 !important; margin:0 !important; background:#fff !important; }
+  .rep{ max-width:none; box-shadow:none; border:0; padding:0; color:#000; }
+  .rep__printhead{ display:flex; justify-content:space-between; gap:12px; padding-bottom:8px;
+    margin-bottom:12px; border-bottom:1px solid #000; font-size:12px; }
+  .rep__t{ font-size:20px; }
+  .goal__bar{ border:1px solid #000; }
+  .goal__fill{ background:#000 !important; }
+  .goal, .rep__body{ break-inside:avoid; }
+}
+
 /* =====================================================================
    The enrolment form - the one screen a family sees before they exist
    ===================================================================== */
@@ -1029,3 +1052,59 @@
   border-color:var(--hbh-teal-400); box-shadow:0 0 0 3px var(--hbh-info-bg);
 }
 .apply__dob.is-bad select{ border-color:var(--hbh-danger-line); }
+
+/* The sentence under a section heading that says what the section is for.
+   Used by the profile's contact card to say which fields are the parent's
+   and which are reception's - a form that does not explain its own limits
+   invites somebody to look for the field that is missing. */
+.sec__note{ font-size:12.5px; color:var(--hbh-muted); line-height:1.9; margin:0 0 12px; }
+
+/* Quick actions: the ways a family can reach the centre right now.
+   Wrapping cells rather than a fixed grid, so three long Arabic labels
+   at 320px stack instead of clipping. */
+.quick{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+.quick__a{
+  flex:1 1 132px; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:8px; min-height:76px; padding:12px 10px;
+  border:1px solid var(--hbh-line); border-radius:14px;
+  background:var(--hbh-surface,#fff); color:var(--hbh-ink,#134e66);
+  text-decoration:none; font-size:13px; font-weight:600; text-align:center;
+}
+.quick__a:hover{ border-color:var(--hbh-teal-400); }
+.quick__a .hbh-i{ width:22px; height:22px; }
+.facts{ margin:0; display:grid; gap:9px; }
+.facts>div{ display:flex; gap:10px; align-items:baseline; font-size:13px; }
+.facts dt{ color:var(--hbh-muted); min-width:82px; flex-shrink:0; }
+.facts dd{ margin:0; line-height:1.8; overflow-wrap:anywhere; }
+.facts dd.pre{ white-space:pre-line; }
+
+/* =====================================================================
+   14b. Online consultation
+
+   The provider's client draws itself inside .stage as an <iframe>, so
+   this is a frame around something this application does not render.
+   It shares the live player's shape deliberately - same radius, same
+   aspect, same shadow - because to a parent the two are the same kind
+   of thing, and a second video surface with its own geometry would
+   read as a different application.
+
+   [hidden] is honoured explicitly. The element stays in the DOM while
+   there is no call, because the client is attached to it by reference
+   and a container that only exists once a pass has arrived would not
+   be there at the moment the script resolves from cache.
+   ===================================================================== */
+.stage{
+  position:relative; border-radius:var(--hbh-radius); overflow:hidden;
+  aspect-ratio:9/12;
+  background:linear-gradient(150deg,var(--hbh-video-a) 0%,var(--hbh-video-b) 55%,var(--hbh-video-c) 100%);
+  box-shadow:var(--hbh-shadow-lg);
+}
+.stage[hidden]{ display:none; }
+/* The client sets its own width and height; these guarantee the frame
+   fills the box on the browsers where it does not. */
+.stage iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+/* Landscape on a phone is how a video call is actually held, and 9/12
+   there leaves the picture in a column down the middle of the screen. */
+@media (orientation:landscape) and (max-height:560px){
+  .stage{ aspect-ratio:16/9; }
+}

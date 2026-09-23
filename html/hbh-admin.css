@@ -212,7 +212,13 @@
   .hbh-row3{ grid-template-columns:1fr; }
 }
 @media (max-width:900px){
-  .hbh-shell{ grid-template-columns:1fr; }
+  /* Two auto rows in a grid that is min-height:100dvh: `align-content`
+     defaults to stretch, and stretch shares the leftover height BETWEEN
+     the auto tracks. So on a short screen the menu bar's row grew by the
+     half of the slack it was given - 144px of empty teal above the page
+     title on a phone - while the bar itself stayed 100px tall. Naming the
+     second row 1fr gives the slack to the content, where it belongs. */
+  .hbh-shell{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
   .hbh-side{
     position:static; height:auto; flex-direction:row; align-items:center;
     gap:14px; overflow-x:auto; padding:12px;
@@ -302,6 +308,23 @@
 }
 .hbh-fld__hint{ font-size:11px; color:var(--hbh-muted); margin-top:7px; line-height:1.85; }
 
+/* A yes/no field. The checkbox needs its own rules because the one above
+   gives every input inside a field box flex:1 and 13px of vertical padding
+   - which stretches a checkbox across the whole row and leaves the word
+   beside it floating. */
+.hbh-fld__switch{
+  display:flex; align-items:center; gap:9px;
+  flex:1; padding:13px 0; cursor:pointer;
+  font-size:15px; font-weight:600; color:var(--hbh-ink);
+}
+.hbh-fld__switch input[type="checkbox"]{
+  flex:0 0 auto; width:18px; height:18px; padding:0; margin:0;
+  accent-color:var(--hbh-teal-400); cursor:pointer;
+}
+/* A field that is shown so the row can be identified and is not the
+   person's to change. It must not read as an empty box waiting for input. */
+.hbh-fld__box input[readonly]{ color:var(--hbh-muted); cursor:default; }
+
 .hbh-signin__meta{
   display:flex; align-items:center; justify-content:space-between;
   gap:10px; margin-top:15px; font-size:11.5px; color:var(--hbh-muted);
@@ -353,8 +376,9 @@
    box grows, the icon does not, and negative inline margin keeps the
    field height unchanged so the two fields still line up. */
 .hbh-signin__peek{
-  width:40px; height:40px; border-radius:10px; flex:none;
-  margin-inline-end:-7px;
+  /* 44, not 40: the touch target the rest of the form keeps (#20). */
+  width:44px; height:44px; border-radius:10px; flex:none;
+  margin-inline-end:-9px;
   display:flex; align-items:center; justify-content:center;
   color:var(--hbh-muted);
 }
@@ -421,12 +445,28 @@
    It is a dialog: the page behind it is dimmed and inert, so nobody
    edits a row while a half-finished edit of another is still open.
    --------------------------------------------------------------- */
+/* A real <dialog>, opened with showModal(). It was a div wearing
+   role="dialog" until the promise in the comment above was measured and
+   found empty - see the note on ModalDialog in the shared library.
+
+   The user-agent sheet gives a dialog a border, a padding, a fitted size
+   and auto margins, and none of that suits a full-viewport scrim, so each
+   is put back. `display` is the one that must stay conditional: this rule
+   is more specific than the UA's `dialog:not([open]){display:none}`, so
+   without the guard a closed dialog would paint over the screen. */
 .hbh-sheet{
   position:fixed; inset:0; z-index:80;
-  display:flex; align-items:center; justify-content:center;
-  padding:20px;
+  width:auto; height:auto; max-width:none; max-height:none;
+  margin:0; border:0; padding:20px;
+  display:none;
+  align-items:center; justify-content:center;
+  color:inherit;
   background:rgba(var(--hbh-video-scrim),.38);
 }
+.hbh-sheet[open]{ display:flex; }
+/* The scrim is painted by the dialog itself, edge to edge. A second one
+   underneath it from the UA would darken the page twice. */
+.hbh-sheet::backdrop{ background:transparent; }
 .hbh-sheet__box{
   width:100%; max-width:440px; max-height:100%;
   display:flex; flex-direction:column;
