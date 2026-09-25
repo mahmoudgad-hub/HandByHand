@@ -1,12 +1,25 @@
 %% بوّابة وليّ الأمر — خريطة الملاحة
 %% المصدر: web/portal/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% ١٦ شاشة. والعدّ — لأنّ رقمًا بلا تعريفه لا يُعاد قياسه: قيم path: في
+%% app.routes.ts، مطروحًا منها كل إدخال فيه redirectTo، وpath: '**'، وpath: ''.
+%% وlogin/otp تُعدّ إطارًا مستقلًّا، والتبويبات داخل الشاشات لا تُعدّ.
+%% ---
 %% لا مسار في هذا التطبيق يحمل معرّف طفل: الطفل المختار يعيش في ChildContextService،
 %% لأنّ تعديل شريط العنوان لا يجوز أن يوحي بأنّه يغيّر ما يُرى — الخادم هو من يقرّر.
+%% والاستثناءان يؤكّدان القاعدة: الأخصائي عضو طاقم والخدمة تُخفي على الصفّ، والموعد
+%% تُعيد authorize_meeting_entry السؤال عن صاحبه في كل نداء فيُجاب الغريب 404.
+%% ---
+%% تنبيه لمن يعدّل: لا تترك سطر تعليق فارغًا (%% وحده) — Mermaid 11 يقرؤه موجّهًا فيفشل.
+%% وبعد كل تعديل هنا: bash scripts/sync-figma-preview.sh (preview.html ناتج بناء).
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart TB
   classDef public fill:#EDF1E5,stroke:#ADC793,color:#22333A
   classDef auth   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
   classDef tab    fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
   classDef guard  fill:#FBF0DA,stroke:#F0DCB4,color:#8A5A0E
+  classDef moved  fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
 
   SITE["الموقع التعريفي العام<br/>site/ — بلا مصادقة ولا API"]:::public
   APPLY["/apply<br/>الطريق الوحيد بلا حارس<br/>الكتابة الوحيدة بلا مصادقة في الخدمة"]:::public
@@ -21,23 +34,31 @@ flowchart TB
 
   HOME["/home<br/>تبويب"]:::tab
   SCHED["/schedule<br/>تبويب"]:::tab
-  PROG["/progress<br/>تبويب"]:::tab
+  PROG["/progress — ProgressHub<br/>تبويب · ابتلع التقارير والملاحظات"]:::tab
   ACT["/activities<br/>تبويب — البرنامج المنزلي"]:::tab
   LIVE["/live<br/>بثّ الجلسة — عودة إلى /home"]:::auth
-  REPS["/reports<br/>تبويب"]:::tab
-  REP["/reports/:reportId<br/>عودة إلى /reports لا إلى /home"]:::auth
+  REP["/reports/:reportId<br/>تقرير مفتوح — والقائمة تبويب في /progress"]:::auth
+  CONS["/consultation/:appointmentId<br/>الاستشارة الأونلاين — بلا childSelectedGuard<br/>الموعد يسمّي طفله"]:::auth
   BILL["/billing<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
-  REQ["/requests<br/>تبويب — لا يحتاج طفلًا مختارًا"]:::tab
+  REQ["/requests — RequestsHub<br/>تبويب · ابتلع المحادثة · requestChildGuard"]:::tab
   THER["/therapists/:therapistId<br/>المعرّف في المسار — عضو طاقم لا بيانات طفل"]:::auth
+  NOTIF["/notifications<br/>موجَّه إلى شخص لا إلى طفل<br/>بلا childSelectedGuard عمدًا"]:::auth
   PROF["/profile<br/>تبويب"]:::tab
-  COMM["/communications<br/>تبويب — محادثة الأسرة والمركز<br/>لا يحتاج طفلًا مختارًا"]:::tab
 
   SITE -->|"portalBaseUrl في site/config.js"| APPLY
   APPLY -->|"بعد القبول والتحويل"| LOGIN
   LOGIN --> OTP --> G1 --> WELCOME
   WELCOME -->|"اختيار طفل"| G2
   G2 --> SHELL
-  SHELL --> HOME & SCHED & PROG & ACT & BILL & REQ & COMM & PROF
+  SHELL --> HOME & SCHED & PROG & ACT & BILL & REQ & NOTIF & PROF
   HOME --> LIVE
-  HOME --> REPS --> REP
+  PROG -->|"تبويب التقارير"| REP
   SCHED -->|"نقر اسم الأخصائي"| THER
+  SCHED -->|"موعد أونلاين"| CONS
+
+  subgraph MOVED["تحويلات — عناوين تقاعدت وروابطها حيّة خارج البناء"]
+    direction TB
+    M1["/otp ← /login/otp"]:::moved
+    M2["/reports ← /progress?tab=reports"]:::moved
+    M3["/communications ← /requests?tab=messages"]:::moved
+  end

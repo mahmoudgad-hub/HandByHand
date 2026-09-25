@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { Router } from '@angular/router';
 
 import { FormatService } from '@hbh/shared/format/format.service';
+import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { AppointmentSummary } from '../../core/models/portal.models';
 import { StatusBadge } from './status-badge';
 
@@ -17,7 +18,7 @@ import { StatusBadge } from './status-badge';
 @Component({
   selector: '[hbhAppointmentRow]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatusBadge],
+  imports: [StatusBadge, TranslatePipe],
   host: { class: 'row' },
   template: `
     <span class="row__date">
@@ -40,7 +41,18 @@ import { StatusBadge } from './status-badge';
         } @else {
           {{ appointment().therapistName }}
         }
-        <s>&middot;</s> {{ appointment().roomName }}
+        <!-- WHERE, and an online appointment has no room to name.
+             Written as a branch rather than a fallback string because the
+             two are different facts: ONLINE means the room is a video call,
+             and an empty roomName on an in-person row means the diary did
+             not carry one. Printing the separator unconditionally - which
+             is what this did - left a trailing dot with nothing after it on
+             every consultation. -->
+        @if (appointment().deliveryMode === 'ONLINE') {
+          <s>&middot;</s> {{ 'schedule.online' | t }}
+        } @else if (appointment().roomName) {
+          <s>&middot;</s> {{ appointment().roomName }}
+        }
       </span>
     </span>
     <span class="row__e">

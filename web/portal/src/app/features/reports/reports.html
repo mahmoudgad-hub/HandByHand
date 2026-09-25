@@ -1,19 +1,5 @@
 <section class="scr">
 
-  <div class="seg" role="tablist">
-    <button class="seg__i" type="button" role="tab"
-            [class.is-on]="scope() === 'reports'"
-            [attr.aria-selected]="scope() === 'reports'"
-            (click)="select('reports')">
-      {{ 'reports.tabReports' | t }}
-    </button>
-    <button class="seg__i" type="button" role="tab"
-            [class.is-on]="scope() === 'notes'"
-            [attr.aria-selected]="scope() === 'notes'"
-            (click)="select('notes')">
-      {{ 'reports.tabNotes' | t }}
-    </button>
-  </div>
 
   @if (loading()) {
     <hbh-skeleton [count]="3" shape="row" />

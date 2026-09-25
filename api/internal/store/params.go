@@ -103,3 +103,26 @@ func (p *Params) MobilePattern(ctx context.Context) (*regexp.Regexp, error) {
 	p.reSource, p.reCompiled = raw, re
 	return re, nil
 }
+
+// GetForCenter returns the value of code as THIS centre's rows are judged by.
+//
+// Not Get, and not cached. Get asks hbh.param with a NULL centre because a
+// login has no identity yet, so a per-centre override is invisible to it -
+// harmless when the answer only has to validate, and a lie when the answer
+// is about to be READ ALOUD to the person at the desk. A message that says
+// "fourteen digits" while the trigger applied a centre override of fifteen
+// sends somebody to count a number that was already right.
+//
+// The cache is skipped on purpose: this runs only on a write the database
+// already refused, so it buys nothing and staleness is the only thing it
+// could add.
+func (p *Params) GetForCenter(ctx context.Context, centerID int, code, def string) (string, error) {
+	var value string
+	err := p.db.InReadTx(ctx, "", func(ctx context.Context, tx pgx.Tx) error {
+		return tx.QueryRow(ctx, `SELECT hbh.param($1, $2, $3)`, centerID, code, def).Scan(&value)
+	})
+	if err != nil {
+		return "", fmt.Errorf("read parameter %s for centre %d: %w", code, centerID, err)
+	}
+	return value, nil
+}

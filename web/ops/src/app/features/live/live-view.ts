@@ -175,6 +175,12 @@ export class LiveView implements OnDestroy {
     if (code === 'NOT_LIVE' || code === 'STREAM_UNAVAILABLE') {
       return `error.${code}`;
     }
+    // CONSENT_REQUIRED (HB081) needs no special case here any more. It meant
+    // two things for one day - a family's live-view consent and a therapist's
+    // consent to publish their profile - and this screen had to override the
+    // shared sentence to avoid telling reception that a therapist had not
+    // agreed to a camera. The service split the words on 2026-09-18, so the
+    // shared map carries the right sentence again and the override is gone.
     return refusalKey(readRefusal(error));
   }
 }

@@ -12,6 +12,7 @@ import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { PortalApi } from '../../core/api/portal-api';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
+import { ChildContextService } from '../../core/auth/child-context.service';
 import { ReportDetail, ReportGoal } from '../../core/models/portal.models';
 
 /**
@@ -43,6 +44,21 @@ export class Report {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly format = inject(FormatService);
+  private readonly childContext = inject(ChildContextService);
+
+  /** On the printed page only: the screen already names the child above. */
+  protected childName(): string {
+    return this.childContext.selected()?.fullName ?? '';
+  }
+
+  /**
+   * Print, or save as PDF - the browser's dialog offers both (#23). There is
+   * no file on the service to fetch: a report IS this content, so the page
+   * itself is the document, and the print stylesheet strips the app around it.
+   */
+  protected print(): void {
+    window.print();
+  }
 
   protected readonly data = signal<ReportDetail | null>(null);
   protected readonly loading = signal(true);

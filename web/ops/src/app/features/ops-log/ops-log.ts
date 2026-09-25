@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -13,6 +14,7 @@ import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { Row } from '../../core/api/ops-api';
+import { OpsAnalytics } from './ops-analytics';
 
 /** One view of the request log, and the columns it needs. */
 interface View {
@@ -64,10 +66,12 @@ const instant = (row: Row, key: string, format: FormatService): string => {
 @Component({
   selector: 'hbh-ops-log',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote, OpsAnalytics],
   templateUrl: './ops-log.html',
 })
 export class OpsLog {
+  protected readonly dashboard = signal(true);
+  protected readonly refresh = signal(0);
   private readonly http = inject(HttpClient);
   private readonly base = `${inject(HBH_CONFIG).apiBaseUrl}/api/v1/ops`;
   private readonly destroyRef = inject(DestroyRef);
@@ -79,7 +83,7 @@ export class OpsLog {
       columns: [
         { key: 'method', labelKey: 'opslog.method', read: (row) => text(row, 'method'), ltr: true },
         { key: 'route', labelKey: 'opslog.route', read: (row) => text(row, 'route'), ltr: true },
-        { key: 'calls', labelKey: 'opslog.calls', read: (row, f) => f.count(Number(text(row, 'calls'))), ltr: true },
+        { key: 'calls', labelKey: 'opslog.calls', read: (row, f) => f.number(Number(text(row, 'calls'))), ltr: true },
         { key: 'p50', labelKey: 'opslog.p50', read: (row) => `${text(row, 'p50_ms')} ms`, ltr: true },
         // p95 rather than an average: the mean hides the slow tail, and the
         // slow tail is the part somebody is waiting through.
@@ -108,9 +112,9 @@ export class OpsLog {
       columns: [
         { key: 'user', labelKey: 'opslog.user', read: (row) => text(row, 'username'), ltr: true },
         { key: 'type', labelKey: 'opslog.userType', read: (row) => text(row, 'user_type'), ltr: true },
-        { key: 'requests', labelKey: 'opslog.requests', read: (row, f) => f.count(Number(text(row, 'requests'))), ltr: true },
-        { key: 'failed', labelKey: 'opslog.failed', read: (row, f) => f.count(Number(text(row, 'failed_requests'))), ltr: true },
-        { key: 'days', labelKey: 'opslog.activeDays', read: (row, f) => f.count(Number(text(row, 'active_days'))), ltr: true },
+        { key: 'requests', labelKey: 'opslog.requests', read: (row, f) => f.number(Number(text(row, 'requests'))), ltr: true },
+        { key: 'failed', labelKey: 'opslog.failed', read: (row, f) => f.number(Number(text(row, 'failed_requests'))), ltr: true },
+        { key: 'days', labelKey: 'opslog.activeDays', read: (row, f) => f.number(Number(text(row, 'active_days'))), ltr: true },
         { key: 'last', labelKey: 'opslog.lastSeen', read: (row, f) => instant(row, 'last_seen_at', f) },
       ],
     },
@@ -128,14 +132,16 @@ export class OpsLog {
   }
 
   protected select(index: number): void {
-    if (index === this.index()) {
+    if (index === this.index() && !this.dashboard()) {
       return;
     }
+    this.dashboard.set(false);
     this.index.set(index);
     this.load();
   }
 
   protected load(): void {
+    if (this.dashboard()) { this.refresh.update(n => n + 1); return; }
     this.loading.set(true);
     this.failed.set(false);
     this.http.get<Record<string, unknown>>(`${this.base}/${this.view().key}`)

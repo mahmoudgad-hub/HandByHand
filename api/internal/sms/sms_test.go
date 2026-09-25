@@ -197,13 +197,18 @@ func TestSegmentsUCS2(t *testing.T) {
 }
 
 func TestNewRefusesAnUnknownProvider(t *testing.T) {
-	// "twilio" rather than "twilio_whatsapp" on purpose: a name that is ALMOST
-	// a real provider is the one somebody types, and answering it with a
-	// working sender would pick a channel the deployment did not ask for.
-	if _, err := New("twilio", HTTPConfig{}, TwilioConfig{}, "development"); err == nil {
+	// "meta" rather than "meta_whatsapp" on purpose: a name that is ALMOST a
+	// real provider is the one somebody types, and answering it with a working
+	// sender would pick a channel the deployment did not ask for.
+	if _, err := New("meta", HTTPConfig{}, MetaConfig{}, "development"); err == nil {
 		t.Fatal("an unknown provider must fail at startup, not at the first login")
 	}
-	if _, err := New("vodafone", HTTPConfig{}, TwilioConfig{}, "development"); err == nil {
+	// And the reseller this service left on 2026-09-18 is no longer a provider
+	// name at all - a deployment still carrying it must stop, not fall back.
+	if _, err := New("twilio_whatsapp", HTTPConfig{}, MetaConfig{}, "development"); err == nil {
+		t.Fatal("twilio_whatsapp is gone and must fail at startup")
+	}
+	if _, err := New("vodafone", HTTPConfig{}, MetaConfig{}, "development"); err == nil {
 		t.Fatal("an unknown provider must fail at startup, not at the first login")
 	}
 }

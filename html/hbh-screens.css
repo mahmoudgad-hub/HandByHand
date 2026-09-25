@@ -160,7 +160,13 @@
 /* ---------------------------------------------------------------
    8. الجداول
    --------------------------------------------------------------- */
-.hbh-tablewrap{ overflow-x:auto; }
+/* position:relative so an absolutely positioned descendant is contained by
+   the scroller rather than escaping to the page. `overflow-x:auto` alone
+   does not hold one: containment follows the containing-block chain, not
+   the DOM, so a child with no positioned ancestor is laid out against the
+   page and clipped by nothing. See the note on .hbh-sr in hbh-shared.css
+   for the screen that cost. */
+.hbh-tablewrap{ overflow-x:auto; position:relative; }
 .hbh-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:680px; }
 .hbh-table th{
   text-align:start; font-size:11.5px; font-weight:600; color:var(--hbh-muted);

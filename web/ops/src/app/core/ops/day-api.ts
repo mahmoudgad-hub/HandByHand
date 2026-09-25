@@ -66,16 +66,32 @@ export interface DayQuery {
   readonly limit?: number;
 }
 
+/**
+ * In the centre, or over video.
+ *
+ * EXTERNAL exists in the schema - a visit somewhere that is neither - and is
+ * deliberately absent from the console's picker until somebody asks for it.
+ * The type carries it so that a row which already has it reads correctly.
+ */
+export type DeliveryMode = 'IN_PERSON' | 'ONLINE' | 'EXTERNAL';
+
 /** What `POST /appointments` and `POST /appointments/validate` both take. */
 export interface NewAppointment {
   readonly child_id: number;
   readonly therapist_id: number;
-  readonly room_id: number;
+  /**
+   * OMITTED for a mode that has no room. The service reads absent as "no
+   * room" and asks hbh.validate_slot about it; sending 0 would be asking
+   * about a room that cannot exist.
+   */
+  readonly room_id?: number;
   readonly service_id: number;
   /** UTC instants. The picker collects local wall time and converts. */
   readonly starts_at: string;
   readonly ends_at: string;
   readonly note_ar?: string;
+  /** Absent means IN_PERSON, which is what this screen booked for years. */
+  readonly delivery_mode?: DeliveryMode;
 }
 
 /**
@@ -103,8 +119,14 @@ export interface SlotCheck {
 export interface Slot {
   readonly starts_at: string;
   readonly ends_at: string;
-  readonly room_id: number;
-  readonly room_name_ar: string;
+  /**
+   * NULL for an online consultation, which has no room and never will.
+   * Typed nullable so the compiler makes every reader decide which it is -
+   * `room_id: number` would have made "no room" arrive as 0 and be rendered
+   * as a room number nobody can walk into.
+   */
+  readonly room_id: number | null;
+  readonly room_name_ar: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -119,6 +141,16 @@ export class DayApi {
    * resource-to-key names would be a second copy of the service's naming
    * convention, and it is the copy that would go stale.
    */
+  /**
+   * One row by its id, for the resources the service reads that way:
+   * `GET /enrolments/{id}`, `GET /invoices/{id}`, `GET /reports/{id}`.
+   * Appointments, sessions and requests have no single-row read - a caller
+   * that holds such a row passes it along instead.
+   */
+  get(resource: DayResource, id: number): Observable<Row> {
+    return this.http.get<Row>(`${this.base}/${resource}/${id}`);
+  }
+
   list(resource: DayResource, query: DayQuery = {}): Observable<Page> {
     return this.http
       .get<Record<string, unknown>>(`${this.base}/${resource}`, { params: this.params(query) })
@@ -148,6 +180,7 @@ export class DayApi {
    */
   slots(
     therapistId: number, serviceId: number, date: string, roomId?: number,
+    mode?: DeliveryMode,
   ): Observable<readonly Slot[]> {
     let params = new HttpParams()
       .set('therapist_id', therapistId)
@@ -155,6 +188,11 @@ export class DayApi {
       .set('date', date);
     if (roomId) {
       params = params.set('room_id', roomId);
+    }
+    // Sent only when it is not the default, so a request for an ordinary
+    // in-person day is byte for byte the request this screen always sent.
+    if (mode && mode !== 'IN_PERSON') {
+      params = params.set('delivery_mode', mode);
     }
     return this.http
       .get<{ slots: readonly Slot[] }>(`${this.base}/appointments/slots`, { params })
@@ -364,9 +402,9 @@ export class DayApi {
    * The contacted timestamp is stamped by the state machine, not sent from
    * here: the moment of a transition is part of the transition.
    */
-  setEnrolmentStatus(id: number, status: string, noteAr = ''): Observable<void> {
+  setEnrolmentStatus(id: number, status: string, noteAr = '', assessmentAt?: string): Observable<void> {
     return this.http.patch<void>(
-      `${this.base}/enrolments/${id}`, { status, note_ar: noteAr });
+      `${this.base}/enrolments/${id}`, { status, note_ar: noteAr, ...(assessmentAt ? { assessment_at: assessmentAt } : {}) });
   }
 
   /**

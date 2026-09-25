@@ -128,6 +128,7 @@ func (d *DB) CentreAppointments(ctx context.Context, ident string, q OpsQuery) (
 
 		rows, err := tx.Query(ctx, `
 			SELECT a.appointment_id, a.appointment_no, a.starts_at, a.ends_at, a.status, a.cancel_reason,
+			       a.delivery_mode,
 			       ch.child_id, ch.child_no, ch.full_name_ar,
 			       r.room_id, r.name_ar,
 			       ses.session_id, ses.status,
@@ -159,6 +160,7 @@ func (d *DB) CentreAppointments(ctx context.Context, ident string, q OpsQuery) (
 			)
 			svc, th, err := scanRef(rows,
 				&a.AppointmentID, &a.AppointmentNo, &a.StartsAt, &a.EndsAt, &a.Status, &a.CancelReason,
+				&a.DeliveryMode,
 				&child.ChildID, &child.ChildNo, &child.FullNameAr,
 				&roomID, &room,
 				&a.SessionID, &a.SessionStatus)

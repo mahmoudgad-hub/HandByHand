@@ -70,28 +70,34 @@ export const DASHBOARD_TILES: readonly Tile[] = [
   },
 
   // ---- waiting for somebody ----
+  //
+  // These four are TASKS, and they open the task inbox filtered to their
+  // kind rather than the raw list: the inbox shows the same rows with the
+  // action each one needs, which is what a person clicking "new requests"
+  // came for. The count is still the list endpoint's own `total`.
   {
     key: 'newEnrolments', labelKey: 'dash.newEnrolments', icon: 'ic-user-plus', tone: 'purple',
     permission: 'ENROLMENT.MANAGE', resource: 'enrolments', query: { status: 'NEW' },
-    link: ['/enrolments'], linkQuery: { status: 'NEW' }, wantsAction: true,
+    link: ['/tasks'], linkQuery: { type: 'ENROLMENT_TRIAGE' }, wantsAction: true,
   },
   {
     key: 'newRequests', labelKey: 'dash.newRequests', icon: 'ic-chat', tone: 'purple',
     permission: 'REQUEST.MANAGE', resource: 'requests', query: { status: 'NEW' },
-    link: ['/requests'], linkQuery: { status: 'NEW' }, wantsAction: true,
+    link: ['/tasks'], linkQuery: { type: 'REQUEST_DECIDE' }, wantsAction: true,
   },
   {
     key: 'draftReports', labelKey: 'dash.draftReports', icon: 'ic-file', tone: 'amber',
     permission: 'REPORT.VIEW', resource: 'reports', query: { status: 'DRAFT' },
-    link: ['/reports'], linkQuery: { status: 'DRAFT' }, wantsAction: true,
+    link: ['/tasks'], linkQuery: { type: 'REPORT_FINISH' }, wantsAction: true,
   },
   {
     key: 'unpaidInvoices', labelKey: 'dash.unpaidInvoices', icon: 'ic-money', tone: 'red',
     // ISSUED only. PARTIALLY_PAID would need a second call and the two cannot
     // be added without asking twice; the screen counts what one filter counts
-    // rather than implying a sum it did not make.
+    // rather than implying a sum it did not make. The task inbox lists the
+    // OVERDUE ones, which is the subset somebody has to chase.
     permission: 'BILLING.VIEW', resource: 'invoices', query: { status: 'ISSUED' },
-    link: ['/billing'], linkQuery: { status: 'ISSUED' }, wantsAction: true,
+    link: ['/tasks'], linkQuery: { type: 'INVOICE_OVERDUE' }, wantsAction: true,
   },
 
   // ---- the centre ----

@@ -1,4 +1,9 @@
-%% آلات الحالة الثماني المحروسة — مستخرَجة حرفيًا من دوال legal_*_transition في db/migrations/
+%% آلات الحالة الإحدى عشرة المحروسة — مستخرَجة حرفيًا من دوال legal_*_transition في db/migrations/
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% مراجعة 2026-09-19: كانت «الثماني» صحيحة يوم كُتبت، وصارت إحدى عشرة — نزلت
+%% legal_payment_plan_transition و legal_installment_transition (0142)
+%% و legal_message_template_transition (0153). والعدد يُقاس هكذا، لا من الذاكرة:
+%%   grep -rhoE "legal_[a-z_]+_transition" db/migrations/*.up.sql | sort -u
 %% القاعدة ٥: الحالات آلات حالة. لا تحديث حرّ لعمود حالة، ولا من مدير المركز.
 %% أي انتقال غير مذكور هنا يرفضه المشغّل في القاعدة بالكود المذكور على كل صندوق.
 %% ---
@@ -12,6 +17,8 @@
 %% وكانت غائبة عن هذا المخطّط تمامًا. أُضيفت في المجموعة الأخيرة بلون مختلف:
 %% الفرق ليس شكليًّا — المحروسة ترفض الانتقال غير الشرعي، وغير المحروسة تقبل أي
 %% قيمة من قائمتها. مَن يصمّم شاشة على الثانية يصمّم على قاعدة لا يفرضها أحد.
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart LR
   classDef start fill:#EDF1E5,stroke:#ADC793,color:#22333A
   classDef mid   fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
@@ -103,6 +110,46 @@ flowchart LR
     r2["ACCEPTED"]:::good
     r3["REJECTED"]:::bad
     r1 --> r2 & r3
+  end
+
+  subgraph PP["خطة التقسيط — 0142"]
+    direction LR
+    q1["DRAFT"]:::start
+    q2["ACTIVE"]:::mid
+    q3["RETIRED"]:::bad
+    q1 --> q2 & q3
+    q2 --> q3
+  end
+
+  subgraph INST["القسط — 0142"]
+    direction LR
+    n1["PENDING"]:::start
+    n2["DUE"]:::mid
+    n3["OVERDUE"]:::mid
+    n4["PAID"]:::good
+    n5["CANCELLED"]:::bad
+    n6["SUPERSEDED"]:::bad
+    n1 --> n2 & n4
+    n2 --> n4 & n3
+    n3 --> n4
+    n4 -->|"دفعة أُلغيت — الجدول يتبع المال"| n1
+    n4 --> n2
+    n1 --> n5 & n6
+    n2 --> n5 & n6
+    n3 --> n5 & n6
+  end
+
+  subgraph MT["قالب الرسائل — 0153"]
+    direction LR
+    g1["DRAFT"]:::start
+    g2["SUBMITTED"]:::mid
+    g3["APPROVED"]:::good
+    g4["REJECTED"]:::bad
+    g1 --> g2
+    g2 --> g3 & g4
+    g2 -->|"تعديل يُرجعه مسوّدة"| g1
+    g3 --> g1
+    g4 --> g1
   end
 
   subgraph FREE["أعمدة حالة بلا دالة انتقال — CHECK وحده يحرسها"]

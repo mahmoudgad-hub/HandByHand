@@ -15,6 +15,7 @@ import (
 
 	"github.com/handbyhand/hbh/api/internal/audit"
 	"github.com/handbyhand/hbh/api/internal/config"
+	"github.com/handbyhand/hbh/api/internal/meeting"
 	"github.com/handbyhand/hbh/api/internal/sms"
 	"github.com/handbyhand/hbh/api/internal/store"
 )
@@ -38,18 +39,24 @@ type Server struct {
 	// screen, and queueing it would mean writing a live credential into a
 	// table to wait there. See store.EnqueueOTPDelivery.
 	sender sms.Sender
+
+	// meetings carries the video for an online consultation. It decides
+	// nothing: hbh.authorize_meeting_entry says who may enter and until
+	// when, and this signs what it decided.
+	meetings meeting.Provider
 }
 
 // NewServer wires the routes.
-func NewServer(cfg config.Config, db *store.DB, params *store.Params, rec *audit.Recorder, log *slog.Logger, sender sms.Sender) *Server {
+func NewServer(cfg config.Config, db *store.DB, params *store.Params, rec *audit.Recorder, log *slog.Logger, sender sms.Sender, meetings meeting.Provider) *Server {
 	return &Server{
-		cfg:     cfg,
-		db:      db,
-		params:  params,
-		audit:   rec,
-		log:     log,
-		authLim: newLimiter(cfg.AuthRatePerMinute),
-		sender:  sender,
+		cfg:      cfg,
+		db:       db,
+		params:   params,
+		audit:    rec,
+		log:      log,
+		authLim:  newLimiter(cfg.AuthRatePerMinute),
+		sender:   sender,
+		meetings: meetings,
 	}
 }
 
@@ -117,6 +124,11 @@ func (s *Server) Handler() http.Handler {
 	rt.route(http.MethodGet, "/api/v1/children/{child_id}/packages", s.requireAuth(http.HandlerFunc(s.handlePackages)))
 	rt.route(http.MethodGet, "/api/v1/children/{child_id}/balance", s.requireAuth(http.HandlerFunc(s.handleBalance)))
 	rt.route(http.MethodGet, "/api/v1/invoices/{invoice_id}", s.requireAuth(http.HandlerFunc(s.handleInvoice)))
+
+	// The door into an online consultation. See meeting_handlers.go, and
+	// migration 0120 for why this one hands the browser a credential when
+	// the stream below so carefully does not.
+	rt.route(http.MethodPost, "/api/v1/appointments/{appointment_id}/consultation", s.requireAuth(http.HandlerFunc(s.handleEnterConsultation)))
 
 	// The live stream. See live_handlers.go before changing any of these.
 	rt.route(http.MethodPost, "/api/v1/sessions/{session_id}/stream", s.requireAuth(http.HandlerFunc(s.handleOpenStream)))
@@ -217,6 +229,11 @@ func (s *Server) Handler() http.Handler {
 	// The service watching itself. Reads of hbh.api_request_log, which this
 	// process writes one row of per request.
 	rt.route(http.MethodPost, "/api/v1/family-messages/{guardian_id}/read", s.requireAuth(http.HandlerFunc(s.handleReadFamilyMessages)))
+	rt.route(http.MethodGet, "/api/v1/chat-contacts", s.requireAuth(http.HandlerFunc(s.handleChatContacts)))
+	rt.route(http.MethodPost, "/api/v1/chat-broadcast", s.requireAuth(http.HandlerFunc(s.handleBroadcastStaff)))
+	rt.route(http.MethodGet, "/api/v1/direct-messages/{user_id}", s.requireAuth(http.HandlerFunc(s.handleDirectMessages)))
+	rt.route(http.MethodPost, "/api/v1/direct-messages/{user_id}", s.requireAuth(http.HandlerFunc(s.handleSendDirectMessage)))
+	rt.route(http.MethodPost, "/api/v1/direct-messages/{user_id}/read", s.requireAuth(http.HandlerFunc(s.handleReadDirectMessages)))
 	rt.route(http.MethodGet, "/api/v1/family-contacts", s.requireAuth(http.HandlerFunc(s.handleFamilyContacts)))
 	rt.route(http.MethodGet, "/api/v1/family-messages/{guardian_id}", s.requireAuth(http.HandlerFunc(s.handleFamilyMessages)))
 	rt.route(http.MethodPost, "/api/v1/family-messages/{guardian_id}", s.requireAuth(http.HandlerFunc(s.handleSendFamilyMessage)))
@@ -224,6 +241,8 @@ func (s *Server) Handler() http.Handler {
 	rt.route(http.MethodGet, "/api/v1/billing/summary", s.requireAuth(http.HandlerFunc(s.handleBillingSummary)))
 	rt.route(http.MethodGet, "/api/v1/dashboard/metrics", s.requireAuth(http.HandlerFunc(s.handleDashboardMetrics)))
 	rt.route(http.MethodGet, "/api/v1/ops/health", s.requireAuth(http.HandlerFunc(s.handleOpsHealth)))
+	rt.route(http.MethodGet, "/api/v1/ops/analytics", s.requireAuth(http.HandlerFunc(s.handleOpsAnalytics)))
+	rt.route(http.MethodPost, "/api/v1/usage-events", s.requireAuth(http.HandlerFunc(s.handleUsageEvent)))
 	rt.route(http.MethodGet, "/api/v1/ops/errors", s.requireAuth(http.HandlerFunc(s.handleOpsErrors)))
 
 	// The centre's operating parameters. Read by anyone signed in - RLS
@@ -301,6 +320,8 @@ func (s *Server) Handler() http.Handler {
 	rt.route(http.MethodGet, "/api/v1/staff-documents/{document_id}/file", s.requireAuth(http.HandlerFunc(s.handleStaffDocFile)))
 	rt.route(http.MethodPost, "/api/v1/users/{user_id}/photo", s.requireAuth(http.HandlerFunc(s.handleUploadStaffPhoto)))
 	rt.route(http.MethodGet, "/api/v1/users/{user_id}/photo", s.requireAuth(http.HandlerFunc(s.handleStaffPhoto)))
+	rt.route(http.MethodPost, "/api/v1/users/{user_id}/avatar", s.requireAuth(http.HandlerFunc(s.handleUploadUserAvatar)))
+	rt.route(http.MethodGet, "/api/v1/users/{user_id}/avatar", s.requireAuth(http.HandlerFunc(s.handleUserAvatar)))
 	rt.route(http.MethodGet, "/api/v1/permissions", s.requireAuth(http.HandlerFunc(s.handlePermissions)))
 
 	// A photograph or an introduction film for the public site. The only

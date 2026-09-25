@@ -1,4 +1,4 @@
-<div class="pa">
+<div class="pa portal-redesign">
 
   <!-- Keyboard users land here first. Without it, reaching the screen's own
        content means tabbing past the header and the whole nav on every
@@ -18,6 +18,8 @@
         <img class="hbh-logo hbh-brand__wm" src="assets/brand/hbh-logo-wordmark.png"
              width="122" height="48" alt="">
       </a>
+
+      <p class="portal-nav-label">{{ 'login.title' | t }}</p>
 
       <nav class="hbh-webnav" [attr.aria-label]="'nav.primary' | t">
         @for (item of webNav; track item.key) {
@@ -61,6 +63,8 @@
              tell a family nothing is waiting on the strength of a call that
              never answered. -->
         <a class="hbh-webnav__item hbh-bell" routerLink="/notifications"
+           [class.is-active]="chrome().tab === 'notifications'"
+           [attr.aria-current]="chrome().tab === 'notifications' ? 'page' : null"
            [attr.aria-label]="'notifications.title' | t">
           <hbh-icon name="ic-bell" />
           {{ 'notifications.title' | t }}
@@ -104,31 +108,60 @@
     }
 
     <div class="pa__ttl">
-      <div class="pa__title">{{ chrome().titleKey | t }}</div>
+      <h1 class="pa__title">{{ chrome().titleKey | t }}</h1>
       @if (subtitle()) {
         <div class="pa__sub">{{ subtitle() }}</div>
       }
     </div>
 
-    <!-- Same on the phone: requests, and named as requests. No dot here
-         either - it was counting the home screen's attention items. -->
-    <a class="pa__act" routerLink="/requests" [attr.aria-label]="'nav.requests' | t">
-      <hbh-icon name="ic-chat" />
+    <!-- THE BELL, on the phone too (UX-5). It opens the notifications feed
+         and its dot is the unread count and nothing else - absent when the
+         count is unknown, as on the wide bar. "More" moved down to the tab
+         bar, where a thumb reaches it. -->
+    <a class="pa__act" routerLink="/notifications"
+       [attr.aria-label]="'notifications.title' | t"
+       [attr.aria-current]="chrome().tab === 'notifications' ? 'page' : null">
+      <hbh-icon name="ic-bell" />
+      @if (unread(); as n) { @if (n > 0) { <i aria-hidden="true"></i> } }
     </a>
   </header>
 
   <!-- The scroll container on the phone; an ordinary block on a laptop. -->
   <main class="pa__body" id="paBody" tabindex="-1">
+    <div class="portal-page-heading">
+      <div class="portal-page-title">
+      @if (!selectedChild() ? chrome().back : null; as back) {
+        <a class="portal-context-back" [routerLink]="back" [attr.aria-label]="'action.back' | t"><hbh-icon name="ic-back" /></a>
+      }
+      <div>
+      <h1>{{ chrome().titleKey | t }}</h1>
+      @if (pageIntro()) { <p class="portal-page-intro">{{ pageIntro() | t }}</p> }
+      </div>
+      </div>
+      @if (selectedChild(); as selected) {
+        <div class="portal-child-heading" [class.portal-child-heading--billing]="chrome().tab === 'billing'">
+        @if (chrome().back; as back) {
+          <a class="portal-context-back portal-child-back" [routerLink]="back" [attr.aria-label]="'action.back' | t"><hbh-icon name="ic-back" /></a>
+        }
+        <div class="portal-child-context">
+          <hbh-person-avatar class="portal-context-avatar" [childId]="selected.id" [gender]="selected.gender" [birthDate]="selected.birthDate" />
+          <strong>{{ selected.fullName }}</strong>
+          @if (canSwitchChild()) {
+            <button class="portal-switch-child" type="button" aria-haspopup="dialog" (click)="openChildPicker()">
+              <span>{{ 'action.switchChild' | t }}</span><hbh-icon name="ic-refresh" />
+            </button>
+          }
+        </div>
+        </div>
+      }
+      @if (chrome().tab === 'billing') {
+        <p>{{ 'billing.familyScope' | t }}</p>
+      }
+    </div>
 
     <!-- A screen the top bar cannot point at still needs a way back. Shown
          only at 900px and above: below that the title bar's arrow is the way
          back, and two of them would be one too many. -->
-    @if (chrome().back; as back) {
-      <a class="pa__crumb" [routerLink]="back">
-        <hbh-icon name="ic-back" />
-        {{ 'action.back' | t }}
-      </a>
-    }
 
     <router-outlet />
   </main>
@@ -144,7 +177,54 @@
         {{ tab.labelKey | t }}
       </a>
     }
+    <!-- The fifth tab is "more": the family's other screens - billing,
+         requests, the centre's messages, notifications, the account - in
+         one sheet under the thumb, instead of five tabs hiding six screens
+         (UX-5, target IA §2). It is lit when one of those screens is on. -->
+    <button class="pa__tab" type="button" aria-haspopup="dialog"
+            [class.is-on]="moreTabOn()" [attr.aria-expanded]="moreOpen()"
+            (click)="moreOpen.set(true)">
+      <hbh-icon name="ic-menu" />
+      {{ 'nav.more' | t }}
+    </button>
   </nav>
+
+  @if (moreOpen()) {
+    <dialog hbhModal class="portal-more" aria-labelledby="portalMoreTitle" (dismissed)="moreOpen.set(false)">
+      <h2 id="portalMoreTitle">{{ 'nav.more' | t }}</h2>
+      <nav [attr.aria-label]="'nav.more' | t">
+        <a routerLink="/billing" (click)="moreOpen.set(false)">{{ 'nav.billing' | t }}</a>
+        <a routerLink="/requests" [queryParams]="{ tab: 'requests' }" (click)="moreOpen.set(false)">{{ 'nav.requests' | t }}</a>
+        <a routerLink="/requests" [queryParams]="{ tab: 'messages' }" (click)="moreOpen.set(false)">{{ 'requests.tabMessages' | t }}</a>
+        <a routerLink="/notifications" (click)="moreOpen.set(false)">{{ 'notifications.title' | t }}</a>
+        <a routerLink="/profile" (click)="moreOpen.set(false)">{{ 'nav.profile' | t }}</a>
+        @if (canSwitchChild()) {
+          <button type="button" (click)="openChildPicker()">{{ 'action.switchChild' | t }}</button>
+        }
+      </nav>
+      <button type="button" (click)="moreOpen.set(false)">{{ 'action.close' | t }}</button>
+    </dialog>
+  }
+
+  @if (childPickerOpen()) {
+    <dialog hbhModal class="portal-child-picker" aria-labelledby="childPickerTitle" (dismissed)="childPickerOpen.set(false)">
+      <div class="child-picker-head">
+        <h2 id="childPickerTitle">{{ 'action.switchChild' | t }}</h2>
+        <button type="button" class="hbh-btn hbh-btn--ghost" (click)="childPickerOpen.set(false)" [disabled]="switchingChild()">{{ 'action.close' | t }}</button>
+      </div>
+      <div class="child-picker-list" [attr.aria-busy]="switchingChild()">
+        @for (child of familyChildren(); track child.id) {
+          <button class="child-picker-option" type="button" [class.is-selected]="selectedChild()?.id === child.id"
+                  [class.is-female]="child.gender === 'F'" [attr.aria-pressed]="selectedChild()?.id === child.id"
+                  [disabled]="switchingChild()" (click)="chooseChild(child)">
+            <hbh-person-avatar [childId]="child.id" [gender]="child.gender" [birthDate]="child.birthDate" />
+            <span><strong>{{ child.fullName }}</strong><small>{{ child.birthDate | hbhAge }} · {{ child.childNo }}</small></span>
+          </button>
+        }
+      </div>
+      @if (switchFailed()) { <p role="alert">{{ 'error.load' | t }}</p> }
+    </dialog>
+  }
 
   <!-- The satisfaction dialog is NOT here. The welcome screen - the first
        thing a parent sees after signing in, and the whole point of asking

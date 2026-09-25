@@ -7,6 +7,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormatService } from '@hbh/shared/format/format.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
 import { Icon } from '@hbh/shared/icon/icon';
+import { DateParts } from '@hbh/shared/ui/date-parts';
 import { HBH_CONFIG } from '@hbh/shared/config/app-config';
 import { EnrolmentApi, EnrolmentApplication } from '../../core/api/enrolment.api';
 
@@ -44,7 +45,7 @@ type FieldName =
 @Component({
   selector: 'hbh-apply',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, RouterLink],
+  imports: [Icon, TranslatePipe, RouterLink, DateParts],
   templateUrl: './apply.html',
   styleUrl: './apply.css',
 })
@@ -61,55 +62,6 @@ export class Apply {
      code rather than a wrong friendly word. */
   protected readonly relationships = ['MOTHER', 'FATHER', 'GUARDIAN'] as const;
   protected readonly genders = ['M', 'F'] as const;
-
-  /*
-   * Birth date as three lists, not a native date input.
-   *
-   * <input type="date"> renders in the BROWSER's locale, not the page's - a
-   * parent on an English Chrome saw mm/dd/yyyy inside this Arabic form, and
-   * 7 March entered as 07/03 was accepted as 3 July. Nothing errors: the
-   * field is valid, the form submits, and the age that every clinical
-   * decision hangs on is wrong by months.
-   *
-   * The parent fills this once, from home, with nobody checking it. A named
-   * month cannot be misread.
-   */
-  protected readonly days = Array.from({ length: 31 }, (unused, i) => i + 1);
-  protected readonly months = this.format.monthNames();
-  protected readonly years = Array.from(
-    { length: 26 }, (unused, i) => new Date().getFullYear() - i);
-
-  protected readonly birthDay = signal('');
-  protected readonly birthMonth = signal('');
-  protected readonly birthYear = signal('');
-
-  /**
-   * Compose the three into the ISO date the service expects, and only when
-   * all three are chosen: a half-built date is not a date, and writing one
-   * would put "2019-00-00" on the wire.
-   *
-   * A day the month does not have - 31 April, 30 February - resolves to
-   * empty rather than rolling forward to 1 May, which is what Date() does
-   * on its own and what nobody would notice.
-   */
-  protected setBirthPart(part: 'd' | 'm' | 'y', raw: string): void {
-    if (part === 'd') { this.birthDay.set(raw); }
-    if (part === 'm') { this.birthMonth.set(raw); }
-    if (part === 'y') { this.birthYear.set(raw); }
-
-    const day = Number(this.birthDay());
-    const month = Number(this.birthMonth());
-    const year = Number(this.birthYear());
-    if (!day || !month || !year) {
-      this.setValue('child_birth_date', '');
-      return;
-    }
-    const made = new Date(Date.UTC(year, month - 1, day));
-    const real = made.getUTCFullYear() === year
-      && made.getUTCMonth() === month - 1
-      && made.getUTCDate() === day;
-    this.setValue('child_birth_date', real ? made.toISOString().slice(0, 10) : '');
-  }
 
   protected readonly values = signal<Record<string, string>>({
     parent_name_ar: '',

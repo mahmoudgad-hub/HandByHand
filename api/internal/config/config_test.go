@@ -1,6 +1,8 @@
 package config
 
 import (
+	"net/netip"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -52,6 +54,68 @@ func TestTrustProxyDefaultsOff(t *testing.T) {
 	}
 	if cfg.TrustProxy {
 		t.Fatal("TRUST_PROXY must default to false")
+	}
+	if len(cfg.TrustedProxies) != 0 {
+		t.Fatalf("with the flag off nothing is trusted, got %v", cfg.TrustedProxies)
+	}
+}
+
+// TRUST_PROXY=true with no list names the deployment it was written for:
+// nginx reaching this service over loopback (deploy/server). Leaving the list
+// empty instead would read as "trusting" and behave as "off".
+func TestTrustedProxiesDefaultToLoopbackWhenTrusting(t *testing.T) {
+	cfg, err := loadFrom(env(map[string]string{
+		"DATABASE_URL": "postgres://x/y",
+		"TRUST_PROXY":  "true",
+	}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !cfg.TrustedProxies[0].Contains(netip.MustParseAddr("127.0.0.1")) {
+		t.Fatalf("loopback is not trusted by default: %v", cfg.TrustedProxies)
+	}
+	if slices.ContainsFunc(cfg.TrustedProxies, func(p netip.Prefix) bool {
+		return p.Contains(netip.MustParseAddr("10.0.0.9"))
+	}) {
+		t.Fatalf("the default trusts more than loopback: %v", cfg.TrustedProxies)
+	}
+}
+
+// A CIDR and a bare address are both accepted; a bare address means that
+// host alone and must not widen to its network.
+func TestTrustedProxiesAcceptCIDRAndBareAddress(t *testing.T) {
+	cfg, err := loadFrom(env(map[string]string{
+		"DATABASE_URL":    "postgres://x/y",
+		"TRUST_PROXY":     "true",
+		"TRUSTED_PROXIES": "10.1.0.0/16, 192.168.4.7",
+	}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	in := func(s string) bool {
+		return slices.ContainsFunc(cfg.TrustedProxies, func(p netip.Prefix) bool {
+			return p.Contains(netip.MustParseAddr(s))
+		})
+	}
+	if !in("10.1.9.9") || !in("192.168.4.7") {
+		t.Fatalf("a named proxy is not trusted: %v", cfg.TrustedProxies)
+	}
+	if in("192.168.4.8") {
+		t.Fatal("a bare address widened to its network")
+	}
+}
+
+// A typo that silently narrows the trust list fails closed - which sounds
+// safe, and is also invisible: the operator who wrote it believes the
+// opposite. It is an error instead.
+func TestTrustedProxiesRejectGarbage(t *testing.T) {
+	_, err := loadFrom(env(map[string]string{
+		"DATABASE_URL":    "postgres://x/y",
+		"TRUST_PROXY":     "true",
+		"TRUSTED_PROXIES": "10.1.0.0/16, not-an-address",
+	}))
+	if err == nil || !strings.Contains(err.Error(), "TRUSTED_PROXIES") {
+		t.Fatalf("a bad entry was accepted: %v", err)
 	}
 }
 
@@ -149,56 +213,30 @@ func TestDevelopmentAllowsTheDevelopmentSMSProvider(t *testing.T) {
 	}
 }
 
-func TestContentSIDsParsing(t *testing.T) {
-	got, err := contentSIDs(" OTP = HX1 , APPOINTMENT_CONFIRMED=HX2 ")
-	if err != nil {
-		t.Fatalf("a well-formed list should parse: %v", err)
-	}
-	if got["OTP"] != "HX1" || got["APPOINTMENT_CONFIRMED"] != "HX2" {
-		t.Fatalf("got %v", got)
-	}
-	if empty, err := contentSIDs(""); err != nil || len(empty) != 0 {
-		t.Fatalf("an empty list is not an error: %v %v", empty, err)
-	}
-
-	// A MALFORMED ENTRY IS AN ERROR, NOT A SKIP. Dropping the pair somebody
-	// mistyped turns a typo into a CONFIG failure at the moment a family was
-	// owed a message, instead of at startup where it can be read.
-	for _, bad := range []string{"OTP", "=HX1", "OTP=", "OTP=HX1,OTP=HX2"} {
-		if _, err := contentSIDs(bad); err == nil {
-			t.Fatalf("%q must be refused at startup", bad)
-		}
-	}
-}
-
-func TestProductionRefusesTwilioWithoutAnOTPTemplate(t *testing.T) {
+// The sender and its token are refused at startup when missing. The login-code
+// TEMPLATE is not this function's to check: the name and language it was
+// approved under live in hbh.message_templates and cmd/hbhd refuses to start
+// production without one, once the database can be asked.
+//
+// THE TWILIO VERSION OF THIS TEST WENT WITH THE TWILIO SENDER on 2026-09-18,
+// and so did TestFreeformFallbackIsRefusedOutsideDevelopment: the affordance it
+// guarded was Twilio's sandbox window, and Meta's Cloud API has no window to
+// lend. Free text with no approved template is now refused by the sender in
+// every environment, which is what that flag existed to prevent in production.
+func TestProductionRefusesMetaWithoutASenderOrToken(t *testing.T) {
 	base := map[string]string{
 		"DATABASE_URL":         "postgres://x/y",
 		"APP_ENV":              "production",
 		"SESSION_SECRET":       "0123456789abcdef0123456789abcdef",
-		"SMS_PROVIDER":         "twilio_whatsapp",
-		"TWILIO_ACCOUNT_SID":   "AC00000000000000000000000000000000",
-		"TWILIO_AUTH_TOKEN":    "secret",
-		"TWILIO_WHATSAPP_FROM": "+201000000000",
-		"TWILIO_CONTENT_SIDS":  "OTP_LOGIN=HX1",
+		"SMS_PROVIDER":         "meta_whatsapp",
+		"META_PHONE_NUMBER_ID": "1332135986649707",
+		"META_ACCESS_TOKEN":    "secret",
 	}
 	if _, err := loadFrom(env(base)); err != nil {
-		t.Fatalf("a complete twilio configuration should load: %v", err)
+		t.Fatalf("a complete meta configuration should load: %v", err)
 	}
 
-	// A login code is the one message whose absence closes the front door, so
-	// a deployment without its template must not start. Every other missing
-	// template costs one message; this one costs every sign-in.
-	noOTP := make(map[string]string, len(base))
-	for k, v := range base {
-		noOTP[k] = v
-	}
-	noOTP["TWILIO_CONTENT_SIDS"] = "APPOINTMENT_CONFIRMED=HX2"
-	if _, err := loadFrom(env(noOTP)); err == nil {
-		t.Fatal("a production process with no OTP template must not start")
-	}
-
-	for _, cut := range []string{"TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"} {
+	for _, cut := range []string{"META_PHONE_NUMBER_ID", "META_ACCESS_TOKEN"} {
 		short := make(map[string]string, len(base))
 		for k, v := range base {
 			short[k] = v
@@ -209,62 +247,19 @@ func TestProductionRefusesTwilioWithoutAnOTPTemplate(t *testing.T) {
 		}
 	}
 
-	// A sender is required, and either kind counts.
-	noSender := make(map[string]string, len(base))
+	// The API version is optional: the sender carries a default, and a
+	// deployment that has to move off a retired version sets it without a
+	// build.
+	pinned := make(map[string]string, len(base))
 	for k, v := range base {
-		noSender[k] = v
+		pinned[k] = v
 	}
-	delete(noSender, "TWILIO_WHATSAPP_FROM")
-	if _, err := loadFrom(env(noSender)); err == nil {
-		t.Fatal("production with no sender at all must not start")
-	}
-	noSender["TWILIO_MESSAGING_SERVICE_SID"] = "MG00000000000000000000000000000000"
-	if _, err := loadFrom(env(noSender)); err != nil {
-		t.Fatalf("a messaging service is a sender: %v", err)
-	}
-}
-
-// The third development-only affordance, refused outside development exactly
-// as OTP_ECHO and SMS_PROVIDER=dev are. It fails the same way if it escapes:
-// quietly, by sending nothing at all in a channel that refuses free text.
-func TestFreeformFallbackIsRefusedOutsideDevelopment(t *testing.T) {
-	base := map[string]string{
-		"DATABASE_URL":          "postgres://x/y",
-		"SESSION_SECRET":        "0123456789abcdef0123456789abcdef",
-		"TWILIO_ALLOW_FREEFORM": "true",
-		"SMS_PROVIDER":          "twilio_whatsapp",
-		"TWILIO_ACCOUNT_SID":    "AC00000000000000000000000000000000",
-		"TWILIO_AUTH_TOKEN":     "secret",
-		"TWILIO_WHATSAPP_FROM":  "+201000000000",
-		"TWILIO_CONTENT_SIDS":   "OTP_LOGIN=HX1",
-	}
-
-	dev := make(map[string]string, len(base))
-	for k, v := range base {
-		dev[k] = v
-	}
-	dev["APP_ENV"] = "development"
-	cfg, err := loadFrom(env(dev))
+	pinned["META_API_VERSION"] = "v22.0"
+	cfg, err := loadFrom(env(pinned))
 	if err != nil {
-		t.Fatalf("development may turn it on: %v", err)
+		t.Fatalf("a pinned api version should load: %v", err)
 	}
-	if !cfg.TwilioAllowFreeform {
-		t.Fatal("the setting did not survive loading")
-	}
-
-	prod := make(map[string]string, len(base))
-	for k, v := range base {
-		prod[k] = v
-	}
-	prod["APP_ENV"] = "production"
-	if _, err := loadFrom(env(prod)); err == nil {
-		t.Fatal("a production process must not start with the freeform fallback on")
-	}
-
-	// And off, production still starts - so the test above is about the flag
-	// and not about the rest of this configuration being wrong.
-	prod["TWILIO_ALLOW_FREEFORM"] = "false"
-	if _, err := loadFrom(env(prod)); err != nil {
-		t.Fatalf("production with the flag off should load: %v", err)
+	if cfg.MetaAPIVersion != "v22.0" {
+		t.Fatalf("the api version did not survive loading: %q", cfg.MetaAPIVersion)
 	}
 }

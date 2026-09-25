@@ -6,16 +6,17 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { PortalApi } from '../../core/api/portal-api';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
 import { ChildContextService } from '../../core/auth/child-context.service';
 import { FormatService } from '@hbh/shared/format/format.service';
-import { HbhAgePipe, HbhCountPipe, HbhMoneyPipe } from '@hbh/shared/format/format.pipes';
+import { HbhMoneyPipe, HbhNumberPipe } from '@hbh/shared/format/format.pipes';
 import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
-import { AppointmentSummary, HomeSummary } from '../../core/models/portal.models';
+import { AppointmentSummary, AttentionItem, Child, HomeSummary } from '../../core/models/portal.models';
+import { attentionIcon, attentionTarget, attentionTint } from '../welcome/attention';
 import { Icon } from '@hbh/shared/icon/icon';
 import { AppointmentRow } from '../../shared/ui/appointment-row';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
@@ -34,7 +35,7 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
   selector: 'hbh-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink, Icon, TranslatePipe, HbhAgePipe, HbhCountPipe, HbhMoneyPipe,
+    RouterLink, Icon, TranslatePipe, HbhNumberPipe, HbhMoneyPipe,
     AppointmentRow, Skeleton, ErrorNote,
   ],
   templateUrl: './home.html',
@@ -43,10 +44,21 @@ export class Home {
   private readonly api = inject(PortalApi);
   private readonly childContext = inject(ChildContextService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
   private readonly i18n = inject(I18nService);
   protected readonly format = inject(FormatService);
 
   protected readonly child = this.childContext.selected;
+
+  /**
+   * What is waiting for the FAMILY - every child at once - from the same
+   * read the welcome screen makes. It lives here because this is the page
+   * a parent opens every day; the welcome screen is the door, seen once.
+   * A failure here draws nothing: the list is a convenience over screens
+   * that each say what they hold.
+   */
+  protected readonly attention = signal<readonly AttentionItem[]>([]);
+  private readonly family = signal<readonly Child[]>([]);
   protected readonly data = signal<HomeSummary | null>(null);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
@@ -74,6 +86,7 @@ export class Home {
   private loadingFor: string | null = null;
 
   protected load(): void {
+    this.loadAttention();
     const wanted = this.childContext.requireId();
     this.loadingFor = wanted;
     this.loading.set(true);
@@ -96,6 +109,50 @@ export class Home {
           this.traceId.set(traceIdFor(error));
         },
       });
+  }
+
+  private loadAttention(): void {
+    this.api.welcome()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (summary) => {
+          this.attention.set(summary.attention);
+          this.family.set(summary.children);
+        },
+        error: () => this.attention.set([]),
+      });
+  }
+
+  protected attentionIcon = attentionIcon;
+  protected attentionTint = attentionTint;
+
+  /** The second line: money through the formatter with its currency, a count through the plural rules. */
+  protected attentionDetail(item: AttentionItem): string {
+    if (item.amount !== null) {
+      return this.format.money(item.amount, item.currency ?? undefined);
+    }
+    if (item.count !== null) {
+      return this.i18n.plural('attention.openActivities', item.count);
+    }
+    return '';
+  }
+
+  /**
+   * Opens the item where it is dealt with. A report or an activity belongs
+   * to one child, so that child is chosen first - the same switch the
+   * header offers - and the family-wide screens need no child at all.
+   */
+  protected openAttention(item: AttentionItem): void {
+    const target = attentionTarget(item);
+    if (item.childId && item.childId !== this.child()?.id) {
+      const next = this.family().find((candidate) => candidate.id === item.childId);
+      if (next) {
+        this.childContext.select(next);
+      } else if (target.needsChild) {
+        return;
+      }
+    }
+    void this.router.navigate([target.path], { queryParams: target.query ?? {} });
   }
 
   /**

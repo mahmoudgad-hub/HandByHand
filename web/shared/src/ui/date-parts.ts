@@ -32,26 +32,37 @@ import { I18nService } from '../i18n/i18n.service';
   selector: 'hbh-date-parts',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!-- [selected] ON THE OPTIONS, not [value] on the <select>.
+         A binding on the element runs BEFORE the @for below it creates the
+         options, so on the very first render there is nothing for the value
+         to match and the box stays on its placeholder - and the binding
+         never runs again, because the value it was given has not changed.
+         Typing a date worked; opening a dialogue on a date the row already
+         had drew three empty boxes over a date that was stored perfectly
+         well, so it read as "it did not save". An option carries its own
+         selectedness, and it carries it whenever it is drawn. -->
     <div class="hbh-dateparts">
-      <select [id]="fieldId()" [value]="part('d')"
+      <select [id]="fieldId()"
               [attr.aria-label]="i18n.translate('field.day')"
               (change)="setPart('d', $any($event.target).value)">
-        <option value="">{{ i18n.translate('field.day') }}</option>
-        @for (d of days; track d) { <option [value]="d">{{ d }}</option> }
-      </select>
-      <select [value]="part('m')"
-              [attr.aria-label]="i18n.translate('field.month')"
-              (change)="setPart('m', $any($event.target).value)">
-        <option value="">{{ i18n.translate('field.month') }}</option>
-        @for (name of months; track name; let i = $index) {
-          <option [value]="i + 1">{{ name }}</option>
+        <option value="" [selected]="!part('d')">{{ i18n.translate('field.day') }}</option>
+        @for (d of days; track d) {
+          <option [value]="d" [selected]="is('d', d)">{{ d }}</option>
         }
       </select>
-      <select [value]="part('y')"
-              [attr.aria-label]="i18n.translate('field.year')"
+      <select [attr.aria-label]="i18n.translate('field.month')"
+              (change)="setPart('m', $any($event.target).value)">
+        <option value="" [selected]="!part('m')">{{ i18n.translate('field.month') }}</option>
+        @for (name of months; track name; let i = $index) {
+          <option [value]="i + 1" [selected]="is('m', i + 1)">{{ name }}</option>
+        }
+      </select>
+      <select [attr.aria-label]="i18n.translate('field.year')"
               (change)="setPart('y', $any($event.target).value)">
-        <option value="">{{ i18n.translate('field.year') }}</option>
-        @for (y of years; track y) { <option [value]="y">{{ y }}</option> }
+        <option value="" [selected]="!part('y')">{{ i18n.translate('field.year') }}</option>
+        @for (y of years; track y) {
+          <option [value]="y" [selected]="is('y', y)">{{ y }}</option>
+        }
       </select>
     </div>
   `,
@@ -60,6 +71,16 @@ import { I18nService } from '../i18n/i18n.service';
        than a day number, and letting them size themselves puts one wide box
        beside two narrow ones, which reads as a mistake. */
     .hbh-dateparts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    /* Its own box styling. A parent screen's "select { ... }" does not reach
+       in here - styles are scoped per component - so on the enrolment form
+       the three boxes rendered as bare browser controls beside the styled
+       inputs around them. 44px is the touch height the forms use. */
+    .hbh-dateparts select {
+      box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px;
+      padding: 8px 10px; border: 1px solid #d5e2e2; border-radius: 8px;
+      background: #fff; color: inherit; font: inherit; cursor: pointer;
+    }
+    .hbh-dateparts select:focus-visible { outline: 2px solid #0a8f97; outline-offset: 1px; }
   `],
 })
 export class DateParts {
@@ -126,6 +147,11 @@ export class DateParts {
       d: String(Number(parts[2]) || ''),
     };
   });
+
+  /** Whether this option is the chosen one. The parts are held as text. */
+  protected is(which: 'y' | 'm' | 'd', option: number): boolean {
+    return this.part(which) === String(option);
+  }
 
   protected part(which: 'y' | 'm' | 'd'): string {
     return (this.fromInput() ?? this.chosen())[which];

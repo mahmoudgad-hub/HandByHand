@@ -249,10 +249,39 @@ eq consent 'and the row is on the record' '1' \
 eq consent 'the desk may record it too' '201' \
   "$(req POST "/api/v1/guardians/$G1/consent" "{\"consent_type\":\"PHOTO_USE\",\"child_id\":$CHILD,\"text_version\":\"v1\"}" "$ADMIN")"
 
-eq consent 'ANOTHER family may not consent for this one' '409' \
+# 404 AND NOT 409, AND THE CHANGE WAS A LEAK BEING CLOSED.
+#
+# These two read '409' until 2026-09-12, and nobody had decided that:
+# HB082 was one of twenty-one live codes businessRefusal never named, so
+# the catch-all answered every one of them 'REFUSED'. The suite recorded
+# what the fallback happened to return and went green on it - which is
+# the whole failure mode of a test written after the code rather than
+# against a rule.
+#
+# And 409 was the wrong answer in a way that mattered. A guardian is not
+# staff and cannot be assumed to have mistyped: somebody walking guardian
+# ids from a family account learns from a 409 that the row is REAL, and
+# from a 404 nothing at all. The schema refuses to distinguish "no such
+# guardian" from "not yours" - see the three messages behind HB082 - and
+# now so does the answer.
+eq consent 'ANOTHER family may not consent for this one' '404' \
   "$(req POST "/api/v1/guardians/$G1/consent" "$LIVE" "$PARENT2")"
-eq consent 'and a therapist may not either' '409' \
+eq consent 'and a therapist may not either' '404' \
   "$(req POST "/api/v1/guardians/$G1/consent" "$LIVE" "$THERAPIST")"
+
+# The property, not the number. A refusal that says 404 still leaks if a
+# guardian who EXISTS answers differently from one who does not, so the
+# two are asked side by side and required to be identical - status and
+# body both. This is what the 409 could never have passed.
+eq consent 'a guardian that does not exist answers the same way' '404' \
+  "$(req POST "/api/v1/guardians/999999999/consent" "$LIVE" "$PARENT2")"
+# request_id is stripped because it is the one field that MUST differ -
+# it is per-request by design. Everything else has to match.
+strip_rid() { sed -E 's/,?"request_id":"[^"]*"//' "$BODY"; }
+ABSENT_BODY="$(strip_rid)"
+eq consent 'the real guardian is refused identically' '404' \
+  "$(req POST "/api/v1/guardians/$G1/consent" "$LIVE" "$PARENT2")"
+eq consent 'and the two bodies are indistinguishable' "$ABSENT_BODY" "$(strip_rid)"
 
 eq consent 'a consent type must be named' '400' \
   "$(req POST "/api/v1/guardians/$G1/consent" '{}' "$ADMIN")"
@@ -270,17 +299,34 @@ eq consent 'and names the field' 'REQUIRED' "$(jstr "$BODY" consent_type)"
 # 'PHOTO' WITH a child trips the pairing first and reads as a refusal.
 # Two mistakes, two answers: "that is not a type" and "that type does
 # not take a child".
+#
+# BOTH ARE 400 SINCE 2026-09-12, AND THE DISTINCTION MOVED RATHER THAN
+# DIED. The pairing rule used to answer 409 only because HB080 fell to
+# businessRefusal's catch-all; it is a malformed BODY - a type that takes
+# no child, sent with a child - and no amount of waiting or retrying
+# changes the answer, which is the one thing 409 is supposed to mean.
+#
+# The two mistakes still answer differently and that is asserted below:
+# the list constraint NAMES a constraint, the pairing rule does not. The
+# original intent of this block is intact; only the axis it is read on
+# has changed, from the status to the body.
 eq consent 'an invented consent type is refused' '400' \
   "$(req POST "/api/v1/guardians/$G1/consent" '{"consent_type":"PHOTO"}' "$ADMIN")"
 eq consent 'and names the constraint' 'REFUSED' "$(jstr "$BODY" constraint)"
-eq consent 'the same type WITH a child trips the pairing rule' '409' \
+eq consent 'the same type WITH a child trips the pairing rule' '400' \
   "$(req POST "/api/v1/guardians/$G1/consent" "{\"consent_type\":\"PHOTO\",\"child_id\":$CHILD}" "$ADMIN")"
 # The pairing rule is not about 'PHOTO' being unknown - a REAL type on
 # the wrong side of it is refused identically. Without this the check
 # above would pass on the list constraint and prove nothing about the
 # pairing.
-eq consent 'and so does a real type on the wrong side of it' '409' \
+eq consent 'and so does a real type on the wrong side of it' '400' \
   "$(req POST "/api/v1/guardians/$G1/consent" "{\"consent_type\":\"SMS_NOTIFY\",\"child_id\":$CHILD}" "$ADMIN")"
+# The axis the two mistakes are still told apart on. A bare '' here means
+# no constraint was named, which is what a business rule refusing a body
+# looks like - as against the list constraint above, which names one. If
+# this ever reads 'REFUSED' the two have collapsed into one answer and
+# the block above has stopped proving anything.
+eq consent 'but the pairing rule names no constraint' '' "$(jstr "$BODY" constraint)"
 eq consent 'no such row was written' '0' \
   "$(psqlq "SELECT count(*) FROM hbh.consents WHERE guardian_id=$G1 AND consent_type IN ('PHOTO','SMS_NOTIFY')")"
 
@@ -330,6 +376,141 @@ eq docs 'a personnel file needs an identity' '401' \
   "$(req GET /api/v1/staff-documents/1/file)"
 eq docs 'and an unknown document is a 404' '404' \
   "$(req GET /api/v1/staff-documents/999999/file '' "$THERAPIST")"
+
+# =====================================================================
+# NOTIFICATIONS - the mailbox nothing was watching
+#
+# Two routes with no check anywhere in tests/: GET /api/v1/notifications
+# and POST /api/v1/notifications/{id}/read. They were found by listing
+# every registered route and asking which no suite so much as mentions -
+# the same inventory that created this suite, run again and still
+# finding something.
+#
+# THE RULE IS PER-USER AND NOT PER-CENTRE, which is why it belongs here
+# rather than beside the family thread. The policy reads
+#
+#     center_id = current_center_id() AND active_flg
+#                 AND user_id = current_user_id()
+#
+# so the second family is not refused by the centre check - they are in
+# the same centre - and a check with only one family in it would pass on
+# a policy that had lost its last clause entirely. And a notification
+# carries clinical context by design: "a session note was published for
+# your child". The wrong mailbox is the wrong child.
+#
+# THE ROWS ARE BUILT WITH A DIRECT INSERT, not by calling notify_guardians.
+# The product function decides WHO is notified and writing that decision
+# here would make the fixture depend on a rule this suite does not test;
+# worse, it fans out to every guardian of a child, so the second family's
+# isolation could be broken by the fixture itself rather than by the
+# endpoint. State is built, behaviour is tested.
+# =====================================================================
+NTF1="$(psqlq "INSERT INTO hbh.notifications (center_id, user_id, kind_code, title_ar, body_ar)
+                SELECT u.center_id, u.user_id, 'NOTE_PUBLISHED', 'إشعار الأسرة الأولى', 'نصّ'
+                  FROM hbh.users u WHERE u.username='a9_parent1' RETURNING notification_id")"
+NTF2="$(psqlq "INSERT INTO hbh.notifications (center_id, user_id, kind_code, title_ar, body_ar)
+                SELECT u.center_id, u.user_id, 'NOTE_PUBLISHED', 'إشعار الأسرة الثانية', 'نصّ'
+                  FROM hbh.users u WHERE u.username='a9_parent2' RETURNING notification_id")"
+for v in NTF1 NTF2; do
+  eval "val=\$$v"
+  ok_if bell "$v is known" "$([ -n "$val" ] && echo 0 || echo 1)" "$v is empty"
+done
+
+# The accept side first, as everywhere else in this suite.
+eq bell 'the family reads its own mailbox' '200' \
+  "$(req GET /api/v1/notifications '' "$PARENT1")"
+ok_if bell 'and its own notification is in it' \
+  "$(grep -q "\"notification_id\":$NTF1" "$BODY" && echo 0 || echo 1)" \
+  'the family cannot see its own notification'
+
+# THE CHECK THIS SECTION EXISTS FOR. Row level security filters, it does
+# not raise - so the wrong family gets 200 and the row is simply absent.
+# Asserting the status alone would pass on a deleted policy.
+eq bell 'the OTHER family also gets 200' '200' \
+  "$(req GET /api/v1/notifications '' "$PARENT2")"
+ok_if bell 'and the first family notification is NOT in it' \
+  "$(grep -q "\"notification_id\":$NTF1" "$BODY" && echo 1 || echo 0)" \
+  "notification $NTF1 leaked to another family"
+ok_if bell 'while its own IS' \
+  "$(grep -q "\"notification_id\":$NTF2" "$BODY" && echo 0 || echo 1)" \
+  'the second family cannot see its own notification'
+
+# Staff are not a special case here. a9_therapist holds a real staff
+# account in this centre and still has no business in a family mailbox.
+eq bell 'staff get 200 and not the family mailbox' '200' \
+  "$(req GET /api/v1/notifications '' "$THERAPIST")"
+ok_if bell 'and no family notification is in it' \
+  "$(grep -qE "\"notification_id\":($NTF1|$NTF2)" "$BODY" && echo 1 || echo 0)" \
+  'a family notification reached staff'
+
+# Marking read. hbh.mark_notification_read is SECURITY DEFINER, so the
+# policy is NOT what protects it - the ownership test lives in the
+# function's WHERE clause. That makes this the more important of the two
+# routes to watch: a policy is visible in pg_policy and a forgotten AND
+# in a function body is not.
+eq bell "another family may not mark this one read" '404' \
+  "$(req POST "/api/v1/notifications/$NTF1/read" '' "$PARENT2")"
+eq bell 'and it is still unread on the row' 't' \
+  "$(psqlq "SELECT read_at IS NULL FROM hbh.notifications WHERE notification_id=$NTF1")"
+
+eq bell 'the owner may' '204' \
+  "$(req POST "/api/v1/notifications/$NTF1/read" '' "$PARENT1")"
+eq bell 'and the row says so' 'f' \
+  "$(psqlq "SELECT read_at IS NULL FROM hbh.notifications WHERE notification_id=$NTF1")"
+
+# The second click is a 404 because the function matches on
+# read_at IS NULL, so "already read" answers exactly like "not yours" and
+# "no such row". That conflation is deliberate and worth pinning: it is
+# what stops a caller learning which notification ids exist by trying
+# them. If this ever answers 204 twice, the WHERE clause has been
+# loosened and the oracle is open.
+eq bell 'marking it again is refused, not silently repeated' '404' \
+  "$(req POST "/api/v1/notifications/$NTF1/read" '' "$PARENT1")"
+
+eq bell 'an anonymous caller has no mailbox' '401' "$(req GET /api/v1/notifications)"
+eq bell 'and cannot mark anything read' '401' \
+  "$(req POST "/api/v1/notifications/$NTF1/read")"
+
+# =====================================================================
+# THE PAIRS LIST - the third route nothing mentioned
+#
+# GET /api/v1/service-therapists feeds the booking screen one list of
+# valid (service, therapist) pairs, so an incompatible combination
+# cannot be expressed rather than merely being discouraged.
+#
+# WHAT THESE CHECKS DO NOT PROVE, SAID HERE SO NOBODY READS THEM AS
+# PROVING IT. The rule that matters on this route is centre scoping, and
+# this database has ONE centre. A fixture that cannot produce the second
+# case cannot tell the two apart - so a check written here as "the list
+# is only my centre's" would be green on a query with no centre clause
+# at all. When a second centre exists in the dev data, that check belongs
+# here and is the first thing to add.
+#
+# What IS provable: the door is shut to strangers, the list is not empty,
+# and `total` is not a number the handler made up separately from the
+# rows it sent - a count that drifts from its own payload is how a screen
+# pages past the end of a list.
+# =====================================================================
+eq pairs 'a stranger gets nothing' '401' "$(req GET /api/v1/service-therapists)"
+
+eq pairs 'a signed-in caller may read it' '200' \
+  "$(req GET /api/v1/service-therapists '' "$PARENT1")"
+
+# Not empty FIRST. Every assertion below this line is vacuous on an empty
+# list - "no pair leaked" and "the count matches" are both true of
+# nothing at all.
+PAIR_N="$(jnum "$BODY" total)"
+ok_if pairs 'and the list is not empty' \
+  "$([ -n "$PAIR_N" ] && [ "$PAIR_N" -gt 0 ] 2>/dev/null && echo 0 || echo 1)" \
+  "total is [${PAIR_N:-missing}] - every check below would pass on nothing"
+
+eq pairs 'the count matches the rows actually sent' "$PAIR_N" \
+  "$(jcount "$BODY" therapist_id)"
+eq pairs 'and matches what the schema holds' "$PAIR_N" \
+  "$(psqlq "SELECT count(*) FROM hbh.therapist_services ts
+              JOIN hbh.services s   ON s.service_id   = ts.service_id
+              JOIN hbh.therapists t ON t.therapist_id = ts.therapist_id
+             WHERE ts.active_flg AND s.active_flg AND t.active_flg")"
 
 # =====================================================================
 # THE DOOR

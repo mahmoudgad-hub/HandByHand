@@ -59,13 +59,13 @@
 <ng-template #front>
 <div class="identity-card" [class.girl]="girl()">
  <div class="card-logo"><img class="card-full-logo" src="assets/brand/card-logo.png" alt="Hand by Hand Skills Center"></div>
- <div class="card-motto">كل خطوة.. <br>تصنع فرقًا <span>{{ girl() ? '♥' : '★' }}</span></div>
- <img class="card-portrait" [class.is-illustration]="!portrait()" [src]="portrait() || ('assets/brand/child-' + (girl() ? 'girl' : 'boy') + '.png')" (error)="photoFailed.set(true)" alt="صورة الطفل">
+ <div class="card-motto">{{ 'card.motto1' | t }} <br>{{ 'card.motto2' | t }} <span>{{ girl() ? '♥' : '★' }}</span></div>
+ <img class="card-portrait" [class.is-illustration]="!portrait()" [src]="portrait() || ('assets/brand/child-' + (girl() ? 'girl' : 'boy') + '.png')" (error)="photoFailed.set(true)" [attr.alt]="'card.photoAlt' | t">
  <div class="card-data"><h3>{{ 'card.kind' | t }}</h3><h2>{{ name() }}</h2>
- <p><hbh-icon name="ic-calendar" /> تاريخ الميلاد: {{ birthDate() }}</p><p><hbh-icon name="ic-users" /> الجنس: {{ girl() ? 'أنثى' : 'ذكر' }}</p>
- <p><hbh-icon name="ic-phone" /> رقم التواصل: <b dir="ltr">{{ text(contacts()[0] || null, 'mobile') || '—' }}</b></p>
- <p><hbh-icon name="ic-receipt" /> رقم الملف: <b dir="ltr">{{ childNo() }}</b></p></div>
- <div class="card-wave">معًا.. <small>نمنح كل طفل فرصة أفضل</small></div>
+ <p><hbh-icon name="ic-calendar" /> {{ 'card.birthDate' | t }}: {{ birthDate() }}</p><p><hbh-icon name="ic-users" /> {{ 'card.gender' | t }}: {{ (girl() ? 'gender.F' : 'gender.M') | t }}</p>
+ <p><hbh-icon name="ic-phone" /> {{ 'card.contact' | t }}: <b dir="ltr">{{ text(contacts()[0] || null, 'mobile') || '—' }}</b></p>
+ <p><hbh-icon name="ic-receipt" /> {{ 'card.fileNo' | t }}: <b dir="ltr">{{ childNo() }}</b></p></div>
+ <div class="card-wave">{{ 'card.wave1' | t }} <small>{{ 'card.wave2' | t }}</small></div>
 </div></ng-template>
 <div class="hbh-cardprev" [class.sheet-mode]="wholeSheet()">
 <figure><ng-container *ngTemplateOutlet="front"/><figcaption class="hbh-noprint">{{ 'card.front' | t }}</figcaption></figure>
@@ -73,7 +73,7 @@
 <div class="card-logo"><img class="card-full-logo" src="assets/brand/card-logo.png" alt="Hand by Hand Skills Center"></div><h3 class="back-centre">{{ centreName() }}</h3>
 <div class="back-contacts">@for (contact of contacts(); track contact['guardian_id']; let first=$first) {
 <div class="emergency"><small>{{ (first ? 'card.emergency' : 'card.orElse') | t }}</small><b>{{ text(contact,'full_name_ar') }} @if (text(contact, 'relationship_code')) { — {{ 'relationship.' + text(contact, 'relationship_code') | t }} }</b><strong dir="ltr"><hbh-icon name="ic-phone" /> {{ text(contact,'mobile') }}</strong></div>}
-</div><div class="found"><b>ملاحظات هامة</b><p>{{ 'card.ifFound' | t }}</p></div><div class="back-footer"><span class="card-sun" aria-hidden="true">{{ girl() ? '🌈' : '☀' }}</span><b>أطفال اليوم<br>قادة الغد</b><span class="card-leaves" aria-hidden="true">❧</span></div>
+</div><div class="found"><b>{{ 'card.notes' | t }}</b><p>{{ 'card.ifFound' | t }}</p></div><div class="back-footer"><span class="card-sun" aria-hidden="true"><hbh-icon [name]="girl() ? 'ic-heart' : 'ic-star'" /></span><b>{{ 'card.footer1' | t }}<br>{{ 'card.footer2' | t }}</b><span class="card-leaves" aria-hidden="true">❧</span></div>
 </div><figcaption class="hbh-noprint">{{ 'card.back' | t }}</figcaption></figure>
 </div>
 @if (wholeSheet()) { <div class="hbh-cardsheet">@for(copy of sheet; track $index) { <ng-container *ngTemplateOutlet="front"/> }</div> }

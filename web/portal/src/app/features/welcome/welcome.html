@@ -43,6 +43,8 @@
                     (retry)="load()" />
   } @else if (data(); as summary) {
 
+    <!-- "What needs your attention" lives on the front page now, for every
+         child at once: this screen is the door, not a dashboard. -->
     <div class="sec__head">
       <h2 class="sec__t">{{ 'welcome.children' | t }}</h2>
       <span class="hbh-muted">{{ 'welcome.childrenHint' | t }}</span>
@@ -56,10 +58,15 @@
         @for (child of summary.children; track child.id) {
           <button class="kid" type="button"
                   [class.kid--live]="child.liveSessionId !== null"
+                  [class.kid--female]="child.gender === 'F'"
+                  [class.kid--male]="child.gender === 'M'"
                   (click)="open(child)">
             <span class="kid__top">
+              <!-- The stand-in picture, chosen from the record. A centre
+                   that has not recorded a gender gets the neutral one -
+                   guessing would put the wrong face on a child's card. -->
               <span class="kid__ph" [class.kid__ph--g]="child.liveSessionId !== null">
-                <hbh-icon name="ic-user" />
+                <hbh-person-avatar [childId]="child.id" [gender]="child.gender" [birthDate]="child.birthDate" />
               </span>
               <span class="kid__id">
                 <span class="kid__name">{{ child.fullName }}</span>
@@ -97,7 +104,7 @@
                 <hbh-icon name="ic-calendar" />
                 <span>{{ 'welcome.noNextSession' | t }}</span>
               }
-              </span><span class="kid-attendance"><span>{{ 'welcome.attendance' | t }}</span><span class="attendance-ring">—</span><small>{{ 'welcome.attendanceUnavailable' | t }}</small></span><span class="kid__go">
+              </span>@if (attendance(child); as a) {<span class="kid-attendance"><span>{{ 'welcome.attendance' | t }}</span><span class="attendance-ring" [style.--attendance-progress]="a.percent + '%'"><span class="attendance-ring__value">{{ format.percent(a.percent) }}</span></span><small>{{ 'welcome.attendanceCount' | t: { attended: format.count(a.attended), total: format.count(a.total) } }}</small></span>}<span class="kid__go">
                 <hbh-icon name="ic-arrow" /><small>{{ 'welcome.details' | t }}</small>
               </span>
           </button>
@@ -105,31 +112,7 @@
       </div>
     }
 
-    @if (summary.attention.length) {
-      <div class="sec">
-        <div class="sec__head">
-          <h2 class="sec__t">{{ 'welcome.attention' | t }}</h2>
-        </div>
-        <div class="stack">
-          @for (item of summary.attention; track item.kind + item.childName) {
-            <button class="row" type="button" (click)="openAttention(item)">
-              <span class="row__ic" [class]="attentionTint(item)">
-                <hbh-icon [name]="attentionIcon(item)" />
-              </span>
-              <span class="row__b">
-                <span class="row__t">{{ item.titleKey | t }}</span>
-                <span class="row__s">
-                  @if (item.childName) {
-                    {{ item.childName }} <s>&middot;</s>
-                  }
-                  <!-- Worded and formatted here, where the app's one money
-                       formatter and its translations live. -->
-                  {{ attentionDetail(item) }}
-                </span></span></button>
-          }
-        </div>
-      </div>
-    }
+
   }
 
   <p class="priv" style="margin-top:24px">
@@ -138,7 +121,5 @@
   </p>
   </main>
 </section>
-
-
 
 

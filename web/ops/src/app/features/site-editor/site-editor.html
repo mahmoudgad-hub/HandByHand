@@ -1,0 +1,15 @@
+<header class="ops-page-header"><div class="ops-page-identity"><h1 class="ops-page-title">{{ 'siteEditor.title' | t }}</h1><p>{{ 'siteEditor.intro' | t }}</p><p class="notice">{{ 'siteEditor.publishHint' | t }}</p></div></header>
+@if(message()){<p role="status" class="notice">{{ message() | t }}</p>}
+<div class="tools ops-filterbar"><input type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="'siteEditor.search' | t" [attr.aria-label]="'siteEditor.search' | t" [disabled]="!!selected()"><button class="hbh-btn hbh-btn--ghost" (click)="load()" [disabled]="loading() || !!selected()">{{ 'siteEditor.refresh' | t }}</button></div>
+<div class="layout"><nav [attr.aria-label]="'siteEditor.title' | t"><button [class.active]="!group()" (click)="group.set('')" [disabled]="!!selected()">{{ 'siteEditor.all' | t }} ({{rows().length}})</button>@for(g of groups();track g){<button [class.active]="group()===g" (click)="group.set(g)" [disabled]="!!selected()">{{ ('siteEditor.group.'+g) | t }}</button>}</nav>
+<main>@if(loading()){<p>{{ 'siteEditor.loading' | t }}</p>}@else{
+@for(row of visible();track row['text_id']){<article><div class="cardhead"><h2>{{ field(row).label | t }}</h2><span>{{ (row['status']==='PUBLISHED'?'siteEditor.published':'siteEditor.draft') | t }}</span></div>
+@if(selected()?.['text_id']===row['text_id']){
+@if(field(row).image){<img [src]="asset(value)" alt=""><label>{{ 'siteEditor.image' | t }}<input type="file" accept="image/png,image/jpeg" (change)="upload($event)" [disabled]="busy()"></label><p>{{ 'siteEditor.imageHint' | t }}</p>}@else{<label>{{ 'siteEditor.value' | t }}<textarea [(ngModel)]="value" [disabled]="busy()" rows="3"></textarea></label><label>{{ 'siteEditor.english' | t }}<textarea [(ngModel)]="english" [disabled]="busy()" dir="ltr" rows="2"></textarea></label>}
+<label>{{ 'siteEditor.status' | t }}<select [(ngModel)]="status" [disabled]="busy() || !auth.can('SITE.PUBLISH')"><option value="DRAFT">{{ 'siteEditor.draft' | t }}</option><option value="PUBLISHED">{{ 'siteEditor.published' | t }}</option></select></label>
+<div class="ops-form-actions"><button class="hbh-btn hbh-btn--primary" (click)="save()" [disabled]="busy() || !value.trim()">{{ 'siteEditor.save' | t }}</button><button class="hbh-btn hbh-btn--ghost" (click)="selected.set(null)" [disabled]="busy()">{{ 'siteEditor.cancel' | t }}</button></div>
+} @else {
+@if(field(row).image){<img [src]="asset(''+row['text_ar'])" alt="">}@else{<p class="copy">{{ row['text_ar'] }}</p>}
+@if(row['is_locked']){<p>{{ 'siteEditor.locked' | t }}</p>}@else{<button class="hbh-btn hbh-btn--ghost" (click)="edit(row)" [disabled]="!!selected() || !auth.can('SITE.EDIT')">{{ 'siteEditor.edit' | t }}</button>}
+}</article>}@empty{<p>{{ 'siteEditor.empty' | t }}</p>}
+}</main></div>

@@ -5,7 +5,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
 import { FormatService } from '@hbh/shared/format/format.service';
+import { I18nService } from '@hbh/shared/i18n/i18n.service';
 import { TranslatePipe } from '@hbh/shared/i18n/translate.pipe';
+import { ToastService } from '@hbh/shared/toast/toast.service';
 import { Icon, IconName } from '@hbh/shared/icon/icon';
 import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
@@ -49,6 +51,8 @@ export class Inbox {
   private readonly api = inject(InboxApi);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastService);
+  private readonly i18n = inject(I18nService);
   protected readonly format = inject(FormatService);
 
   protected readonly data = signal<Feed | null>(null);
@@ -57,6 +61,9 @@ export class Inbox {
 
   /** Unread only, off by default: the whole list is the honest default. */
   protected readonly unreadOnly = signal(false);
+
+  /** A mark-all in flight. The button says so and refuses a second one. */
+  protected readonly marking = signal(false);
 
   constructor() {
     this.load();
@@ -114,8 +121,51 @@ export class Inbox {
   protected open(item: InboxItem): void {
     this.markRead(item);
     if (item.target) {
-      void this.router.navigate(item.target as string[]);
+      void this.router.navigate(item.target as string[],{queryParams:item.targetQuery});
     }
+  }
+
+  /**
+   * Mark the whole feed read (#24).
+   *
+   * NOT OPTIMISTIC, unlike markRead below, and the difference is where the
+   * person is standing. Opening an item takes them to another screen, so a
+   * failed write is invisible and correcting it would interrupt something
+   * else. Here they stay and watch: a list that empties its dots and fills
+   * them again on the next load, with nothing said, is the screen lying to
+   * somebody who is looking straight at it.
+   *
+   * So the rows change when the service says they changed, and the toast
+   * carries THE SERVICE'S count. The feed holds the newest fifty and the
+   * write clears every unread row the person has - reporting the number of
+   * dots on screen would understate it whenever there are more.
+   */
+  protected markAllRead(): void {
+    const feed = this.data();
+    if (!feed || !feed.unread || this.marking()) {
+      return;
+    }
+    this.marking.set(true);
+    this.api.markAllRead()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (marked) => {
+          this.marking.set(false);
+          const current = this.data();
+          if (current) {
+            this.data.set({
+              ...current,
+              unread: 0,
+              rows: current.rows.map((row) => row.read ? row : { ...row, read: true }),
+            });
+          }
+          this.toast.show(this.i18n.plural('inbox.markedAll', marked));
+        },
+        error: () => {
+          this.marking.set(false);
+          this.toast.warning(this.i18n.translate('inbox.markAllFailed'));
+        },
+      });
   }
 
   protected markRead(item: InboxItem): void {
@@ -144,6 +194,7 @@ export class Inbox {
    */
   protected icon(item: InboxItem): IconName {
     const byKind: Record<string, IconName> = {
+      CHAT_MESSAGE:'ic-chat',
       STAFF_CHILD_ASSIGNED: 'ic-user',
       STAFF_APPOINTMENT_BOOKED: 'ic-calendar',
       STAFF_REQUEST_NEW: 'ic-chat',

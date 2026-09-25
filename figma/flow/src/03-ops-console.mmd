@@ -1,16 +1,27 @@
 %% تطبيق المركز (ops) — خريطة الملاحة والصلاحيات
 %% المصدر: web/ops/src/app/app.routes.ts (مستخرَجة حرفيًا)
+%% الأرض: 2026-09-19 · ١٦٢ ملفّ *.up.sql على القرص، أقصى رقم 0162 (رقم القرص لا المطبَّق)
+%% ٣٤ شاشة. والعدّ — لأنّ رقمًا بلا تعريفه لا يُعاد قياسه: قيم path: في
+%% app.routes.ts، مطروحًا منها كل إدخال فيه redirectTo (نصًّا أو دالّة movedTo)،
+%% وpath: '**'، وpath: ''. والتبويبات داخل الشاشات لا تُعدّ إطارًا.
+%% ---
 %% كل شاشة تعلن الصلاحية التي تحتاجها. الحارس يمنع رسم شاشة سيرفضها الخادم —
 %% وليس هو الرفض نفسه، فالرفض في سياسة RLS تحت الاستعلام.
-%% الشاشات تنقسم إلى نوعين مدفوعين بوصفين: ResourceScreen للموارد التي تُنشأ وتُعدَّل،
-%% وDayScreen للقراءات المفهرسة بالمركز — صفوف تتحرّك عبر آلات الحالة لا بتعديل عمود.
+%% والشاشات ثلاثة أنواع: ResourceScreen للموارد التي تُنشأ وتُعدَّل، وDayScreen
+%% للقراءات المفهرسة بالمركز — صفوف تتحرّك عبر آلات الحالة لا بتعديل عمود — وخاصّة لغيرهما.
+%% ---
 %% LR لا TB: بـTB يتفرّع الهيكل إلى اثنتي عشرة شاشة جنبًا إلى جنب،
 %% فيصير المخطّط ٣٧٩٥px عرضًا و٦٢٠px ارتفاعًا — لا يُقرأ على أي شاشة.
+%% وتنبيه: لا تترك سطر تعليق فارغًا (%% وحده) — Mermaid 11 يقرؤه موجّهًا فيفشل.
+%% وبعد كل تعديل هنا: bash scripts/sync-figma-preview.sh (preview.html ناتج بناء).
+%% ولا يحرسه فحص: لا شيء يمنع هذا الملفّ من الانحراف ثانيةً. الأرقام فيه دقيقة
+%% لحظةَ قياسها لا بعدها — شُكَّ فيها وأعد القياس بالأوامر المكتوبة أعلاه.
 flowchart LR
   classDef res  fill:#FFFFFF,stroke:#E8E1D4,color:#22333A
   classDef day  fill:#DEEEF0,stroke:#C6E0E7,color:#22333A
   classDef one  fill:#EDF1E5,stroke:#ADC793,color:#22333A
   classDef sys  fill:#F1ECE1,stroke:#E3DCCD,color:#4A5F68
+  classDef moved fill:#F1ECE1,stroke:#C9B99A,stroke-dasharray:4 3,color:#6B5836
 
   LOGIN["/login<br/>opsGuestGuard"]:::one
   SHELL["الهيكل — القائمة الجانبية<br/>opsAuthGuard"]:::one
@@ -18,19 +29,21 @@ flowchart LR
 
   LOGIN --> SHELL --> DASH
 
-  subgraph R["ResourceScreen — ثمانية وعشرون موردًا CRUD في ست شاشات"]
+  subgraph R["ResourceScreen — الموارد التي تُنشأ وتُعدَّل وتُؤرشَف"]
     direction TB
-    CH["/children<br/>CHILD.VIEW_ALL<br/>أولياء الأمور + الأطفال"]:::res
-    TH["/therapists<br/>STAFF.MANAGE<br/>الأخصائيون + ساعات العمل + caseload"]:::res
+    GU["/guardians<br/>GUARDIAN.MANAGE<br/>لهم شاشتهم الآن"]:::res
+    CH["/children<br/>CHILD.VIEW_ALL<br/>الأطفال وحدهم"]:::res
+    TH["/therapists<br/>STAFF.MANAGE<br/>أخصائيون + ساعات + caseload + مصفوفة الخدمات"]:::res
     RM["/rooms<br/>CATALOG.MANAGE<br/>الغرف + الكاميرات"]:::res
     PL["/plans<br/>PLAN.MANAGE<br/>خطط + أهداف + قياسات + أنشطة الطفل"]:::res
-    CT["/catalog<br/>CATALOG.MANAGE<br/>خدمات + باقات + مكتبة أنشطة + استبيانات"]:::res
-    ST["/site<br/>SITE.EDIT<br/>كلمات الموقع — خمسة تبويبات"]:::res
+    CT["/catalog<br/>CATALOG.MANAGE<br/>خدمات + باقات + مكتبة أنشطة"]:::res
+    ST["/site<br/>SITE.EDIT<br/>ستّة أوصاف + نصوص الموقع + الفريق"]:::res
+    NPS["/satisfaction<br/>NPS.MANAGE<br/>الاستبيانات وإجاباتها معًا"]:::res
   end
 
-  subgraph D["DayScreen — القراءات المفهرسة بالمركز"]
+  subgraph D["DayScreen — صفوف تتحرّك عبر آلات الحالة"]
     direction TB
-    AP["/appointments<br/>APPOINTMENT.BOOK"]:::day
+    AP["/appointments<br/>APPOINTMENT.BOOK أو SESSION.START<br/>ويوم الأخصائي ?view=mine"]:::day
     SE["/sessions<br/>SESSION.START"]:::day
     RP["/reports<br/>REPORT.VIEW"]:::day
     BL["/billing<br/>BILLING.VIEW"]:::day
@@ -38,28 +51,44 @@ flowchart LR
     EN["/enrolments<br/>ENROLMENT.MANAGE<br/>ما كانت تسمّيه التصاميم leads"]:::day
   end
 
-  SHELL --> CH & TH & RM & PL & CT & ST
+  SHELL --> GU & CH & TH & RM & PL & CT & ST & NPS
   SHELL --> AP & SE & RP & BL & RQ & EN
 
+  GUD["/guardians/:guardianId<br/>الأسرة خلف الأطفال — تبويبات في شريط العنوان"]:::one
   CHILD["/children/:childId<br/>ملفّ الطفل — المعرّف في المسار"]:::one
+  RNEW["/children/:childId/reports/new<br/>REPORT.WRITE — تقرير فارغ، لا معرّف له بعد"]:::one
+  REDIT["/children/:childId/reports/:reportId<br/>REPORT.WRITE — بعد حفظ المسوّدة"]:::one
   CARD["/children/:childId/card<br/>بطاقة تُطبع — بلا رقم قومي ولا عنوان"]:::one
   TPROF["/therapists/:therapistId/profile<br/>بلا حارس صلاحية عمدًا:<br/>السؤال عن الصفّ لا عن الشخص"]:::one
-  TSVC["/therapist-services<br/>STAFF.MANAGE<br/>بدونها لا يُحجز موعد — THERAPIST_SERVICE_MISMATCH"]:::one
   TEAM["/site/team<br/>SITE.EDIT — رئيس وتفصيل"]:::one
   LIVEV["/sessions/:sessionId/live<br/>LIVE.VIEW — بثّ فقط، لا تسجيل"]:::one
+  END["/enrolments/:applicationId<br/>طلب واحد في مكان واحد — والقائمة تبقى الطابور"]:::one
 
-  CH --> CHILD --> CARD
+  GU --> GUD
+  CH --> CHILD
+  CHILD --> RNEW & REDIT & CARD
   TH --> TPROF
-  TH --> TSVC
   ST --> TEAM
   SE --> LIVEV
+  EN --> END
 
-  ACC["/access<br/>PORTAL.VIEW<br/>أي شاشة تحتاج أي صلاحية — ليست إدارة مستخدمين"]:::sys
-  NPS["/satisfaction<br/>CATALOG.MANAGE"]:::sys
+  PROF["/profile<br/>من قائمة الحساب لا القائمة الجانبية<br/>بلا حارس — كل حساب له واحد"]:::sys
+  FAV["/favorites<br/>PORTAL.VIEW"]:::sys
+  TASKS["/tasks<br/>PORTAL.VIEW — مشتقّ من حالة صفوف أخرى<br/>لا جدول ولا كتابة"]:::sys
+  NOTIF["/notifications<br/>PORTAL.VIEW — كانت inbox<br/>الاسم وعدَ بقائمة مهامّ لم يكنها"]:::sys
+  USERS["/users<br/>USER.MANAGE — الحسابات والأدوار<br/>ومعها جدول الصلاحيات الذي بدأت به"]:::sys
   LOG["/ops-log<br/>OPS.VIEW"]:::sys
-  SET["/settings<br/>CATALOG.MANAGE<br/>قابلة للتحرير — guard_center_settings"]:::sys
-  COMM["/communications<br/>محادثة الأسرة — نفس مكوّن البوّابة"]:::sys
+  SET["/settings<br/>SETTINGS.MANAGE — قابلة للتحرير"]:::sys
+  COMM["/communications<br/>PORTAL.VIEW — نفس مكوّن البوّابة"]:::sys
   DEN["/denied"]:::sys
 
-  SHELL --> ACC & NPS & LOG & SET & COMM
+  SHELL --> PROF & FAV & TASKS & NOTIF & USERS & LOG & SET & COMM
   SHELL -.->|"الحارس يرفض"| DEN
+
+  subgraph MOVED["تحويلات — عناوين تقاعدت وروابطها حيّة في إشعارات ورسائل وإشارات مرجعية"]
+    direction TB
+    M1["/inbox ← /notifications"]:::moved
+    M2["/access ← /users"]:::moved
+    M3["/my-day ← /appointments?view=mine"]:::moved
+    M4["/therapist-services ← /therapists?tab=services"]:::moved
+  end

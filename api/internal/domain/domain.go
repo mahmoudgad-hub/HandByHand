@@ -73,6 +73,19 @@ type Child struct {
 	// The guardian's own view of this child. Nil for staff, who reach the
 	// child through a permission rather than through a link.
 	Link *GuardianLink `json:"link,omitempty"`
+
+	// Sessions attended and missed since the 1st of this month, in the
+	// centre's time zone. Two counts and not a percentage: 1 of 1 and 20 of
+	// 20 are both "100%", and only the counts tell a family which they are.
+	AttendanceMonth *Attendance `json:"attendance_month,omitempty"`
+}
+
+// Attendance is what hbh.child_attendance_month counted. Attended is
+// CHECKED_IN or COMPLETED; Missed is NO_SHOW. Cancelled appointments and
+// ones nobody has recorded yet are in neither - see migration 0139.
+type Attendance struct {
+	Attended int `json:"attended"`
+	Missed   int `json:"missed"`
 }
 
 // GuardianLink is the guardian-to-child relationship and the two switches

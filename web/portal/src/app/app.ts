@@ -7,6 +7,8 @@ import { IconSprite } from '@hbh/shared/sprite/icon-sprite';
 import { Toast } from '@hbh/shared/toast/toast';
 import { AuthService } from './core/auth/auth.service';
 import { NpsCard } from './features/nps/nps-card';
+import { NotificationPush } from './core/alerts/notification-push';
+import { UsageTracker } from '@hbh/shared/analytics/usage-tracker';
 
 /**
  * The application root holds the pieces every screen shares and no logic of
@@ -17,13 +19,14 @@ import { NpsCard } from './features/nps/nps-card';
 @Component({
   selector: 'hbh-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, IconSprite, Toast, Connectivity, RouteAnnouncer, NpsCard],
+  imports: [RouterOutlet, IconSprite, Toast, Connectivity, RouteAnnouncer, NpsCard, UsageTracker, NotificationPush],
   template: `
     <hbh-icon-sprite />
     <hbh-connectivity />
     <router-outlet />
     <hbh-toast />
     <hbh-route-announcer />
+    <hbh-usage-tracker app="portal" [token]="auth.token" />
 
     <!--
       The satisfaction question, asked straight after signing in.
@@ -41,6 +44,7 @@ import { NpsCard } from './features/nps/nps-card';
       next person to use the phone is asked about their own visits.
     -->
     @if (auth.isSignedIn()) {
+      <hbh-notification-push />
       <hbh-nps-card />
     }
   `,

@@ -30,3 +30,70 @@
 .rating-body{text-align:center;padding:18px 12px}.rating-trophy{font-size:38px;display:block}.rating-body strong{font-size:22px;display:block;color:#07536e}.rating-body p{font-size:12px;color:#567b8b}.rating-stars{font-size:27px;color:#e0e9ed;white-space:nowrap}.rating-stars .filled{color:#ffbd21}.rating-body small{font-size:13px;color:#567b8b}.trend-svg{width:100%;height:auto;direction:ltr;overflow:visible}.trend-svg text{font-size:10px;fill:#285a75}.trend-empty{display:grid;place-items:center;min-height:165px;color:#658293;font-size:14px;text-align:center}
 @media(max-width:1100px){.hbh-nps-charts{grid-template-columns:1fr 1fr}.rating-summary{grid-column:1/-1}.rating-body{padding:12px}.rating-trophy{font-size:30px}}
 @media(max-width:650px){.hbh-nps-charts{grid-template-columns:1fr}.rating-summary{grid-column:auto}}
+
+/* =====================================================================
+   The answers behind one row (#): a list, not a table. Each answer is a
+   person, a band, a score, a date and sometimes a sentence - and the
+   sentence is the part worth reading, which a table column would squeeze
+   into a strip the width of a phone.
+   ===================================================================== */
+
+.nps-row { cursor: pointer; }
+.nps-row:hover { background: var(--hbh-surface-2); }
+
+/* The row's keyboard door. It carries no colour of its own: the name is a
+   name, and a blue link here would promise another page. */
+.nps-row__open {
+  border: 0; background: none; padding: 0; font: inherit; color: inherit;
+  cursor: pointer; text-align: start; min-block-size: 44px;
+}
+.nps-row__open:focus-visible { outline: 2px solid var(--hbh-teal-600); outline-offset: 2px; }
+
+.nps-answers { max-inline-size: 760px; }
+
+.nps-answers__filters { display: flex; flex-wrap: wrap; gap: 8px; margin-block-end: 14px; }
+.nps-chip { min-block-size: 44px; }
+/* The chosen one is filled rather than merely darker: "pressed" has to be
+   readable without comparing two buttons side by side. */
+.nps-chip.is-on {
+  background: var(--hbh-teal-600); color: var(--hbh-on-dark); border-color: transparent;
+}
+.nps-chip.is-on .hbh-badge { background: rgba(255,255,255,.22); color: var(--hbh-on-dark); }
+
+.nps-answers__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.nps-answer {
+  border: 1px solid var(--hbh-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--hbh-surface);
+}
+
+.nps-answer__head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+
+.nps-answer__who { font-weight: 600; }
+.nps-answer__tel { color: inherit; min-block-size: 44px; display: inline-flex; align-items: center; }
+
+.nps-answer__band { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; }
+.nps-answer__dot { inline-size: 8px; block-size: 8px; border-radius: 50%; }
+
+/* The score sits at the end of the line, in the same tabular figures the
+   table above uses, so a column of them lines up while scrolling. */
+.nps-answer__score {
+  margin-inline-start: auto; font-variant-numeric: tabular-nums;
+  font-size: 1.05rem; font-weight: 600;
+}
+
+.nps-answer__at { font-size: .85rem; color: var(--hbh-muted); }
+
+.nps-answer__text { margin: 8px 0 0; line-height: 1.7; }
+
+.nps-answers__note { margin-block-start: 14px; }
+
+@media (max-width: 600px) {
+  /* The score keeps its place at the end of the first line; everything else
+     wraps under it rather than squeezing. */
+  .nps-answer__at { inline-size: 100%; }
+}

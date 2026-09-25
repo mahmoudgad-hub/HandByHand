@@ -1,0 +1,65 @@
+/* The record drawer: a side sheet on a desktop, wider on a tablet, the
+   whole screen on a phone. It is a <dialog> opened with showModal(), so
+   the same rules as .hbh-sheet apply: the user-agent sheet's border,
+   padding, size and margins are put back, and `display` stays conditional
+   on [open] so a closed dialog never paints. */
+:host { display: contents; }
+
+.hbh-drawer {
+  position: fixed; inset: 0; z-index: 80;
+  width: auto; height: auto; max-width: none; max-height: none;
+  margin: 0; border: 0; padding: 0;
+  display: none;
+  color: inherit;
+  background: rgba(var(--hbh-video-scrim), .38);
+}
+.hbh-drawer[open] { display: flex; }
+.hbh-drawer::backdrop { background: transparent; }
+
+/* At the inline END - away from the sidebar, which sits at the start. */
+.hbh-drawer__panel {
+  margin-inline-start: auto;
+  width: min(520px, 100%); height: 100%;
+  display: flex; flex-direction: column; min-width: 0;
+  background: var(--hbh-surface);
+  border-inline-start: 1px solid var(--hbh-line);
+  box-shadow: var(--hbh-shadow-lg);
+}
+
+.hbh-drawer__head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--hbh-line); flex-shrink: 0;
+}
+.hbh-drawer__title { min-width: 0; display: grid; gap: 4px; }
+.hbh-drawer__kind { font-size: 12px; font-weight: 600; color: var(--hbh-muted); }
+.hbh-drawer__title .hbh-card-title {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: 0; font-size: 19px; line-height: 1.5; overflow-wrap: anywhere;
+}
+.hbh-drawer__head .hbh-iconbtn { flex-shrink: 0; }
+
+.hbh-drawer__body {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  padding: 18px 20px; scrollbar-width: thin;
+}
+.hbh-drawer__foot {
+  display: flex; gap: 9px; padding: 12px 20px; flex-shrink: 0;
+  border-top: 1px solid var(--hbh-line); background: var(--hbh-surface-2);
+}
+.hbh-drawer__foot .hbh-btn { min-height: 42px; }
+
+.rd__notice { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+
+/* Phone: the whole screen. The panels' own rules are in record-panel.css,
+   scoped to the panel components - a rule written here never reaches an
+   element inside a child component's template. */
+@media (max-width: 1024px) {
+  .hbh-drawer__panel { width: min(640px, 82vw); }
+}
+@media (max-width: 640px) {
+  .hbh-drawer__panel { width: 100%; border: 0; }
+  .hbh-drawer__head, .hbh-drawer__body, .hbh-drawer__foot { padding-inline: 14px; }
+  .hbh-drawer__head { padding-top: max(14px, env(safe-area-inset-top)); }
+  .hbh-drawer__foot { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .hbh-drawer__foot .hbh-btn { flex: 1; }
+}

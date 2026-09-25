@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
+import { TabBadge } from './tab-badge';
 import { I18nService } from '../i18n/i18n.service';
 
 /**
@@ -26,6 +27,7 @@ import { I18nService } from '../i18n/i18n.service';
   `,
 })
 export class RouteAnnouncer {
+  private readonly tabBadge = inject(TabBadge);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly i18n = inject(I18nService);
@@ -37,22 +39,66 @@ export class RouteAnnouncer {
       filter((event) => event instanceof NavigationEnd),
       takeUntilDestroyed(),
     ).subscribe(() => {
-      const title = this.i18n.translate(this.titleKey());
+      const title = this.screenName();
       this.announcement.set(title);
       // The browser tab should carry it too - it is the same answer to the
       // same question, and it is what a bookmark and a task switcher show.
-      document.title = title
+      this.tabBadge.setTitle(title
         ? `${title} — ${this.i18n.translate('app.name')}`
-        : this.i18n.translate('app.name');
+        : this.i18n.translate('app.name'));
     });
   }
 
-  private titleKey(): string {
+  /**
+   * The name of the screen, and of the TAB inside it when it has one.
+   *
+   * A screen whose tabs live in the address bar is thirteen screens as far
+   * as anybody reading the browser tab, a bookmark or a task switcher is
+   * concerned - and the child's file announced "ملفّ المستفيد" for all
+   * thirteen, so a screen reader user moving between them heard the same
+   * three words each time and could not tell whether anything had happened.
+   *
+   * THE TAB'S NAME COMES FROM route.data, NOT FROM THE COMPONENT. A route
+   * carries `tabTitles`, one map from the `tab` query parameter's value to
+   * the key that names it. The component that draws the tabs is not asked
+   * and must not be: this announcer is the one place the title is decided,
+   * and a component that set document.title as well would be a second answer
+   * to one question - the defect this file exists to have removed (HBH-039).
+   *
+   * ONE MECHANISM, NOT TWO (HBH-102). This first shipped reading a PREFIX -
+   * `tabTitlePrefix: 'child.tab.'` plus the tab's own name - which worked for
+   * the three detail screens and could not express the resource screen at
+   * all: its tabs are a list of resources followed by a list of components,
+   * each already carrying a title key of its own (`site.team`,
+   * `satisfaction.results`) that other screens share. A prefix there would
+   * have meant copying those sentences into `resource.tab.*` twins, and two
+   * copies of a sentence drift the first time somebody edits one. So the map
+   * is the mechanism everywhere; the prefix survives as one way to BUILD a
+   * map, at the route, where it is data and not a second thing to read here.
+   *
+   * An unknown tab name falls back to the screen alone rather than printing
+   * a key: translate() returns what it was given when the bundle has no
+   * entry, and "child.tab.nonsense — Hand By Hand" in a task switcher is
+   * worse than the screen's name on its own.
+   */
+  private screenName(): string {
     let route = this.route;
     while (route.firstChild?.snapshot) {
       route = route.firstChild;
     }
-    const data = route.snapshot.data as { titleKey?: string };
-    return data.titleKey ?? '';
+    const data = route.snapshot.data as {
+      titleKey?: string; tabTitles?: Readonly<Record<string, string>>;
+    };
+    const screen = data.titleKey ? this.i18n.translate(data.titleKey) : '';
+    if (!screen || !data.tabTitles) {
+      return screen;
+    }
+    const tab = route.snapshot.queryParamMap.get('tab');
+    const key = tab ? data.tabTitles[tab] : undefined;
+    if (!key) {
+      return screen;
+    }
+    const named = this.i18n.translate(key);
+    return named && named !== key ? `${screen} · ${named}` : screen;
   }
 }

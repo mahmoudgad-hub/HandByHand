@@ -422,7 +422,7 @@ hbh-login {
   display: inline-block;
   margin-inline-start: 6px;
   font-size: 11px;
-  color: var(--hbh-progress);
+  color: var(--hbh-progress-ink);
 }
 
 /* ---- team profile: portrait, chips, drop zone, media grid ---------- */
@@ -655,6 +655,11 @@ hbh-login {
   border: 0;
   background: none;
   padding: 0;
+  /* A 20px-tall line of text was the whole target; the box grows to 44
+     without moving the text (#20). */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font: inherit;
   cursor: pointer;
   text-align: start;
@@ -674,3 +679,93 @@ hbh-login {
   margin: 8px 0;
   user-select: all;
 }
+
+/* ---------------------------------------------------------------------
+   UX-1: the grouped sidebar, its two live counts, and the focused row.
+   Groups are headings on a desktop and vanish on the narrow strip, where
+   the entries flow as one row of icons exactly as before.
+   --------------------------------------------------------------------- */
+.hbh-nav__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hbh-nav__group + .hbh-nav__group {
+  margin-top: 10px;
+}
+.hbh-nav__head {
+  padding: 8px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--hbh-on-dark-3, #b4d8dc);
+  opacity: .85;
+}
+.hbh-nav__item {
+  position: relative;
+}
+.hbh-nav__badge {
+  margin-inline-start: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: var(--hbh-danger-ink, #c0392b);
+  direction: ltr;
+}
+.hbh-nav__item.is-active .hbh-nav__badge {
+  background: #fff;
+  color: var(--hbh-teal-700, #007786);
+}
+
+@media (max-width: 900px) {
+  .hbh-nav__group {
+    flex-direction: row;
+    gap: 4px;
+  }
+  .hbh-nav__group + .hbh-nav__group {
+    margin-top: 0;
+    margin-inline-start: 6px;
+    padding-inline-start: 6px;
+    border-inline-start: 1px solid rgba(255, 255, 255, .15);
+  }
+  .hbh-nav__head {
+    display: none;
+  }
+  .hbh-nav__badge {
+    position: absolute;
+    top: 2px;
+    inset-inline-end: 2px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+}
+
+/* A plain select in the task inbox's filter bar, matching the field boxes. */
+hbh-tasks select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--hbh-line, #e9edf0);
+  border-radius: 10px;
+  background: var(--hbh-surface, #fff);
+  color: var(--hbh-ink, #073f58);
+}
+hbh-tasks, hbh-task-card {
+  display: block;
+}
+/* The same favorite control stays beside the active screen title at all widths. */
+.ops-favorite-toggle{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;border:1px solid #d4e8e9;border-radius:12px;background:#eaf5f5;color:#17616c;cursor:pointer;transition:background .16s,color .16s}
+.ops-favorite-toggle.is-favorite{color:#896500;background:#fff2c5}
+.ops-favorite-toggle.is-favorite .hbh-i{fill:currentColor}
+.ops-favorite-toggle:hover{background:#dceeed}
+.ops-favorite-toggle:focus-visible{outline:2px solid #008c9d;outline-offset:3px}
+@media(max-width:520px){.ops-topbar .ops-mobile-trigger span{display:none}.ops-topbar .ops-mobile-trigger{min-width:40px;width:40px;padding-inline:0;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.ops-favorite-toggle{transition:none}}

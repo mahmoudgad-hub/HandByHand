@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -43,7 +44,7 @@ const LEVELS = ['NATIVE', 'FLUENT', 'WORKING', 'BASIC'] as const;
 @Component({
   selector: 'hbh-therapist-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, ErrorNote],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, ErrorNote],
   templateUrl: './therapist-profile.html',
 })
 export class TherapistProfileEditor {
@@ -285,7 +286,11 @@ export class TherapistProfileEditor {
       return 'error.connection';
     }
     const code = (error as { error?: { error?: { code?: string } } })?.error?.error?.code;
-    if (code === 'CONSENT_REQUIRED' || code === 'NOT_YOUR_CONSENT') {
+    // PROFILE_CONSENT_REQUIRED since 2026-09-18: the therapist's own consent
+    // to publish, which the service used to answer with the same word as a
+    // family's live-view consent. No special case is needed for either now -
+    // each code carries its own sentence in the bundle.
+    if (code === 'NOT_YOUR_CONSENT') {
       return `error.${code}`;
     }
     return refusalKey(readRefusal(error));

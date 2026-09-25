@@ -128,3 +128,205 @@ func pad3(n int) string {
 	d := []byte{'0' + byte(n/100), '0' + byte(n/10%10), '0' + byte(n%10)}
 	return string(d)
 }
+
+// TestTheCatchAllIsNotTheAnswerForALiveFamily pins the twenty-one codes
+// that the widened "HB" fallback was quietly swallowing.
+//
+// WHAT THE FIRST FIX MISSED. Widening the fallback from "HB0" to "HB"
+// stopped live refusals becoming 500s, and that was right. It also made
+// the next failure invisible: twenty-one codes the schema raises today -
+// HB001 through HB231, scattered through ranges this map believed it
+// covered - matched the catch-all and were answered 409 REFUSED. A
+// caller lacking GUARDIAN.MANAGE was told their request conflicted with
+// something. Our own unseeded number series was reported as the caller's
+// conflict. The live-viewing consent gate, the rule that keeps a camera
+// shut to somebody who never agreed to it, answered with a word the
+// screen cannot act on.
+//
+// TestEveryHBCodeIsKnown above cannot see any of this, and that is not a
+// flaw in it: the catch-all genuinely does answer, so "is it known" is
+// true. The question it does not ask is "is it known BY NAME", and the
+// only authority on which names are live is the database. That check is
+// `bash scripts/api.sh code-drift`, which reads pg_proc.
+//
+// What lives here is the half that needs no database: once a code has
+// been given a meaning, nothing may move it back to the generic answer.
+func TestTheCatchAllIsNotTheAnswerForALiveFamily(t *testing.T) {
+	for _, c := range []struct {
+		code   string
+		status int
+		client string
+	}{
+		// Ours, not the caller's. These must be logged, not filed as a
+		// conflict the caller could resolve.
+		{"HB001", http.StatusInternalServerError, CodeInternal},
+		{"HB010", http.StatusInternalServerError, CodeInternal},
+		{"HB012", http.StatusInternalServerError, CodeInternal},
+		{"HB220", http.StatusInternalServerError, CodeInternal},
+		{"HB230", http.StatusInternalServerError, CodeInternal},
+		{"HB231", http.StatusInternalServerError, CodeInternal},
+
+		// Permission. A missing grant is never a conflict.
+		{"HB011", http.StatusForbidden, CodeForbidden},
+		{"HB200", http.StatusForbidden, CodeForbidden},
+
+		// The schema refuses to say whether the row is gone or not
+		// yours, and neither does this layer.
+		{"HB041", http.StatusNotFound, CodeNotFound},
+		{"HB073", http.StatusNotFound, CodeNotFound},
+		{"HB082", http.StatusNotFound, CodeNotFound},
+		{"HB094", http.StatusNotFound, CodeNotFound},
+		{"HB201", http.StatusNotFound, CodeNotFound},
+
+		// The caller's input, with a field to name.
+		{"HB072", http.StatusBadRequest, CodeValidation},
+		{"HB080", http.StatusBadRequest, CodeValidation},
+		{"HB113", http.StatusBadRequest, CodeValidation},
+		{"HB173", http.StatusBadRequest, CodeValidation},
+
+		// Conflicts that are genuinely conflicts - and each says which.
+		{"HB042", http.StatusConflict, CodeAlreadyLogged},
+		{"HB071", http.StatusConflict, "NOT_A_PASSWORD_USER"},
+		{"HB081", http.StatusConflict, "CONSENT_REQUIRED"},
+		{"HB203", http.StatusConflict, "TEXT_LOCKED"},
+	} {
+		status, client, ok := businessRefusal(c.code)
+		if !ok || status != c.status || client != c.client {
+			t.Errorf("%s -> %d %q, want %d %q", c.code, status, client, c.status, c.client)
+		}
+		if client == "REFUSED" {
+			t.Errorf("%s fell back to the catch-all", c.code)
+		}
+	}
+}
+
+// TestAChangedDraftIsNotAClosedOne pins HB290 (0141, #14). Answered as
+// ALREADY_PUBLISHED, the editor would tell a clinician the report is
+// closed when a colleague merely saved it - and stop offering the newer
+// text. Answered by the catch-all, the screen cannot act at all.
+func TestAChangedDraftIsNotAClosedOne(t *testing.T) {
+	status, client, ok := businessRefusal("HB290")
+	if !ok || status != http.StatusConflict || client != "REPORT_CHANGED" {
+		t.Errorf("HB290 -> %d %q, want 409 REPORT_CHANGED", status, client)
+	}
+	if _, published, _ := businessRefusal("HB033"); published == client {
+		t.Errorf("HB290 and HB033 both answer %q", client)
+	}
+}
+
+// TestPricesAndOriginsAreNamed pins the codes from 0129-0138 to the
+// owner's pricing contract of 2026-09-12, and the two splits in it.
+//
+// HB258 used to mean both "no BILLING.PRICE_OVERRIDE" and "an override on
+// a line with no service"; HB260 meant "no BILLING.PRICE_EDIT", "not this
+// centre's service" and "unknown price kind". One code, answers the screen
+// must handle differently - so the codes split away are asserted to land
+// in DIFFERENT statuses from the permission they left. A later edit that
+// folds them back into one case fails here, not on a receptionist's
+// screen. ("Not this centre's service" left for HB051, which is pinned
+// with the rest of the invoice codes.)
+func TestPricesAndOriginsAreNamed(t *testing.T) {
+	for _, c := range []struct {
+		code   string
+		status int
+		client string
+	}{
+		{"HB241", http.StatusConflict, "ORIGIN_LOCKED"},
+		{"HB254", http.StatusInternalServerError, CodeInternal},
+		{"HB255", http.StatusForbidden, CodeForbidden},
+		{"HB256", http.StatusBadRequest, CodeValidation},
+		{"HB257", http.StatusConflict, "NO_EFFECTIVE_CATALOGUE_PRICE"},
+		{"HB258", http.StatusForbidden, "PRICE_OVERRIDE_FORBIDDEN"},
+		{"HB259", http.StatusConflict, "BILLING_MODEL_DISALLOWS_CHARGE"},
+		{"HB260", http.StatusForbidden, "PRICE_MANAGEMENT_FORBIDDEN"},
+		{"HB261", http.StatusConflict, "MOBILE_HELD_BY_GUARDIAN"},
+		{"HB262", http.StatusUnprocessableEntity, CodeValidation},
+		{"HB264", http.StatusBadRequest, CodeValidation},
+	} {
+		status, client, ok := businessRefusal(c.code)
+		if !ok || status != c.status || client != c.client {
+			t.Errorf("%s -> %d %q, want %d %q", c.code, status, client, c.status, c.client)
+		}
+		if client == "REFUSED" {
+			t.Errorf("%s fell back to the catch-all", c.code)
+		}
+	}
+
+	for _, split := range []struct{ was, now string }{
+		{"HB258", "HB262"}, // permission / an override with no service
+		{"HB260", "HB264"}, // permission / not a price kind
+		{"HB260", "HB051"}, // permission / not this centre's service
+	} {
+		a, _, _ := businessRefusal(split.was)
+		b, _, _ := businessRefusal(split.now)
+		if a == b {
+			t.Errorf("%s and %s both answer %d - the split has been folded back", split.was, split.now, a)
+		}
+	}
+}
+
+// TestTheHB2xxFamilyIsNotOneThing is the HB1xx test one family later.
+//
+// Six codes share the HB2xx prefix and mean four different things: a
+// missing permission, a row that is not there, a locked row, and three
+// assertions that can only mean this service called a function wrongly.
+// Answering all six alike - which the catch-all did - is the same defect
+// as HB101 meaning four things at once, and it is worth its own test
+// because the pressure to add `case "HB2"` will come back.
+func TestTheHB2xxFamilyIsNotOneThing(t *testing.T) {
+	seen := map[int]bool{}
+	for _, code := range []string{"HB200", "HB201", "HB203", "HB220"} {
+		status, _, ok := businessRefusal(code)
+		if !ok {
+			t.Fatalf("%s unknown", code)
+		}
+		seen[status] = true
+	}
+	if len(seen) != 4 {
+		t.Errorf("HB200/HB201/HB203/HB220 collapsed to %d distinct statuses, want 4: %v", len(seen), seen)
+	}
+}
+
+// TestPaymentPlansAreNamed pins the nine codes 0142 introduces, named in
+// the API before the migration raises any of them.
+//
+// Three families, and the test asserts they stay three: a plan or invoice
+// in the wrong STATE (409), a well-formed request whose COMBINATION is
+// refused (422), and HB269 - an instalment written off its state machine,
+// which no request body can reach and so is our defect (500). Folding the
+// 422s into 409 would tell a clerk to refresh a screen when the schedule
+// they typed does not add up.
+func TestPaymentPlansAreNamed(t *testing.T) {
+	for _, c := range []struct {
+		code   string
+		status int
+		client string
+	}{
+		{"HB265", http.StatusConflict, "PAYMENT_PLAN_TRANSITION"},
+		{"HB266", http.StatusConflict, "PAYMENT_PLAN_STATE"},
+		{"HB267", http.StatusUnprocessableEntity, "PAYMENT_PLAN_INCOMPLETE"},
+		{"HB268", http.StatusUnprocessableEntity, "SCHEDULE_EXCEEDS_TOTAL"},
+		{"HB269", http.StatusInternalServerError, CodeInternal},
+		{"HB270", http.StatusForbidden, "SCHEDULE_OVERRIDE_FORBIDDEN"},
+		{"HB271", http.StatusUnprocessableEntity, "OVERRIDE_REASON_REQUIRED"},
+		{"HB272", http.StatusUnprocessableEntity, "SCHEDULE_TOTAL_MISMATCH"},
+		{"HB273", http.StatusBadRequest, CodeValidation},
+	} {
+		status, client, ok := businessRefusal(c.code)
+		if !ok || status != c.status || client != c.client {
+			t.Errorf("%s -> %d %q, want %d %q", c.code, status, client, c.status, c.client)
+		}
+		if client == "REFUSED" {
+			t.Errorf("%s fell back to the catch-all", c.code)
+		}
+	}
+
+	families := map[int]bool{}
+	for _, code := range []string{"HB266", "HB272", "HB269"} {
+		s, _, _ := businessRefusal(code)
+		families[s] = true
+	}
+	if len(families) != 3 {
+		t.Errorf("state / combination / our defect collapsed to %d statuses, want 3", len(families))
+	}
+}

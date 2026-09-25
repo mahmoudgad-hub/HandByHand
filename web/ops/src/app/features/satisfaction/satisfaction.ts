@@ -1,9 +1,11 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 
+import { ModalDialog } from '@hbh/shared/a11y/modal-dialog';
 import { HBH_CONFIG } from '@hbh/shared/config/app-config';
 import { FormatService } from '@hbh/shared/format/format.service';
 import { Icon, IconName } from '@hbh/shared/icon/icon';
@@ -85,7 +87,7 @@ interface Slice {
 @Component({
   selector: 'hbh-satisfaction',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote, ModalDialog],
   templateUrl: './satisfaction.html',
   styleUrl: './satisfaction.css',
 })
@@ -156,27 +158,27 @@ export class Satisfaction {
       ? this.i18n.translate('nps.perSurvey') : undefined;
 
     return [
-      { key: 'skipped', labelKey: 'nps.skipped', icon: 'ic-x-circle', tone: 'red', value: this.format.count(t.skipped) },
+      { key: 'skipped', labelKey: 'nps.skipped', icon: 'ic-x-circle', tone: 'red', value: this.format.number(t.skipped) },
       {
         key: 'answered', labelKey: 'nps.answered', icon: 'ic-users', tone: 'blue',
-        value: this.format.count(t.answered),
+        value: this.format.number(t.answered),
         foot: t.skipped > 0
           ? this.i18n.translate('nps.skippedFoot', { count: this.format.count(t.skipped) })
           : undefined,
       },
       {
         key: 'promoters', labelKey: 'nps.promoters', icon: 'ic-check-circle',
-        tone: 'green', value: this.format.count(t.promoters),
+        tone: 'green', value: this.format.number(t.promoters),
         foot: this.shareFoot(t.promoters, t.answered),
       },
       {
         key: 'passives', labelKey: 'nps.passives', icon: 'ic-info', tone: 'amber',
-        value: this.format.count(t.passives),
+        value: this.format.number(t.passives),
         foot: this.shareFoot(t.passives, t.answered),
       },
       {
         key: 'detractors', labelKey: 'nps.detractors', icon: 'ic-x-circle',
-        tone: 'red', value: this.format.count(t.detractors),
+        tone: 'red', value: this.format.number(t.detractors),
         foot: this.shareFoot(t.detractors, t.answered),
       },
       {
@@ -285,6 +287,20 @@ export class Satisfaction {
       key: 'skipped', labelKey: 'nps.skipped', ltr: true,
       read: (row) => this.format.number(num(row, 'skipped_cnt')),
     },
+    // What "1 answered" is one OUT OF. Straight from the view (0156), where
+    // the audience predicate is the same function hbh.nps_due asks - so the
+    // denominator on this screen cannot drift from the rule that decides who
+    // is asked.
+    //
+    // "المحتمل" and not "المستهدفون", deliberately. For a campaign the two
+    // are the same, but a survey asked after a session reaches only families
+    // who had one, and this column counts the audience rather than them. A
+    // column named for a target would overstate its own number on half the
+    // rows here.
+    {
+      key: 'audience', labelKey: 'nps.audience', ltr: true,
+      read: (row) => this.format.number(num(row, 'audience_cnt')),
+    },
     {
       key: 'promoters', labelKey: 'nps.promoters', ltr: true,
       read: (row) => this.format.number(num(row, 'promoters')),
@@ -309,6 +325,41 @@ export class Satisfaction {
       },
     },
   ];
+
+  // =====================================================================
+  // The answers behind one row.
+  //
+  // A score of -100 names nothing anybody can act on. These are the replies
+  // it was computed from: who said it, what they wrote, and when.
+  //
+  // WHAT IS SHOWN IS THE SERVICE'S DECISION, NOT THIS SCREEN'S. A staff
+  // survey comes back with no name, and the mobile is NULL for a caller
+  // without GUARDIAN.MANAGE - both decided inside hbh.nps_answers, which
+  // takes no parameter that could widen either. Nothing here reveals; it
+  // draws what arrived, and an empty column is drawn as empty rather than
+  // filled with a guess.
+  // =====================================================================
+
+  /** The survey whose answers are open, or null. */
+  protected readonly answersFor = signal<Row | null>(null);
+  protected readonly answers = signal<readonly Row[]>([]);
+  protected readonly answersLoading = signal(false);
+  protected readonly answersFailed = signal(false);
+  /** '' is every answer. Otherwise a band as hbh.nps_band names it. */
+  protected readonly band = signal('');
+
+  /**
+   * The filter is applied to the band the SERVICE sent, never to the score.
+   *
+   * The boundaries live in hbh.nps_band (0156) and the counts in the table
+   * above are made of them. Re-deriving "9 and up is a promoter" here would
+   * put that rule in a second language, and the day anybody moves it the
+   * filter and the number it filters would disagree while both look right.
+   */
+  protected readonly shownAnswers = computed(() => {
+    const want = this.band();
+    return want ? this.answers().filter((row) => text(row, 'band') === want) : this.answers();
+  });
 
   protected readonly monthly = signal<readonly Row[]>([]);
   protected readonly trend = computed(() => this.monthly().map((r,i,all) => ({x: all.length === 1 ? 200 : 42+i*316/(all.length-1), y: 155-Number(r['mean_score'])*13, score: Number(r['mean_score']), month: String(r['month'])})));
@@ -338,6 +389,128 @@ export class Satisfaction {
 
   protected cell(row: Row, column: { readonly read: (row: Row) => string }): string {
     return column.read(row);
+  }
+
+  /**
+   * Open one survey's answers.
+   *
+   * ONE REQUEST PER OPENING, and it is not only about traffic: every
+   * successful call writes an audit row, because a list of what families
+   * said about their child's therapy is a sensitive read. A screen that
+   * asked twice to draw once would leave a trail saying somebody opened a
+   * family's answers twice.
+   */
+  protected openAnswers(row: Row): void {
+    if (this.answersFor()) {
+      return;
+    }
+    this.answersFor.set(row);
+    this.band.set('');
+    this.loadAnswers();
+  }
+
+  protected loadAnswers(): void {
+    const survey = this.answersFor();
+    if (!survey) {
+      return;
+    }
+    this.answersLoading.set(true);
+    this.answersFailed.set(false);
+    this.answers.set([]);
+    this.http
+      .get<{ answers?: readonly Row[] }>(`${this.base}/${text(survey, 'survey_id')}/answers`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          this.answers.set(body.answers ?? []);
+          this.answersLoading.set(false);
+        },
+        error: () => {
+          this.answersLoading.set(false);
+          this.answersFailed.set(true);
+        },
+      });
+  }
+
+  protected closeAnswers(): void {
+    this.answersFor.set(null);
+    this.answers.set([]);
+    this.band.set('');
+  }
+
+  /** The three filters, each carrying how many it would leave. */
+  protected readonly bandFilters = computed(() => {
+    const all = this.answers();
+    const count = (want: string) => all.filter((row) => text(row, 'band') === want).length;
+    return [
+      { value: '', labelKey: 'nps.answersAll', count: all.length },
+      { value: 'PROMOTER', labelKey: 'nps.promoters', count: count('PROMOTER') },
+      { value: 'PASSIVE', labelKey: 'nps.passives', count: count('PASSIVE') },
+      { value: 'DETRACTOR', labelKey: 'nps.detractors', count: count('DETRACTOR') },
+    ];
+  });
+
+  /**
+   * The colour of one answer's band - the same three the tiles and the
+   * doughnut above are drawn in, from the same variables. A fourth green
+   * defined here would drift from them the first time the palette moved.
+   *
+   * TWO TOKENS PER BAND, NOT ONE, and the pair is the whole point: the dot
+   * is a FILL and the word beside it is TEXT. The fill tokens are chosen to
+   * sit under things, so `--hbh-danger` as a label colour fails the contrast
+   * floor - which is exactly what tests/web/w1_contrast_verify.sh checks, and
+   * why the system carries an `-ink` twin for every one of them.
+   */
+  protected bandColour(row: Row): string {
+    switch (text(row, 'band')) {
+      case 'PROMOTER': return 'var(--hbh-success-ink)';
+      case 'PASSIVE': return 'var(--hbh-progress-ink)';
+      case 'DETRACTOR': return 'var(--hbh-danger-ink)';
+      default: return 'var(--hbh-muted)';
+    }
+  }
+
+  /** The dot's fill, which is where the untinted token belongs. */
+  protected bandFill(row: Row): string {
+    switch (text(row, 'band')) {
+      case 'PROMOTER': return 'var(--hbh-success)';
+      case 'PASSIVE': return 'var(--hbh-progress)';
+      case 'DETRACTOR': return 'var(--hbh-danger)';
+      default: return 'var(--hbh-muted)';
+    }
+  }
+
+  protected bandLabel(row: Row): string {
+    const band = text(row, 'band');
+    return band ? this.i18n.translate(`nps.kind.${band}`) : this.i18n.translate('nps.skippedOne');
+  }
+
+  protected answerKey(row: Row, index: number): string {
+    return text(row, 'response_id') || String(index);
+  }
+
+  /**
+   * One field of one answer, as text.
+   *
+   * A Row is a bag of `unknown` - it is whatever the service sent - and the
+   * template cannot narrow that. Reading through here rather than with
+   * `answer['mobile']` in the markup is what makes the empty case explicit:
+   * a masked column arrives as null and leaves as '', which the template
+   * tests, instead of printing "null" at somebody.
+   */
+  protected field(row: Row, key: string): string {
+    return text(row, key);
+  }
+
+  protected answeredAt(row: Row): string {
+    const at = text(row, 'responded_at');
+    return at ? this.format.dayMonthYear(at) : '';
+  }
+
+  /** A score, or '' for a dismissal - which has no score and never had one. */
+  protected answerScore(row: Row): string {
+    const score = text(row, 'score');
+    return score ? this.format.number(Number(score)) : '';
   }
 
   protected rowKey(row: Row, index: number): string {

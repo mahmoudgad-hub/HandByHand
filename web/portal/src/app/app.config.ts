@@ -5,7 +5,8 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withInMemoryScrolling } from '@angular/router';
+import { provideRouter, withInMemoryScrolling, RouteReuseStrategy } from '@angular/router';
+import { ChildRouteReuse } from './core/auth/child-route-reuse';
 
 import { routes } from './app.routes';
 import {
@@ -21,6 +22,7 @@ import { HttpAuthApi } from './core/auth/http-auth-api';
 import { PortalApi } from './core/api/portal-api';
 import { FixturePortalApi } from './core/api/fixture-portal-api';
 import { HttpPortalApi } from './core/api/http-portal-api';
+import { usageInterceptor } from '@hbh/shared/analytics/usage-tracker';
 
 /**
  * The portal talks to the real service.
@@ -39,12 +41,13 @@ const config: AppConfig = { ...DEFAULT_HBH_CONFIG, useFixtures: false };
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: RouteReuseStrategy, useExisting: ChildRouteReuse },
     provideBrowserGlobalErrorListeners(),
     provideRouter(
       routes,
       withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
     ),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, usageInterceptor])),
 
     { provide: HBH_CONFIG, useValue: config },
 

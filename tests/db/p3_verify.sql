@@ -129,13 +129,23 @@ INSERT INTO hbh_test.fxt (k, v) VALUES
                   + interval '7 days' + interval '12 hours 45 minutes') AT TIME ZONE 'Africa/Cairo');
 
 -- services and rooms
-INSERT INTO hbh.services (center_id, branch_id, code, name_ar, kind_code, default_duration_min)
+--
+-- P3-CONSULT was added for 0118 and it is not decoration. The two flags
+-- are what make a consultation a consultation: it opens no therapy
+-- session and wants no caseload. Before them, the online booking below
+-- used the SPEECH service - a service that DOES open sessions - and the
+-- booking guard would now refuse it with HB251, rightly.
+INSERT INTO hbh.services (center_id, branch_id, code, name_ar, kind_code, default_duration_min,
+                          creates_session_flg, needs_caseload_flg)
 VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
-        'P3-SPEECH', 'تخاطب — اختبار', 'SPEECH', 45),
+        'P3-SPEECH', 'تخاطب — اختبار', 'SPEECH', 45, true, true),
        ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
-        'P3-OT', 'علاج وظيفي — اختبار', 'OT', 45);
-INSERT INTO hbh_test.fx (k, v) SELECT 'svc_speech', service_id FROM hbh.services WHERE code='P3-SPEECH';
-INSERT INTO hbh_test.fx (k, v) SELECT 'svc_ot',     service_id FROM hbh.services WHERE code='P3-OT';
+        'P3-OT', 'علاج وظيفي — اختبار', 'OT', 45, true, true),
+       ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
+        'P3-CONSULT', 'استشارة أونلاين — اختبار', 'CONSULT', 30, false, false);
+INSERT INTO hbh_test.fx (k, v) SELECT 'svc_speech',  service_id FROM hbh.services WHERE code='P3-SPEECH';
+INSERT INTO hbh_test.fx (k, v) SELECT 'svc_ot',      service_id FROM hbh.services WHERE code='P3-OT';
+INSERT INTO hbh_test.fx (k, v) SELECT 'svc_consult', service_id FROM hbh.services WHERE code='P3-CONSULT';
 
 INSERT INTO hbh.rooms (center_id, branch_id, code, name_ar)
 VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'), 'P3-R1', 'غرفة اختبار ١'),
@@ -191,9 +201,13 @@ INSERT INTO hbh_test.fx (k, v) SELECT 'th_cons', therapist_id FROM hbh.therapist
 -- something real to catch. The consultation therapist delivers it too,
 -- or every slot asked against them answers THERAPIST_SERVICE_MISMATCH
 -- before reaching anything this suite is about.
+-- th_cons delivers BOTH: the consultation, which is what they are here
+-- for, and speech - so section 3b can ask for a therapy service with no
+-- room and be refused for THAT reason rather than for a mismatch.
 INSERT INTO hbh.therapist_services (therapist_id, service_id)
 VALUES ((SELECT v FROM hbh_test.fx WHERE k='th'),      (SELECT v FROM hbh_test.fx WHERE k='svc_speech')),
-       ((SELECT v FROM hbh_test.fx WHERE k='th_cons'), (SELECT v FROM hbh_test.fx WHERE k='svc_speech'));
+       ((SELECT v FROM hbh_test.fx WHERE k='th_cons'), (SELECT v FROM hbh_test.fx WHERE k='svc_speech')),
+       ((SELECT v FROM hbh_test.fx WHERE k='th_cons'), (SELECT v FROM hbh_test.fx WHERE k='svc_consult'));
 
 -- Sunday to Thursday, 09:00 to 17:00. Egypt rests Friday and Saturday.
 INSERT INTO hbh.therapist_working_hours (center_id, therapist_id, weekday, start_time, end_time)
@@ -220,6 +234,31 @@ INSERT INTO hbh_test.fx (k, v) SELECT 'gd', guardian_id FROM hbh.guardians WHERE
 INSERT INTO hbh.guardian_children (guardian_id, child_id, relationship_code, is_primary_flg)
 VALUES ((SELECT v FROM hbh_test.fx WHERE k='gd'), (SELECT v FROM hbh_test.fx WHERE k='child_a'), 'FATHER', true);
 
+-- A SECOND FAMILY, ADDED FOR 0121, and it is the point of the door
+-- checks rather than scenery.
+--
+-- The suite had one guardian, on child_a. Every consultation booked here
+-- is child_a's, so "somebody else's family cannot get in" had nobody to
+-- ask it with - and the first attempt at that check used a guardian who
+-- turned out to be the child's OTHER parent, which is a person who
+-- SHOULD get in. It passed, and proved nothing.
+INSERT INTO hbh.users (center_id, branch_id, username, full_name_ar, user_type, mobile)
+VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
+        'p3.stranger', 'ولي أمر أسرة أخرى', 'GUARDIAN', '+201300000005');
+INSERT INTO hbh_test.fx (k, v) SELECT 'user_str', user_id FROM hbh.users WHERE username='p3.stranger';
+
+INSERT INTO hbh.user_roles (user_id, role_id)
+SELECT (SELECT v FROM hbh_test.fx WHERE k='user_str'), r.role_id
+FROM hbh.roles r WHERE r.center_id = (SELECT v FROM hbh_test.fx WHERE k='center') AND r.code = 'GUARDIAN';
+
+INSERT INTO hbh.guardians (center_id, branch_id, user_id, full_name_ar, mobile)
+VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
+        (SELECT v FROM hbh_test.fx WHERE k='user_str'), 'ولي أمر أسرة أخرى', '+201300000005');
+INSERT INTO hbh_test.fx (k, v) SELECT 'gd_str', guardian_id FROM hbh.guardians WHERE mobile='+201300000005';
+
+INSERT INTO hbh.guardian_children (guardian_id, child_id, relationship_code, is_primary_flg)
+VALUES ((SELECT v FROM hbh_test.fx WHERE k='gd_str'), (SELECT v FROM hbh_test.fx WHERE k='child_b'), 'FATHER', true);
+
 -- Caseload for child A only. Child B is deliberately left off it, so
 -- the caseload refusal has a case to refuse.
 INSERT INTO hbh.caseload (center_id, therapist_id, child_id, service_id, is_primary_flg)
@@ -239,8 +278,21 @@ VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx
 CALL hbh_test.chk('fixture', 'migration 0005 recorded',
   $q$ SELECT EXISTS (SELECT 1 FROM hbh.schema_migrations WHERE version = '0005') $q$);
 
-CALL hbh_test.chk('fixture', 'two services exist',
-  $q$ SELECT count(*) = 2 FROM hbh.services WHERE code LIKE 'P3-%' $q$);
+CALL hbh_test.chk('fixture', 'three services exist',
+  $q$ SELECT count(*) = 3 FROM hbh.services WHERE code LIKE 'P3-%' $q$);
+
+-- THE FLAGS ARE ASSERTED BY NAME, before anything depends on them. Both
+-- default to true, so a consultation row that was inserted without them
+-- would look like an ordinary therapy service - and every check in
+-- section 3b would then be refused for a reason that had nothing to do
+-- with what it was testing.
+CALL hbh_test.chk('fixture', 'and the consultation opens no session and wants no caseload',
+  $q$ SELECT NOT creates_session_flg AND NOT needs_caseload_flg
+      FROM hbh.services WHERE code = 'P3-CONSULT' $q$);
+
+CALL hbh_test.chk('fixture', 'while the therapy services do both',
+  $q$ SELECT bool_and(creates_session_flg AND needs_caseload_flg)
+      FROM hbh.services WHERE code IN ('P3-SPEECH','P3-OT') $q$);
 
 CALL hbh_test.chk('fixture', 'two rooms exist',
   $q$ SELECT count(*) = 2 FROM hbh.rooms WHERE code LIKE 'P3-%' $q$);
@@ -487,11 +539,39 @@ CALL hbh_test.chk_reason('mode', 'and a reversed window is still answered before
 -- THE HOUR ITSELF. child_a is already in an in-person session with
 -- 'th' at slot_start - booked at the top of section 3.
 -- ---------------------------------------------------------------------
+-- A THERAPY SERVICE CANNOT BE BOOKED WITHOUT A ROOM - 0118.
+--
+-- hbh.therapy_sessions.room_id is NOT NULL, so a service that opens a
+-- session needs somewhere for it to happen. 0117 left this to
+-- start_session, which is the expensive half of the discovery: at
+-- booking it is a typo somebody fixes, and at start it is a family in a
+-- room.
+CALL hbh_test.chk_reason('mode', 'a service that opens a session cannot be booked with no room',
+  $q$ SELECT reason FROM hbh.validate_slot(
+        (SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='child_b'),
+        (SELECT v FROM hbh_test.fx WHERE k='th_cons'), NULL,
+        (SELECT v FROM hbh_test.fx WHERE k='svc_speech'),
+        (SELECT v FROM hbh_test.fxt WHERE k='slot2_start'),
+        (SELECT v FROM hbh_test.fxt WHERE k='slot2_end'), NULL, 'ONLINE') $q$, 'SERVICE_NEEDS_ROOM');
+
+-- And the guarantee behind that explanation, asserted on the table.
+CALL hbh_test.chk_raises('mode', 'and the schema refuses it too, by name',
+  $q$ INSERT INTO hbh.appointments (center_id, branch_id, appointment_no, child_id,
+                                    therapist_id, room_id, service_id, starts_at, ends_at,
+                                    delivery_mode)
+      VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
+              'P3-MODE-4', (SELECT v FROM hbh_test.fx WHERE k='child_b'),
+              (SELECT v FROM hbh_test.fx WHERE k='th_cons'), NULL,
+              (SELECT v FROM hbh_test.fx WHERE k='svc_speech'),
+              (SELECT v FROM hbh_test.fxt WHERE k='slot2_start'),
+              (SELECT v FROM hbh_test.fxt WHERE k='slot2_end'),
+              'ONLINE') $q$, 'HB251');
+
 CALL hbh_test.chk('mode', 'the child being in a session does not block a consultation about them',
   $q$ SELECT ok FROM hbh.validate_slot(
         (SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='child_a'),
         (SELECT v FROM hbh_test.fx WHERE k='th_cons'), NULL,
-        (SELECT v FROM hbh_test.fx WHERE k='svc_speech'),
+        (SELECT v FROM hbh_test.fx WHERE k='svc_consult'),
         (SELECT v FROM hbh_test.fxt WHERE k='slot_start'),
         (SELECT v FROM hbh_test.fxt WHERE k='slot_end'), NULL, 'ONLINE') $q$);
 
@@ -500,7 +580,7 @@ CALL hbh_test.chk('mode', 'and it books, with no room and the mode recorded',
         SELECT hbh.book_appointment(
           (SELECT v FROM hbh_test.fx WHERE k='center'), NULL,
           (SELECT v FROM hbh_test.fx WHERE k='child_a'), (SELECT v FROM hbh_test.fx WHERE k='th_cons'),
-          NULL, (SELECT v FROM hbh_test.fx WHERE k='svc_speech'),
+          NULL, (SELECT v FROM hbh_test.fx WHERE k='svc_consult'),
           (SELECT v FROM hbh_test.fxt WHERE k='slot_start'),
           (SELECT v FROM hbh_test.fxt WHERE k='slot_end'),
           NULL, 'ONLINE') AS id),
@@ -543,7 +623,7 @@ CALL hbh_test.chk_reason('mode', 'the consultation now occupies its therapist',
   $q$ SELECT reason FROM hbh.validate_slot(
         (SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='child_b'),
         (SELECT v FROM hbh_test.fx WHERE k='th_cons'), NULL,
-        (SELECT v FROM hbh_test.fx WHERE k='svc_speech'),
+        (SELECT v FROM hbh_test.fx WHERE k='svc_consult'),
         (SELECT v FROM hbh_test.fxt WHERE k='slot_start'),
         (SELECT v FROM hbh_test.fxt WHERE k='slot_end'), NULL, 'ONLINE') $q$, 'THERAPIST_BUSY');
 
@@ -561,6 +641,17 @@ CALL hbh_test.chk_raises('mode', 'the schema itself refuses an online row holdin
               (SELECT v FROM hbh_test.fxt WHERE k='slot2_end'),
               'ONLINE') $q$, '23514');
 
+-- WITH THE CONSULTATION SERVICE, AND THAT IS THE POINT OF THIS LINE.
+--
+-- Written with the speech service it came back HB251, not 23514 - a
+-- BEFORE trigger runs before a CHECK constraint, so the booking guard
+-- answered first and hid the constraint entirely. Same family as the
+-- lesson in CLAUDE.md about a BEFORE trigger hiding an RLS refusal: the
+-- business rule replies, and the check underneath is never reached.
+--
+-- A service that opens no session lets the trigger return early, so the
+-- constraint is the only thing left to refuse it - which is what this
+-- check claims to be testing.
 CALL hbh_test.chk_raises('mode', 'and an in-person row with none',
   $q$ INSERT INTO hbh.appointments (center_id, branch_id, appointment_no, child_id,
                                     therapist_id, room_id, service_id, starts_at, ends_at,
@@ -568,10 +659,210 @@ CALL hbh_test.chk_raises('mode', 'and an in-person row with none',
       VALUES ((SELECT v FROM hbh_test.fx WHERE k='center'), (SELECT v FROM hbh_test.fx WHERE k='branch'),
               'P3-MODE-3', (SELECT v FROM hbh_test.fx WHERE k='child_b'),
               (SELECT v FROM hbh_test.fx WHERE k='th_cons'), NULL,
-              (SELECT v FROM hbh_test.fx WHERE k='svc_speech'),
+              (SELECT v FROM hbh_test.fx WHERE k='svc_consult'),
               (SELECT v FROM hbh_test.fxt WHERE k='slot2_start'),
               (SELECT v FROM hbh_test.fxt WHERE k='slot2_end'),
               'IN_PERSON') $q$, '23514');
+
+-- =====================================================================
+-- 3c. THE ROOM, AND THE DOOR - 0120, 0121
+--
+-- appt_online was booked a moment ago, so a room already exists: the
+-- trigger opens one for every ONLINE appointment, because there is more
+-- than one way an appointment is created and a consultation with no room
+-- is a family pressing a button that does nothing.
+--
+-- WHAT THE DOOR IS FOR. A consultation's video cannot be proxied - the
+-- family's browser talks to the provider itself - so the pass reaches
+-- the browser and CANNOT BE CALLED BACK once issued. Everything below is
+-- what narrows that: the appointment is yours, it is paid, the hour has
+-- come, and the pass dies quickly.
+-- =====================================================================
+CALL hbh_test.chk('door', 'booking an online consultation opened a room',
+  $q$ SELECT status = 'READY' AND provider IS NOT NULL FROM hbh.meetings
+      WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online') $q$);
+
+-- NOT THE APPOINTMENT NUMBER, and the constraint says so too. With a
+-- provider whose rooms exist by being joined, a name anybody can work
+-- out by counting is an open door.
+CALL hbh_test.chk('door', 'and its name is a secret, not a number',
+  $q$ SELECT room_ref ~ '^[a-z0-9]{24,64}$'
+         AND room_ref NOT LIKE '%' || (SELECT appointment_no FROM hbh.appointments
+                                        WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online')) || '%'
+      FROM hbh.meetings
+      WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online') $q$);
+
+SET ROLE hbh_app;
+SET hbh.user_id = 'p3.guardian';
+
+-- BOOKED means the invoice has not been paid. Asking the status here
+-- asks about the money without this function knowing what an invoice is.
+CALL hbh_test.chk_raises('door', 'an unpaid consultation does not open - HB253',
+  $q$ SELECT * FROM hbh.authorize_meeting_entry(
+        (SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$, 'HB253');
+
+RESET ROLE;
+RESET hbh.user_id;
+
+CALL hbh_test.chk('door', 'paying confirms it',
+  $q$ WITH u AS (UPDATE hbh.appointments SET status = 'CONFIRMED'
+                 WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online') RETURNING 1)
+      SELECT count(*) = 1 FROM u $q$);
+
+SET ROLE hbh_app;
+SET hbh.user_id = 'p3.guardian';
+
+-- The slot this suite books is days away, so the door is shut on time
+-- rather than on permission - and the code says which.
+CALL hbh_test.chk_raises('door', 'but the hour has not come - HB252',
+  $q$ SELECT * FROM hbh.authorize_meeting_entry(
+        (SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$, 'HB252');
+
+RESET ROLE;
+RESET hbh.user_id;
+
+-- MOVING THE APPOINTMENT MOVES THE DOOR, which is the other half of the
+-- trigger and the reason a rescheduled consultation is enterable at all.
+-- Done as an UPDATE rather than by editing the meeting directly: the
+-- claim is that the door follows the appointment.
+-- TWO STATEMENTS, AND THE FIRST DRAFT WAS ONE.
+--
+-- Written as `WITH u AS (UPDATE appointments ...) SELECT ... FROM
+-- meetings`, the room the UPDATE's own trigger had just moved was
+-- invisible to the outer SELECT: both halves read the snapshot taken
+-- when the statement began. The CTE rule in CLAUDE.md, arriving through
+-- a trigger this time instead of a literal INSERT - which is what made
+-- it look like the trigger had not fired.
+UPDATE hbh.appointments
+   SET starts_at = now() + interval '5 minutes',
+       ends_at   = now() + interval '35 minutes'
+ WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online');
+
+CALL hbh_test.chk('door', 'moving the appointment moves the door with it',
+  $q$ SELECT opens_at <= now() AND expires_at > now() FROM hbh.meetings
+       WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online') $q$);
+
+SET ROLE hbh_app;
+SET hbh.user_id = 'p3.guardian';
+
+CALL hbh_test.chk('door', 'now the family is let in, and is NOT a moderator',
+  $q$ SELECT NOT moderator_flg AND room_ref ~ '^[a-z0-9]{24,64}$'
+      FROM hbh.authorize_meeting_entry((SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$);
+
+-- Never past the door, whatever MEETING_TOKEN_TTL_MIN says.
+CALL hbh_test.chk('door', 'and the pass cannot outlive the consultation',
+  $q$ SELECT a.expires_at <= m.expires_at
+      FROM hbh.authorize_meeting_entry((SELECT v FROM hbh_test.fx WHERE k='appt_online')) a
+      JOIN hbh.meetings m ON m.appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online') $q$);
+
+-- THE BARRIER, AND IT IS HANDED THE REAL IDENTIFIER.
+--
+-- Written first with a subquery for the id, the stranger's own RLS hid
+-- the appointment, the subquery returned NULL, and the function refused
+-- a NULL rather than refusing THEM. Green, and about nothing. The id is
+-- read from hbh_test.fx - which every session can see - so the only
+-- thing left to refuse is whose appointment it is.
+--
+-- And it answers HB021, the same as "no such appointment": telling a
+-- stranger it exists but is not theirs is telling them it exists.
+SET hbh.user_id = 'p3.stranger';
+
+-- HB051 AND NOT HB021, AND THE DIFFERENCE IS THE WHOLE POINT.
+--
+-- 0121 raised HB021 here, which book_appointment already raises for a
+-- refused slot - so the API answered 409 SLOT_UNAVAILABLE to a family
+-- asking about somebody else's appointment. Wrong sentence, and it
+-- implies a slot exists, which is the one thing this refusal must not
+-- do. HB051 is what this schema uses for a row that is not there or not
+-- yours, and the API answers it 404. Corrected in 0124, found by calling
+-- the endpoint rather than by reading it.
+CALL hbh_test.chk_raises('door', 'another family holding the real id is refused as if it did not exist',
+  $q$ SELECT * FROM hbh.authorize_meeting_entry(
+        (SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$, 'HB051');
+
+-- The therapist runs the room. A guardian never does.
+SET hbh.user_id = 'p3.consult';
+
+CALL hbh_test.chk('door', 'the therapist is the moderator',
+  $q$ SELECT moderator_flg FROM hbh.authorize_meeting_entry(
+        (SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$);
+
+-- The evidence row: who took a pass, for which room, and for how long.
+CALL hbh_test.chk('door', 'issuing a pass is recorded',
+  $q$ WITH r AS (
+        SELECT hbh.record_meeting_token(
+          (SELECT meeting_id FROM hbh.meetings
+            WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online')),
+          public.digest('p3-pass', 'sha256'), true,
+          now() + interval '15 minutes', '196.0.0.9'::inet) AS id)
+      SELECT (SELECT count(*) FROM r) = 1 $q$);
+
+-- THE CEILING IS ON THE ROW, not in the caller. Nothing can revoke what
+-- this issues, so the window is the only control there is.
+CALL hbh_test.chk_raises('door', 'and a pass longer than the ceiling is refused by the table itself',
+  $q$ SELECT hbh.record_meeting_token(
+        (SELECT meeting_id FROM hbh.meetings
+          WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online')),
+        public.digest('p3-too-long', 'sha256'), false,
+        now() + interval '4 hours', NULL) $q$, '23514');
+
+RESET ROLE;
+RESET hbh.user_id;
+
+-- A CLOSED ROOM TURNS PEOPLE AWAY.
+--
+-- Forced directly, with the appointment left CONFIRMED, and that is the
+-- only way to reach this branch. Cancelling closes the room AND changes
+-- the status, and the status is asked first - so a cancelled
+-- consultation answers HB253, which is true and is a different rule.
+-- Asserting HB252 there would have been asserting nothing: the first
+-- draft did exactly that and came back HB253.
+--
+-- The branch still earns its place. The room can be closed while the
+-- appointment stands - a provider failure, or an operator shutting one
+-- room - and this is what happens then.
+UPDATE hbh.meetings
+   SET status = 'CLOSED', closed_at = now(), closed_reason = 'اختبار الإغلاق المباشر'
+ WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online');
+
+SET ROLE hbh_app;
+SET hbh.user_id = 'p3.guardian';
+
+CALL hbh_test.chk_raises('door', 'a closed room turns away a family whose appointment still stands - HB252',
+  $q$ SELECT * FROM hbh.authorize_meeting_entry(
+        (SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$, 'HB252');
+
+RESET ROLE;
+RESET hbh.user_id;
+
+-- AND NOW THE ORDINARY PATH: cancelling. Two statements again, because
+-- the row the trigger touches is not visible inside the statement that
+-- fires it.
+UPDATE hbh.meetings SET status = 'READY', closed_at = NULL, closed_reason = NULL
+ WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online');
+
+UPDATE hbh.appointments
+   SET status = 'CANCELLED', cancel_reason = 'اختبار الإغلاق'
+ WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online');
+
+-- A pass already in a browser cannot be called back, so closing the row
+-- is the only thing that stops the NEXT one being issued.
+CALL hbh_test.chk('door', 'cancelling the appointment closes its room, with a reason',
+  $q$ SELECT status = 'CLOSED' AND closed_reason = 'APPOINTMENT_CANCELLED'
+      FROM hbh.meetings
+      WHERE appointment_id = (SELECT v FROM hbh_test.fx WHERE k='appt_online') $q$);
+
+SET ROLE hbh_app;
+SET hbh.user_id = 'p3.guardian';
+
+-- The status is asked before the room, so this is HB253 - and saying so
+-- here is the difference between a test and a hope.
+CALL hbh_test.chk_raises('door', 'and a cancelled consultation is refused on its status - HB253',
+  $q$ SELECT * FROM hbh.authorize_meeting_entry(
+        (SELECT v FROM hbh_test.fx WHERE k='appt_online')) $q$, 'HB253');
+
+RESET ROLE;
+RESET hbh.user_id;
 
 -- =====================================================================
 -- 4. TWO RECEPTIONISTS, ONE SLOT
@@ -697,13 +988,20 @@ CALL hbh_test.chk_raises('session', 'a second session on the same appointment ra
   $q$ SELECT hbh.start_session((SELECT v FROM hbh_test.fx WHERE k='appt_a')) $q$, 'HB022');
 
 -- ---------------------------------------------------------------------
--- A CONSULTATION DOES NOT OPEN A SESSION - 0117
+-- A CONSULTATION DOES NOT OPEN A SESSION - 0117, then 0118
 --
 -- WHY THIS IS HERE AND NOT A NICETY. hbh.therapy_sessions.room_id is
 -- NOT NULL. The moment appointments.room_id became nullable, this call
 -- stopped being impossible and started being a raw 23502 from inside a
 -- SECURITY DEFINER function - "null value in column room_id" shown to a
 -- therapist who pressed Start.
+--
+-- WHAT THE REFUSAL IS ABOUT CHANGED UNDER THIS CHECK, and the check did
+-- not. 0117 refused because the appointment was not IN_PERSON; 0118
+-- refuses because the SERVICE does not open sessions, which is the rule
+-- that was always meant. appt_online now uses svc_consult, so the same
+-- HB250 comes back for the right reason - and it would come back for a
+-- consultation held in a room, too, which the mode test never could.
 --
 -- AS ITS OWN THERAPIST. p3.consult is the user behind th_cons, who is
 -- named by appt_online, so can_start_session is satisfied and HB028 is
@@ -775,6 +1073,41 @@ SET hbh.user_id = 'p3.therapist';
 
 CALL hbh_test.chk_raises('session', 'a therapist not on the caseload cannot start it - HB023',
   $q$ SELECT hbh.start_session((SELECT v FROM hbh_test.fx WHERE k='appt_b')) $q$, 'HB023');
+
+-- ---------------------------------------------------------------------
+-- THE OTHER FLAG - 0118
+--
+-- needs_caseload_flg is the half that is easy to add and never prove.
+-- The line above is the whole test for it: the SAME call, the SAME
+-- appointment, the SAME therapist with no caseload row - and the only
+-- thing that changed is the service's flag. Anything less would be
+-- asserting that the flag exists, not that it does anything.
+--
+-- WHY THE FLAG IS FLIPPED ON svc_speech RATHER THAN USING svc_consult.
+-- A consultation opens no session at all, so it would be refused by
+-- HB250 long before the caseload question was reached - green, and
+-- about a different rule entirely. What has to be isolated here is one
+-- flag, on a service that still opens sessions.
+--
+-- IT IS PUT BACK IMMEDIATELY, and the restore is a recorded check at the
+-- bottom with the others. Left false, every therapy service on this
+-- database would stop asking who is answerable for the child - a
+-- safeguard switched off by a test, silently, for every session sharing
+-- the database.
+UPDATE hbh.services SET needs_caseload_flg = false
+ WHERE service_id = (SELECT v FROM hbh_test.fx WHERE k='svc_speech');
+
+CALL hbh_test.chk('session', 'with needs_caseload_flg false the same call goes through',
+  $q$ WITH s AS (SELECT hbh.start_session((SELECT v FROM hbh_test.fx WHERE k='appt_b')) AS id),
+           i AS (INSERT INTO hbh_test.fx (k, v) SELECT 'sess_b', id FROM s RETURNING 1)
+      SELECT (SELECT count(*) FROM i) = 1 $q$);
+
+CALL hbh_test.chk('session', 'and the session it opened is a real one',
+  $q$ SELECT status = 'IN_PROGRESS' FROM hbh.therapy_sessions
+      WHERE session_id = (SELECT v FROM hbh_test.fx WHERE k='sess_b') $q$);
+
+UPDATE hbh.services SET needs_caseload_flg = true
+ WHERE service_id = (SELECT v FROM hbh_test.fx WHERE k='svc_speech');
 
 RESET hbh.user_id;
 
@@ -943,16 +1276,52 @@ CALL hbh_test.chk('cleanup', 'session history removed',
                       (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b'))) RETURNING 1)
       SELECT count(*) >= 2 FROM d $q$);
 
+-- Two since 0118: child_a's, and the one the needs_caseload_flg check
+-- opened on child_b.
 CALL hbh_test.chk('cleanup', 'sessions removed',
   $q$ WITH d AS (DELETE FROM hbh.therapy_sessions WHERE child_id IN
                    (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b')) RETURNING 1)
-      SELECT count(*) = 1 FROM d $q$);
+      SELECT count(*) = 2 FROM d $q$);
+
+-- THE FLAG THIS SUITE TURNED OFF IS BACK ON. Left false, hbh.start_session
+-- would stop asking which clinician is answerable for which child's work -
+-- on every therapy service in this database, for every session sharing
+-- it, until somebody went looking for why.
+CALL hbh_test.chk('cleanup', 'the caseload requirement was put back',
+  $q$ SELECT bool_and(needs_caseload_flg AND creates_session_flg)
+      FROM hbh.services WHERE code IN ('P3-SPEECH','P3-OT') $q$);
 
 CALL hbh_test.chk('cleanup', 'appointment history removed',
   $q$ WITH d AS (DELETE FROM hbh.appointment_status_history WHERE appointment_id IN
                    (SELECT appointment_id FROM hbh.appointments WHERE child_id IN
                       (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b'))) RETURNING 1)
       SELECT count(*) >= 3 FROM d $q$);
+
+-- THE ROOM BEFORE THE APPOINTMENT IT BELONGS TO - 0120.
+--
+-- hbh.meetings has a foreign key to hbh.appointments, so the delete
+-- below stopped working the moment an online consultation opened a room:
+-- 23503, the whole cleanup statement rolled back, and the NEXT run
+-- started dirty and failed eleven checks that had nothing to do with
+-- anything. Exactly the shape CLAUDE.md describes for the P5 cleanup
+-- that took twenty-one checks down with it.
+--
+-- Tokens before rooms, rooms before appointments. Children first, every
+-- level its own statement.
+CALL hbh_test.chk('cleanup', 'meeting passes removed',
+  $q$ WITH d AS (DELETE FROM hbh.meeting_tokens WHERE meeting_id IN
+                   (SELECT m.meeting_id FROM hbh.meetings m
+                     JOIN hbh.appointments a ON a.appointment_id = m.appointment_id
+                    WHERE a.child_id IN (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b')))
+                  RETURNING 1)
+      SELECT count(*) >= 0 FROM d $q$);
+
+CALL hbh_test.chk('cleanup', 'meeting rooms removed',
+  $q$ WITH d AS (DELETE FROM hbh.meetings WHERE appointment_id IN
+                   (SELECT appointment_id FROM hbh.appointments WHERE child_id IN
+                      (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b')))
+                  RETURNING 1)
+      SELECT count(*) = 1 FROM d $q$);
 
 -- Four since 0117: the three this suite always booked, plus the online
 -- consultation in section 3b.
@@ -969,7 +1338,7 @@ CALL hbh_test.chk('cleanup', 'caseload and guardian links removed',
                    (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b')) RETURNING 1),
            g AS (DELETE FROM hbh.guardian_children WHERE child_id IN
                    (SELECT v FROM hbh_test.fx WHERE k IN ('child_a','child_b')) RETURNING 1)
-      SELECT (SELECT count(*) FROM c) = 1 AND (SELECT count(*) FROM g) = 1 $q$);
+      SELECT (SELECT count(*) FROM c) = 1 AND (SELECT count(*) FROM g) = 2 $q$);
 
 CALL hbh_test.chk('cleanup', 'children removed',
   $q$ WITH d AS (DELETE FROM hbh.children WHERE child_no LIKE 'P3-%' RETURNING 1)
@@ -986,10 +1355,11 @@ CALL hbh_test.chk('cleanup', 'rota, skills and therapists removed',
                    (SELECT v FROM hbh_test.fx WHERE k IN ('th','th_leave','th_cons')) RETURNING 1)
       SELECT (SELECT count(*) FROM w) = 10 AND (SELECT count(*) FROM t) = 3 $q$);
 
+-- Three services since 0118: speech, OT and the consultation.
 CALL hbh_test.chk('cleanup', 'rooms and services removed',
   $q$ WITH r AS (DELETE FROM hbh.rooms    WHERE code LIKE 'P3-%' RETURNING 1),
            s AS (DELETE FROM hbh.services WHERE code LIKE 'P3-%' RETURNING 1)
-      SELECT (SELECT count(*) FROM r) = 2 AND (SELECT count(*) FROM s) = 2 $q$);
+      SELECT (SELECT count(*) FROM r) = 2 AND (SELECT count(*) FROM s) = 3 $q$);
 
 -- 0089 gave staff notifications of their own, so booking an appointment
 -- now writes a row addressed to the therapist. The teardown predates
@@ -1016,18 +1386,18 @@ CALL hbh_test.chk('cleanup', 'the guardian is removed',
   $q$ WITH d AS (DELETE FROM hbh.guardians
                   WHERE user_id IN (SELECT user_id FROM hbh.users WHERE username LIKE 'p3.%')
                   RETURNING 1)
-      SELECT count(*) = 1 FROM d $q$);
+      SELECT count(*) = 2 FROM d $q$);
 
 -- Four role rows since 0117: three therapists and one guardian.
 CALL hbh_test.chk('cleanup', 'the role grants are removed',
   $q$ WITH d AS (DELETE FROM hbh.user_roles
                   WHERE user_id IN (SELECT user_id FROM hbh.users WHERE username LIKE 'p3.%')
                   RETURNING 1)
-      SELECT count(*) = 4 FROM d $q$);
+      SELECT count(*) = 5 FROM d $q$);
 
 CALL hbh_test.chk('cleanup', 'and the accounts themselves',
   $q$ WITH d AS (DELETE FROM hbh.users WHERE username LIKE 'p3.%' RETURNING 1)
-      SELECT count(*) = 4 FROM d $q$);
+      SELECT count(*) = 5 FROM d $q$);
 
 -- The check that keeps the teardown honest. If the suite ever dies
 -- between the DISABLE and the ENABLE above, this fails on the next run

@@ -35,26 +35,41 @@
         <div class="fld">
           <label class="fld__l" for="phone">{{ 'login.phoneLabel' | t }}</label>
           <div class="fld__box" [class.is-bad]="showError() && phone.invalid">
-            <!-- NO "+20" HERE, and its absence is the decision.
-
-                 This field asks for 01XXXXXXXXX - eleven digits starting
-                 with a zero, which is the national form the centre records
-                 and the only one hbh.guardians.mobile accepts. A "+20" chip
-                 beside it composed, on screen, into "+20 01…", and that is
-                 not a number in either notation: the international form
-                 DROPS the leading zero.
-
-                 So the two together said something false, and the one that
-                 had to go is the one carrying no information. The placeholder
-                 and the hint below already say the shape exactly.
-
-                 The same trap was met on the printed child card, where
-                 config.phoneCountryCode stood in for a telephone number the
-                 system does not hold - see child-card.ts. A country code is
-                 not a prefix you can staple to anything. -->
-            <input #phoneBox id="phone" type="tel" inputmode="numeric" maxlength="11"
-                   autocomplete="tel-national" autofocus enterkeyhint="send"
-                   [attr.placeholder]="'login.phonePlaceholder' | t"
+            <div #countryPicker class="country-picker" (keydown)="onCountryKeydown($event)"
+                 (focusout)="onCountryFocusOut($event)">
+              <button #countryButton class="fld__country" id="phoneCountry" type="button"
+                      aria-haspopup="dialog" [attr.aria-expanded]="countryOpen()"
+                      [attr.aria-controls]="countryOpen() ? 'countryMenu' : null"
+                      [attr.aria-label]="('login.countryLabel' | t) + ': ' + selectedCountry().name + ' ' + selectedCountry().code"
+                      (click)="toggleCountry()">
+                <img class="country-flag" [src]="'assets/flags/' + selectedCountry().id + '.svg'" alt="" width="26" height="20">
+                <bdi>{{ selectedCountry().code }}</bdi>
+                <span class="country-chevron" aria-hidden="true"></span>
+              </button>
+              @if (countryOpen()) {
+                <div class="country-menu" id="countryMenu" role="dialog" [attr.aria-label]="'login.countryLabel' | t">
+                  <input #countrySearch class="country-search" type="search" autocomplete="off"
+                         [attr.aria-label]="'login.countrySearch' | t" [attr.placeholder]="'login.countrySearch' | t"
+                         [formControl]="countryQuery">
+                  <div class="country-options">
+                    @for (option of filteredCountryOptions; track option.id) {
+                      <button class="country-option" type="button" [class.is-selected]="selectedCountry().id === option.id"
+                              [attr.aria-pressed]="selectedCountry().id === option.id" [attr.aria-label]="option.name + ' ' + option.code"
+                              [attr.title]="option.name" (click)="selectCountry(option)">
+                        <img class="country-flag" [src]="'assets/flags/' + option.id + '.svg'" alt="" width="26" height="20" loading="lazy">
+                        <bdi>{{ option.code }}</bdi>
+                        @if (selectedCountry().id === option.id) { <hbh-icon name="ic-check" /> }
+                      </button>
+                    } @empty {
+                      <p class="country-empty" role="status">{{ 'login.countryEmpty' | t }}</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+            <input #phoneBox id="phone" type="tel" inputmode="numeric"
+                   autocomplete="tel-national" enterkeyhint="send"
+                   [attr.placeholder]="(selectedCountry().id === 'eg' ? 'login.phonePlaceholder' : 'login.phoneInternationalPlaceholder') | t"
                    [formControl]="phone"
                    (input)="onInput(phone.value)"
                    [attr.aria-invalid]="showError() && phone.invalid"
@@ -62,7 +77,7 @@
             <hbh-icon name="ic-phone" />
           </div>
           @if (showError() && phone.invalid) {
-            <p class="fld__err" id="phone-err" role="alert">{{ 'login.phoneInvalid' | t }}</p>
+            <p class="fld__err" id="phone-err" role="alert">{{ (phone.hasError('required') ? 'login.phoneRequired' : selectedCountry().id === 'eg' ? 'login.phoneInvalid' : 'login.phoneInternationalInvalid') | t }}</p>
           } @else {
             <p class="fld__hint" id="phone-hint">{{ 'login.phoneHint' | t }}</p>
           }
@@ -108,9 +123,15 @@
            already inside. -->
       <button class="hbh-signin__join" type="button" (click)="goToApply()">
         <hbh-icon name="ic-users" />
-        {{ 'login.firstTime' | t }}
-        <small>{{ 'login.applyHere' | t }}</small>
+        <span><strong>{{ 'login.applyHere' | t }}</strong><small>{{ 'login.firstTime' | t }}</small></span>
+        <hbh-icon name="ic-arrow" />
       </button>
+
+      @if (config.receptionPhone) {
+        <a class="signin-help" [href]="'tel:' + config.receptionPhone">
+          <hbh-icon name="ic-phone" />{{ 'login.contactReception' | t }}
+        </a>
+      }
 
       <p class="hbh-signin__privacy">
         <hbh-icon name="ic-shield" />

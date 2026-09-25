@@ -55,11 +55,14 @@
         </div>
         <!-- An archived account is not in the default list, so without
              this the restore button sits on a row nobody can reach. -->
-        <button class="hbh-btn hbh-btn--ghost hbh-acc__search" type="button"
-                [attr.aria-pressed]="showArchived()" (click)="toggleArchived()">
-          <hbh-icon name="ic-filter" />
-          {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
-        </button>
+        <div class="user-list-filters">
+          <hbh-archive-switch [checked]="showArchived()" (changed)="toggleArchived()" />
+          <select class="user-category-filter" [attr.aria-label]="'access.userTypeFilter' | t" [value]="userCategory()" (change)="changeUserCategory($any($event.target).value)">
+            <option value="STAFF">{{ 'role.RECEPTION' | t }}</option>
+            <option value="GUARDIAN">{{ 'access.guardianType' | t }}</option>
+            <option value="ALL">{{ 'access.allTypes' | t }}</option>
+          </select>
+        </div>
         <!-- "Who is suspended?" in one press. It filters what is ALREADY
              loaded, so it can only narrow the list this account may see -
              it is not a second way to ask the service for accounts. -->
@@ -73,7 +76,7 @@
                   [class.is-active]="user.user_id === selectedUserId()"
                   [class.is-archived]="!user.active_flg"
                   (click)="selectUser(user)">
-            <span class="hbh-md__face hbh-md__face--none"><hbh-icon name="ic-user" /></span>
+            <span class="hbh-md__face hbh-md__face--none"><hbh-user-avatar [userId]="user.user_id" [name]="user.full_name_ar" /></span>
             <span class="hbh-md__who">
               <span class="hbh-md__name">{{ user.full_name_ar }}</span>
               <span class="hbh-md__role">{{ roleNames(user) }}</span>
@@ -114,6 +117,30 @@
               </div>
             }
           </div>
+
+          <section class="hbh-card user-account-card" aria-labelledby="userAccountDetails">
+            <div class="user-photo-header">
+              <span class="user-photo"><hbh-user-avatar [userId]="user.user_id" [name]="user.full_name_ar" /></span>
+              <h2 id="userAccountDetails">{{ user.full_name_ar }}</h2>
+            <p>{{ userTypeKey(user) | t }}</p>
+              @if (canSeePii()) {
+                <div class="user-photo-actions"><label class="hbh-btn hbh-btn--ghost"><hbh-icon name="ic-camera" />{{ 'access.changePhoto' | t }}<input type="file" accept="image/jpeg,image/png,image/webp" class="hbh-sr" [disabled]="loadingPhoto()" (change)="onPickStaffPhoto($event)"></label>
+                @if (photoUrl()) { <button class="hbh-btn hbh-btn--ghost" type="button" [disabled]="loadingPhoto()" (click)="removeStaffPhoto()">{{ 'team.removePhoto' | t }}</button> }</div>
+              }
+            </div>
+            <form class="user-account-form" (submit)="$event.preventDefault(); saveAccount()">
+              <div class="user-fields-grid">
+                <label class="user-field" for="account-name"><span>{{ 'profile.fullName' | t }}</span><input id="account-name" autocomplete="name" [formControl]="accountName" [readOnly]="!canManage() || accountBusy()" required></label>
+                <label class="user-field" for="account-mobile"><span>{{ 'field.mobile' | t }}</span><input id="account-mobile" type="tel" dir="ltr" autocomplete="tel" [formControl]="accountMobile" [readOnly]="!canManage() || accountBusy()" placeholder="+20…"></label>
+                <label class="user-field" for="account-username"><span>{{ 'profile.username' | t }}</span><input id="account-username" [value]="user.username" readonly dir="auto"><small>{{ 'access.usernameFixed' | t }}</small></label>
+                <label class="user-field" for="account-type"><span>{{ 'access.userType' | t }}</span><input id="account-type" [value]="userTypeKey(user) | t" readonly></label>
+                <label class="user-field" for="account-center"><span>{{ 'profile.center' | t }}</span><input id="account-center" [value]="user.center_name" readonly></label>
+                <label class="user-field" for="account-zone"><span>{{ 'profile.timeZone' | t }}</span><input id="account-zone" [value]="user.time_zone" readonly dir="auto"><small>{{ 'access.zoneManaged' | t }}</small></label>
+              </div>
+              @if(accountError()) { <p class="user-account-error" role="alert">{{ accountError() }}</p> }
+              @if(canManage()) { <footer class="user-form-actions"><button type="submit" class="hbh-btn hbh-btn--primary" [disabled]="!accountDirty() || accountBusy()">{{ (accountBusy() ? 'action.saving' : 'action.save') | t }}</button><button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="!accountDirty() || accountBusy()" (click)="resetAccount()">{{ 'action.cancel' | t }}</button></footer> }
+            </form>
+          </section>
 
           @if (canManage()) {
             <div class="hbh-card">
@@ -257,43 +284,24 @@
               <div class="hbh-card-body">
                 <p class="hbh-md__note">{{ 'access.personalNote' | t }}</p>
 
-                <!-- The photograph. Fetched through the HTTP client and
-                     rendered from a blob, not linked: this route needs the
-                     session token and an <img src> sends no headers. -->
-                <div class="hbh-md__portrait">
-                  @if (photoUrl()) {
-                    <img class="hbh-md__avatar" alt="" [src]="photoUrl()">
-                  } @else {
-                    <span class="hbh-md__avatar hbh-md__avatar--none">
-                      <hbh-icon name="ic-user" />
-                    </span>
-                  }
-                  <label class="hbh-md__camera" [attr.title]="'access.changePhoto' | t">
-                    <hbh-icon name="ic-camera" />
-                    <span class="hbh-sr">{{ 'access.changePhoto' | t }}</span>
-                    <input type="file" accept="image/*" class="hbh-sr"
-                           [disabled]="loadingPhoto()"
-                           (change)="onPickStaffPhoto($event)">
-                  </label>
-                </div>
-                <p class="hbh-md__note hbh-md__center">
-                  {{ (loadingPhoto() ? 'team.uploading' : 'access.photoNote') | t }}
-                </p>
-                @if (photoUrl()) {
-                  <p class="hbh-md__center">
-                    <button class="hbh-btn hbh-btn--ghost" type="button"
-                            (click)="removeStaffPhoto()">
-                      {{ 'team.removePhoto' | t }}
-                    </button>
-                  </p>
-                }
-
+                <div class="user-personal-grid">
                 <div class="hbh-fld">
                   <label class="hbh-fld__l" for="pii-nid">{{ 'field.nationalId' | t }}</label>
-                  <div class="hbh-fld__box">
+                  <div class="hbh-fld__box" [class.is-bad]="piiBadField() === 'national_id'">
+                    <!-- aria-describedby, not a bare coloured box: the count
+                         and the refusal are the whole explanation, and a
+                         screen reader that only announces "الرقم القومي"
+                         gets the same dead end the toast used to be. -->
                     <input id="pii-nid" type="text" dir="ltr" inputmode="numeric"
+                           aria-describedby="pii-nid-count"
+                           [attr.aria-invalid]="piiBadField() === 'national_id' ? 'true' : null"
                            [formControl]="pii()['national_id']">
                   </div>
+                  <!-- Always there, not only after a refusal: counting
+                       fourteen digits by eye is what nobody does. -->
+                  <p class="hbh-fld__hint" id="pii-nid-count">
+                    {{ 'field.digitsTyped' | t: { count: nidDigits() } }}
+                  </p>
                 </div>
                 <div class="hbh-fld">
                   <label class="hbh-fld__l" for="pii-dob">{{ 'field.birthDate' | t }}</label>
@@ -313,6 +321,17 @@
                               [formControl]="pii()['address_ar']"></textarea>
                   </div>
                 </div>
+
+                </div>
+                <!-- The refusal, in words, where the form is - and it stays
+                     until the box that caused it is edited. A toast alone
+                     was the whole answer here, and a toast is gone by the
+                     time somebody looks back at the field. -->
+                @if (piiError(); as message) {
+                  <p class="hbh-signin__err" role="alert">
+                    <hbh-icon name="ic-warn" /><span>{{ message }}</span>
+                  </p>
+                }
 
                 <div class="hbh-acc__label">{{ 'access.documents' | t }}</div>
                 @if (userDocuments().length === 0) {
@@ -520,8 +539,8 @@
       <hbh-icon name="ic-info" />
       <div>{{ 'access.mineNote' | t: { held: heldCount(), total: totalCount() } }}</div>
     </div>
-    <div class="hbh-tablewrap">
-      <table class="hbh-table">
+    <hbh-table-pages #tablePage1 [rows]="screens()">
+<div class="hbh-tablewrap"><table class="hbh-table">
         <thead>
           <tr>
             <th>{{ 'access.screen' | t }}</th>
@@ -530,7 +549,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of screens(); track row.key) {
+          @for (row of tablePage1.visible(); track row.key) {
             <tr>
               <td>
                 @if (row.held) {
@@ -549,8 +568,8 @@
             </tr>
           }
         </tbody>
-      </table>
-    </div>
+      </table></div>
+</hbh-table-pages>
 
     @if (actionOnly().length) {
       <div class="hbh-card hbh-acc__card">
@@ -604,9 +623,9 @@
           <label class="hbh-fld__l" for="u-type">{{ 'access.userType' | t }}</label>
           <div class="hbh-fld__box">
             <select id="u-type" [formControl]="newUser()['user_type']">
-              <option value="STAFF">{{ 'access.type.STAFF' | t }}</option>
-              <option value="THERAPIST">{{ 'access.type.THERAPIST' | t }}</option>
-              <option value="GUARDIAN">{{ 'access.type.GUARDIAN' | t }}</option>
+              <option value="STAFF">{{ 'role.RECEPTION' | t }}</option>
+              <option value="THERAPIST">{{ 'role.THERAPIST' | t }}</option>
+              <option value="GUARDIAN">{{ 'role.GUARDIAN' | t }}</option>
             </select>
           </div>
           <p class="hbh-md__note">{{ 'access.userTypeNote' | t }}</p>
@@ -630,11 +649,11 @@
         }
       </div>
       <div class="hbh-sheet__foot">
-        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelAddUser()">
-          {{ 'action.cancel' | t }}
-        </button>
         <button class="hbh-btn hbh-btn--primary" type="submit" [disabled]="saving()">
           {{ (saving() ? 'action.saving' : 'action.save') | t }}
+        </button>
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="cancelAddUser()">
+          {{ 'action.cancel' | t }}
         </button>
       </div>
     </form>

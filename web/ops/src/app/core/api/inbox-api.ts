@@ -29,6 +29,7 @@ export interface InboxItem {
   readonly at: string;
   readonly read: boolean;
   /** Where this item leads, or null when it leads nowhere. */
+  readonly targetQuery?: {peer:number};
   readonly target: readonly (string | number)[] | null;
 }
 
@@ -70,6 +71,7 @@ export class InboxApi {
         body: row.body_ar ?? '',
         at: row.created_at,
         read: !!row.read_at,
+        targetQuery: row.link_kind==='CHAT' && row.link_id ? {peer:row.link_id} : undefined,
         target: InboxApi.target(row.link_kind, row.link_id, row.child_id),
       })),
     })));
@@ -77,6 +79,25 @@ export class InboxApi {
 
   markRead(id: number): Observable<unknown> {
     return this.http.post(`${this.base}/notifications/${id}/read`, {});
+  }
+
+  /**
+   * Mark the whole feed read. Answers how many rows actually moved.
+   *
+   * IT NAMES NOBODY, and that is the point of the shape. "All" is decided by
+   * hbh.mark_all_notifications_read() from the caller's own identity, so
+   * there is no body and no parameter - an endpoint that took a user id
+   * would be a way to clear somebody else's bell.
+   *
+   * The count is the service's answer, not a number counted here. A feed
+   * shows the newest fifty; the write clears every unread row the person
+   * has, so a screen that reported its own visible count would understate
+   * what it just did.
+   */
+  markAllRead(): Observable<number> {
+    return this.http
+      .post<{ marked?: number }>(`${this.base}/notifications/read-all`, {})
+      .pipe(map((body) => body.marked ?? 0));
   }
 
   /**
@@ -96,6 +117,7 @@ export class InboxApi {
     id: number | null | undefined,
     childId: number | null | undefined,
   ): readonly (string | number)[] | null {
+    if(kind==='CHAT' && id) return ['/communications'];
     if (kind === 'CHILD' && id) {
       return ['/children', id];
     }
@@ -109,7 +131,10 @@ export class InboxApi {
       return ['/appointments'];
     }
     if (kind === 'INVOICE' && id) {
-      return ['/invoices'];
+      // /billing, not /invoices: there has never been an /invoices route, so
+      // this link fell through the wildcard onto the dashboard and the person
+      // never saw the invoice they were told about.
+      return ['/billing'];
     }
     // No link of its own, but it names a child - open the child.
     if (childId) {

@@ -702,19 +702,60 @@ CALL hbh_test.chk_raises('author', 'a period that runs backwards is refused - HB
 CALL hbh_test.chk_raises('author', 'a draft with no summary cannot be published - HB029',
   $q$ SELECT hbh.publish_report((SELECT v FROM hbh_test.fx WHERE k='authored')) $q$, 'HB029');
 
-CALL hbh_test.chk('author', 'the author fills the summary in',
-  $q$ WITH u AS (SELECT hbh.update_report(
-                   (SELECT v FROM hbh_test.fx WHERE k='authored'), NULL, 'ملخّص مكتوب لاحقًا'))
-      SELECT count(*) = 1 FROM u $q$);
+-- TWO EDITORS, ONE DRAFT (migration 0141, backlog #14). Every save names
+-- the version it was opened at - coalesce(updated_at, created_at) - and a
+-- save over a version that has since moved is refused instead of silently
+-- replacing the colleague's text. v0 is the version both editors
+-- "opened"; it is read into a psql variable because each CALL is its own
+-- transaction, and the whole point is that the second save happens after
+-- the first committed.
+SELECT coalesce(updated_at, created_at) AS v0 FROM hbh.progress_reports
+WHERE report_id = (SELECT v FROM hbh_test.fx WHERE k='authored') \gset
+
+-- The state the next save starts from, asserted rather than assumed. A
+-- draft nobody has edited has updated_at NULL - the touch trigger fires on
+-- UPDATE only - and a version read from updated_at alone made exactly this
+-- draft unsaveable. The save two checks down is the proof it is not.
+CALL hbh_test.chk('author', 'the fresh draft has never been edited, so updated_at is still NULL',
+  $q$ SELECT updated_at IS NULL FROM hbh.progress_reports
+      WHERE report_id = (SELECT v FROM hbh_test.fx WHERE k='authored') $q$);
+
+CALL hbh_test.chk_raises('author', 'a save that names no version is refused - HB029',
+  $q$ SELECT hbh.update_report((SELECT v FROM hbh_test.fx WHERE k='authored'),
+        NULL, NULL, 'بلا إصدار', NULL, NULL, NULL) $q$, 'HB029');
+
+CALL hbh_test.chk('author', 'the author fills the summary in, and gets the new version back',
+  format($q$ WITH u AS (SELECT hbh.update_report(
+                   (SELECT v FROM hbh_test.fx WHERE k='authored'), %L::timestamptz,
+                   NULL, 'ملخّص مكتوب لاحقًا', NULL, NULL, NULL) AS v)
+      SELECT v > %L::timestamptz FROM u $q$, :'v0', :'v0'));
 
 CALL hbh_test.chk('author', 'and the edit landed',
   $q$ SELECT summary_ar = 'ملخّص مكتوب لاحقًا' FROM hbh.progress_reports
       WHERE report_id = (SELECT v FROM hbh_test.fx WHERE k='authored') $q$);
 
+CALL hbh_test.chk_raises('author', 'a second editor still holding the old version is refused - HB290',
+  format($q$ SELECT hbh.update_report((SELECT v FROM hbh_test.fx WHERE k='authored'),
+        %L::timestamptz, NULL, 'نسخة الزميلة القديمة', NULL, NULL, NULL) $q$, :'v0'), 'HB290');
+
+CALL hbh_test.chk('author', 'and the first editor''s text is still there',
+  $q$ SELECT summary_ar = 'ملخّص مكتوب لاحقًا' FROM hbh.progress_reports
+      WHERE report_id = (SELECT v FROM hbh_test.fx WHERE k='authored') $q$);
+
+-- The acceptance after the refusal: without it, HB290 on every save would
+-- pass the check above just as well.
+CALL hbh_test.chk('author', 'a save at the current version still goes through',
+  $q$ WITH u AS (SELECT hbh.update_report(
+                   (SELECT v FROM hbh_test.fx WHERE k='authored'),
+                   (SELECT coalesce(updated_at, created_at) FROM hbh.progress_reports
+                     WHERE report_id = (SELECT v FROM hbh_test.fx WHERE k='authored')),
+                   NULL, 'ملخّص مكتوب لاحقًا', NULL, NULL, NULL) AS v)
+      SELECT v IS NOT NULL FROM u $q$);
+
 SET hbh.user_id = 'p4.guardian';
 CALL hbh_test.chk_raises('author', 'a guardian cannot edit a draft - HB032',
-  $q$ SELECT hbh.update_report((SELECT v FROM hbh_test.fx WHERE k='authored'),
-        NULL, 'تعديل من ولي أمر') $q$, 'HB032');
+  format($q$ SELECT hbh.update_report((SELECT v FROM hbh_test.fx WHERE k='authored'),
+        %L::timestamptz, NULL, 'تعديل من ولي أمر', NULL, NULL, NULL) $q$, :'v0'), 'HB032');
 
 CALL hbh_test.chk('author', 'and a guardian cannot even see the draft',
   $q$ SELECT count(*) = 0 FROM hbh.progress_reports
@@ -725,9 +766,13 @@ CALL hbh_test.chk('author', 'the author publishes it once it has a summary',
   $q$ WITH p AS (SELECT hbh.publish_report((SELECT v FROM hbh_test.fx WHERE k='authored')))
       SELECT count(*) = 1 FROM p $q$);
 
+-- Its CURRENT version, so the only thing left to refuse is the status:
+-- published is the truer answer than "somebody changed it".
 CALL hbh_test.chk_raises('author', 'and it is immutable afterwards - HB033',
   $q$ SELECT hbh.update_report((SELECT v FROM hbh_test.fx WHERE k='authored'),
-        NULL, 'تعديل بعد النشر') $q$, 'HB033');
+        (SELECT coalesce(updated_at, created_at) FROM hbh.progress_reports
+          WHERE report_id = (SELECT v FROM hbh_test.fx WHERE k='authored')),
+        NULL, 'تعديل بعد النشر', NULL, NULL, NULL) $q$, 'HB033');
 
 SET hbh.user_id = 'p4.guardian';
 CALL hbh_test.chk('author', 'the guardian sees it only now that it is published',

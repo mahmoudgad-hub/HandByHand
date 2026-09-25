@@ -248,7 +248,7 @@ hbh.book_consultation(child_id, therapist_id, service_id, starts_at)
 الأخصائي بقيد الاستبعاد** تمامًا كموعد مدفوع. فمن يحجز ولا يدفع يقتل الفتحة.
 
 **العلاج بالشكل الموجود في السكيما بالفعل:** نافذة سداد بارامترية
-(`CONSULT_PAYMENT_HOLD_HOURS`)، و`run_maintenance` تُلغي ما تجاوزها بسبب مسجَّل —
+(`CONSULT_PAYMENT_HOLD_MIN`)، و`run_maintenance` تُلغي ما تجاوزها بسبب مسجَّل —
 وهي **نفس آلية `release_expired_offers`** التي تُحرّر عروض قائمة الانتظار. لا اختراع،
 توسيع.
 
@@ -282,7 +282,7 @@ hbh.book_consultation(child_id, therapist_id, service_id, starts_at)
 الإنتاجية ساعة كلام بساعة علاج.
 
 **٢. مهلة السداد قبل تحرير الفتحة، ومهلة الإلغاء بلا رسوم؟** بارامتران لا كود —
-والأول (`CONSULT_PAYMENT_HOLD_HOURS`) يعطّل الإطلاق، لأن بدونه تبقى الفتحة محجوزة بلا دفع.
+والأول (`CONSULT_PAYMENT_HOLD_MIN`) يعطّل الإطلاق، لأن بدونه تبقى الفتحة محجوزة بلا دفع.
 
 **٣. من يقدّم الاستشارة؟** أي أخصائي، أم من له `CONSULT` في `therapist_services`؟
 الثاني أصحّ ويعمل اليوم بلا إضافة.

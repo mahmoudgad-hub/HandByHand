@@ -106,10 +106,10 @@
       <p class="hbh-fld__hint">{{ 'tprofile.ageHint' | t }}</p>
     </div>
 
-    <button class="hbh-btn hbh-btn--primary" type="button"
+    <div class="ops-form-actions"><button class="hbh-btn hbh-btn--primary" type="button"
             [class.is-busy]="saving()" [disabled]="saving()" (click)="saveProfile()">
       {{ (saving() ? 'action.saving' : 'action.save') | t }}
-    </button>
+    </button></div>
     <!-- Says what an emptied box does, because the service distinguishes
          "not sent" from "clear it" and this screen owns all four fields. -->
     <p class="hbh-fld__hint">{{ 'tprofile.clearNote' | t }}</p>
@@ -121,8 +121,8 @@
     <p class="hbh-card-title">{{ 'tprofile.languages' | t }}</p>
 
     @if (languages().length) {
-      <div class="hbh-tablewrap">
-        <table class="hbh-table">
+      <hbh-table-pages #tablePage1 [rows]="languages()">
+<div class="hbh-tablewrap"><table class="hbh-table">
           <thead>
             <tr>
               <th>{{ 'tprofile.language' | t }}</th>
@@ -132,7 +132,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (lang of languages(); track text(lang, 'lang_code')) {
+            @for (lang of tablePage1.visible(); track text(lang, 'lang_code')) {
               <tr>
                 <td>
                   {{ 'lang.' + text(lang, 'lang_code') | t }}
@@ -152,8 +152,8 @@
               </tr>
             }
           </tbody>
-        </table>
-      </div>
+        </table></div>
+</hbh-table-pages>
     }
 
     <div class="hbh-filters" style="margin-top:12px">
@@ -203,8 +203,8 @@
     <p class="hbh-card-title">{{ 'tprofile.certificates' | t }}</p>
 
     @if (certificates().length) {
-      <div class="hbh-tablewrap">
-        <table class="hbh-table">
+      <hbh-table-pages #tablePage2 [rows]="certificates()">
+<div class="hbh-tablewrap"><table class="hbh-table">
           <thead>
             <tr>
               <th>{{ 'field.title' | t }}</th>
@@ -214,7 +214,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (cert of certificates(); track text(cert, 'certificate_id')) {
+            @for (cert of tablePage2.visible(); track text(cert, 'certificate_id')) {
               <tr>
                 <td>{{ text(cert, 'title_ar') }}</td>
                 <td>{{ text(cert, 'issuer_ar') }}</td>
@@ -240,8 +240,8 @@
               </tr>
             }
           </tbody>
-        </table>
-      </div>
+        </table></div>
+</hbh-table-pages>
     }
 
     <div class="hbh-filters" style="margin-top:12px">

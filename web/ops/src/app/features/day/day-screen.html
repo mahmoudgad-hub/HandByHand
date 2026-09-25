@@ -1,3 +1,4 @@
+@if (!embedded) {
 <div class="hbh-pagehead">
   <div class="hbh-pagehead__left">
     <div>
@@ -19,12 +20,12 @@
 </div>
 
 @if (spec.resource === 'invoices') {<hbh-billing-overview />
-<nav class="hbh-filters" aria-label="أقسام الفواتير">@for(tab of [{key:'invoices',label:'الفواتير'},{key:'payments',label:'المدفوعات'},{key:'packages',label:'الباقات والأسعار'},{key:'balances',label:'أرصدة الجلسات'}];track tab.key){<button type="button" class="hbh-btn" [class.hbh-btn--primary]="billingTab()===tab.key" [attr.aria-pressed]="billingTab()===tab.key" (click)="billingTab.set(tab.key)">{{tab.label}}</button>}</nav>
+<nav class="hbh-filters" [attr.aria-label]="'billing.tabsLabel' | t">@for(tab of [{key:'invoices',label:'billing.tab.invoices'},{key:'payments',label:'billing.tab.payments'},{key:'packages',label:'billing.tab.packages'},{key:'balances',label:'billing.tab.balances'}];track tab.key){<button type="button" class="hbh-btn" [class.hbh-btn--primary]="billingTab()===tab.key" [attr.aria-pressed]="billingTab()===tab.key" (click)="billingTab.set(tab.key)">{{tab.label | t}}</button>}</nav>
 @if(billingTab()!=='invoices'){<hbh-billing-ledger [kind]="billingTab()" />}}
 @if(spec.resource!=='invoices'||billingTab()==='invoices'){
-@if(exportError()){<p role="alert">{{exportError()}}</p>}
+@if(exportError()){<p role="alert">{{exportError() | t}}</p>}
 <div class="hbh-filters">
-  @if(spec.resource === 'invoices'){<button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="exporting() || loading() || failed()" (click)="exportInvoices()">{{exporting() ? 'جارٍ التصدير…' : 'تصدير كل النتائج CSV'}}</button>}
+  @if(spec.resource === 'invoices'){<button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="exporting() || loading() || failed()" (click)="exportInvoices()">{{ (exporting() ? 'billing.exporting' : 'billing.exportAll') | t }}</button>}
   @if(spec.window === 'diary') {
     <!-- No therapist picker on /my-day. The screen is one person's day and
          already asks the service for their rows only; a dropdown offering
@@ -37,25 +38,25 @@
          Reception keeps it on /appointments, where choosing a colleague is
          the whole job. -->
     @if (!isMyDay) {
-      <select class="hbh-select" aria-label="الأخصائي" [value]="therapistFilter()" (change)="therapistFilter.set($any($event.target).value);refilter()"><option value="">كل الأخصائيين</option>@for(item of filterOptions()['therapists'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>
+      <select class="hbh-select" [attr.aria-label]="'field.therapist' | t" [value]="therapistFilter()" (change)="therapistFilter.set($any($event.target).value);refilter()"><option value="">{{ 'filter.allTherapists' | t }}</option>@for(item of filterOptions()['therapists'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>
     }
-    <select class="hbh-select" aria-label="الغرفة" [value]="roomFilter()" (change)="roomFilter.set($any($event.target).value);refilter()"><option value="">كل الغرف</option>@for(item of filterOptions()['rooms'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>
-    @if(spec.resource === 'appointments'){<select class="hbh-select" aria-label="الخدمة" [value]="serviceFilter()" (change)="serviceFilter.set($any($event.target).value);refilter()"><option value="">كل الخدمات</option>@for(item of filterOptions()['services'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>}
-    @if(filtersFailed()){<button type="button" class="hbh-btn" (click)="loadFilterOptions()">تعذر تحميل الفلاتر — إعادة المحاولة</button>}
+    <select class="hbh-select" [attr.aria-label]="'field.room' | t" [value]="roomFilter()" (change)="roomFilter.set($any($event.target).value);refilter()"><option value="">{{ 'filter.allRooms' | t }}</option>@for(item of filterOptions()['rooms'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>
+    @if(spec.resource === 'appointments'){<select class="hbh-select" [attr.aria-label]="'field.service' | t" [value]="serviceFilter()" (change)="serviceFilter.set($any($event.target).value);refilter()"><option value="">{{ 'filter.allServices' | t }}</option>@for(item of filterOptions()['services'];track item.value){<option [value]="item.value">{{item.labelKey}}</option>}</select>}
+    @if(filtersFailed()){<button type="button" class="hbh-btn" (click)="loadFilterOptions()">{{ 'filter.loadFailedRetry' | t }}</button>}
   }
 
-  @if (spec.resource === 'enrolments') {<button type="button" class="hbh-btn hbh-btn--ghost" [attr.aria-pressed]="boardView()" (click)="toggleBoard()">{{ boardView() ? 'عرض الجدول' : 'عرض مراحل المتابعة' }}</button>}
-  @if (spec.resource === 'reports') {<button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="loading() || failed() || !rows().length" (click)="exportPage()">تصدير الصفحة الحالية CSV</button>}
+  @if (spec.resource === 'enrolments') {<button type="button" class="hbh-btn hbh-btn--ghost" [attr.aria-pressed]="boardView()" (click)="toggleBoard()">{{ (boardView() ? 'enrolments.viewTable' : 'enrolments.viewBoard') | t }}</button>}
+  @if (spec.resource === 'reports') {<button type="button" class="hbh-btn hbh-btn--ghost" [disabled]="loading() || failed() || !rows().length" (click)="exportPage()">{{ 'reports.exportPage' | t }}</button>}
   @if (spec.resource === 'appointments') {
     <button class="hbh-btn hbh-btn--ghost" type="button" [attr.aria-pressed]="calendarView()" (click)="toggleCalendar()">
-      <hbh-icon name="ic-calendar" /> {{ calendarView() ? 'عرض الجدول' : 'التقويم الأسبوعي' }}
+      <hbh-icon name="ic-calendar" /> {{ (calendarView() ? 'appointments.viewTable' : 'appointments.viewWeek') | t }}
     </button>
   }
   <!-- A diary opens on one day and steps a day at a time, because that is
        how the desk works: yesterday's no-shows, today, tomorrow's list. -->
   @if (spec.window === 'diary') {
     <button class="hbh-iconbtn" type="button"
-            [attr.aria-label]="calendarView() ? 'الأسبوع السابق' : ('action.previousDay' | t)" (click)="shiftDay(calendarView() ? -7 : -1)">
+            [attr.aria-label]="(calendarView() ? 'appointments.prevWeek' : 'action.previousDay') | t" (click)="shiftDay(calendarView() ? -7 : -1)">
       <hbh-icon name="ic-chevron" />
     </button>
     <!-- A native date box HERE, unlike every stored date in the console -
@@ -77,7 +78,7 @@
     </div>
     <span class="hbh-daylabel">{{ format.dayMonthYear(day()) }}</span>
     <button class="hbh-iconbtn" type="button"
-            [attr.aria-label]="calendarView() ? 'الأسبوع التالي' : ('action.nextDay' | t)" (click)="shiftDay(calendarView() ? 7 : 1)">
+            [attr.aria-label]="(calendarView() ? 'appointments.nextWeek' : 'action.nextDay') | t" (click)="shiftDay(calendarView() ? 7 : 1)">
       <hbh-icon name="ic-back" />
     </button>
     <button class="hbh-btn hbh-btn--ghost" type="button" (click)="setToday()">
@@ -107,11 +108,7 @@
        never called back would disappear from it. -->
 
   @if (spec.archivable) {
-    <button class="hbh-btn hbh-btn--ghost" type="button" (click)="toggleArchived()"
-            [attr.aria-pressed]="showArchived()">
-      <hbh-icon name="ic-filter" />
-      {{ (showArchived() ? 'action.hideArchived' : 'action.showArchived') | t }}
-    </button>
+    <hbh-archive-switch [checked]="showArchived()" [disabled]="loading()" (changed)="toggleArchived()" />
   }
 
   <!-- `selected` on each option, not `value` on the select. Angular sets the
@@ -147,20 +144,21 @@
       </select>
     </div>
   }
+  <label class="ops-page-size"><span>{{ 'table.rowsPerPage' | t }}</span><select [attr.aria-label]="'table.rowsPerPage' | t" [value]="pageSize()" (change)="changePageSize($any($event.target).value)" [disabled]="loading()">@for(size of [10,20,30,50];track size){<option [value]="size">{{size}}</option>}</select></label>
 </div>
 
 @if (spec.resource === 'invoices') {
-  <div class="invoice-statuses" aria-label="الفواتير حسب الحالة خلال الفترة المحددة">
+  <div class="invoice-statuses" [attr.aria-label]="'billing.byStatus' | t">
     @for (stage of spec.statusFilter; track stage) {
       <button class="invoice-status" type="button" [class.is-selected]="status() === stage" (click)="setStatus(stage)"><span>{{ spec.statusPrefix + stage | t }}</span><strong>{{ invoiceCounts()[stage] ?? '—' }}</strong></button>
     }
   </div>
 }
 @if(spec.resource==='appointments'){
-<section class="appointment-attention"><h3>متابعة مواعيد {{calendarDate(day())}} · @if(isMyDay){مواعيدي}@else{كل الأخصائيين والغرف}</h3>
-@if(attentionLoading()){<p>جارٍ مراجعة المواعيد…</p>}@else if(attentionFailed()){<p role="alert">تعذر تحميل متابعة المواعيد.</p>}@else{
-<details><summary>بانتظار التأكيد ({{pendingAppointments().length}})</summary>@for(row of pendingAppointments();track rowKey(row)){<article><strong>{{appointmentName(row)}}</strong> · {{format.time($any(row['starts_at']))}}<div class="week-actions">@for(action of actionsFor(row);track action.key){<button class="hbh-btn hbh-btn--sm" (click)="startAction(action,row)">{{action.labelKey|t}}</button>}</div></article>}@empty{<p>لا توجد مواعيد بانتظار التأكيد.</p>}</details>
-<details><summary>تداخلات الأخصائي أو الغرفة ({{appointmentConflicts().length}})</summary>@for(pair of appointmentConflicts();track $index){<p>{{appointmentName(pair.first)}} · {{format.time($any(pair.first['starts_at']))}} — {{appointmentName(pair.second)}} · {{format.time($any(pair.second['starts_at']))}}</p>}@empty{<p>لا توجد تداخلات في المواعيد النشطة لهذا اليوم.</p>}</details>}
+<section class="appointment-attention"><h3>{{ 'appointments.attentionTitle' | t: { day: calendarDate(day()) } }} · {{ (isMyDay ? 'appointments.attentionMine' : 'appointments.attentionAll') | t }}</h3>
+@if(attentionLoading()){<p>{{ 'appointments.attentionLoading' | t }}</p>}@else if(attentionFailed()){<p role="alert">{{ 'appointments.attentionFailed' | t }}</p>}@else{
+<details><summary>{{ 'appointments.pendingConfirm' | t }} ({{pendingAppointments().length}})</summary>@for(row of pendingAppointments();track rowKey(row)){<article><strong>{{appointmentName(row)}}</strong> · {{format.time($any(row['starts_at']))}}<div class="week-actions"><button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="openRecord(row)">{{ 'action.open' | t }}</button>@for(action of actionsFor(row);track action.key){<button class="hbh-btn hbh-btn--sm" type="button" (click)="startAction(action,row)">{{action.labelKey|t}}</button>}</div></article>}@empty{<p>{{ 'appointments.noPendingConfirm' | t }}</p>}</details>
+<details><summary>{{ 'appointments.conflicts' | t }} ({{appointmentConflicts().length}})</summary>@for(pair of appointmentConflicts();track $index){<p>{{appointmentName(pair.first)}} · {{format.time($any(pair.first['starts_at']))}} — {{appointmentName(pair.second)}} · {{format.time($any(pair.second['starts_at']))}}</p>}@empty{<p>{{ 'appointments.noConflicts' | t }}</p>}</details>}
 </section>}
 @if (loading()) {
   <hbh-skeleton [count]="6" shape="row" />
@@ -168,7 +166,7 @@
   <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
                   (retry)="load()" />
 } @else if (boardView()) {
-  <div class="followup-board" role="region" aria-label="مراحل متابعة طلبات الالتحاق" tabindex="0">
+  <div class="followup-board" role="region" [attr.aria-label]="'enrolments.boardLabel' | t" tabindex="0">
     @for (stage of spec.statusFilter; track stage) {
       <section class="week-day"><h3>{{ spec.statusPrefix + stage | t }} <small>{{ boardRows(stage).length }}</small></h3>
         @for (row of boardRows(stage); track rowKey(row)) {
@@ -176,16 +174,16 @@
             @for (column of spec.columns; track column.key) {<div [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</div>}
             <div class="week-actions">@for (action of actionsFor(row); track action.key) {<button type="button" class="hbh-btn hbh-btn--sm" (click)="startAction(action, row)">{{ action.labelKey | t }}</button>}</div>
           </article>
-        } @empty {<p class="week-empty">لا توجد طلبات في هذه المرحلة</p>}
+        } @empty {<p class="week-empty">{{ 'enrolments.stageEmpty' | t }}</p>}
       </section>
     }
   </div>
 } @else if (calendarView()) {
-  <div class="week-calendar" role="region" aria-label="مواعيد الأسبوع" tabindex="0">
+  <div class="week-calendar" role="region" [attr.aria-label]="'appointments.weekLabel' | t" tabindex="0">
     @for (day of week(); track day.date) {
       <section class="week-day" [class.week-day--today]="day.date === format.today()">
-        <h3>{{ calendarDate(day.date) }} <small>{{ day.rows.length }} موعد</small></h3>
-@if(creates().length){<details class="hour-booking"><summary>حجز بساعة محددة</summary><p>يتم التحقق من التوافر قبل تأكيد الحجز.</p><div>@for(hour of bookingHours;track hour){<button type="button" class="hbh-btn hbh-btn--sm" (click)="bookHour(day.date,hour)">{{hour}}:00 · حجز</button>}</div></details>}
+        <h3>{{ calendarDate(day.date) }} <small>{{ day.rows.length | hbhPlural: 'appointments.count' }}</small></h3>
+@if(creates().length){<details class="hour-booking"><summary>{{ 'appointments.bookHour' | t }}</summary><p>{{ 'appointments.bookHourNote' | t }}</p><div>@for(hour of bookingHours;track hour){<button type="button" class="hbh-btn hbh-btn--sm" (click)="bookHour(day.date,hour)">{{ 'appointments.bookAt' | t: { hour: hour } }}</button>}</div></details>}
         @for (row of day.rows; track rowKey(row)) {
           <article class="week-appointment">
             <span class="hbh-badge" [class]="statusTone(row)">{{ statusKey(row) | t }}</span>
@@ -197,14 +195,14 @@
             <div class="week-actions">
               @for (action of actionsFor(row); track action.key) {
                 @if (action.link) {
-                  <a class="hbh-btn hbh-btn--sm" [routerLink]="action.link(row)">{{ action.labelKey | t }}</a>
+                  <a class="hbh-btn hbh-btn--sm" [routerLink]="action.link(row)" [queryParams]="action.query">{{ action.labelKey | t }}</a>
                 } @else {
                   <button type="button" class="hbh-btn hbh-btn--sm" (click)="startAction(action, row)">{{ action.labelKey | t }}</button>
                 }
               }
             </div>
           </article>
-        } @empty { <p class="week-empty">لا توجد مواعيد</p> }
+        } @empty { <p class="week-empty">{{ 'appointments.weekEmpty' | t }}</p> }
       </section>
     }
   </div>
@@ -232,7 +230,7 @@
       </thead>
       <tbody>
         @for (row of rows(); track rowKey(row)) {
-          <tr>
+          <tr [class.is-focus]="focusId !== '' && rowKey(row) === focusId">
             @for (column of spec.columns; track column.key) {
               <!-- Clock times, money and identifiers read left to right even
                    on an Arabic page; names do not. -->
@@ -245,6 +243,14 @@
             </td>
             <td>
               <div class="hbh-pagehead__actions">
+                <!-- The record, beside the list: everything about this row
+                     and the same verbs, without leaving the day. -->
+                @if (drawerEntity) {
+                  <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="openRecord(row)">
+                    <hbh-icon name="ic-eye" />
+                    {{ 'action.open' | t }}
+                  </button>
+                }
                 @for (action of actionsFor(row); track action.key) {
                   @if (action.link) {
                     <!-- Goes somewhere. Drawn as a link so it gets the
@@ -253,7 +259,7 @@
                     <a class="hbh-btn hbh-btn--sm"
                        [class.hbh-btn--primary]="action.primary"
                        [class.hbh-btn--ghost]="!action.primary"
-                       [routerLink]="action.link(row)">
+                       [routerLink]="action.link(row)" [queryParams]="action.query">
                       <hbh-icon [name]="action.icon" />
                       {{ action.labelKey | t }}
                     </a>
@@ -300,6 +306,8 @@
       </div>
     }
   </div>
+}
+}
 }
 
 <!-- One dialog for every verb on this screen. An action with no fields is a
@@ -425,6 +433,10 @@
                          [id]="'d-' + field.name"
                          [value]="slotDate()"
                          (change)="setSlotDate($any($event.target).value)">
+                  @if (slotDate()) {
+                    <!-- The day in words, for the same reason as above (#18). -->
+                    <p class="hbh-fld__hint">{{ format.fullDate(slotDate()) }}</p>
+                  }
                   @if (slotsState() === 'loading') {
                     <p class="hbh-fld__hint">{{ 'appointments.slotsLoading' | t }}</p>
                   } @else if (slotsState() === 'denied') {
@@ -445,7 +457,11 @@
                                 [attr.aria-pressed]="pickedSlot() === slot.starts_at"
                                 (click)="pickSlot(slot)">
                           <b dir="ltr">{{ slotLabel(slot) }}</b>
-                          <small>{{ slot.room_name_ar }}</small>
+                          <!-- The room, or the fact that there is none. An
+                               empty line under an online slot would read as a
+                               room whose name failed to load, and the two are
+                               not the same thing to say to reception. -->
+                          <small>{{ slot.room_name_ar ?? ('delivery.ONLINE' | t) }}</small>
                         </button>
                       }
                     </div>
@@ -468,6 +484,13 @@
                        (input)="setValue(field.name, $any($event.target).value)">
               }
             </div>
+            @if (field.kind === 'datetime' && readableWhen(values()[field.name]); as when) {
+              <!-- The same instant in words. datetime-local shows the
+                   BROWSER's order - 08/04/2026 is 4 August or 8 April
+                   depending on whose Chrome - and this box books a child's
+                   appointment or an assessment (#18). -->
+              <p class="hbh-fld__hint">{{ when }}</p>
+            }
             @if (field.hintKey) {
               <p class="hbh-fld__hint">{{ field.hintKey | t }}</p>
             }
@@ -616,6 +639,4 @@
       </div>
     </form>
   </dialog>
-}
-
 }

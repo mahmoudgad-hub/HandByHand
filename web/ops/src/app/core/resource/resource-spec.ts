@@ -20,8 +20,22 @@ import { OpsResource } from '../api/ops-api';
  * the shape of what they typed and the page would show one run-on
  * sentence.
  */
+/**
+ * `combo` is a box to type in WITH the known answers offered in it, and it is
+ * not a softer `select`. It is for a column where most rows are one of a few
+ * recurring things and the rest are one-offs that cannot be listed in
+ * advance.
+ *
+ * `nps_surveys.code` is the case. Most surveys are the centre's standing
+ * questions - after a session, after a report - and typing those by hand is a
+ * spelling test: PARENT-VISIT and PARENT_VISIT are two surveys under
+ * `uq_nps_code`, and the results screen then reports one question as two. But
+ * a survey also gets raised for one occasion - a release, an outage - and
+ * that code is new every time, so a closed list would make the occasion
+ * itself impossible to ask about.
+ */
 export type FieldKind =
-  'text' | 'textarea' | 'number' | 'date' | 'time' | 'select' | 'switch' | 'ref';
+  'text' | 'textarea' | 'number' | 'date' | 'time' | 'select' | 'combo' | 'switch' | 'ref';
 
 export interface FieldSpec {
   /** The column name, exactly as the service sends and accepts it. */
@@ -43,12 +57,9 @@ export interface FieldSpec {
    * columns across the clinical screens looked like that.
    *
    * So the screen loads the referenced resource once and joins by id. The
-   * number stays the value that is stored and sent; only the reading changes.
-   *
-   * THIS IS THE DISPLAY HALF ONLY. Identifiers are still TYPED in the editor,
-   * which is a decision recorded above PLANS_SPEC with its reasons - four
-   * dependent pickers is a different piece of work. Nothing here changes what
-   * a form sends.
+   * number stays the value that is stored and sent. The same complete list
+   * supplies named choices in the editor, with identifiers to disambiguate
+   * equal names. Contextual parent references are prefilled by the child's file.
    */
   readonly ref?: {
     /** The resource to read the names from. */
@@ -147,6 +158,16 @@ export interface ResourceSpec {
   /** Whether the list takes a `q` search parameter. */
   readonly searchable?: boolean;
   /**
+   * The search box's placeholder: WHAT the term is matched against (#17).
+   *
+   * It must name the columns in `search` for this resource in
+   * api/internal/store/crud.go, and nothing else. A placeholder is a promise:
+   * "search by name or code" on therapists, who have no code searched, sends
+   * a receptionist typing a code into a box that can never find it - and
+   * reads the empty result as "no such therapist". Change both together.
+   */
+  readonly searchKey?: string;
+  /**
    * The column carrying the row's own lifecycle status, if it has one. It is
    * NOT the archive flag: a child can be DISCHARGED and still be a live row,
    * while archiving is the centre hiding the record. Different questions.
@@ -202,6 +223,7 @@ export const CHILDREN_SPEC: ResourceSpec = {
   viewPermission: 'CHILD.VIEW_ALL',
   writePermission: 'CHILD.EDIT',
   searchable: true,
+  searchKey: 'search.children',
   statusColumn: 'status',
   statusPrefix: 'status.child.',
   rowLink: (id) => ['/children', id],
@@ -227,6 +249,7 @@ export const THERAPISTS_SPEC: ResourceSpec = {
   viewPermission: 'STAFF.MANAGE',
   writePermission: 'STAFF.MANAGE',
   searchable: true,
+  searchKey: 'search.therapists',
   // The name opens the profile editor - biography, languages, certificates,
   // and the consent that lets any of it reach a family.
   rowLink: (id) => ['/therapists', id, 'profile'],
@@ -281,6 +304,24 @@ export const CASELOAD_SPEC: ResourceSpec = {
     // child for speech and not for occupational therapy, and starting a
     // session checks all three.
     { name: 'service_id', labelKey: 'field.service', kind: 'ref', ref: { resource: 'services', idColumn: 'service_id', labelColumn: 'name_ar' }, ltr: true, inList: true, required: true },
+    // Who carries this child for this service when more than one therapist
+    // does. It is here because hbh.assign_therapist MOVES it - demoting the
+    // previous holder in one statement and promoting this row in another -
+    // and nothing in the schema enforces one primary per (child, service).
+    // Without the field the one behaviour that makes the new route worth
+    // having is unreachable from the screen (HBH-103).
+    //
+    // ONE LABEL SERVES THE FORM AND THE COLUMN, so it is worded as a flag
+    // and not as a person: the column's values are "نعم / لا", and a header
+    // that named a therapist over a cell reading "yes" is a column nobody
+    // can read.
+    //
+    // AND AN ENDED ASSIGNMENT KEEPS THIS FLAG. The constraint the schema is
+    // getting covers LIVE primary rows only (active_flg AND is_primary_flg),
+    // so a row that was primary and has ended still says yes - correct, and
+    // not something to tidy away. With archived rows shown, that column and
+    // the row's own archived badge are read together.
+    { name: 'is_primary_flg', labelKey: 'field.primaryTherapist', kind: 'switch', inList: true },
   ],
 };
 
@@ -292,6 +333,7 @@ export const ROOMS_SPEC: ResourceSpec = {
   viewPermission: 'CATALOG.MANAGE',
   writePermission: 'CATALOG.MANAGE',
   searchable: true,
+  searchKey: 'search.rooms',
   fields: [
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true },
@@ -329,10 +371,42 @@ export const SERVICES_SPEC: ResourceSpec = {
   viewPermission: 'CATALOG.MANAGE',
   writePermission: 'CATALOG.MANAGE',
   searchable: true,
+  searchKey: 'search.services',
   fields: [
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true },
     { name: 'kind_code', labelKey: 'field.kind', kind: 'text', ltr: true, inList: true },
+    /*
+     * HOW LONG IT RUNS, which decides every slot the booking screen offers.
+     *
+     * The column has always existed and this form never showed it, so every
+     * service created from the console took the default of 45 minutes and
+     * there was no way to say otherwise without SQL. A thirty-minute
+     * consultation could not be described at all.
+     */
+    { name: 'default_duration_min', labelKey: 'field.defaultDuration', kind: 'number',
+      ltr: true, inList: true },
+    /*
+     * THE TWO FLAGS THAT MAKE A SERVICE A CONSULTATION.
+     *
+     * Off and off is a consultation: no therapy session is opened when it
+     * starts, and the child is not added to the therapist's caseload for
+     * it. That combination is also the ONLY one hbh.validate_slot will
+     * accept without a room - it answers SERVICE_NEEDS_ROOM otherwise - so
+     * until these were on this form, nobody could create a service that
+     * could be held online, and the whole consultation feature had no way
+     * in.
+     *
+     * ck_services_caseload_needs_session refuses "no session but yes
+     * caseload", which is the one combination of the four that means
+     * nothing: a child cannot be on a caseload for work that never opens a
+     * session. The schema refuses it and the service answers 400; the
+     * labels are written so the dependency reads in the order the switches
+     * are drawn.
+     */
+    { name: 'creates_session_flg', labelKey: 'field.createsSession', kind: 'switch',
+      inList: true },
+    { name: 'needs_caseload_flg', labelKey: 'field.needsCaseload', kind: 'switch' },
   ],
 };
 
@@ -361,6 +435,7 @@ export const ACTIVITY_LIBRARY_SPEC: ResourceSpec = {
   viewPermission: 'CATALOG.MANAGE',
   writePermission: 'CATALOG.MANAGE',
   searchable: true,
+  searchKey: 'search.activity-library',
   fields: [
     { name: 'title_ar', labelKey: 'field.title', kind: 'text', inList: true, required: true },
     { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true },
@@ -386,18 +461,9 @@ const GOAL_STATUS = [
 /**
  * The treatment plan, and the three things hung off it.
  *
- * This is the clinician's own work and none of it was reachable from the
- * console: a therapist could not write a plan, set a goal, record a
- * measurement or assign a home activity from any screen. The child's file
- * SHOWS plans; nothing created one. Four CRUD resources the service has
- * always served and nothing ever called.
- *
- * Identifiers are typed rather than picked from a list. The lookup machinery
- * belongs to the day screens, and a plan is chosen against a child who was
- * chosen on the screen before - wiring four dependent pickers here would be
- * a bigger change than the value it adds today. The service refuses an
- * identifier that is not the caller's, so a wrong number is a refusal and
- * never someone else's child.
+ * The child's file opens these same editors with the originating child,
+ * plan or goal prefilled. Reference fields show names while preserving the
+ * identifiers expected by CRUD; the server still checks every relationship.
  */
 export const PLANS_SPEC: ResourceSpec = {
   resource: 'plans',
@@ -506,6 +572,34 @@ const NPS_TRIGGER = [
   { value: 'PERIOD', labelKey: 'nps.trigger.PERIOD' },
 ];
 
+/**
+ * The centre's standing questions, offered in the code box - NOT the whole
+ * set of codes it may use.
+ *
+ * These are the purposes that come back: one per audience and moment the
+ * survey is asked at. They are offered so they are spelled the same way every
+ * time, because `uq_nps_code` makes PARENT-VISIT and PARENT_VISIT two surveys
+ * and the results screen then reports one question as two.
+ *
+ * WHAT IS NOT HERE, and why the box is a `combo` and not a `select`: a survey
+ * raised for one occasion - a release, an outage, an apology - carries a code
+ * nobody could have listed in advance, and it is used once. A closed list was
+ * shipped here first and it made exactly that survey impossible to create:
+ * every code on it is already taken by the standing survey that owns it.
+ *
+ * Adding a purpose here is a line and a label. Asking about an occasion needs
+ * nothing from this file at all.
+ */
+const NPS_CODE = [
+  { value: 'PARENT_SESSION', labelKey: 'nps.code.PARENT_SESSION' },
+  { value: 'PARENT_REPORT', labelKey: 'nps.code.PARENT_REPORT' },
+  { value: 'PARENT_INVOICE', labelKey: 'nps.code.PARENT_INVOICE' },
+  { value: 'PARENT_WELCOME', labelKey: 'nps.code.PARENT_WELCOME' },
+  { value: 'PARENT_PERIODIC', labelKey: 'nps.code.PARENT_PERIODIC' },
+  { value: 'STAFF_PERIODIC', labelKey: 'nps.code.STAFF_PERIODIC' },
+  { value: 'CENTER_PERIODIC', labelKey: 'nps.code.CENTER_PERIODIC' },
+];
+
 const NPS_ACTION = [
   { value: 'SESSION_COMPLETED', labelKey: 'nps.action.SESSION_COMPLETED' },
   { value: 'REPORT_PUBLISHED', labelKey: 'nps.action.REPORT_PUBLISHED' },
@@ -521,8 +615,9 @@ export const NPS_SURVEYS_SPEC: ResourceSpec = {
   viewPermission: 'NPS.MANAGE',
   writePermission: 'NPS.MANAGE',
   searchable: true,
+  searchKey: 'search.nps-surveys',
   fields: [
-    { name: 'code', labelKey: 'field.code', kind: 'text', ltr: true, inList: true, required: true },
+    { name: 'code', labelKey: 'field.code', kind: 'combo', options: NPS_CODE, ltr: true, inList: true, required: true },
     { name: 'name_ar', labelKey: 'field.name', kind: 'text', inList: true, required: true },
     { name: 'question_ar', labelKey: 'nps.question', kind: 'text', inList: true, required: true },
     { name: 'followup_question_ar', labelKey: 'nps.followup', kind: 'text' },
@@ -554,6 +649,7 @@ export const GUARDIANS_SPEC: ResourceSpec = {
   viewPermission: 'GUARDIAN.MANAGE',
   writePermission: 'GUARDIAN.MANAGE',
   searchable: true,
+  searchKey: 'search.guardians',
   fields: [
     { name: 'full_name_ar', labelKey: 'field.fullName', kind: 'text', inList: true, required: true },
     { name: 'mobile', labelKey: 'field.mobile', kind: 'text', ltr: true, inList: true },
@@ -687,6 +783,7 @@ export const SITE_TEXTS_SPEC: ResourceSpec = {
   viewPermission: 'SITE.EDIT',
   writePermission: 'SITE.EDIT',
   searchable: true,
+  searchKey: 'search.site-texts',
   statusColumn: 'status',
   statusPrefix: 'site.status.',
   fields: [

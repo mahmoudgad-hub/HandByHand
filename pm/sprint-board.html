@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  ============================================================================
+  pm/sprint-board.html — ما انتهى · ما في الأيدي · السبرنت القادم · الباكلوج
+  ----------------------------------------------------------------------------
+  يُفتح بالنقر المزدوج. لا خادم، ولا بناء، ولا npm — لكنه يقرأ
+  pm/board.data.js **من بجواره** (`<script src>`)، فيعمل داخل مجلّد pm/ فقط.
+
+  كان في أوّله نسخة مطبوعة من البيانات، فتأخّر عن الأصل يومًا كاملًا وعرض
+  حالة خاطئة (HBH-048). لذلك لا نسخة هنا: حرِّر board.data.js وحده، وحدِّث
+  الصفحة. نسختان من لوحة تتباعدان — القاعدة ١ على اللوحة كما على الداتابيز.
+  (الخطّ من Google Fonts وحده يحتاج إنترنت، وبدونه يسقط إلى خطّ النظام.)
+
+  ولا مسوّدة في localStorage — قرار لا سهو. سببه مكتوب في البطاقة نفسها:
+  «لوحة تحفظ في localStorage وحده تعني أحد عشر تابًا يرون أحد عشر واقعًا».
+  فالسحب هنا يعيش في الذاكرة وحدها: تحديث الصفحة يعيد ما في الملفّ. وما يخرج
+  من الصفحة نصٌّ يُنسخ بزرّ «انسخ النقلات» — لا حالة تُكتب في مكان ثانٍ.
+
+  والنسخة المستضافة على claude.ai هي الوحيدة التي تحفظ وتشارك، لأن لها مخزنًا
+  واحدًا يراه كل من يفتح الرابط. هذه للقراءة وللنقل اليدوي.
+  ==========================================================================-->
+<title>لوحة سبرنت هاند باي هاند</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+  /* Light is the base set; the two blocks after it only redefine tokens. */
+  :root{
+    --ground:#eef2f2; --panel:#ffffff; --sunk:#f5f8f8;
+    --ink:#12333d; --ink-2:#4a6672; --ink-3:#7b939c;
+    --line:#d8e2e3; --line-2:#e9eff0;
+    --accent:#1f7a8c; --accent-ink:#ffffff; --accent-soft:#e2f0f2;
+    --done:#2b7a5f; --doing:#1f7a8c; --review:#a85a1f; --blocked:#b1443c; --ready:#4a7a2b;
+    --shadow:0 1px 2px rgba(18,51,61,.05), 0 2px 8px rgba(18,51,61,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0e1619; --panel:#162226; --sunk:#121d21;
+      --ink:#e2ecee; --ink-2:#9db3ba; --ink-3:#6f8a92;
+      --line:#25373d; --line-2:#1d2c31;
+      --accent:#5fb3c4; --accent-ink:#08181c; --accent-soft:#17323a;
+      --done:#57b491; --doing:#5fb3c4; --review:#d9955c; --blocked:#e08b84; --ready:#8fc064;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 2px 10px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1619; --panel:#162226; --sunk:#121d21;
+    --ink:#e2ecee; --ink-2:#9db3ba; --ink-3:#6f8a92;
+    --line:#25373d; --line-2:#1d2c31;
+    --accent:#5fb3c4; --accent-ink:#08181c; --accent-soft:#17323a;
+    --done:#57b491; --doing:#5fb3c4; --review:#d9955c; --blocked:#e08b84; --ready:#8fc064;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 2px 10px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
+    font-size:14px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:1680px;margin:0 auto;padding:20px 22px 80px}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ── the sprint strip: a rule, not a card ─────────────────────── */
+  .strip{border-bottom:2px solid var(--line);padding-bottom:15px;margin-bottom:16px}
+  .strip__eyebrow{
+    font-size:11px;letter-spacing:.14em;color:var(--ink-3);
+    text-transform:uppercase;margin:0 0 5px;font-weight:600;
+  }
+  .strip h1{margin:0 0 7px;font-size:26px;font-weight:700;line-height:1.35;text-wrap:balance}
+  .strip__goal{margin:0;max-width:70ch;color:var(--ink-2);font-size:14px}
+  .strip__fresh{margin:8px 0 0;font-size:11.5px;color:var(--ink-3)}
+  .strip__fresh code,.strip__fresh kbd{font:inherit;font-size:11px;padding:0 4px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);color:var(--ink-2)}
+  .strip__meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;align-items:center}
+
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;padding:3px 10px;
+    border:1px solid var(--line);border-radius:7px;background:var(--panel);
+    font-size:12px;color:var(--ink-2);
+  }
+  .chip b{color:var(--ink);font-weight:600}
+  .chip--closed{border-color:var(--review);color:var(--review);background:transparent;font-weight:600}
+
+  /* ── the tally ────────────────────────────────────────────────── */
+  .tally{display:flex;flex-wrap:wrap;margin:0 0 16px;border:1px solid var(--line);
+         border-radius:11px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
+  .tally__i{flex:1 1 110px;padding:10px 15px;border-inline-start:1px solid var(--line-2)}
+  .tally__i:first-child{border-inline-start:0}
+  .tally__n{font-size:22px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
+  .tally__l{font-size:11.5px;color:var(--ink-3)}
+  .t-done .tally__n{color:var(--done)} .t-doing .tally__n{color:var(--doing)}
+  .t-review .tally__n{color:var(--review)} .t-blocked .tally__n{color:var(--blocked)}
+  .t-next .tally__n{color:var(--accent)} .t-backlog .tally__n{color:var(--ink-2)}
+
+  /* ── controls ─────────────────────────────────────────────────── */
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  select,input[type="search"]{
+    font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);
+    border-radius:8px;background:var(--panel);color:var(--ink);
+  }
+  input[type="search"]{min-width:200px}
+  button{
+    font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);
+    border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer;
+  }
+  button:hover{border-color:var(--accent)}
+  button.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+  button:focus-visible,select:focus-visible,input:focus-visible,.card:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px
+  }
+  .count{margin-inline-start:auto;font-size:12.5px;color:var(--ink-3)}
+
+  .sync{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-3);
+        padding:6px 11px;border:1px dashed var(--line);border-radius:8px}
+  .sync .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-3);flex:none}
+  .sync.on{color:var(--done);border-color:var(--done)} .sync.on .dot{background:var(--done)}
+  .sync.off{color:var(--review);border-color:var(--review)} .sync.off .dot{background:var(--review)}
+
+  /* ── four groups, in the order work actually travels ──────────── */
+  .groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
+  @media (max-width:1240px){.groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:720px){.groups{grid-template-columns:1fr}}
+  .group{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+         box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .group--next{border-color:var(--accent)}
+  .group__h{padding:12px 15px 10px;border-bottom:1px solid var(--line-2)}
+  .group__h h2{margin:0;font-size:15px;font-weight:700;display:flex;
+               align-items:baseline;justify-content:space-between;gap:8px}
+  .group__h h2 span{font-size:12px;color:var(--ink-3);font-weight:500}
+  .group__h p{margin:3px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.7}
+  .group__b{padding:11px}
+
+  .lane{margin-bottom:13px}
+  .lane:last-child{margin-bottom:0}
+  .lane__h{display:flex;align-items:center;gap:7px;margin:0 2px 7px;font-size:12px;color:var(--ink-3)}
+  .lane__h b{font-weight:600;font-size:12.5px}
+  .lane__h .bead{width:7px;height:7px;border-radius:2px;flex:none;background:var(--ink-3)}
+  .l-done .bead{background:var(--done)} .l-done b{color:var(--done)}
+  .l-doing .bead{background:var(--doing)} .l-doing b{color:var(--doing)}
+  .l-review .bead{background:var(--review)} .l-review b{color:var(--review)}
+  .l-blocked .bead{background:var(--blocked)} .l-blocked b{color:var(--blocked)}
+  .l-ready .bead{background:var(--ready)} .l-ready b{color:var(--ready)}
+  .drop{border-radius:9px;min-height:34px;padding:2px;transition:background .12s}
+  .drop.over{background:var(--accent-soft);outline:2px dashed var(--accent);outline-offset:-2px}
+  .empty{font-size:12px;color:var(--ink-3);padding:6px 4px;margin:0}
+
+  /* ── the card: a stripe carries state, colour never alone ─────── */
+  .card{
+    position:relative;border:1px solid var(--line-2);border-radius:9px;
+    background:var(--sunk);padding:9px 12px 9px 10px;margin-bottom:7px;cursor:grab;
+    padding-inline-start:14px;text-align:start;width:100%;display:block;font:inherit;color:inherit;
+  }
+  .card:last-child{margin-bottom:0}
+  .card::before{
+    content:"";position:absolute;inset-block:0;inset-inline-start:0;width:4px;
+    border-start-start-radius:9px;border-end-start-radius:9px;background:var(--ink-3);
+  }
+  .s-done::before{background:var(--done)} .s-doing::before{background:var(--doing)}
+  .s-review::before{background:var(--review)} .s-blocked::before{background:var(--blocked)}
+  .s-ready::before{background:var(--ready)}
+  .card:hover{border-color:var(--accent)}
+  .card.dragging{opacity:.45}
+  .card.moved{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .card__top{display:flex;gap:8px;align-items:baseline}
+  .card__id{font-size:11px;font-weight:600;color:var(--ink-3);flex:none;font-variant-numeric:tabular-nums}
+  .card__ttl{font-size:13px;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+  .card__foot{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;align-items:center}
+  .who{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;color:#fff;white-space:nowrap}
+  .tag{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);
+       background:var(--panel);color:var(--ink-3);white-space:nowrap}
+  .tag--moved{border-color:var(--accent);color:var(--accent);font-weight:600}
+  .card__wait{margin-top:6px;font-size:11.5px;color:var(--blocked);line-height:1.6}
+  .card__push{margin-top:8px}
+  .card__push button{font-size:11.5px;padding:4px 10px;width:100%}
+
+  /* ── what the file does not know yet ──────────────────────────── */
+  .pending{margin-top:20px;border:1px solid var(--accent);border-radius:12px;
+           background:var(--panel);box-shadow:var(--shadow);overflow:hidden}
+  .pending__h{padding:12px 16px;border-bottom:1px solid var(--line-2);
+              display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .pending__h h2{margin:0;font-size:15px;font-weight:700;color:var(--accent)}
+  .pending__b{padding:13px 16px}
+  .pending__b p{margin:0 0 11px;font-size:12.5px;color:var(--ink-2);max-width:82ch;line-height:1.85}
+  .pending ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+  .pending li{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:12.5px;
+              padding:7px 10px;background:var(--sunk);border-radius:7px}
+  .pending li b{font-variant-numeric:tabular-nums;color:var(--ink)}
+  .pending li .to{color:var(--accent);font-weight:600}
+  .pending li button{margin-inline-start:auto;font-size:11.5px;padding:2px 9px}
+
+  /* ── detail ───────────────────────────────────────────────────── */
+  dialog{
+    border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);
+    padding:0;max-width:720px;width:calc(100% - 28px);box-shadow:0 24px 60px rgba(0,0,0,.3);
+  }
+  dialog::backdrop{background:rgba(8,20,24,.55)}
+  .d__h{padding:15px 19px;border-bottom:1px solid var(--line-2);display:flex;
+        justify-content:space-between;gap:14px;align-items:flex-start}
+  .d__h h3{margin:2px 0 0;font-size:16px;font-weight:700;line-height:1.5;text-wrap:balance}
+  .d__b{padding:17px 19px;max-height:62vh;overflow:auto}
+  .d__b h4{margin:17px 0 7px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+           color:var(--ink-3);font-weight:600}
+  .d__b h4:first-child{margin-top:0}
+  .d__b p{margin:0;color:var(--ink)}
+  .d__b ul{margin:0;padding-inline-start:19px}
+  .d__b li{margin-bottom:7px;line-height:1.8}
+  .d__b code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--sunk);
+             padding:1px 5px;border-radius:4px;direction:ltr;display:inline-block}
+  .facts{display:grid;gap:6px;margin:0}
+  .facts div{display:flex;gap:9px;font-size:13px}
+  .facts dt{color:var(--ink-3);min-width:86px;flex:none}
+  .facts dd{margin:0}
+  .d__f{padding:13px 19px;border-top:1px solid var(--line-2);display:flex;gap:8px;flex-wrap:wrap}
+
+  .note{font-size:12.5px;color:var(--ink-3);line-height:1.9;margin:18px 0 0;max-width:86ch}
+  .note b{color:var(--ink-2)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="page" dir="rtl">
+  <header class="strip">
+    <p class="strip__eyebrow" id="eyebrow">—</p>
+    <h1 id="title">لوحة السبرنت</h1>
+    <p class="strip__goal" id="goal"></p>
+    <div class="strip__meta" id="meta"></div>
+    <!-- The browser may keep an old board.data.js (PM saw 048 as "ready"
+         after moving it). One line, rather than a cache trick that may not
+         behave the same on file:// and on a folder server. -->
+    <p class="strip__fresh">عدّلتَ <code>board.data.js</code> ولا ترى التعديل؟ حدِّث الصفحة بـ <kbd>Ctrl</kbd>+<kbd>F5</kbd>.</p>
+  </header>
+
+  <div class="tally" id="tally"></div>
+
+  <div class="bar">
+    <select id="fOwner"><option value="">كل الأدوار</option></select>
+    <select id="fEpic"><option value="">كل المحاور</option></select>
+    <input id="fText" type="search" placeholder="ابحث برقم البطاقة أو عنوانها">
+    <span class="sync" id="sync"><span class="dot"></span><span id="syncText">جارٍ الاتصال…</span></span>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="groups" id="groups"></div>
+
+  <section class="pending" id="pending" hidden>
+    <div class="pending__h">
+      <h2 id="pendingTitle">نقلات لم تصل الملفّ بعد</h2>
+      <span style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="copyAll" class="go" type="button">انسخ النقلات</button>
+        <button id="clearAll" type="button">تراجَع عن كل النقلات</button>
+      </span>
+    </div>
+    <div class="pending__b">
+      <p>
+        الفريق يقرأ حالة البطاقات من <code>pm/board.data.js</code> وحده — هذه الصفحة لا
+        تكتب فيه. النقلات هنا محفوظة ويراها كل من يفتح الرابط، وتنتقل إلى الملفّ حين
+        أُطلب ذلك، فيبدأ الفريق عليها.
+      </p>
+      <ul id="pendingList"></ul>
+    </div>
+  </section>
+
+  <p class="note" id="foot"></p>
+</div>
+
+<dialog id="dlg">
+  <div class="d__h">
+    <div>
+      <div class="card__id num" id="dId"></div>
+      <h3 id="dTitle"></h3>
+    </div>
+    <button id="dX" type="button">إغلاق</button>
+  </div>
+  <div class="d__b" id="dBody"></div>
+  <div class="d__f" id="dFoot"></div>
+</dialog>
+
+<!-- The board data is read from the file next to this page, never copied
+     into it: a copy is a second board that drifts (HBH-048, rule 1). -->
+<script src="board.data.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var DATA = window.HBH_BOARD;
+  // Without the data file there is no board - and saying why beats an empty
+  // page that reads as "nothing to do this sprint".
+  if (!DATA) {
+    document.getElementById('title').textContent = 'تعذّر تحميل بيانات اللوحة';
+    document.getElementById('goal').textContent =
+      'الصفحة تقرأ board.data.js من نفس المجلّد. افتحها من داخل pm/ ولا تنسخها وحدها إلى مكان آخر.';
+    return;
+  }
+
+  var CARDS = DATA.cards, ROLES = DATA.roles, EPICS = DATA.epics, META = DATA.meta;
+  var SPRINT = META.sprint || {};
+  var NEXT_SPRINT = (SPRINT.no || 1) + 1;
+
+  /* The moves made on this page. cardId -> {status, sprint, at}.
+     Held here and, when the store is reachable, in the artifact's own
+     database so every viewer sees the same board. The FILE is still the
+     thing the team works from; this is the list of what it does not know
+     yet, which is why nothing here pretends to be saved to it. */
+  var moves = Object.create(null);
+  var db = null;
+
+  /* ---------- where a card sits, after any move ---------- */
+  function stateOf(c) {
+    var m = moves[c.id];
+    return m ? { status: m.status, sprint: m.sprint } : { status: c.status, sprint: c.sprint };
+  }
+  function isMoved(c) { return !!moves[c.id]; }
+
+  /* The four groups, in the order work travels. A card lands in exactly
+     one: the search is ordered, and "done" wins over everything because a
+     finished card is finished whatever sprint it carries. */
+  function groupOf(c) {
+    var s = stateOf(c);
+    if (s.status === 'done') { return 'done'; }
+    if (s.status === 'doing' || s.status === 'review' || s.status === 'blocked') { return 'hand'; }
+    if (s.sprint === NEXT_SPRINT) { return 'next'; }
+    if (s.sprint === SPRINT.no && s.status === 'ready') { return 'hand'; }
+    return 'backlog';
+  }
+
+  var GROUPS = [
+    { key: 'done',    label: 'ما انتهى',
+      note: 'معايير القبول كلّها متحقّقة.',
+      lanes: [{ status: 'done', label: 'منتهية' }] },
+    { key: 'hand',    label: 'ما في الأيدي',
+      note: 'سبرنت ' + (SPRINT.no || 1) + ' — يُنهى ما بدأ ولا يُبدأ جديد.',
+      lanes: [
+        { status: 'doing',   label: 'قيد العمل' },
+        { status: 'review',  label: 'مراجعة' },
+        { status: 'blocked', label: 'محجوبة' },
+        { status: 'ready',   label: 'جاهزة ولم تبدأ' }
+      ] },
+    { key: 'next',    label: 'السبرنت القادم (' + NEXT_SPRINT + ')',
+      note: 'اسحب بطاقة من الباكلوج إلى هنا ليعمل عليها الفريق.',
+      lanes: [{ status: 'ready', label: 'مسحوبة للسبرنت' }] },
+    { key: 'backlog', label: 'الباكلوج',
+      note: 'مكتوبة ولم تُسحب بعد.',
+      lanes: [{ status: 'backlog', label: 'في الانتظار' }, { status: 'ready', label: 'جاهزة' }] }
+  ];
+
+  /* ---------- filters ---------- */
+  var fOwner = document.getElementById('fOwner');
+  var fEpic  = document.getElementById('fEpic');
+  var fText  = document.getElementById('fText');
+
+  function passes(c) {
+    if (fOwner.value && c.owner !== fOwner.value) { return false; }
+    if (fEpic.value && c.epic !== fEpic.value) { return false; }
+    var q = fText.value.trim().toLowerCase();
+    if (q && (c.id + ' ' + c.title).toLowerCase().indexOf(q) === -1) { return false; }
+    return true;
+  }
+
+  /* ---------- header ---------- */
+  function paintHeader() {
+    document.getElementById('eyebrow').textContent = META.project || '';
+    document.getElementById('title').textContent = 'سبرنت ' + (SPRINT.no || 1) + ' — لوحة المتابعة';
+    document.getElementById('goal').textContent = SPRINT.goal || '';
+
+    var meta = document.getElementById('meta');
+    meta.textContent = '';
+    function chip(label, value, cls) {
+      var s = document.createElement('span');
+      s.className = 'chip' + (cls ? ' ' + cls : '');
+      s.appendChild(document.createTextNode(label + ' '));
+      var b = document.createElement('b');
+      b.textContent = value;
+      s.appendChild(b);
+      meta.appendChild(s);
+    }
+    if (SPRINT.from) { chip('من', SPRINT.from); }
+    if (SPRINT.to) { chip('إلى', SPRINT.to); }
+    chip('آخر تحديث للملفّ', META.updated || '—');
+    if (SPRINT.length) {
+      var s = document.createElement('span');
+      s.className = 'chip chip--closed';
+      s.textContent = SPRINT.length;
+      meta.appendChild(s);
+    }
+  }
+
+  /* ---------- the tally, before any detail ---------- */
+  function paintTally() {
+    /* EVERY card lands in exactly one of these, and they must add up to
+       the total the bar below prints. The first draft counted the four
+       working statuses plus next plus backlog - and silently dropped the
+       cards that are READY inside the current sprint, so the summary read
+       39 while the columns beside it held 50. A tally that disagrees with
+       the board it summarises is worse than no tally. */
+    var counts = { done: 0, doing: 0, review: 0, blocked: 0, ready: 0, next: 0, backlog: 0 };
+    CARDS.forEach(function (c) {
+      var g = groupOf(c), s = stateOf(c);
+      if (g === 'next') { counts.next++; return; }
+      if (g === 'backlog') { counts.backlog++; return; }
+      if (counts[s.status] !== undefined) { counts[s.status]++; return; }
+      /* A status this board has not been taught still has to be somewhere,
+         or the numbers stop adding up without saying so. */
+      counts.backlog++;
+    });
+    var order = [
+      ['done', 'منتهية', 't-done'], ['doing', 'قيد العمل', 't-doing'],
+      ['review', 'مراجعة', 't-review'], ['blocked', 'محجوبة', 't-blocked'],
+      ['ready', 'جاهزة (سبرنت ' + (SPRINT.no || 1) + ')', 't-ready'],
+      ['next', 'سبرنت ' + NEXT_SPRINT, 't-next'], ['backlog', 'الباكلوج', 't-backlog']
+    ];
+    var box = document.getElementById('tally');
+    box.textContent = '';
+    order.forEach(function (o) {
+      var d = document.createElement('div');
+      d.className = 'tally__i ' + o[2];
+      var n = document.createElement('div');
+      n.className = 'tally__n';
+      n.textContent = String(counts[o[0]]);
+      var l = document.createElement('div');
+      l.className = 'tally__l';
+      l.textContent = o[1];
+      d.appendChild(n); d.appendChild(l);
+      box.appendChild(d);
+    });
+  }
+
+  /* ---------- one card ---------- */
+  function cardEl(c) {
+    var s = stateOf(c);
+    var el = document.createElement('div');
+    el.className = 'card s-' + s.status + (isMoved(c) ? ' moved' : '');
+    el.draggable = true;
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.dataset.id = c.id;
+
+    var top = document.createElement('div');
+    top.className = 'card__top';
+    var id = document.createElement('span');
+    id.className = 'card__id';
+    id.textContent = c.id.replace('HBH-', '');
+    var ttl = document.createElement('span');
+    ttl.className = 'card__ttl';
+    ttl.textContent = c.title;
+    top.appendChild(id); top.appendChild(ttl);
+    el.appendChild(top);
+
+    var foot = document.createElement('div');
+    foot.className = 'card__foot';
+    var role = ROLES[c.owner];
+    if (role) {
+      var who = document.createElement('span');
+      who.className = 'who';
+      who.style.background = role.color;
+      who.textContent = role.label;
+      foot.appendChild(who);
+    }
+    [String(c.size) + ' يوم', (EPICS[c.epic] || {}).label || c.epic].forEach(function (t) {
+      var g = document.createElement('span');
+      g.className = 'tag';
+      g.textContent = t;
+      foot.appendChild(g);
+    });
+    if (isMoved(c)) {
+      var mv = document.createElement('span');
+      mv.className = 'tag tag--moved';
+      mv.textContent = 'نُقلت — لم تصل الملفّ';
+      foot.appendChild(mv);
+    }
+    el.appendChild(foot);
+
+    /* Why it is stuck, on the card. A blocked card whose reason lives one
+       click away is a card nobody unblocks. */
+    if (s.status === 'blocked' && c.ext) {
+      var w = document.createElement('p');
+      w.className = 'card__wait';
+      w.textContent = 'ينتظر: ' + c.ext.replace(/\*\*/g, '');
+      el.appendChild(w);
+    }
+
+    /* The keyboard's way in, and the phone's. Dragging is a mouse on a
+       wide screen; this is the same move for everyone else. */
+    if (groupOf(c) === 'backlog') {
+      var push = document.createElement('div');
+      push.className = 'card__push';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = 'اسحبها لسبرنت ' + NEXT_SPRINT;
+      b.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        move(c.id, 'ready', NEXT_SPRINT);
+      });
+      push.appendChild(b);
+      el.appendChild(push);
+    }
+
+    el.addEventListener('click', function () { openCard(c); });
+    el.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openCard(c); }
+    });
+    el.addEventListener('dragstart', function (ev) {
+      ev.dataTransfer.setData('text/plain', c.id);
+      ev.dataTransfer.effectAllowed = 'move';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', function () { el.classList.remove('dragging'); });
+    return el;
+  }
+
+  /* ---------- the board ---------- */
+  function paint() {
+    paintTally();
+    var host = document.getElementById('groups');
+    host.textContent = '';
+    var shown = 0;
+
+    GROUPS.forEach(function (g) {
+      var mine = CARDS.filter(function (c) { return groupOf(c) === g.key && passes(c); });
+      shown += mine.length;
+
+      var sec = document.createElement('section');
+      sec.className = 'group' + (g.key === 'next' ? ' group--next' : '');
+
+      var head = document.createElement('div');
+      head.className = 'group__h';
+      var h2 = document.createElement('h2');
+      h2.appendChild(document.createTextNode(g.label));
+      var n = document.createElement('span');
+      n.textContent = mine.length + ' بطاقة';
+      h2.appendChild(n);
+      var p = document.createElement('p');
+      p.textContent = g.note;
+      head.appendChild(h2); head.appendChild(p);
+      sec.appendChild(head);
+
+      var body = document.createElement('div');
+      body.className = 'group__b';
+
+      g.lanes.forEach(function (lane) {
+        var inLane = mine.filter(function (c) { return stateOf(c).status === lane.status; });
+        /* A lane with nothing in it and nothing droppable into it is noise.
+           The next-sprint lane always draws, because it is the target. */
+        if (inLane.length === 0 && g.key !== 'next') { return; }
+
+        var wrap = document.createElement('div');
+        wrap.className = 'lane l-' + lane.status;
+        var lh = document.createElement('div');
+        lh.className = 'lane__h';
+        var bead = document.createElement('span');
+        bead.className = 'bead';
+        var lb = document.createElement('b');
+        lb.textContent = lane.label;
+        var lc = document.createElement('span');
+        lc.textContent = String(inLane.length);
+        lh.appendChild(bead); lh.appendChild(lb); lh.appendChild(lc);
+        wrap.appendChild(lh);
+
+        var drop = document.createElement('div');
+        drop.className = 'drop';
+        drop.dataset.group = g.key;
+        drop.dataset.status = lane.status;
+        if (inLane.length === 0) {
+          var e = document.createElement('p');
+          e.className = 'empty';
+          e.textContent = 'أفلِت بطاقة هنا';
+          drop.appendChild(e);
+        } else {
+          inLane.forEach(function (c) { drop.appendChild(cardEl(c)); });
+        }
+        wireDrop(drop);
+        wrap.appendChild(drop);
+        body.appendChild(wrap);
+      });
+
+      if (mine.length === 0 && g.key !== 'next') {
+        var none = document.createElement('p');
+        none.className = 'empty';
+        none.textContent = 'لا شيء هنا';
+        body.appendChild(none);
+      }
+
+      sec.appendChild(body);
+      host.appendChild(sec);
+    });
+
+    document.getElementById('count').textContent =
+      'معروضة ' + shown + ' من ' + CARDS.length + ' بطاقة';
+    paintPending();
+  }
+
+  function wireDrop(drop) {
+    drop.addEventListener('dragover', function (ev) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      drop.classList.add('over');
+    });
+    drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+    drop.addEventListener('drop', function (ev) {
+      ev.preventDefault();
+      drop.classList.remove('over');
+      var id = ev.dataTransfer.getData('text/plain');
+      if (!id) { return; }
+      var sprint = drop.dataset.group === 'next' ? NEXT_SPRINT
+                 : drop.dataset.group === 'backlog' ? null
+                 : SPRINT.no;
+      move(id, drop.dataset.status, sprint);
+    });
+  }
+
+  /* ---------- a move ---------- */
+  function move(id, status, sprint) {
+    var card = CARDS.find(function (c) { return c.id === id; });
+    if (!card) { return; }
+
+    /* Back to where the file already has it is not a move - it is an
+       undo, and leaving a no-op in the list would send me to edit a line
+       that already says this. */
+    if (card.status === status && (card.sprint || null) === (sprint || null)) {
+      delete moves[id];
+      paint();
+      if (db) { db.doc('moves/' + id).delete().catch(writeFailed); }
+      return;
+    }
+    moves[id] = { status: status, sprint: sprint, at: new Date().toISOString() };
+    paint();
+    if (db) {
+      db.doc('moves/' + id).set({
+        cardId: id, status: status, sprint: sprint, at: moves[id].at
+      }).catch(writeFailed);
+    }
+  }
+
+  function undo(id) {
+    delete moves[id];
+    paint();
+    if (db) { db.doc('moves/' + id).delete().catch(writeFailed); }
+  }
+
+  /* A refused write is not nothing: the card moved on this screen, the
+     store did not take it, and the next snapshot puts the card back
+     where it was. Swallowed, that reads as the board undoing a move by
+     itself. Said out loud, it reads as what it is. */
+  function writeFailed() {
+    sayOffline('لم تُحفظ النقلة — أعد المحاولة');
+  }
+
+  /* ---------- what the file does not know yet ---------- */
+  var STATUS_AR = {
+    backlog: 'الباكلوج', ready: 'جاهزة', doing: 'قيد العمل',
+    review: 'مراجعة', blocked: 'محجوبة', done: 'منتهية'
+  };
+
+  function paintPending() {
+    var ids = Object.keys(moves);
+    var box = document.getElementById('pending');
+    box.hidden = ids.length === 0;
+    if (ids.length === 0) { return; }
+
+    document.getElementById('pendingTitle').textContent =
+      ids.length === 1 ? 'نقلة واحدة لم تصل الملفّ بعد'
+                       : ids.length + ' نقلات لم تصل الملفّ بعد';
+
+    var list = document.getElementById('pendingList');
+    list.textContent = '';
+    ids.forEach(function (id) {
+      var c = CARDS.find(function (x) { return x.id === id; });
+      if (!c) { return; }
+      var m = moves[id];
+      var li = document.createElement('li');
+
+      var b = document.createElement('b');
+      b.textContent = id;
+      li.appendChild(b);
+
+      var t = document.createElement('span');
+      t.textContent = c.title;
+      li.appendChild(t);
+
+      var arrow = document.createElement('span');
+      arrow.className = 'to';
+      arrow.textContent = '← ' + (STATUS_AR[m.status] || m.status)
+        + (m.sprint ? ' · سبرنت ' + m.sprint : ' · بلا سبرنت');
+      li.appendChild(arrow);
+
+      var u = document.createElement('button');
+      u.type = 'button';
+      u.textContent = 'تراجَع';
+      u.addEventListener('click', function () { undo(id); });
+      li.appendChild(u);
+
+      list.appendChild(li);
+    });
+  }
+
+  /* The moves as text, to hand to whoever edits board.data.js.
+     Every line carries the card id AND the two values that change, so it
+     can be applied without opening this page again - a list that only
+     said "moved" would need the board beside it to mean anything. */
+  function movesAsText() {
+    return Object.keys(moves).map(function (id) {
+      var m = moves[id];
+      var c = CARDS.find(function (x) { return x.id === id; });
+      return id + '  status: ' + m.status
+           + '  sprint: ' + (m.sprint === null ? 'null' : m.sprint)
+           + '   # ' + (c ? c.title : '');
+    }).join('\n');
+  }
+
+  document.getElementById('copyAll').addEventListener('click', function () {
+    var btn = this;
+    var text = movesAsText();
+
+    /* execCommand and not only navigator.clipboard: this same page is
+       opened from disk as a file://, where the async clipboard API is
+       unavailable in some browsers - and a copy button that silently
+       does nothing is worse than none. The textarea path works in both. */
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', 'readonly');
+      ta.style.position = 'fixed';
+      ta.style.insetInlineStart = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      say(ok);
+    }
+    function say(ok) {
+      btn.textContent = ok ? 'اتنسخت' : 'انسخها يدويًّا من القائمة';
+      setTimeout(function () { btn.textContent = 'انسخ النقلات'; }, 2200);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { say(true); }, fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  document.getElementById('clearAll').addEventListener('click', function () {
+    Object.keys(moves).forEach(function (id) {
+      delete moves[id];
+      if (db) { db.doc('moves/' + id).delete().catch(writeFailed); }
+    });
+    paint();
+  });
+
+  /* ---------- the detail ---------- */
+  var dlg = document.getElementById('dlg');
+  document.getElementById('dX').addEventListener('click', function () { dlg.close(); });
+
+  function openCard(c) {
+    var s = stateOf(c);
+    document.getElementById('dId').textContent = c.id;
+    document.getElementById('dTitle').textContent = c.title;
+
+    var body = document.getElementById('dBody');
+    body.textContent = '';
+
+    function heading(text) {
+      var h = document.createElement('h4');
+      h.textContent = text;
+      body.appendChild(h);
+    }
+    function para(text) {
+      var p = document.createElement('p');
+      p.textContent = text;
+      body.appendChild(p);
+    }
+
+    heading('الحال');
+    var dl = document.createElement('dl');
+    dl.className = 'facts';
+    [
+      ['الحالة', (STATUS_AR[s.status] || s.status) + (isMoved(c) ? ' (نقلة لم تصل الملفّ)' : '')],
+      ['السبرنت', s.sprint ? String(s.sprint) : 'الباكلوج'],
+      ['المسؤول', (ROLES[c.owner] || {}).label || c.owner],
+      ['المحور', (EPICS[c.epic] || {}).label || c.epic],
+      ['الحجم', c.size + ' يوم عمل'],
+      ['يعتمد على', (c.deps && c.deps.length) ? c.deps.join(' · ') : 'لا شيء']
+    ].forEach(function (row) {
+      var d = document.createElement('div');
+      var dt = document.createElement('dt');
+      dt.textContent = row[0];
+      var dd = document.createElement('dd');
+      dd.textContent = row[1];
+      d.appendChild(dt); d.appendChild(dd);
+      dl.appendChild(d);
+    });
+    body.appendChild(dl);
+
+    if (c.why) { heading('لماذا'); para(c.why); }
+    if (c.ext) { heading('ينتظر'); para(c.ext.replace(/\*\*/g, '')); }
+
+    if (c.ac && c.ac.length) {
+      heading('معايير القبول');
+      var ul = document.createElement('ul');
+      c.ac.forEach(function (a) {
+        var li = document.createElement('li');
+        /* Backticks mark the file names and commands in the source. They
+           read as literal characters otherwise, in a list somebody is
+           meant to tick off. */
+        a.split(/`([^`]+)`/).forEach(function (part, i) {
+          if (i % 2 === 1) {
+            var code = document.createElement('code');
+            code.textContent = part;
+            li.appendChild(code);
+          } else {
+            li.appendChild(document.createTextNode(part.replace(/\*\*/g, '')));
+          }
+        });
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+    }
+    if (c.src) { heading('من أين جاءت'); para(c.src); }
+
+    var foot = document.getElementById('dFoot');
+    foot.textContent = '';
+    if (groupOf(c) !== 'next') {
+      var pull = document.createElement('button');
+      pull.type = 'button';
+      pull.className = 'go';
+      pull.textContent = 'اسحبها لسبرنت ' + NEXT_SPRINT;
+      pull.addEventListener('click', function () {
+        move(c.id, 'ready', NEXT_SPRINT);
+        dlg.close();
+      });
+      foot.appendChild(pull);
+    }
+    if (isMoved(c)) {
+      var u = document.createElement('button');
+      u.type = 'button';
+      u.textContent = 'تراجَع عن النقلة';
+      u.addEventListener('click', function () { undo(c.id); dlg.close(); });
+      foot.appendChild(u);
+    }
+    dlg.showModal();
+  }
+
+  /* ---------- filters, wired ---------- */
+  Object.keys(ROLES).forEach(function (k) {
+    var o = document.createElement('option');
+    o.value = k;
+    o.textContent = ROLES[k].label;
+    fOwner.appendChild(o);
+  });
+  Object.keys(EPICS).forEach(function (k) {
+    var o = document.createElement('option');
+    o.value = k;
+    o.textContent = EPICS[k].label;
+    fEpic.appendChild(o);
+  });
+  [fOwner, fEpic].forEach(function (el) { el.addEventListener('change', paint); });
+  fText.addEventListener('input', paint);
+
+  /* ---------- first paint, before any capability answers ---------- */
+  paintHeader();
+  paint();
+  document.getElementById('foot').textContent =
+    'الفريق يعمل من pm/board.data.js — هذه الصفحة تعرضه ولا تكتب فيه. '
+    + 'النقلات تُحفظ هنا ويراها كل من يفتح الرابط، وتُنقل إلى الملفّ حين تطلب ذلك.';
+
+  /* ---------- the store, when the viewer can reach it ---------- */
+  var sync = document.getElementById('sync');
+  var syncText = document.getElementById('syncText');
+
+  function sayOffline(text) {
+    sync.className = 'sync off';
+    syncText.textContent = text;
+  }
+
+  if (window.claude && typeof window.claude.use === 'function') {
+    window.claude.use('db').then(function (store) {
+      if (!store) { sayOffline('النقلات في هذا المتصفّح فقط'); return; }
+      db = store;
+      sync.className = 'sync on';
+      syncText.textContent = 'محفوظ ومشترك';
+      /* Live, so a move made on the phone shows on the laptop without a
+         refresh - and so two people are never looking at two boards. */
+      db.collection('moves').onSnapshot(function (snap) {
+        /* snap.docs, not snap.forEach: a QuerySnapshot here carries
+           docs/size/empty/docChanges and nothing else. forEach would
+           throw inside this callback, which fails INVISIBLY - the board
+           keeps showing whatever it had and nobody's move ever arrives. */
+        var next = Object.create(null);
+        (snap.docs || []).forEach(function (doc) {
+          var d = doc.data();
+          if (d && d.cardId) {
+            next[d.cardId] = { status: d.status, sprint: d.sprint, at: d.at };
+          }
+        });
+        moves = next;
+        paint();
+      }, function () { sayOffline('انقطع التزامن — النقلات محفوظة'); });
+    }).catch(function () { sayOffline('النقلات في هذا المتصفّح فقط'); });
+  } else {
+    sayOffline('النقلات في هذا المتصفّح فقط');
+  }
+}());
+</script>
+</body>
+</html>

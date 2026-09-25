@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -39,6 +40,21 @@ type Config struct {
 	// ends up in the audit log as the client address, and a header a client
 	// can write is a client-controlled audit trail.
 	TrustProxy bool
+
+	// TrustedProxies are the peers whose X-Forwarded-For is believed, and
+	// TrustProxy alone is not enough without them.
+	//
+	// "The flag is on" answers WHETHER a proxy sets the header. It cannot
+	// answer WHO is talking to us right now - and a caller that reaches the
+	// socket directly, carrying a header it wrote itself, looks identical to
+	// the proxy unless somebody checks the peer. That check is this list.
+	//
+	// Defaults to loopback when TRUST_PROXY is on, which is the deployment
+	// in deploy/server: nginx does proxy_pass to 127.0.0.1:8090 and the
+	// service binds to 127.0.0.1, so nothing off-host can be the peer at
+	// all. A different topology - a proxy on another machine, a container
+	// network - names its addresses in TRUSTED_PROXIES instead.
+	TrustedProxies []netip.Prefix
 
 	// OTPEcho returns the generated one-time code in the HTTP response.
 	// There is no SMS gateway yet, and the acceptance suite has no other way
@@ -81,8 +97,28 @@ type Config struct {
 	// a service with nowhere safe to put a file should refuse to take one.
 	StaffDocsDir string
 
+	// MeetingProvider selects who carries the video for an online
+	// consultation: "JITSI_PUBLIC" or "JITSI_JAAS".
+	//
+	// JITSI_PUBLIC is meet.jit.si and has NO tokens: the room name is the
+	// only credential and it never expires. Right on a laptop, and refused
+	// in production by meeting.PublicProvider.Usable for the same reason
+	// sms.DevSender is.
+	//
+	// The provider a ROOM was opened with is recorded on the row, so a
+	// centre that changes this does not strand a consultation booked last
+	// week - the handler refuses that case out loud rather than minting a
+	// pass for a room somewhere else.
+	MeetingProvider string
+
+	// The JaaS account. Each is a secret or an address, and none of them is
+	// written to the database, to a log, or to an error detail.
+	MeetingJaaSAppID      string
+	MeetingJaaSKeyID      string
+	MeetingJaaSPrivateKey string
+
 	// SMSProvider selects the delivery implementation: "dev", "http" or
-	// "twilio_whatsapp".
+	// "meta_whatsapp".
 	//
 	// "dev" accepts every message and sends nothing, which is right on a
 	// laptop and catastrophic in production - a centre whose parents cannot
@@ -111,29 +147,22 @@ type Config struct {
 	SMSHTTPFieldTo       string
 	SMSHTTPFieldBody     string
 
-	// Twilio, when SMS_PROVIDER is twilio_whatsapp. The account sid and token
-	// are secrets on the same terms as the bulk-provider account above.
+	// Meta's WhatsApp Cloud API, when SMS_PROVIDER is meta_whatsapp. The
+	// access token is a secret on the same terms as the bulk-provider account
+	// above; the phone number id is an address and is not one.
 	//
-	// TwilioContentSIDs maps a template_code to the ContentSid Meta approved
-	// for it, read from TWILIO_CONTENT_<CODE>. It is a map and not four named
-	// fields because the set of templates grows with the centre's messages
-	// and a new one should be an environment line, not a build.
-	TwilioAccountSID     string
-	TwilioAuthToken      string
-	TwilioWhatsAppFrom   string
-	TwilioMessagingSvc   string
-	TwilioStatusCallback string
-	TwilioContentSIDs    map[string]string
-
-	// TwilioAllowFreeform sends the rendered Arabic when a template code has
-	// no approved ContentSid, instead of refusing. It exists so a developer
-	// can watch a login code arrive on a real handset inside Twilio's WhatsApp
-	// sandbox, which opens a 24-hour session, before Meta has approved
-	// anything. Load refuses it outside development for the same reason it
-	// refuses OTPEcho: outside that window WhatsApp rejects free text every
-	// time, so in production it would retry an identical refusal to the end of
-	// the ladder and deliver nothing.
-	TwilioAllowFreeform bool
+	// THE CENTRE SENDS THROUGH META DIRECTLY since 2026-09-18. It used to go
+	// through Twilio, and the Twilio sender, its five environment variables
+	// and its error map were removed in the same change - git history has
+	// them if a reseller is ever wanted again.
+	//
+	// There is no template map here. The name and language each template was
+	// approved under live in hbh.message_templates, per centre, so approving
+	// a template is a change in the console and not an environment line and a
+	// restart.
+	MetaPhoneNumberID string
+	MetaAccessToken   string
+	MetaAPIVersion    string
 
 	// SMSWorkerInterval is how often the outbox is polled, and SMSWorkerBatch
 	// how many messages one pass claims. Neither is a business value: what to
@@ -203,6 +232,9 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	if cfg.TrustProxy, err = boolean(getenv, "TRUST_PROXY", false); err != nil {
 		errs = append(errs, err)
 	}
+	if cfg.TrustedProxies, err = prefixes(getenv, "TRUSTED_PROXIES", cfg.TrustProxy); err != nil {
+		errs = append(errs, err)
+	}
 	if cfg.OTPEcho, err = boolean(getenv, "OTP_ECHO", false); err != nil {
 		errs = append(errs, err)
 	}
@@ -211,6 +243,17 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	}
 	cfg.SiteAssetsDir = strings.TrimSpace(getenv("SITE_ASSETS_DIR"))
 	cfg.StaffDocsDir = strings.TrimSpace(getenv("STAFF_DOCS_DIR"))
+
+	// The video for an online consultation. JITSI_PUBLIC is the default
+	// because it needs no account and works on a laptop; meeting.New
+	// refuses it outside development, where it has no access control at
+	// all - the room name is the only credential and nothing expires.
+	cfg.MeetingProvider = strings.ToUpper(str(getenv, "MEETING_PROVIDER", "JITSI_PUBLIC"))
+	cfg.MeetingJaaSAppID = strings.TrimSpace(getenv("MEETING_JAAS_APP_ID"))
+	cfg.MeetingJaaSKeyID = strings.TrimSpace(getenv("MEETING_JAAS_KEY_ID"))
+	// Not trimmed: a PEM block is whitespace-significant and trimming has
+	// been the cause of "not PEM" on a key that was perfectly good.
+	cfg.MeetingJaaSPrivateKey = getenv("MEETING_JAAS_PRIVATE_KEY")
 
 	cfg.SMSProvider = strings.ToLower(str(getenv, "SMS_PROVIDER", "dev"))
 	cfg.SMSHTTPURL = strings.TrimSpace(getenv("SMS_HTTP_URL"))
@@ -222,17 +265,9 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	cfg.SMSHTTPFieldSender = strings.TrimSpace(getenv("SMS_HTTP_FIELD_SENDER"))
 	cfg.SMSHTTPFieldTo = strings.TrimSpace(getenv("SMS_HTTP_FIELD_TO"))
 	cfg.SMSHTTPFieldBody = strings.TrimSpace(getenv("SMS_HTTP_FIELD_BODY"))
-	cfg.TwilioAccountSID = strings.TrimSpace(getenv("TWILIO_ACCOUNT_SID"))
-	cfg.TwilioAuthToken = getenv("TWILIO_AUTH_TOKEN")
-	cfg.TwilioWhatsAppFrom = strings.TrimSpace(getenv("TWILIO_WHATSAPP_FROM"))
-	cfg.TwilioMessagingSvc = strings.TrimSpace(getenv("TWILIO_MESSAGING_SERVICE_SID"))
-	cfg.TwilioStatusCallback = strings.TrimSpace(getenv("TWILIO_STATUS_CALLBACK"))
-	if cfg.TwilioContentSIDs, err = contentSIDs(getenv("TWILIO_CONTENT_SIDS")); err != nil {
-		errs = append(errs, err)
-	}
-	if cfg.TwilioAllowFreeform, err = boolean(getenv, "TWILIO_ALLOW_FREEFORM", false); err != nil {
-		errs = append(errs, err)
-	}
+	cfg.MetaPhoneNumberID = strings.TrimSpace(getenv("META_PHONE_NUMBER_ID"))
+	cfg.MetaAccessToken = getenv("META_ACCESS_TOKEN")
+	cfg.MetaAPIVersion = strings.TrimSpace(getenv("META_API_VERSION"))
 	if cfg.SMSWorkerInterval, err = seconds(getenv, "SMS_WORKER_SECONDS", cfg.SMSWorkerInterval); err != nil {
 		errs = append(errs, err)
 	}
@@ -262,16 +297,14 @@ func loadFrom(getenv func(string) string) (Config, error) {
 		errs = append(errs, errors.New("OTP_ECHO is a development-only affordance and must not be set when APP_ENV is not development"))
 	}
 
-	// THE THIRD AFFORDANCE OF THE SAME FAMILY, and it fails the same way if
-	// it escapes: quietly. A WhatsApp message the centre starts is refused as
-	// free text with error 63016 outside a 24-hour session, and every message
-	// this centre starts is outside one. So in production this setting does
-	// not send the message a different way - it sends nothing, five times,
-	// and writes failures that name a template rather than the approval
-	// nobody asked for. Refusing to start is the only honest response.
-	if cfg.TwilioAllowFreeform && cfg.Env != "development" {
-		errs = append(errs, errors.New("TWILIO_ALLOW_FREEFORM is a development-only affordance and must not be set when APP_ENV is not development"))
-	}
+	// THE THIRD AFFORDANCE OF THIS FAMILY USED TO BE CHECKED HERE:
+	// TWILIO_ALLOW_FREEFORM, which sent the rendered Arabic when a template
+	// had no approval, and was refused outside development because WhatsApp
+	// rejects free text outside a 24-hour window every time. It went with the
+	// Twilio sender on 2026-09-18. Meta's Cloud API has no sandbox window to
+	// lend it, so there is nothing left to allow: a message with no approved
+	// template is refused as CONFIG on the first attempt, in every
+	// environment.
 
 	// And the half that was missing until C5. Turning OTP_ECHO off without a
 	// provider does not make production safe, it makes production UNUSABLE -
@@ -283,10 +316,29 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	// The two rules together are the guarantee: a production process has a
 	// real delivery channel, or it does not start. Neither can be satisfied
 	// by remembering to set something.
+	// THE VIDEO IS NOT CHECKED HERE, AND THAT IS DELIBERATE.
+	//
+	// The obvious symmetry would be to refuse MEETING_PROVIDER=JITSI_PUBLIC
+	// in production the way SMS_PROVIDER=dev is refused above. It was
+	// written that way first, and it is wrong: the two are not the same
+	// kind of setting.
+	//
+	// Every deployment needs to deliver a login code, so a process that
+	// cannot has no front door and should not start. Not every centre holds
+	// online consultations. Refusing here would stop a centre that has never
+	// booked one from starting at all, over a feature it does not use.
+	//
+	// So the refusal lives where the feature is used: meeting_handlers.go
+	// asks Usable() on every entry and answers 503, and
+	// meeting.PublicProvider.Usable refuses in production. A centre with no
+	// consultations never reaches it; one that tries gets a clear refusal
+	// and nobody is handed a room with no access control. hbhd also says so
+	// once at startup, so the misconfiguration is visible before a family
+	// finds it.
 	if cfg.Env != "development" {
 		switch cfg.SMSProvider {
 		case "dev", "":
-			errs = append(errs, errors.New("SMS_PROVIDER=dev delivers nothing - a production process must be given a real provider (SMS_PROVIDER=http or twilio_whatsapp)"))
+			errs = append(errs, errors.New("SMS_PROVIDER=dev delivers nothing - a production process must be given a real provider (SMS_PROVIDER=http or meta_whatsapp)"))
 		case "http":
 			// The presence of every credential is checked here rather than at
 			// the first login, for the same reason MobilePattern is read at
@@ -304,33 +356,24 @@ func loadFrom(getenv func(string) string) (Config, error) {
 					errs = append(errs, fmt.Errorf("SMS_PROVIDER=http needs %s", p.name))
 				}
 			}
-		case "twilio_whatsapp":
+		case "meta_whatsapp":
 			for _, p := range []struct {
 				name, value string
 			}{
-				{"TWILIO_ACCOUNT_SID", cfg.TwilioAccountSID},
-				{"TWILIO_AUTH_TOKEN", cfg.TwilioAuthToken},
+				{"META_PHONE_NUMBER_ID", cfg.MetaPhoneNumberID},
+				{"META_ACCESS_TOKEN", cfg.MetaAccessToken},
 			} {
 				if strings.TrimSpace(p.value) == "" {
-					errs = append(errs, fmt.Errorf("SMS_PROVIDER=twilio_whatsapp needs %s", p.name))
+					errs = append(errs, fmt.Errorf("SMS_PROVIDER=meta_whatsapp needs %s", p.name))
 				}
 			}
-			if strings.TrimSpace(cfg.TwilioWhatsAppFrom) == "" &&
-				strings.TrimSpace(cfg.TwilioMessagingSvc) == "" {
-				errs = append(errs, errors.New(
-					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_WHATSAPP_FROM or TWILIO_MESSAGING_SERVICE_SID"))
-			}
-			// A login code is the one message whose absence closes the front
-			// door, so its template is required rather than discovered at the
-			// first attempt. Every other template fails one message; this one
-			// fails every sign-in.
-			if _, ok := cfg.TwilioContentSIDs["OTP_LOGIN"]; !ok {
-				errs = append(errs, errors.New(
-					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_CONTENT_SIDS to map OTP_LOGIN - "+
-						"without it no parent can receive a login code"))
-			}
+			// THE LOGIN-CODE TEMPLATE IS STILL REQUIRED BEFORE PRODUCTION
+			// STARTS, and still refused at startup rather than discovered at a
+			// parent's first sign-in. It is checked in cmd/hbhd once the
+			// database is reachable, because the answer now lives there -
+			// this function reads only the environment.
 		default:
-			errs = append(errs, fmt.Errorf("SMS_PROVIDER must be dev, http or twilio_whatsapp, got %q", cfg.SMSProvider))
+			errs = append(errs, fmt.Errorf("SMS_PROVIDER must be dev, http or meta_whatsapp, got %q", cfg.SMSProvider))
 		}
 	}
 
@@ -338,38 +381,6 @@ func loadFrom(getenv func(string) string) (Config, error) {
 		return Config{}, errors.Join(errs...)
 	}
 	return cfg, nil
-}
-
-// contentSIDs parses TWILIO_CONTENT_SIDS: CODE=SID pairs, comma separated.
-//
-// A MALFORMED ENTRY IS AN ERROR AND NOT A SKIP. Dropping the pair somebody
-// mistyped leaves a template unmapped, and an unmapped template is a CONFIG
-// failure at the moment a family was owed a message rather than at startup -
-// the same shape as every other setting this file refuses to guess at.
-func contentSIDs(raw string) (map[string]string, error) {
-	out := map[string]string{}
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return out, nil
-	}
-	for _, pair := range strings.Split(raw, ",") {
-		pair = strings.TrimSpace(pair)
-		if pair == "" {
-			continue
-		}
-		code, sid, ok := strings.Cut(pair, "=")
-		code, sid = strings.TrimSpace(code), strings.TrimSpace(sid)
-		if !ok || code == "" || sid == "" {
-			return nil, fmt.Errorf("TWILIO_CONTENT_SIDS entry %q is not CODE=SID", pair)
-		}
-		if _, dup := out[code]; dup {
-			// Last-wins would make which template a family receives depend on
-			// the order of an environment string.
-			return nil, fmt.Errorf("TWILIO_CONTENT_SIDS names %q twice", code)
-		}
-		out[code] = sid
-	}
-	return out, nil
 }
 
 func str(getenv func(string) string, key, def string) string {
@@ -389,6 +400,50 @@ func boolean(getenv func(string) string, key string, def bool) (bool, error) {
 		return def, fmt.Errorf("%s: %q is not a boolean", key, v)
 	}
 	return b, nil
+}
+
+// prefixes reads a comma-separated list of CIDRs, or bare addresses, which
+// are taken as single-host prefixes.
+//
+// The default is loopback and only when the caller says the proxy switch is
+// on: an empty list with TRUST_PROXY=true would believe the header from
+// nobody, which reads at a glance as "trusting" and behaves as "off". A
+// default that silently does the opposite of its name is worse than a
+// missing one.
+//
+// An unparseable entry is an error rather than a skipped line. A typo in a
+// trust list that quietly narrows what is trusted fails closed, which sounds
+// safe and is: it is also invisible, and the operator who wrote it believes
+// the opposite.
+func prefixes(getenv func(string) string, key string, trustOn bool) ([]netip.Prefix, error) {
+	raw := strings.TrimSpace(getenv(key))
+	if raw == "" {
+		if !trustOn {
+			return nil, nil
+		}
+		return []netip.Prefix{
+			netip.MustParsePrefix("127.0.0.0/8"),
+			netip.MustParsePrefix("::1/128"),
+		}, nil
+	}
+
+	var out []netip.Prefix
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if p, err := netip.ParsePrefix(part); err == nil {
+			out = append(out, p)
+			continue
+		}
+		addr, err := netip.ParseAddr(part)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %q is not an address or CIDR", key, part)
+		}
+		out = append(out, netip.PrefixFrom(addr, addr.BitLen()))
+	}
+	return out, nil
 }
 
 func integer(getenv func(string) string, key string, def int) (int, error) {

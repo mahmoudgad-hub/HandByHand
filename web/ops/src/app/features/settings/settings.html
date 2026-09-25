@@ -16,7 +16,7 @@
 </div>
 
 <div class="hbh-tablewrap" style="margin-top:16px">
-  <table class="hbh-table">
+  <hbh-table-pages #tablePage1 [rows]="centre()"><table class="hbh-table">
     <thead>
       <tr>
         <th>{{ 'settings.setting' | t }}</th>
@@ -29,7 +29,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (row of centre(); track row.source) {
+      @for (row of tablePage1.visible(); track row.source) {
         <tr>
           <td>
             {{ row.labelKey | t }}
@@ -57,7 +57,7 @@
         </tr>
       }
     </tbody>
-  </table>
+  </table></hbh-table-pages>
 </div>
 
 @if (editingCentre(); as row) {
@@ -167,8 +167,8 @@
 } @else if (failed()) {
   <hbh-error-note [message]="'error.UNAVAILABLE' | t" [retryLabel]="'action.retry' | t" (retry)="load()" />
 } @else {
-  <div class="hbh-tablewrap">
-    <table class="hbh-table">
+  <hbh-table-pages #tablePage2 [rows]="params()">
+<div class="hbh-tablewrap"><table class="hbh-table">
       <thead>
         <tr>
           <th>{{ 'settings.param' | t }}</th>
@@ -178,7 +178,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (p of params(); track p.code) {
+        @for (p of tablePage2.visible(); track p.code) {
           <tr>
             <td>
               <code dir="ltr">{{ p.code }}</code>
@@ -226,8 +226,8 @@
           </tr>
         }
       </tbody>
-    </table>
-  </div>
+    </table></div>
+</hbh-table-pages>
 
   <div class="hbh-tablefoot">
     <span>{{ 'settings.editableCount' | t }} {{ editableCount() }} / {{ params().length }}</span>

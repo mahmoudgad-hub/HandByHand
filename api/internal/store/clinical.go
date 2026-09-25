@@ -119,6 +119,7 @@ func appointmentsTx(ctx context.Context, tx pgx.Tx, childID int, w Window) ([]do
 	out := []domain.Appointment{}
 	rows, err := tx.Query(ctx, `
 			SELECT a.appointment_id, a.appointment_no, a.starts_at, a.ends_at, a.status, a.cancel_reason,
+			       a.delivery_mode,
 			       r.room_id, r.name_ar,`+selectRef+`
 			FROM   hbh.appointments a
 			LEFT JOIN hbh.services   s ON s.service_id   = a.service_id
@@ -143,7 +144,7 @@ func appointmentsTx(ctx context.Context, tx pgx.Tx, childID int, w Window) ([]do
 		)
 		svc, th, err := scanRef(rows,
 			&a.AppointmentID, &a.AppointmentNo, &a.StartsAt, &a.EndsAt, &a.Status, &a.CancelReason,
-			&roomID, &room)
+			&a.DeliveryMode, &roomID, &room)
 		if err != nil {
 			return nil, err
 		}
@@ -339,11 +340,11 @@ func (d *DB) Report(ctx context.Context, ident string, reportID int) (domain.Rep
 	err := d.InReadTx(ctx, ident, func(ctx context.Context, tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
 			SELECT report_id, report_no, title_ar, period_start, period_end, status, published_at,
-			       plan_id, summary_ar, goals_snapshot, child_id
+			       plan_id, summary_ar, goals_snapshot, child_id, coalesce(updated_at, created_at)
 			FROM   hbh.progress_reports
 			WHERE  report_id = $1`, reportID).
 			Scan(&r.ReportID, &r.ReportNo, &r.TitleAr, &r.PeriodStart, &r.PeriodEnd, &r.Status,
-				&r.PublishedAt, &r.PlanID, &r.SummaryAr, &r.GoalsSnapshot, &childID)
+				&r.PublishedAt, &r.PlanID, &r.SummaryAr, &r.GoalsSnapshot, &childID, &r.Version)
 	})
 	if err != nil {
 		return domain.Report{}, 0, noRows(err)

@@ -376,8 +376,9 @@
    box grows, the icon does not, and negative inline margin keeps the
    field height unchanged so the two fields still line up. */
 .hbh-signin__peek{
-  width:40px; height:40px; border-radius:10px; flex:none;
-  margin-inline-end:-7px;
+  /* 44, not 40: the touch target the rest of the form keeps (#20). */
+  width:44px; height:44px; border-radius:10px; flex:none;
+  margin-inline-end:-9px;
   display:flex; align-items:center; justify-content:center;
   color:var(--hbh-muted);
 }

@@ -81,6 +81,32 @@ type Message struct {
 	// becoming a place where a provider's variable names are written down.
 	TemplateCode string
 	Vars         []string
+
+	// TemplateName and TemplateLang identify the template Meta approved for
+	// this code IN THIS CENTRE, looked up in hbh.message_templates by whoever
+	// builds the Message (migration 0167). An empty name means no approved
+	// template exists there yet - which a WhatsApp sender refuses as CONFIG,
+	// because WhatsApp refuses the same message identically every time.
+	//
+	// THE NAME AND THE LANGUAGE ARE ONE ANSWER, NOT TWO. Meta approves a
+	// template per language, and asking for a name in a language it was not
+	// approved in is answered as if the template did not exist at all. They
+	// are looked up together and travel together for that reason.
+	//
+	// They travel on the message rather than living in the sender because the
+	// answer is per centre and changes while the process runs: the owner
+	// approves a template in the console and the next message uses it, with
+	// no deploy and no restart. It used to be a Twilio ContentSid, which is
+	// the same idea with a reseller's name on it.
+	TemplateName string
+	TemplateLang string
+
+	// TemplateAuth says this is an AUTHENTICATION template, which Meta builds
+	// with a copy-the-code button whose value must be sent alongside the body
+	// - see the button component in meta.go for what happens when it is not.
+	// It is the template's category as the database records it, not something
+	// this package decides.
+	TemplateAuth bool
 }
 
 // Result is what came back when the provider accepted it.
@@ -280,15 +306,15 @@ func truncate(s string, n int) string {
 // "dev" is the only one that needs no configuration, and Usable refuses it
 // outside development - see dev.go. An unknown name is a configuration error
 // at startup rather than a surprise at the first login.
-func New(provider string, cfg HTTPConfig, twilio TwilioConfig, env string) (Sender, error) {
+func New(provider string, cfg HTTPConfig, meta MetaConfig, env string) (Sender, error) {
 	switch strings.ToLower(strings.TrimSpace(provider)) {
 	case "", "dev":
 		return &DevSender{Env: env}, nil
 	case "http":
 		return NewHTTPSender(cfg)
-	case "twilio_whatsapp":
-		return NewTwilioWhatsApp(twilio)
+	case "meta_whatsapp":
+		return NewMetaWhatsApp(meta)
 	default:
-		return nil, fmt.Errorf("SMS_PROVIDER %q is not one of dev, http, twilio_whatsapp", provider)
+		return nil, fmt.Errorf("SMS_PROVIDER %q is not one of dev, http, meta_whatsapp", provider)
 	}
 }

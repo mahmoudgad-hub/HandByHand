@@ -250,6 +250,14 @@ func (s *Server) handleStaffDocFile(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/users/{user_id}/photo
 func (s *Server) handleUploadStaffPhoto(w http.ResponseWriter, r *http.Request) {
+	s.uploadAccountImage(w, r, false)
+}
+
+func (s *Server) handleUploadUserAvatar(w http.ResponseWriter, r *http.Request) {
+	s.uploadAccountImage(w, r, true)
+}
+
+func (s *Server) uploadAccountImage(w http.ResponseWriter, r *http.Request, avatar bool) {
 	ident, _ := auth.FromContext(r.Context())
 
 	if s.cfg.StaffDocsDir == "" {
@@ -329,7 +337,11 @@ func (s *Server) handleUploadStaffPhoto(w http.ResponseWriter, r *http.Request) 
 
 	// The row before the rename, as on the documents route: a refused
 	// write must not leave the file behind.
-	if err := s.db.SetStaffPhoto(r.Context(), ident.Username, userID, name); err != nil {
+	save := s.db.SetStaffPhoto
+	if avatar {
+		save = s.db.SetUserAvatar
+	}
+	if err := save(r.Context(), ident.Username, userID, name); err != nil {
 		s.opsError(w, r, "SET_STAFF_PHOTO", err)
 		return
 	}
@@ -349,6 +361,14 @@ func (s *Server) handleUploadStaffPhoto(w http.ResponseWriter, r *http.Request) 
 // authenticated image and is why this route does not try to be clever
 // with a guessable name.
 func (s *Server) handleStaffPhoto(w http.ResponseWriter, r *http.Request) {
+	s.serveAccountImage(w, r, false)
+}
+
+func (s *Server) handleUserAvatar(w http.ResponseWriter, r *http.Request) {
+	s.serveAccountImage(w, r, true)
+}
+
+func (s *Server) serveAccountImage(w http.ResponseWriter, r *http.Request, avatar bool) {
 	ident, _ := auth.FromContext(r.Context())
 
 	if s.cfg.StaffDocsDir == "" {
@@ -361,7 +381,11 @@ func (s *Server) handleStaffPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name, err := s.db.StaffPhoto(r.Context(), ident.Username, userID)
+	read := s.db.StaffPhoto
+	if avatar {
+		read = s.db.UserAvatar
+	}
+	name, err := read(r.Context(), ident.Username, userID)
 	if err != nil {
 		s.opsError(w, r, "READ_STAFF_PHOTO", err)
 		return

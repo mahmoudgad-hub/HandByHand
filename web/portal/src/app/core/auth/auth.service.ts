@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { UserAvatars } from '@hbh/shared/ui/user-avatar';
 import { Observable, tap } from 'rxjs';
 
 import { AuthApi, AuthSession, OtpChallenge, OtpFailure, OtpRefusal } from './auth-api';
+import { ChildContextService } from './child-context.service';
 
 const TOKEN_KEY = 'hbh.portal.session';
 
@@ -26,10 +28,24 @@ const TOKEN_KEY = 'hbh.portal.session';
 export class AuthService {
   private readonly api = inject(AuthApi);
   private readonly router = inject(Router);
+  private readonly avatars = inject(UserAvatars);
+  /**
+   * Cleared alongside the token. The selected child grants nothing - the
+   * server re-checks the guardian's link on every request - but a key that
+   * outlives the session it belonged to is still somebody's leftover on a
+   * device the next person uses (SEC-016).
+   */
+  private readonly childContext = inject(ChildContextService);
 
   private readonly session = signal<AuthSession | null>(this.restore());
   private readonly challenge = signal<OtpChallenge | null>(null);
   private readonly mobile = signal<string | null>(null);
+  /**
+   * The same number in the form the parent typed it, kept only to be shown
+   * back to them. `mobile` is the canonical international form the service
+   * needs; this is the national one they would recognise.
+   */
+  private readonly national = signal<string | null>(null);
 
   readonly isSignedIn = computed(() => this.session() !== null);
   readonly pendingChallenge = this.challenge.asReadonly();
@@ -38,15 +54,29 @@ export class AuthService {
    * The number with its middle hidden, for the "we sent it to..." line.
    * Masked here rather than by the server, which deliberately echoes nothing
    * back - so the digits never leave this device a second time.
+   *
+   * IT MASKS THE NATIONAL FORM, and that is the whole point. The line answers
+   * one question - "is that the number you meant?" - and only the part that
+   * tells two numbers apart can answer it. Taking the head off the canonical
+   * form showed `+20 **** 3838` to every Egyptian parent: a prefix every
+   * Egyptian number carries, in place of the operator prefix (010/011/012/015)
+   * that is the distinguishing part. Worse abroad - a Kuwaiti parent saw
+   * `+96`, half a dial code.
+   *
+   * Nothing here knows about Egypt: no `+20`, no fixed offset. The screen
+   * hands over what was typed, and the mask sits on that. A country whose
+   * national form has no trunk zero simply shows its own first three.
    */
   readonly maskedMobile = computed(() => {
-    const current = this.mobile();
-    if (!current || current.length < 4) {
+    const current = this.national() ?? this.mobile();
+    if (!current) {
       return '';
     }
     const tail = current.slice(-4);
-    const head = current.slice(0, 3);
-    return `${head} **** ${tail}`;
+    // Below seven digits the head and the tail would overlap and the line
+    // would show the same digits twice, which says less than showing none.
+    const head = current.length >= 7 ? current.slice(0, 3) : '';
+    return head ? `${head} **** ${tail}` : `**** ${tail}`;
   });
 
   get token(): string | null {
@@ -69,7 +99,7 @@ export class AuthService {
    */
   private echoed: { mobile: string; code: string; until: number } | null = null;
 
-  requestOtp(mobile: string): Observable<OtpChallenge> {
+  requestOtp(mobile: string, national: string = mobile): Observable<OtpChallenge> {
     return this.api.requestOtp(mobile).pipe(
       tap((challenge) => {
         // A number with no file leaves NOTHING outstanding. Storing a
@@ -82,6 +112,7 @@ export class AuthService {
         if (challenge.outcome !== 'SENT') {
           this.challenge.set(null);
           this.mobile.set(null);
+          this.national.set(null);
           return;
         }
 
@@ -105,6 +136,7 @@ export class AuthService {
           : undefined;
         this.challenge.set(live ? { ...challenge, devCode: live } : challenge);
         this.mobile.set(mobile);
+        this.national.set(national);
       }),
     );
   }
@@ -123,6 +155,7 @@ export class AuthService {
   abandonChallenge(): void {
     this.challenge.set(null);
     this.mobile.set(null);
+    this.national.set(null);
     // `echoed` deliberately survives this. Both "change the number" AND
     // "resend the code" route through here, and the resend case is the very
     // one the echo exists for: clearing it would drop the only copy of a code
@@ -137,9 +170,11 @@ export class AuthService {
    * signed out.
    */
   signOut(): void {
+    this.avatars.reset(null);
     this.session.set(null);
     this.abandonChallenge();
     sessionStorage.removeItem(TOKEN_KEY);
+    this.childContext.clear();
     this.api.logout().subscribe({
       error: () => undefined,
       complete: () => undefined,
@@ -149,8 +184,10 @@ export class AuthService {
 
   /** Called by the interceptor when the server rejects the token. */
   sessionExpired(): void {
+    this.avatars.reset(null);
     this.session.set(null);
     sessionStorage.removeItem(TOKEN_KEY);
+    this.childContext.clear();
     void this.router.navigate(['/login'], { queryParams: { reason: 'expired' } });
   }
 

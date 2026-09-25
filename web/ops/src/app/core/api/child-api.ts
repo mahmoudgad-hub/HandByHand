@@ -38,6 +38,19 @@ export interface Balance {
   readonly paid_amt: string;
 }
 
+/**
+ * What granting a family portal access answers.
+ *
+ * `created` false is a success: the family already had an account, and this
+ * names it. There is deliberately no password field - the family signs in
+ * with a one-time code, so there is nothing here to read out or write down.
+ */
+export interface PortalAccessResult {
+  readonly user_id: number;
+  readonly username: string;
+  readonly created: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChildApi {
   private readonly http = inject(HttpClient);
@@ -93,6 +106,28 @@ export class ChildApi {
   }
 
   /**
+   * Give the family a way in (HBH-012).
+   *
+   * hbh.grant_portal_access decides everything: GUARDIAN.MANAGE, that the
+   * guardian is this centre's, that the mobile is not already a staff account
+   * (HB204) or another guardian's (HB261). None of that is repeated here.
+   *
+   * THE ANSWER IS 200 EVEN WHEN NOTHING WAS CREATED, and `created` is the
+   * field that matters. Two receptionists working the same list is ordinary,
+   * not an error: the second call names the account that already exists and
+   * says created:false. A screen that read the status alone would report
+   * having made a second account for a family that has one.
+   *
+   * NO PASSWORD COMES BACK BECAUSE THERE IS NONE. The family signs in with a
+   * one-time code to their mobile, so there is no credential for this screen
+   * to display, write down, or read out over the phone.
+   */
+  grantPortalAccess(guardianId: number): Observable<PortalAccessResult> {
+    return this.http.post<PortalAccessResult>(
+      `${this.base}/guardians/${guardianId}/portal-access`, {});
+  }
+
+  /**
    * Take it back. The database drops the permission that leaned on it in the
    * same statement - a withdrawal that left the flag standing would be a
    * withdrawal in name only.
@@ -130,16 +165,24 @@ export class ChildApi {
   createReport(input: {
     child_id: number; title_ar: string; period_start: string; period_end: string;
     plan_id?: number | null; summary_ar?: string | null;
-  }): Observable<{ report_id: number }> {
-    return this.http.post<{ report_id: number }>(`${this.base}/reports`, input);
+  }): Observable<{ report_id: number; version: string }> {
+    return this.http.post<{ report_id: number; version: string }>(`${this.base}/reports`, input);
   }
 
-  /** Edits a draft. Any field left out is left alone. */
+  /**
+   * Edits a draft. Any field left out is left alone.
+   *
+   * expected_version is the version this editor opened, sent back
+   * exactly as the service gave it. A colleague's save in between is
+   * refused as REPORT_CHANGED rather than overwritten (migration 0141),
+   * and the answer carries the new version for the next save.
+   */
   updateReport(reportId: number, patch: {
+    expected_version: string | null;
     title_ar?: string; summary_ar?: string;
     period_start?: string; period_end?: string; plan_id?: number | null;
-  }): Observable<void> {
-    return this.http.patch<void>(`${this.base}/reports/${reportId}`, patch);
+  }): Observable<{ version: string }> {
+    return this.http.patch<{ version: string }>(`${this.base}/reports/${reportId}`, patch);
   }
 
   report(reportId: number): Observable<Row> {

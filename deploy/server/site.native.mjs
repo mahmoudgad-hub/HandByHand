@@ -128,12 +128,9 @@ function sendFile(res, file) {
       "script-src 'self'",
       "style-src 'self' https://fonts.googleapis.com",
       "font-src https://fonts.gstatic.com",
-      "img-src 'self' data:",
-      // No frame-src: the embedded Google map was removed on 2026-09-10,
-      // and the allowance goes with it. Order matters - the frame first,
-      // then this - or the page ships a blocked iframe for one deploy.
-      // Re-adding this line means re-adding a third party that sees every
-      // visitor to a children's therapy page.
+      "img-src 'self' data: https://tile.openstreetmap.org",
+      // No embedded third-party documents; the map uses image tiles.
+      "frame-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'none'",
     ].join('; '),

@@ -1,0 +1,290 @@
+@if (state() === 'loading') {
+  <hbh-skeleton [count]="6" shape="row" />
+} @else if (state() === 'notFound') {
+  <hbh-empty-state icon="ic-search" [title]="'guardian.notFound' | t" [note]="'guardian.notFoundNote' | t" />
+  <p class="gd__center"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="back()">{{ 'guardian.backToList' | t }}</button></p>
+} @else if (state() === 'denied') {
+  <hbh-empty-state icon="ic-shield" [title]="'denied.title' | t" [note]="'denied.note' | t" />
+  <p class="gd__center"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="back()">{{ 'guardian.backToList' | t }}</button></p>
+} @else if (state() === 'failed') {
+  <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="load()" />
+} @else if (guardian(); as g) {
+
+  <header class="gd__head ops-page-header">
+    <div class="ops-page-breadcrumb">
+      <button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="back()">
+        <hbh-icon name="ic-back" /> {{ 'guardian.backToList' | t }}
+      </button>
+    </div>
+    <div class="ops-page-identity">
+      <div class="gd__ident">
+        <span class="hbh-badge" [class.hbh-badge--success]="hasAccount()" [class.hbh-badge--muted]="!hasAccount()">
+          {{ (hasAccount() ? 'guardian.hasAccount' : 'guardian.noAccount') | t }}
+        </span>
+        @if (has('relationship')) { <span class="hbh-badge hbh-badge--info">{{ val('relationship') }}</span> }
+        @if (has('registration_source')) { <span class="hbh-badge hbh-badge--muted">{{ ('guardian.source.' + val('registration_source')) | t }}</span> }
+        @if (g['active_flg'] === false) { <span class="hbh-badge hbh-badge--muted">{{ 'status.archived' | t }}</span> }
+      </div>
+      <h1 class="gd__name ops-page-title">{{ name() }}</h1>
+      <div class="gd__facts">
+        @if (telHref(); as tel) { <a [href]="tel" class="gd__tel" dir="ltr"><hbh-icon name="ic-phone" /> {{ mobile() }}</a> }
+        @if (has('email')) { <span dir="ltr">{{ val('email') }}</span> }
+        @if (has('city')) { <span><b>{{ 'field.city' | t }}:</b> {{ val('city') }}</span> }
+        @if (has('created_at')) { <span><b>{{ 'guardian.since' | t }}:</b> {{ day$(val('created_at')) }}</span> }
+        <span><b>{{ 'guardian.children' | t }}:</b> {{ childCount() ?? '…' }}</span>
+        @if (auth.can('ENROLMENT.MANAGE')) {
+          <span><b>{{ 'guardian.openApplications' | t }}:</b> {{ applications() ? openApplications().length : '…' }}</span>
+        }
+      </div>
+    </div>
+    <div class="gd__actions ops-page-actions">
+      @if (telHref(); as tel) { <a class="hbh-btn hbh-btn--primary" [href]="tel"><hbh-icon name="ic-phone" /> {{ 'enrolment.call' | t }}</a> }
+      @if (canMessage()) { <a class="hbh-btn hbh-btn--ghost" routerLink="/communications"><hbh-icon name="ic-chat" /> {{ 'enrolment.openConversation' | t }}</a> }
+      @if (canEdit()) { <button class="hbh-btn hbh-btn--ghost" type="button" (click)="edit()"><hbh-icon name="ic-edit" /> {{ 'guardian.edit' | t }}</button> }
+      @if (latestApplication(); as app) {
+        <a class="hbh-btn hbh-btn--ghost" [routerLink]="['/enrolments', appId(app)]"><hbh-icon name="ic-user-plus" /> {{ 'guardian.openApplication' | t }}</a>
+      }
+    </div>
+  </header>
+
+  @if (notice()) { <p class="hbh-alert gd__notice" role="status"><hbh-icon name="ic-info" /> {{ notice() | t }}</p> }
+  @if (partsFailed().length) {
+    <p class="hbh-alert gd__notice"><hbh-icon name="ic-warn" /> {{ 'guardian.partial' | t }}
+      @for (part of partsFailed(); track part; let last = $last) { {{ ('guardian.part.' + part) | t }}@if (!last) {، } }
+    </p>
+  }
+
+  <div class="hbh-tabbar gd__tabs" role="tablist">
+    @for (item of tabs; track item) {
+      @if (item !== 'finance' || canFinance()) {
+        <button class="hbh-tabbar__item" type="button" role="tab"
+                [class.is-active]="tab() === item" [attr.aria-selected]="tab() === item" (click)="selectTab(item)">
+          {{ ('guardian.tab.' + item) | t }}
+        </button>
+      }
+    }
+  </div>
+
+  @switch (tab()) {
+
+    @case ('overview') {
+      <section class="gd__grid">
+        <div class="gd__card">
+          <h3>{{ 'guardian.tab.communication' | t }}</h3>
+          <dl class="gd__kv">
+            <dt>{{ 'field.mobile' | t }}</dt><dd dir="ltr">{{ mobile() || '—' }}</dd>
+            <dt>{{ 'field.email' | t }}</dt><dd dir="ltr">{{ val('email') || '—' }}</dd>
+            <dt>{{ 'field.city' | t }}</dt><dd>{{ val('city') || '—' }}</dd>
+            <dt>{{ 'guardian.portal' | t }}</dt><dd>{{ (hasAccount() ? 'guardian.hasAccount' : 'guardian.noAccount') | t }}</dd>
+          </dl>
+        </div>
+        <div class="gd__card">
+          <h3>{{ 'guardian.tab.beneficiaries' | t }}</h3>
+          @if (children() === null) { <p class="gd__muted">{{ 'action.loading' | t }}</p> }
+          @else if (!children()!.length) { <p class="gd__muted">{{ 'guardian.noChildren' | t }}</p> }
+          @else {
+            <ul class="gd__list">
+              @for (child of children(); track childId(child)) {
+                <li><div><b>{{ child['full_name_ar'] }}</b><p>{{ ageOf(child) }} @if (childStatusKey(child)) { · {{ childStatusKey(child) | t }} }</p></div>
+                  <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="['/children', childId(child)]">{{ 'guardian.openChild' | t }}</a></li>
+              }
+            </ul>
+          }
+        </div>
+        <div class="gd__card">
+          <h3>{{ 'guardian.latestApplication' | t }}</h3>
+          @if (!auth.can('ENROLMENT.MANAGE')) { <p class="gd__muted">{{ 'guardian.noPermissionPart' | t }}</p> }
+          @else if (applications() === null) { <p class="gd__muted">{{ 'action.loading' | t }}</p> }
+          @else if (latestApplication(); as app) {
+            <p><b>{{ app['child_name_ar'] }}</b> <span class="hbh-badge" [class]="'hbh-badge ' + appTone(app)">{{ appStatusKey(app) | t }}</span></p>
+            <p class="gd__muted">{{ appNextKey(app) | t }}</p>
+            <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="['/enrolments', appId(app)]">{{ 'guardian.openApplication' | t }}</a>
+          } @else { <p class="gd__muted">{{ 'guardian.noApplications' | t }}</p> }
+        </div>
+        <div class="gd__card">
+          <h3>{{ 'guardian.nextAppointment' | t }}</h3>
+          @if (appointmentsState() === 'idle' && (children()?.length ?? 0) > 6) {
+            <button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="loadAppointments()">{{ 'guardian.loadAppointments' | t }}</button>
+          } @else if (appointmentsState() === 'loading' || appointmentsState() === 'idle') { <p class="gd__muted">{{ 'action.loading' | t }}</p> }
+          @else if (appointmentsState() === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadAppointments()" /> }
+          @else if (nextAppointment(); as next) {
+            <p><b dir="ltr">{{ when($any(next.row['starts_at'])) }}</b></p>
+            <p>{{ next.childName }} · {{ nested(next.row, 'service', 'name_ar') }} · {{ nested(next.row, 'therapist', 'full_name_ar') }}
+              <span class="hbh-badge" [class]="'hbh-badge ' + apptTone(next.row)">{{ apptStatusKey(next.row) | t }}</span></p>
+          } @else { <p class="gd__muted">{{ 'guardian.noUpcoming' | t }}</p> }
+        </div>
+        @if (canFinance()) {
+          <div class="gd__card">
+            <h3>{{ 'guardian.tab.finance' | t }}</h3>
+            @if (balancesState() === 'ready') { <p><b dir="ltr">{{ totalOutstanding() || '—' }}</b> <span class="gd__muted">{{ 'guardian.outstanding' | t }}</span></p> }
+            @else { <button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="loadBalances()">{{ 'guardian.loadFinance' | t }}</button> }
+          </div>
+        }
+        <div class="gd__card">
+          <h3>{{ 'guardian.latestActivity' | t }}</h3>
+          @if (activity().length) {
+            @let last = activity()[0];
+            <p><b>{{ last.key | t }}</b> @if (last.detail) { · {{ last.detail | t }} }</p>
+            <p class="gd__muted">{{ when(last.at) }}</p>
+          } @else { <p class="gd__muted">{{ 'guardian.noActivity' | t }}</p> }
+        </div>
+      </section>
+    }
+
+    @case ('beneficiaries') {
+      @if (children() === null) { <hbh-skeleton [count]="3" shape="row" /> }
+      @else if (!children()!.length) { <hbh-empty-state icon="ic-users" [title]="'guardian.noChildren' | t" [note]="'guardian.noChildrenNote' | t" /> }
+      @else {
+        <ul class="gd__list">
+          @for (child of children(); track childId(child)) {
+            <li>
+              <div>
+                <b>{{ child['full_name_ar'] }}</b> <span dir="ltr" class="gd__muted">{{ child['child_no'] }}</span>
+                <p>{{ ageOf(child) }} @if (childStatusKey(child)) { · {{ childStatusKey(child) | t }} }</p>
+              </div>
+              <a class="hbh-btn hbh-btn--primary hbh-btn--sm" [routerLink]="['/children', childId(child)]">{{ 'guardian.openChild' | t }}</a>
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('applications') {
+      @if (!auth.can('ENROLMENT.MANAGE')) { <hbh-empty-state icon="ic-shield" [title]="'guardian.noPermissionPart' | t" /> }
+      @else if (applications() === null) { <hbh-skeleton [count]="3" shape="row" /> }
+      @else if (!applications()!.length) { <hbh-empty-state icon="ic-user-plus" [title]="'guardian.noApplications' | t" [note]="'guardian.applicationsNote' | t" /> }
+      @else {
+        <p class="gd__muted">{{ 'guardian.applicationsNote' | t }}</p>
+        <ul class="gd__list">
+          @for (app of applications(); track appId(app)) {
+            <li>
+              <div>
+                <b>{{ app['child_name_ar'] }}</b> <span dir="ltr" class="gd__muted">{{ app['application_no'] }}</span>
+                <span class="hbh-badge" [class]="'hbh-badge ' + appTone(app)">{{ appStatusKey(app) | t }}</span>
+                <p>{{ 'field.submittedAt' | t }}: {{ when($any(app['submitted_at'])) }} · {{ appNextKey(app) | t }}</p>
+              </div>
+              <a class="hbh-btn hbh-btn--primary hbh-btn--sm" [routerLink]="['/enrolments', appId(app)]">{{ 'guardian.openApplication' | t }}</a>
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('appointments') {
+      @if (appointmentsState() === 'loading' || appointmentsState() === 'idle') { <hbh-skeleton [count]="3" shape="row" /> }
+      @else if (appointmentsState() === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadAppointments()" /> }
+      @else if (!(appointments() ?? []).length) { <hbh-empty-state icon="ic-calendar" [title]="'guardian.noAppointments' | t" /> }
+      @else {
+        <hbh-table-pages #tablePage1 [rows]="appointments() ?? []">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.time' | t }}</th><th>{{ 'field.child' | t }}</th><th>{{ 'field.service' | t }}</th><th>{{ 'field.therapist' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th></tr></thead>
+          <tbody>
+            @for (item of tablePage1.visible(); track item.row['appointment_id']) {
+              <tr>
+                <td dir="ltr">{{ when($any(item.row['starts_at'])) }}</td>
+                <td><a [routerLink]="['/children', item.childId]">{{ item.childName }}</a></td>
+                <td>{{ nested(item.row, 'service', 'name_ar') }}</td>
+                <td>{{ nested(item.row, 'therapist', 'full_name_ar') }}</td>
+                <td><span class="hbh-badge" [class]="'hbh-badge ' + apptTone(item.row)">{{ apptStatusKey(item.row) | t }}</span></td>
+                <td><button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="openAppointment(item)"><hbh-icon name="ic-eye" /> {{ 'action.open' | t }}</button></td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      }
+    }
+
+    @case ('finance') {
+      @if (balancesState() === 'loading' || balancesState() === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (balancesState() === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadBalances()" /> }
+      @else if (!(balances() ?? []).length) { <hbh-empty-state icon="ic-money" [title]="'guardian.noChildren' | t" /> }
+      @else {
+        <p><b dir="ltr">{{ totalOutstanding() || '—' }}</b> <span class="gd__muted">{{ 'guardian.outstanding' | t }}</span></p>
+        <ul class="gd__list">
+          @for (item of balances(); track childId(item.child)) {
+            <li>
+              <div><b>{{ item.child['full_name_ar'] }}</b>
+                <p>{{ 'child.outstanding' | t }}: <span dir="ltr">{{ money(item.balance) }}</span>
+                  @if (item.balance) { · {{ 'child.invoiced' | t }}: <span dir="ltr">{{ format.money(+item.balance.invoiced_amt, item.balance.currency_code) }}</span> }</p>
+              </div>
+              <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="['/children', childId(item.child)]" [queryParams]="{ tab: 'invoices' }">{{ 'guardian.openInvoices' | t }}</a>
+            </li>
+          }
+        </ul>
+        <!-- The family's invoices, each opening in the record drawer beside
+             this page. Payment is offered there to BILLING.MANAGE and to
+             nobody else (OQ-13). -->
+        <h3 class="gd__h3">{{ 'guardian.invoices' | t }}</h3>
+        @if (invoicesState() === 'loading' || invoicesState() === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+        @else if (invoicesState() === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadInvoices()" /> }
+        @else if (!(invoices() ?? []).length) { <p class="gd__muted">{{ 'guardian.noInvoices' | t }}</p> }
+        @else {
+          <hbh-table-pages #tablePage2 [rows]="invoices() ?? []">
+<div class="hbh-tablewrap"><table class="hbh-table">
+            <thead><tr><th>{{ 'field.invoiceNo' | t }}</th><th>{{ 'field.child' | t }}</th><th>{{ 'field.issueDate' | t }}</th><th>{{ 'field.total' | t }}</th><th>{{ 'field.paid' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th></tr></thead>
+            <tbody>
+              @for (item of tablePage2.visible(); track item.row['invoice_id']) {
+                <tr>
+                  <td dir="ltr">{{ item.row['invoice_no'] }}</td>
+                  <td><a [routerLink]="['/children', childId(item.child)]">{{ item.child['full_name_ar'] }}</a></td>
+                  <td>{{ item.row['issue_date'] ? format.dayMonthYear($any(item.row['issue_date'])) : '—' }}</td>
+                  <td dir="ltr">{{ format.money(+$any(item.row['total_amt']), $any(item.row['currency_code'])) }}</td>
+                  <td dir="ltr">{{ format.money(+$any(item.row['paid_amt']), $any(item.row['currency_code'])) }}</td>
+                  <td><span class="hbh-badge" [class]="'hbh-badge ' + invoiceTone(item.row)">{{ invoiceStatusKey(item.row) | t }}</span></td>
+                  <td><button class="hbh-btn hbh-btn--ghost hbh-btn--sm" type="button" (click)="openInvoice(item)"><hbh-icon name="ic-eye" /> {{ 'action.open' | t }}</button></td>
+                </tr>
+              }
+            </tbody>
+          </table></div>
+</hbh-table-pages>
+        }
+        <!-- OQ-13: reception sees money and does not collect it. No payment
+             button here for anyone; the invoice's own screen offers it to
+             whoever holds BILLING.MANAGE. -->
+      }
+    }
+
+    @case ('communication') {
+      <section class="gd__card">
+        <div class="gd__row">
+          @if (telHref(); as tel) { <a class="hbh-btn hbh-btn--primary" [href]="tel"><hbh-icon name="ic-phone" /> {{ 'enrolment.call' | t }}</a> }
+          @if (canMessage()) { <a class="hbh-btn hbh-btn--ghost" routerLink="/communications"><hbh-icon name="ic-chat" /> {{ 'enrolment.openConversation' | t }}</a> }
+          @else if (!hasAccount()) { <p class="gd__muted">{{ 'guardian.noAccountNote' | t }}</p> }
+        </div>
+      </section>
+      <h3 class="gd__h3">{{ 'guardian.requests' | t }}</h3>
+      @if (!auth.can('REQUEST.MANAGE')) { <p class="gd__muted">{{ 'guardian.noPermissionPart' | t }}</p> }
+      @else if (requests() === null) { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (!requests()!.length) { <hbh-empty-state icon="ic-help" [title]="'guardian.noRequests' | t" /> }
+      @else {
+        <ul class="gd__list">
+          @for (r of requests(); track r['request_id']) {
+            <li>
+              <div><b>{{ reqKindKey(r) | t }}</b> <span class="hbh-badge" [class]="'hbh-badge ' + reqTone(r)">{{ reqStatusKey(r) | t }}</span>
+                <p>{{ nested(r, 'child', 'full_name_ar') }} · {{ when($any(r['created_at'])) }}</p>
+                @if (r['body_ar']) { <p>{{ r['body_ar'] }}</p> }
+              </div>
+              <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" routerLink="/requests" [queryParams]="{ focus: r['request_id'] }">{{ 'tasks.openList' | t }}</a>
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('activity') {
+      @if (activity().length) {
+        <ol class="gd__timeline">
+          @for (event of activity(); track event.at + event.key + (event.detail ?? '')) {
+            <li>
+              <time [attr.datetime]="event.at" dir="ltr">{{ when(event.at) }}</time>
+              <div><b>{{ event.key | t }}</b> @if (event.detail) { · {{ event.detail | t }} }
+                @if (event.link) { <a class="hbh-btn hbh-btn--ghost hbh-btn--sm" [routerLink]="event.link">{{ 'action.open' | t }}</a> }
+              </div>
+            </li>
+          }
+        </ol>
+      } @else { <hbh-empty-state icon="ic-clock" [title]="'guardian.noActivity' | t" /> }
+    }
+  }
+}

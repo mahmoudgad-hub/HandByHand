@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
 
 import { HBH_CONFIG } from '@hbh/shared/config/app-config';
+import { UserAvatars } from '@hbh/shared/ui/user-avatar';
 
 const TOKEN_KEY = 'hbh.ops.session';
 
@@ -79,6 +80,7 @@ export interface Identity {
  */
 @Injectable({ providedIn: 'root' })
 export class OpsAuthService {
+  private readonly avatars = inject(UserAvatars);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly base = `${inject(HBH_CONFIG).apiBaseUrl}/api/v1`;
@@ -120,7 +122,7 @@ export class OpsAuthService {
         weekendDays: body.center.weekend_days ?? [],
         permissions: body.permissions ?? [],
       })),
-      tap((identity) => this.identity.set(identity)),
+      tap((identity) => { this.avatars.reset(identity.userId); this.identity.set(identity); }),
     );
   }
 
@@ -130,12 +132,46 @@ export class OpsAuthService {
   }
 
   /**
+   * Role label key used by the console header and profile screens.
+   *
+   * `user_type` is not enough to distinguish manager from reception for STAFF
+   * accounts, because both share it in the database. We infer the role label
+   * from the assigned permissions; center admin accounts hold at least one
+   * admin-level permission.
+   */
+  roleLabelKey(identity: Identity | null = this.identity()): string {
+    if (!identity) {
+      return '';
+    }
+    const permissions = identity.permissions ?? [];
+    if (identity.userType === 'THERAPIST') {
+      return 'role.THERAPIST';
+    }
+    if (identity.userType === 'GUARDIAN') {
+      return 'role.GUARDIAN';
+    }
+    if (identity.userType === 'STAFF') {
+      if (permissions.includes('USER.MANAGE')
+        || permissions.includes('STAFF.MANAGE')
+        || permissions.includes('SITE.EDIT')) {
+        return 'role.CENTER_ADMIN';
+      }
+      return 'role.RECEPTION';
+    }
+    if (identity.userType === 'ADMIN') {
+      return 'role.ADMIN';
+    }
+    return `access.type.${identity.userType}`;
+  }
+
+  /**
    * Clears this device first, then tells the server. If the network call
    * fails the console is still signed out here, which is the safe direction.
    * The server revoke is what actually ends the session - closing a tab does
    * not.
    */
   signOut(): void {
+    this.avatars.reset(null);
     this.session.set(null);
     this.identity.set(null);
     try {
@@ -151,6 +187,7 @@ export class OpsAuthService {
 
   /** Called by the interceptor when the server rejects the token. */
   sessionExpired(): void {
+    this.avatars.reset(null);
     this.session.set(null);
     this.identity.set(null);
     try {

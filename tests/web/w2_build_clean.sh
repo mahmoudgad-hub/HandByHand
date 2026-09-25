@@ -65,9 +65,35 @@ for f in "$WEB/angular.json" "$WEB/package.json"; do
   fi
 done
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "  W2 SKIPPED: node is not on PATH" >&2
-  exit 0
+# ---------------------------------------------------------------------
+# Node is not on this host and is not meant to be. node_modules is a
+# Linux build in a named volume, so every build runs INSIDE the
+# project's own container - the same way `scripts/web.sh build` does,
+# and for the same reason.
+#
+# AND AN INABILITY TO RUN IS A FAILURE, NOT A SKIP. What stood here was
+#
+#   if ! command -v node; then echo "W2 SKIPPED"; exit 0; fi
+#
+# and node is on the PATH of NO machine in this project. So W2 skipped
+# everywhere, always, and its exit code said "passed" - the suite's own
+# header (a warning inside a green build) turned on the suite itself,
+# except that here nothing at all was measured. A run that cannot run
+# names what it needed and fails.
+# ---------------------------------------------------------------------
+container_for() {
+  case "$1" in
+    portal) echo "hbh-web-portal" ;;
+    ops)    echo "hbh-web-ops" ;;
+    *)      echo "" ;;
+  esac
+}
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "  W2 CANNOT RUN: docker is not on PATH, and the builds run" >&2
+  echo "  inside hbh-web-portal and hbh-web-ops. Not skipped - failed." >&2
+  echo "  W2 FAILED" >&2
+  exit 1
 fi
 
 # ---------------------------------------------------------------------
@@ -81,6 +107,20 @@ log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 
 for project in ops portal; do
+  container="$(container_for "$project")"
+
+  # The container is asserted BY NAME before it is asked to build, so
+  # that "it is not running" can never be read as "the application does
+  # not compile". Captured into a variable and compared, not `grep -q`
+  # in a condition: under pipefail the status of a pipe is the status of
+  # whichever member failed, and this suite has no business guessing.
+  up="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -Fx "$container")"
+  check "$project build container ($container) is up" "$container" "$up"
+  if [ "$up" != "$container" ]; then
+    echo "      start it with: docker compose -f deploy/compose/docker-compose.yml up -d" >&2
+    continue
+  fi
+
   # The build writes to a FILE and its own exit status is read directly.
   #
   # Not `out="$(ng build | sed ...)"; rc=$?`. That reads the status of a
@@ -91,7 +131,8 @@ for project in ops portal; do
   # intermittent gate is worse than no gate, because the first false
   # alarm teaches everyone to re-run it, and the second real one is
   # re-run too. So the ambiguity is removed rather than explained.
-  (cd "$WEB" && npx ng build "$project") > "$log" 2>&1
+  docker exec "$container" sh -c \
+    "cd /app && npx ng build $project --configuration production" > "$log" 2>&1
   rc=$?
 
   # Colour codes are stripped when the log is READ, not while it is

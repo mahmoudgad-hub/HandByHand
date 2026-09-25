@@ -1,0 +1,38 @@
+/* =====================================================================
+   Getting around: the nav groups and headings, the collapsed rail and
+   its popovers, and the phone drawer.
+   ===================================================================== */
+.hbh-shell .ops-nav-heading { color:#f1fcfd; font-size:13px; gap:10px; padding:8px; }
+.ops-group-icon { flex:none; }
+.hbh-shell .hbh-nav__group + .hbh-nav__group { border-top:1px solid #ffffff26; margin-top:7px; padding-top:7px; }
+.hbh-shell .hbh-nav__item { min-height:36px; padding:6px 10px; font-size:13px; border-radius:9px; }
+.hbh-shell .hbh-nav__item.is-active { background:linear-gradient(110deg,#eaf9f9,#c8e8ec); color:#00546a; box-shadow:inset 0 0 0 1px #ffffff65; }
+.hbh-shell .hbh-nav__badge,.hbh-shell .hbh-nav__item.is-active .hbh-nav__badge { background:#df342e; color:white; border-radius:20px; min-width:21px; text-align:center; padding:1px 5px; }
+@media(min-width:901px){
+  .ops-sidebar-collapsed .hbh-side .ops-nav-heading { display:flex; justify-content:center; width:48px; min-height:48px; margin:auto; padding:0; border-radius:12px; }
+  .ops-sidebar-collapsed .ops-nav-heading > span,.ops-sidebar-collapsed .ops-nav-heading > hbh-icon:last-child { display:none; }
+  .ops-sidebar-collapsed .ops-nav-heading[aria-expanded=true] { background:#e0f3f5; color:#006275; }
+  .ops-sidebar-collapsed .hbh-side .ops-nav-links.ops-rail-panel { position:fixed; inset:var(--rail-top) auto auto var(--rail-left); margin:0; box-sizing:border-box; width:248px; max-height:calc(100dvh - 24px); overflow:auto; padding:14px; background:#fff; color:#194e64; border:1px solid #dcebee; border-radius:16px; box-shadow:0 16px 44px #073f5929; }
+  .ops-rail-panel:not(:popover-open) { display:none!important; }
+  .ops-rail-panel:popover-open { display:grid; gap:4px; }
+  .ops-rail-title { display:block; padding:4px 10px 12px; font-size:14px; }
+  .hbh-shell.ops-sidebar-collapsed .hbh-side .ops-rail-panel .hbh-nav__item { width:100%; height:auto; min-height:42px; justify-content:flex-start; padding:8px 10px; color:#41657b; }
+  .ops-sidebar-collapsed .hbh-side .ops-rail-panel .hbh-nav__item > span { display:block; }
+  .hbh-shell.ops-sidebar-collapsed .hbh-side .ops-rail-panel .hbh-nav__item:hover { background:#edf7f8; }
+  .hbh-shell.ops-sidebar-collapsed .hbh-side .ops-rail-panel .hbh-nav__item.is-active { color:#00546a; background:#d9eff2; }
+}
+.ops-menu-dialog { width:min(340px,calc(100vw - 24px)); padding: max(18px,env(safe-area-inset-top)) 16px 0; background:linear-gradient(155deg,#006b78,#00515d); border-radius:24px 0 0 24px; overflow:hidden; box-shadow:-16px 0 60px #002f4538; }
+.ops-menu-dialog::backdrop { background:#16384766; backdrop-filter:blur(3px); }
+.ops-menu-dialog__head { min-height:76px; flex:none; margin-bottom:14px; }
+.ops-menu-dialog__head img { width:205px; max-width:calc(100% - 54px); height:auto; }
+.ops-menu-dialog__head .ops-menu-button { border:0; padding:8px; }
+.hbh-shell .ops-menu-dialog .hbh-nav { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.hbh-shell .ops-menu-dialog .hbh-nav__item { min-height:46px; font-size:14px; }
+.hbh-shell .ops-menu-dialog .ops-nav-heading { min-height:52px; font-size:14px; }
+@media(prefers-reduced-motion:no-preference){
+  .ops-menu-dialog[open] { animation:ops-drawer-enter .22s ease-out; }
+  @keyframes ops-drawer-enter { from { transform:translateX(100%); opacity:.5; } to { transform:translateX(0); opacity:1; } }
+}
+@media(min-width:901px){
+  .ops-sidebar-collapsed .ops-nav-heading.has-active-page { background:#d9eff2; color:#00546a; }
+}

@@ -99,6 +99,10 @@ export interface ListQuery {
  */
 @Injectable({ providedIn: 'root' })
 export class OpsApi {
+  chatContacts(): Observable<readonly Row[]> {
+    return this.http.get<{rows:Row[]}>(this.base+'/chat-contacts').pipe(map(response=>response.rows));
+  }
+
   private readonly http = inject(HttpClient);
   private readonly base = `${inject(HBH_CONFIG).apiBaseUrl}/api/v1`;
 
@@ -137,6 +141,38 @@ export class OpsApi {
 
   create(resource: OpsResource, body: Row): Observable<Row> {
     return this.http.post<Row>(`${this.base}/${resource}`, body);
+  }
+
+  /**
+   * Putting a child on a therapist's caseload, and taking them off (HBH-103).
+   *
+   * These exist BESIDE create/archive rather than through them because
+   * `caseload` has two doors and only one of them carries the rules. The
+   * generic POST /caseload inserts the row; hbh.assign_therapist behind this
+   * pair returns the live row when the assignment already exists, moves the
+   * primary (which nothing in the schema enforces - uix_caseload_live is
+   * keyed on therapist, child and service, so two primaries for one service
+   * is a state the generic door can reach and this one cannot), and reads
+   * the permission before it reads the row.
+   *
+   * Two doors into one rule means the weaker one decides, so the screen goes
+   * through this one and nothing in this console posts to the other.
+   *
+   * 200 and not 201 on purpose: the service answers "the state you asked for
+   * holds", which is also true of a second click on the same button.
+   */
+  assignCaseload(
+    childId: number, therapistId: number, serviceId: number, isPrimary: boolean,
+  ): Observable<{ caseload_id: number }> {
+    return this.http.post<{ caseload_id: number }>(
+      `${this.base}/children/${childId}/caseload`,
+      { therapist_id: therapistId, service_id: serviceId, is_primary: isPrimary });
+  }
+
+  /** `ended` says whether this call is what ended it, not whether it is ended. */
+  endCaseload(childId: number, caseloadId: number): Observable<{ ended: boolean }> {
+    return this.http.delete<{ ended: boolean }>(
+      `${this.base}/children/${childId}/caseload/${caseloadId}`);
   }
 
   update(resource: OpsResource, id: number, body: Row): Observable<Row> {

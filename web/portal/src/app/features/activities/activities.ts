@@ -103,7 +103,7 @@ export class Activities {
   }
 
   protected toggle(activity: HomeActivity): void {
-    if (this.isSaving(activity)) {
+    if (this.isSaving(activity) || activity.completedAt !== null) {
       return;
     }
     const done = activity.completedAt === null;

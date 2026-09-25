@@ -1,0 +1,40 @@
+@if(auth.me(); as me) {
+  <section class="profile-identity">
+    <span class="profile-avatar" aria-hidden="true"><hbh-user-avatar [userId]="me.userId" [name]="me.fullName" /></span>
+    <hbh-avatar-editor [userId]="me.userId" />
+    <div><h2>{{ me.fullName }}</h2><p>{{ roleLabelKey() | t }} · {{ me.centerName }}</p></div>
+    @if(me.therapistId !== undefined) {<a class="hbh-btn hbh-btn--ghost" [routerLink]="['/therapists', me.therapistId, 'profile']">{{ 'profile.professional' | t }} <hbh-icon name="ic-chevron" /></a>}
+  </section>
+  <div class="profile-grid">
+    <section class="profile-card" aria-labelledby="profileAccountTitle">
+      <h2 id="profileAccountTitle"><hbh-icon name="ic-user" />{{ 'profile.account' | t }}</h2>
+      <dl>
+        <div><dt>{{ 'profile.fullName' | t }}</dt><dd>{{ me.fullName }}</dd></div>
+        <div><dt>{{ 'profile.username' | t }}</dt><dd dir="auto">{{ me.username }}</dd></div>
+        <div><dt>{{ 'access.userType' | t }}</dt><dd>{{ roleLabelKey() | t }}</dd></div>
+        <div><dt>{{ 'profile.center' | t }}</dt><dd>{{ me.centerName }}</dd></div>
+        <div><dt>{{ 'profile.timeZone' | t }}</dt><dd dir="auto">{{ me.timeZone }}</dd></div>
+      </dl>
+    </section>
+    @if(passwordEnabled()) {
+      <section class="profile-card" aria-labelledby="profilePasswordTitle">
+        <h2 id="profilePasswordTitle"><hbh-icon name="ic-shield" />{{ 'profile.changePassword' | t }}</h2>
+        <form (submit)="$event.preventDefault(); changePassword()">
+          <fieldset [disabled]="busy()">
+            <label for="profile-current">{{ 'access.currentPassword' | t }}</label>
+            <input id="profile-current" type="password" autocomplete="current-password" [formControl]="currentPassword" required>
+            <label for="profile-new">{{ 'access.newPassword' | t }}</label>
+            <input id="profile-new" type="password" autocomplete="new-password" [formControl]="newPassword" aria-describedby="profile-password-hint" required>
+            <small id="profile-password-hint">{{ 'profile.passwordHint' | t }}</small>
+            <label for="profile-confirm">{{ 'profile.confirmPassword' | t }}</label>
+            <input id="profile-confirm" type="password" autocomplete="new-password" [formControl]="confirmPassword" required>
+            <button type="submit" class="hbh-btn hbh-btn--primary">{{ (busy() ? 'action.saving' : 'action.save') | t }}</button>
+          </fieldset>
+          @if(error()) {<p class="profile-error" role="alert">{{ error() | t }}</p>}
+          @if(done()) {<p class="profile-success" role="status">{{ 'access.passwordChanged' | t }}</p>}
+        </form>
+      </section>
+    }
+
+  </div>
+}

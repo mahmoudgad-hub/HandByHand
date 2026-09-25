@@ -56,7 +56,15 @@
                   "maximumError": "16kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "fonts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                }
+              }
             },
             "development": {
               "optimization": false,
@@ -142,7 +150,8 @@
               "ops/src/styles/hbh-admin.css",
               "ops/src/styles/hbh-screens.css",
               "ops/src/styles/ops.css",
-              "ops/src/styles/ops-reference.css"
+              "ops/src/styles/ops-reference.css",
+              "ops/src/styles/ops-page-template.css"
             ]
           },
           "configurations": {
@@ -165,7 +174,15 @@
                   "maximumError": "16kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "fonts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                }
+              }
             },
             "development": {
               "optimization": false,
@@ -212,7 +229,8 @@
               "ops/src/styles/hbh-admin.css",
               "ops/src/styles/hbh-screens.css",
               "ops/src/styles/ops.css",
-              "ops/src/styles/ops-reference.css"
+              "ops/src/styles/ops-reference.css",
+              "ops/src/styles/ops-page-template.css"
             ]
           }
         }

@@ -1,20 +1,23 @@
-@if (loading()) {
+@if (state() === 'loading') {
   <hbh-skeleton [count]="4" shape="card" />
-} @else if (failed()) {
-  <!-- 403 and 404 both land here. The service keeps them apart and so does
-       the message: this screen cannot tell which, so it says neither. -->
-  <hbh-error-note [message]="'child.loadFailed' | t" [retryLabel]="'action.retry' | t"
-                  (retry)="load()" />
+} @else if (state() === 'notFound') {
+  <hbh-empty-state icon="ic-search" [title]="'child.notFound' | t" [note]="'child.notFoundNote' | t" />
+  <p class="cp__center"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="back()">{{ 'child.backToList' | t }}</button></p>
+} @else if (state() === 'denied') {
+  <hbh-empty-state icon="ic-shield" [title]="'denied.title' | t" [note]="'denied.note' | t" />
+  <p class="cp__center"><button class="hbh-btn hbh-btn--ghost" type="button" (click)="back()">{{ 'child.backToList' | t }}</button></p>
+} @else if (state() === 'failed') {
+  <hbh-error-note [message]="'child.loadFailed' | t" [retryLabel]="'action.retry' | t" (retry)="load()" />
 } @else {
 
-  <div class="hbh-pagehead">
+  <!-- ===== Header: who, who cares for them, who treats them, what is next ===== -->
+  <div class="hbh-pagehead cp__head">
     <div class="hbh-pagehead__left">
-      <button class="hbh-iconbtn" type="button"
-              [attr.aria-label]="'action.back' | t" (click)="back()">
+      <button class="hbh-iconbtn" type="button" [attr.aria-label]="'action.back' | t" (click)="back()">
         <hbh-icon name="ic-back" />
       </button>
-      <span class="child-avatar" aria-hidden="true"><hbh-icon name="ic-user" /></span>
-      <div>
+      <span class="child-avatar" aria-hidden="true"><hbh-icon [name]="avatar()" /></span>
+      <div class="cp__ident">
         <div class="hbh-pagehead__title">
           {{ name() }}
           @if (isArchived()) {
@@ -22,168 +25,505 @@
           } @else if (statusKey()) {
             <span class="hbh-badge hbh-badge--success">{{ statusKey() | t }}</span>
           }
+          @for (flag of flags(); track flag.key) {
+            <span class="cp__flag" [class.cp__flag--warn]="flag.tone === 'warn'">
+              <hbh-icon [name]="flag.tone === 'warn' ? 'ic-warn' : 'ic-info'" /> {{ flag.key | t }}
+            </span>
+          }
         </div>
-        <!-- Age, not birth date: whether a two-year-old or a nine-year-old is
-             on the phone changes the conversation, and a date makes the
-             reader do the arithmetic. The code is there because it is what
-             gets said out loud. -->
         <div class="hbh-pagehead__sub">
           <span dir="ltr">{{ childNo() }}</span>
           @if (age()) { · {{ age() }} }
           @if (genderKey()) { · {{ genderKey() | t }} }
         </div>
+        <div class="cp__facts">
+          <span><b>{{ 'field.guardian' | t }}:</b>
+            @if (primaryGuardian(); as g) {
+              @if (auth.can('GUARDIAN.MANAGE')) {
+                <a [routerLink]="['/guardians', n(g, 'guardian_id')]">{{ t(g, 'full_name_ar') }}</a>
+              } @else {
+                {{ t(g, 'full_name_ar') }}
+              }
+              @if (relationshipKey(g)) { <small>({{ relationshipKey(g) | t }})</small> }
+              @if (t(g, 'mobile')) { · <a [href]="'tel:' + t(g, 'mobile')" dir="ltr">{{ t(g, 'mobile') }}</a> }
+            } @else if (partState('guardians') === 'ready') { {{ 'child.noGuardian' | t }} } @else { … }
+          </span>
+          <span><b>{{ 'child.specialist' | t }}:</b>
+            @if (primarySpecialist(); as s) {
+              {{ s.name }} @if (s.serviceName) { <small>({{ s.serviceName }})</small> }
+              @if ((specialists()?.length ?? 0) > 1) { <small>+{{ (specialists()?.length ?? 1) - 1 }}</small> }
+            } @else if (specialistsState() === 'ready') { {{ 'child.specialistNone' | t }} }
+            @else if (specialistsState() === 'failed') { {{ 'child.specialistUnknown' | t }} } @else { … }
+          </span>
+          <span><b>{{ 'child.currentPlan' | t }}:</b>
+            @if (currentPlan(); as plan) { {{ t(plan, 'title_ar') }} <span class="hbh-badge hbh-badge--info">{{ ('status.plan.' + t(plan, 'status')) | t }}</span> }
+            @else if (partState('plans') === 'ready') { {{ 'child.noPlan' | t }} } @else { … }
+          </span>
+          <span><b>{{ 'child.nextAppointment' | t }}:</b>
+            @if (nextAppointment(); as next) { <button type="button" class="cp__linkbtn" (click)="openAppointment(next)"><span dir="ltr">{{ when(t(next, 'starts_at')) }}</span> · {{ r(next, 'service', 'name_ar') }}</button> }
+            @else if (partState('appointments') === 'ready') { {{ 'child.noUpcoming' | t }} } @else { … }
+          </span>
+          @if (originApplication(); as app) {
+            <span><b>{{ 'child.origin' | t }}:</b> <a [routerLink]="['/enrolments', app]">{{ 'child.openApplication' | t }}</a></span>
+          }
+        </div>
       </div>
     </div>
-    <div class="hbh-pagehead__actions">
-      <!-- The printed card. Reached from the file rather than the list,
-           because whoever prints one has just looked the child up. -->
-      <a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', childId, 'card']">
-        <hbh-icon name="ic-printer" />
-        {{ 'card.title' | t }}
-      </a>
+    <div class="hbh-pagehead__actions cp__actions">
+      @if (canBook()) {
+        <button class="hbh-btn hbh-btn--primary" type="button" (click)="book()"><hbh-icon name="ic-cal-plus" /> {{ 'appointments.book' | t }}</button>
+      }
+      @if (canAssign()) {
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="assignTherapist()"><hbh-icon name="ic-user-check" /> {{ 'child.assignTherapist' | t }}</button>
+      }
+      @if (canPlan()) {
+        <button class="hbh-btn hbh-btn--ghost" type="button" (click)="newPlan()"><hbh-icon name="ic-target" /> {{ 'child.newPlan' | t }}</button>
+      }
+      @if (canReport()) {
+        <a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', childId, 'reports', 'new']"><hbh-icon name="ic-file" /> {{ 'child.newReport' | t }}</a>
+      }
+      @if (canMessage()) {
+        <a class="hbh-btn hbh-btn--ghost" routerLink="/communications"><hbh-icon name="ic-chat" /> {{ 'enrolment.openConversation' | t }}</a>
+      }
+      <a class="hbh-btn hbh-btn--ghost" [routerLink]="['/children', childId, 'card']"><hbh-icon name="ic-printer" /> {{ 'card.title' | t }}</a>
     </div>
   </div>
+
+  @if (notice()) { <p class="hbh-alert cp__notice" role="status"><hbh-icon name="ic-info" /> {{ notice() | t }}</p> }
 
   @if (balance(); as money) {
     <div class="hbh-kpis">
       <div class="hbh-kpi">
-        <div class="hbh-kpi__top">
-          <hbh-icon name="ic-money" />
-          <span class="hbh-kpi__label">{{ 'child.outstanding' | t }}</span>
-        </div>
+        <div class="hbh-kpi__top"><hbh-icon name="ic-money" /><span class="hbh-kpi__label">{{ 'child.outstanding' | t }}</span></div>
         <div class="hbh-kpi__value" dir="ltr">{{ outstanding() }}</div>
-        <!-- Plural, and in the same digits as the age above it. hbhNum uses
-             Latin digits for identifiers and money; a COUNT of things belongs
-             with the Arabic-Indic set, and mixing the two in one card reads
-             as a mistake. -->
-        <div class="hbh-kpi__foot">
-          {{ money.open_invoice_count | hbhPlural: 'child.openInvoices' }}
-        </div>
+        <div class="hbh-kpi__foot">{{ money.open_invoice_count | hbhPlural: 'child.openInvoices' }}</div>
       </div>
       <div class="hbh-kpi">
-        <div class="hbh-kpi__top">
-          <hbh-icon name="ic-receipt" />
-          <span class="hbh-kpi__label">{{ 'child.invoiced' | t }}</span>
-        </div>
-        <div class="hbh-kpi__value" dir="ltr">
-          {{ format.money(+money.invoiced_amt, money.currency_code) }}
-        </div>
+        <div class="hbh-kpi__top"><hbh-icon name="ic-receipt" /><span class="hbh-kpi__label">{{ 'child.invoiced' | t }}</span></div>
+        <div class="hbh-kpi__value" dir="ltr">{{ format.money(+money.invoiced_amt, money.currency_code) }}</div>
       </div>
       <div class="hbh-kpi">
-        <div class="hbh-kpi__top">
-          <hbh-icon name="ic-check-circle" />
-          <span class="hbh-kpi__label">{{ 'child.paid' | t }}</span>
-        </div>
-        <div class="hbh-kpi__value" dir="ltr">
-          {{ format.money(+money.paid_amt, money.currency_code) }}
-        </div>
+        <div class="hbh-kpi__top"><hbh-icon name="ic-check-circle" /><span class="hbh-kpi__label">{{ 'child.paid' | t }}</span></div>
+        <div class="hbh-kpi__value" dir="ltr">{{ format.money(+money.paid_amt, money.currency_code) }}</div>
       </div>
     </div>
   }
 
-
-
-  <div class="hbh-tabbar" role="tablist"><button class="hbh-tabbar__item" type="button" role="tab" [class.is-active]="overview()" [attr.aria-selected]="overview()" (click)="openOverview()">نظرة عامة</button>
-    @for (item of tabs; track item.part; let i = $index) {
-      <button class="hbh-tabbar__item" type="button" role="tab"
-              [class.is-active]="!overview() && tabIndex() === i"
-              [attr.aria-selected]="!overview() && tabIndex() === i"
-              (click)="selectTab(i)">
-        {{ item.labelKey | t }}
-      </button>
-    }
-  </div>
-
-  @if (overview()) {
-    <div class="child-overview">
-      <section><h2>أولياء الأمور والتواصل</h2>
-        @for (row of summary()['guardians']; track $index) {
-          <article><strong>{{ textValue(row, 'full_name_ar') }}</strong><p>{{ ('relationship.' + textValue(row, 'relationship_code')) | t }}</p><span dir="ltr">{{ textValue(row, 'mobile') || 'رقم الجوال غير مسجل' }}</span></article>
-        } @empty {<p>{{ summary()['guardians'] === undefined ? 'جارٍ التحميل…' : summary()['guardians'] === null ? 'تعذر تحميل بيانات التواصل' : 'لا توجد بيانات متاحة' }}</p>}
-      </section>
-      @for (part of ['sessions', 'plans', 'reports']; track part) {
-        <section><h2>{{ part === 'sessions' ? 'الجلسات المسجلة' : part === 'plans' ? 'الخطط العلاجية' : 'تقارير التقدم' }}</h2>
-          @for (row of summary()[part]?.slice(0, 3); track $index) {
-            <article><strong>{{ textValue(row, 'title_ar') || textValue(row, 'report_no') || (textValue(row, 'started_at') ? format.shortDate(textValue(row, 'started_at')) : '') }}</strong><p>{{ ('status.' + (part === 'sessions' ? 'session.' : part === 'plans' ? 'plan.' : 'report.') + textValue(row, 'status')) | t }}</p></article>
-          } @empty {<p>{{ summary()[part] === undefined ? 'جارٍ التحميل…' : summary()[part] === null ? 'تعذر تحميل هذا القسم' : 'لا توجد بيانات متاحة' }}</p>}
-          <button type="button" class="hbh-btn hbh-btn--ghost" (click)="selectTab(part === 'sessions' ? 1 : part === 'plans' ? 2 : 3)">عرض التفاصيل</button>
-        </section>
+  <!-- ===== Tabs: one scrolling row. Heavy ones read only when opened. ===== -->
+  <div class="hbh-tabbar cp__tabs" role="tablist">
+    @for (item of tabs; track item) {
+      @if (tabVisible(item)) {
+        <button class="hbh-tabbar__item" type="button" role="tab"
+                [class.is-active]="tab() === item" [attr.aria-selected]="tab() === item" (click)="selectTab(item)">
+          {{ ('child.tab.' + item) | t }}
+        </button>
       }
-    </div>
-  } @else {
-  <div class="child-section-head">
-    <h2 class="child-section-title">{{ tab().labelKey | t }}</h2>
-    <!-- The entry point, on the tab it belongs to and nowhere else. The
-         therapist is already inside this child's file, so the report does
-         not ask which child it is about. REPORT.WRITE only decides whether
-         to draw this; hbh.create_report decides whether it works. -->
-    @if (tab().part === 'reports' && auth.can('REPORT.WRITE')) {
-      <a class="hbh-btn hbh-btn--primary"
-         [routerLink]="['/children', childId, 'reports', 'new']">
-        <hbh-icon name="ic-file" /> إنشاء تقرير
-      </a>
     }
   </div>
-  @if (rowsLoading()) {
-    <hbh-skeleton [count]="4" shape="row" />
-  } @else if (rowsFailed()) {
-    <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t"
-                    (retry)="loadTab()" />
-  } @else if (rows().length === 0) {
-    <hbh-empty-state icon="ic-list" [title]="'child.emptyTab' | t"
-                     [note]="'child.emptyTabNote' | t" />
-  } @else {
-    <div class="hbh-tablewrap">
-      <table class="hbh-table">
-        <thead>
-          <tr>
-            @for (column of tab().columns; track column.key) {
-              <th>{{ column.labelKey | t }}</th>
-            }
-            @if (tab().statusPrefix) {
-              <th>{{ 'field.status' | t }}</th>
-            }
-            @if (tab().part === 'notes' || tab().part === 'guardians') {
-              <th>{{ 'field.actions' | t }}</th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows(); track rowKey(row, $index)) {
-            <tr>
-              @for (column of tab().columns; track column.key) {
-                <td [attr.dir]="column.ltr ? 'ltr' : null">{{ cell(row, column) }}</td>
-              }
-              @if (tab().statusPrefix) {
-                <td>
-                  <span class="hbh-badge hbh-badge--info">{{ rowStatusKey(row) | t }}</span>
-                </td>
-              }
-              @if (tab().part === 'notes') {
-                <td>
-                  @if (isInternal(row)) {
-                    <button type="button" class="hbh-btn hbh-btn--sm"
-                            [disabled]="publishing() === noteId(row)"
-                            (click)="publish(row)">
-                      {{ 'notes.publish' | t }}
+
+  @switch (tab()) {
+
+    @case ('overview') {
+      <div class="child-overview">
+        <section>
+          <h2>{{ 'child.tab.family' | t }}</h2>
+          @for (g of guardians(); track n(g, 'guardian_id')) {
+            <article><strong><a [routerLink]="['/guardians', n(g, 'guardian_id')]">{{ t(g, 'full_name_ar') }}</a></strong>
+              <p>{{ relationshipKey(g) | t }} @if (g['is_primary'] === true) { · {{ 'child.primaryGuardian' | t }} }</p>
+              <span dir="ltr">{{ t(g, 'mobile') || ('child.noMobile' | t) }}</span></article>
+          } @empty {
+            <p>{{ (partState('guardians') === 'failed' ? 'error.load' : partState('guardians') === 'ready' ? 'child.noGuardian' : 'action.loading') | t }}</p>
+          }
+        </section>
+        <section>
+          <h2>{{ 'child.specialist' | t }}</h2>
+          @for (s of specialists(); track s.therapistId + ':' + s.serviceId) {
+            <article><strong>{{ s.name }}</strong><p>{{ s.serviceName }} @if (s.primary) { · {{ 'child.primarySpecialist' | t }} }</p></article>
+          } @empty {
+            <p>{{ (specialistsState() === 'failed' ? 'child.specialistUnknown' : specialistsState() === 'ready' ? 'child.specialistNone' : 'action.loading') | t }}</p>
+          }
+          @if (canAssign()) { <button type="button" class="hbh-btn hbh-btn--ghost" (click)="assignTherapist()">{{ 'child.assignTherapist' | t }}</button> }
+        </section>
+        <section>
+          <h2>{{ 'child.tab.plans' | t }}</h2>
+          @for (row of plans()?.slice(0, 3); track n(row, 'plan_id')) {
+            <article><strong>{{ t(row, 'title_ar') }}</strong><p>{{ ('status.plan.' + t(row, 'status')) | t }} · {{ period(t(row, 'start_date'), t(row, 'end_date')) }}</p></article>
+          } @empty {
+            <p>{{ (partState('plans') === 'failed' ? 'error.load' : partState('plans') === 'ready' ? 'child.noPlan' : 'action.loading') | t }}</p>
+          }
+          <button type="button" class="hbh-btn hbh-btn--ghost" (click)="selectTab('plans')">{{ 'child.showAll' | t }}</button>
+        </section>
+        <section>
+          <h2>{{ 'child.tab.appointments' | t }}</h2>
+          @for (row of upcoming().slice(0, 3); track n(row, 'appointment_id')) {
+            <article><button type="button" class="cp__linkbtn" (click)="openAppointment(row)"><strong dir="ltr">{{ when(t(row, 'starts_at')) }}</strong></button><p>{{ r(row, 'service', 'name_ar') }} · {{ r(row, 'therapist', 'full_name_ar') }} · <span class="hbh-badge" [class]="'hbh-badge ' + apptTone(row)">{{ apptStatusKey(row) | t }}</span></p></article>
+          } @empty {
+            <p>{{ (partState('appointments') === 'failed' ? 'error.load' : partState('appointments') === 'ready' ? 'child.noUpcoming' : 'action.loading') | t }}</p>
+          }
+          <div class="cp__row">
+            <button type="button" class="hbh-btn hbh-btn--ghost" (click)="selectTab('appointments')">{{ 'child.showAll' | t }}</button>
+            @if (canBook()) { <button type="button" class="hbh-btn hbh-btn--primary" (click)="book()">{{ 'appointments.book' | t }}</button> }
+          </div>
+        </section>
+      </div>
+    }
+
+    @case ('family') {
+      @if (partState('guardians') === 'loading' || partState('guardians') === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (partState('guardians') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('guardians', true)" /> }
+      @else if (!rowsOf('guardians').length) {
+        <!-- WHY THERE IS NO BUTTON HERE, said rather than left to be guessed.
+             The account is created on a guardian's mobile, so a child with
+             no guardian on record cannot have one - and the warning in the
+             header would otherwise read as a thing somebody forgot to do on
+             this screen. The note names the only path that exists today. -->
+        <hbh-empty-state icon="ic-user" [title]="'child.noGuardian' | t"
+                         [note]="'child.noGuardianAccountNote' | t" />
+      }
+      @else {
+        <hbh-table-pages #tablePage1 [rows]="rowsOf('guardians')">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.name' | t }}</th><th>{{ 'field.relationship' | t }}</th><th>{{ 'field.mobile' | t }}</th><th>{{ 'consent.liveView' | t }}</th><th>{{ 'field.actions' | t }}</th></tr></thead>
+          <tbody>
+            @for (g of tablePage1.visible(); track n(g, 'guardian_id')) {
+              <tr>
+                <td><a [routerLink]="['/guardians', n(g, 'guardian_id')]">{{ t(g, 'full_name_ar') }}</a> @if (g['is_primary'] === true) { <span class="hbh-badge hbh-badge--info">{{ 'child.primaryGuardian' | t }}</span> }</td>
+                <td>{{ relationshipKey(g) | t }}</td>
+                <td dir="ltr">{{ t(g, 'mobile') }}</td>
+                <td>{{ (g['can_view_live'] === true ? 'answer.yes' : 'answer.no') | t }}</td>
+                <td class="cp__cell-actions">
+                  <!-- Offered while the FAMILY has no account, not while this
+                       guardian has none: one account per family is what the
+                       service grants, and the flag it sends is about the
+                       family. Offering it per guardian would invite a second
+                       press that answers created:false and reads as failure. -->
+                  @if (noPortalAccount() && canManageGuardians()) {
+                    <button type="button" class="hbh-btn hbh-btn--sm hbh-btn--primary"
+                            (click)="askGrantAccess(g)">
+                      {{ 'portalAccess.grant' | t }}
                     </button>
                   }
-                </td>
-              }
-              @if (tab().part === 'guardians') {
-                <td>
-                  <button type="button" class="hbh-btn hbh-btn--sm"
-                          [disabled]="publishing() === guardianId(row)"
-                          (click)="toggleLiveConsent(row)">
-                    {{ (canViewLive(row) ? 'consent.withdraw' : 'consent.grant') | t }}
+                  <button type="button" class="hbh-btn hbh-btn--sm hbh-btn--ghost" [disabled]="publishing() === n(g, 'guardian_id')" (click)="toggleLiveConsent(g)">
+                    {{ (g['can_view_live'] === true ? 'consent.withdraw' : 'consent.grant') | t }}
                   </button>
+                  <a class="hbh-btn hbh-btn--sm hbh-btn--ghost" [routerLink]="['/guardians', n(g, 'guardian_id')]">{{ 'guardian.open' | t }}</a>
                 </td>
-              }
-            </tr>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      }
+    }
+
+    @case ('appointments') {
+      <div class="child-section-head">
+        <h2 class="child-section-title">{{ 'child.tab.appointments' | t }}</h2>
+        @if (canBook()) { <button class="hbh-btn hbh-btn--primary" type="button" (click)="book()"><hbh-icon name="ic-cal-plus" /> {{ 'appointments.book' | t }}</button> }
+      </div>
+      @if (partState('appointments') === 'loading' || partState('appointments') === 'idle') { <hbh-skeleton [count]="4" shape="row" /> }
+      @else if (partState('appointments') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('appointments', true)" /> }
+      @else if (!rowsOf('appointments').length) { <hbh-empty-state icon="ic-calendar" [title]="'child.noAppointments' | t" [note]="(canBook() ? 'child.bookHint' : 'child.emptyTabNote') | t" /> }
+      @else {
+        @if (upcoming().length) { <h3 class="cp__h3">{{ 'enrolment.upcoming' | t }}</h3>
+          <ng-container *ngTemplateOutlet="apptTable; context: { rows: upcoming() }" /> }
+        @if (past().length) { <h3 class="cp__h3">{{ 'enrolment.past' | t }}</h3>
+          <ng-container *ngTemplateOutlet="apptTable; context: { rows: past() }" /> }
+      }
+      <ng-template #apptTable let-rows="rows">
+        <hbh-table-pages #tablePage2 [rows]="rows">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.time' | t }}</th><th>{{ 'field.service' | t }}</th><th>{{ 'field.therapist' | t }}</th><th>{{ 'field.room' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th></tr></thead>
+          <tbody>
+            @for (row of tablePage2.visible(); track n(row, 'appointment_id')) {
+              <tr>
+                <td dir="ltr">{{ when(t(row, 'starts_at')) }}</td>
+                <td>{{ r(row, 'service', 'name_ar') }}</td>
+                <td>{{ r(row, 'therapist', 'full_name_ar') }}</td>
+                <td>{{ r(row, 'room', 'name_ar') || (t(row, 'delivery_mode') ? (('delivery.' + t(row, 'delivery_mode')) | t) : '') }}</td>
+                <td><span class="hbh-badge" [class]="'hbh-badge ' + apptTone(row)">{{ apptStatusKey(row) | t }}</span></td>
+                <td class="cp__cell-actions">
+                  <!-- The record drawer, beside the file. The diary link
+                       lives inside it; the verbs stay here for one click. -->
+                  <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="openAppointment(row)"><hbh-icon name="ic-eye" /> {{ 'action.open' | t }}</button>
+                  @if (canRow('appointments', 'start', row)) { <button class="hbh-btn hbh-btn--sm hbh-btn--primary" type="button" (click)="rowAction('appointments', 'start', row)">{{ 'sessions.start' | t }}</button> }
+                  @if (canRow('appointments', 'status', row)) { <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="rowAction('appointments', 'status', row)">{{ 'appointments.changeStatus' | t }}</button> }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      </ng-template>
+    }
+
+    @case ('sessions') {
+      @if (partState('sessions') === 'loading' || partState('sessions') === 'idle') { <hbh-skeleton [count]="4" shape="row" /> }
+      @else if (partState('sessions') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('sessions', true)" /> }
+      @else if (!rowsOf('sessions').length) { <hbh-empty-state icon="ic-activity" [title]="'child.noSessions' | t" [note]="'child.sessionsNote' | t" /> }
+      @else {
+        <hbh-table-pages #tablePage3 [rows]="rowsOf('sessions')">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.startedAt' | t }}</th><th>{{ 'field.service' | t }}</th><th>{{ 'field.therapist' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th></tr></thead>
+          <tbody>
+            @for (row of tablePage3.visible(); track n(row, 'session_id')) {
+              <tr>
+                <td dir="ltr">{{ when(t(row, 'started_at')) }}</td>
+                <td>{{ r(row, 'service', 'name_ar') }}</td>
+                <td>{{ r(row, 'therapist', 'full_name_ar') }}</td>
+                <td><span class="hbh-badge" [class]="'hbh-badge ' + sessionTone(row)">{{ sessionStatusKey(row) | t }}</span></td>
+                <td class="cp__cell-actions">
+                  @if (t(row, 'status') === 'IN_PROGRESS' && auth.can('LIVE.VIEW')) { <a class="hbh-btn hbh-btn--sm hbh-btn--ghost" [routerLink]="['/sessions', n(row, 'session_id'), 'live']">{{ 'live.watch' | t }}</a> }
+                  @if (canRow('sessions', 'note', row)) { <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="rowAction('sessions', 'note', row)">{{ 'sessions.note' | t }}</button> }
+                  @if (canRow('sessions', 'close', row)) { <button class="hbh-btn hbh-btn--sm hbh-btn--primary" type="button" (click)="rowAction('sessions', 'close', row)">{{ 'sessions.close' | t }}</button> }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      }
+    }
+
+    @case ('assessments') {
+      <!-- Built in the schema, no route yet (UX-PROBLEMS.md R-01). What is
+           true is said; no button promises a screen that is not there. -->
+      <hbh-empty-state icon="ic-clipboard" [title]="'child.assessmentsNone' | t" [note]="'child.assessmentsNote' | t" />
+    }
+
+    @case ('plans') {
+      <div class="child-section-head">
+        <h2 class="child-section-title">{{ 'child.tab.plans' | t }}</h2>
+        @if (canPlan()) { <button class="hbh-btn hbh-btn--primary" type="button" (click)="newPlan()"><hbh-icon name="ic-target" /> {{ 'child.newPlan' | t }}</button> }
+      </div>
+      @if (partState('plans') === 'loading' || partState('plans') === 'idle') { <hbh-skeleton [count]="3" shape="row" /> }
+      @else if (partState('plans') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('plans', true)" /> }
+      @else if (!rowsOf('plans').length) { <hbh-empty-state icon="ic-target" [title]="'child.noPlan' | t" [note]="(canPlan() ? 'child.planHint' : 'child.emptyTabNote') | t" /> }
+      @else {
+        <div class="cp__cards">
+          @for (plan of rowsOf('plans'); track n(plan, 'plan_id')) {
+            <article class="cp__card" [class.is-current]="t(plan, 'status') === 'ACTIVE'">
+              <header class="cp__card-head">
+                <div>
+                  <b>{{ t(plan, 'title_ar') }}</b> <span class="hbh-badge" [class.hbh-badge--success]="t(plan, 'status') === 'ACTIVE'" [class.hbh-badge--muted]="t(plan, 'status') !== 'ACTIVE'">{{ ('status.plan.' + t(plan, 'status')) | t }}</span>
+                  <p class="cp__muted">{{ r(plan, 'service', 'name_ar') }} · {{ r(plan, 'therapist', 'full_name_ar') }} · {{ period(t(plan, 'start_date'), t(plan, 'end_date')) }}</p>
+                </div>
+                <div class="cp__cell-actions">
+                  @if (canGoal()) { <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="addGoal(plan)">{{ 'child.addGoal' | t }}</button> }
+                  @if (canPlan()) { <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="editPlan(plan)">{{ 'action.edit' | t }}</button> }
+                </div>
+              </header>
+              @if ($any(plan['goals'])?.length) {
+                <ul class="cp__goals">
+                  @for (goal of $any(plan['goals']); track goal['goal_id']) {
+                    <li><span>{{ goal['title_ar'] }}</span> <span class="hbh-badge hbh-badge--info">{{ ('status.goal.' + goal['status']) | t }}</span>
+                      <span class="cp__muted" dir="ltr">{{ pct(goal['latest_pct']) }} / {{ pct(goal['target_pct']) }}</span></li>
+                  }
+                </ul>
+              } @else { <p class="cp__muted">{{ 'child.noGoals' | t }}</p> }
+            </article>
           }
-        </tbody>
-      </table>
+        </div>
+      }
+    }
+
+    @case ('goals') {
+      @if (partState('plans') === 'loading' || partState('plans') === 'idle') { <hbh-skeleton [count]="3" shape="row" /> }
+      @else if (partState('plans') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('plans', true)" /> }
+      @else if (!goals().length) { <hbh-empty-state icon="ic-target" [title]="'child.noGoals' | t" [note]="(canGoal() ? 'child.goalHint' : 'child.emptyTabNote') | t" /> }
+      @else {
+        @if (measurementsState() === 'failed') { <p class="cp__muted">{{ 'child.measurementsUnavailable' | t }}</p> }
+        <div class="cp__cards">
+          @for (goal of goals(); track n(goal, 'goal_id')) {
+            <article class="cp__card">
+              <header class="cp__card-head">
+                <div>
+                  <b>{{ t(goal, 'title_ar') }}</b> <span class="hbh-badge hbh-badge--info">{{ ('status.goal.' + t(goal, 'status')) | t }}</span>
+                  <p class="cp__muted">{{ t(goal, 'plan_title') }}</p>
+                </div>
+                <div class="cp__cell-actions">
+                  @if (canMeasure()) { <button class="hbh-btn hbh-btn--sm hbh-btn--primary" type="button" (click)="addMeasurement(goal)">{{ 'child.addMeasurement' | t }}</button> }
+                  @if (canGoal()) { <button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="editGoal(goal)">{{ 'action.edit' | t }}</button> }
+                </div>
+              </header>
+              <dl class="cp__kv">
+                <dt>{{ 'field.baseline' | t }}</dt><dd dir="ltr">{{ pct(goal['baseline_pct']) }}</dd>
+                <dt>{{ 'field.target' | t }}</dt><dd dir="ltr">{{ pct(goal['target_pct']) }}</dd>
+                <dt>{{ 'child.latest' | t }}</dt><dd dir="ltr">{{ pct(goal['latest_pct']) }} @if (t(goal, 'latest_measured_on')) { <small>({{ day(t(goal, 'latest_measured_on')) }})</small> }</dd>
+                <dt>{{ 'child.measurementCount' | t }}</dt><dd dir="ltr">{{ goal['measurement_count'] ?? 0 }}</dd>
+              </dl>
+              @if (measurementsState() === 'ready' && measurementsOf(n(goal, 'goal_id')).length) {
+                <details class="cp__details">
+                  <summary>{{ 'child.measurements' | t }} ({{ measurementsOf(n(goal, 'goal_id')).length }})</summary>
+                  <ul class="cp__goals">
+                    @for (m of measurementsOf(n(goal, 'goal_id')); track n(m, 'measurement_id')) {
+                      <li><span dir="ltr">{{ day(t(m, 'measured_on')) }}</span> <b dir="ltr">{{ pct(m['value_pct']) }}</b>
+                        @if (t(m, 'trials_cnt')) { <span class="cp__muted">{{ 'field.trials' | t }}: {{ t(m, 'trials_cnt') }}</span> }
+                        @if (t(m, 'note_ar')) { <span class="cp__muted">{{ t(m, 'note_ar') }}</span> }</li>
+                    }
+                  </ul>
+                </details>
+              }
+            </article>
+          }
+        </div>
+      }
+    }
+
+    @case ('reports') {
+      <div class="child-section-head">
+        <h2 class="child-section-title">{{ 'child.tab.reports' | t }}</h2>
+        @if (canReport()) { <a class="hbh-btn hbh-btn--primary" [routerLink]="['/children', childId, 'reports', 'new']"><hbh-icon name="ic-file" /> {{ 'child.newReport' | t }}</a> }
+      </div>
+      @if (partState('reports') === 'loading' || partState('reports') === 'idle') { <hbh-skeleton [count]="3" shape="row" /> }
+      @else if (partState('reports') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('reports', true)" /> }
+      @else if (!rowsOf('reports').length) { <hbh-empty-state icon="ic-file" [title]="'child.noReports' | t" [note]="(canReport() ? 'child.reportHint' : 'child.emptyTabNote') | t" /> }
+      @else {
+        <hbh-table-pages #tablePage4 [rows]="rowsOf('reports')">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.reportNo' | t }}</th><th>{{ 'field.title' | t }}</th><th>{{ 'field.period' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th></tr></thead>
+          <tbody>
+            @for (row of tablePage4.visible(); track n(row, 'report_id')) {
+              <tr>
+                <td dir="ltr">{{ t(row, 'report_no') }}</td>
+                <td>{{ t(row, 'title_ar') }}</td>
+                <td>{{ period(t(row, 'period_start'), t(row, 'period_end')) }}</td>
+                <td><span class="hbh-badge" [class]="'hbh-badge ' + reportTone(row)">{{ reportStatusKey(row) | t }}</span></td>
+                <td class="cp__cell-actions">
+                  @if (canReport()) { <a class="hbh-btn hbh-btn--sm hbh-btn--ghost" [routerLink]="['/children', childId, 'reports', n(row, 'report_id')]">{{ (t(row, 'status') === 'DRAFT' ? 'child.finishReport' : 'action.open') | t }}</a> }
+                  @if (canRow('reports', 'publish', row)) { <button class="hbh-btn hbh-btn--sm hbh-btn--primary" type="button" (click)="rowAction('reports', 'publish', row)">{{ 'reports.publish' | t }}</button> }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      }
+    }
+
+    @case ('packages') {
+      @if (partState('packages') === 'loading' || partState('packages') === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (partState('packages') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('packages', true)" /> }
+      @else if (!rowsOf('packages').length) { <hbh-empty-state icon="ic-tag" [title]="'child.noPackages' | t" /> }
+      @else {
+        <hbh-table-pages #tablePage5 [rows]="rowsOf('packages')">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.name' | t }}</th><th>{{ 'field.sessionsLeft' | t }}</th><th>{{ 'field.expiresOn' | t }}</th><th>{{ 'field.status' | t }}</th></tr></thead>
+          <tbody>
+            @for (row of tablePage5.visible(); track n(row, 'child_package_id')) {
+              <tr><td>{{ t(row, 'name_ar') }}</td><td dir="ltr">{{ t(row, 'sessions_left') }} / {{ t(row, 'sessions_total') }}</td><td>{{ day(t(row, 'expires_on')) }}</td>
+                <td><span class="hbh-badge hbh-badge--info">{{ ('status.package.' + t(row, 'status')) | t }}</span></td></tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      }
+    }
+
+    @case ('invoices') {
+      @if (partState('invoices') === 'loading' || partState('invoices') === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (partState('invoices') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('invoices', true)" /> }
+      @else if (!rowsOf('invoices').length) { <hbh-empty-state icon="ic-receipt" [title]="'child.noInvoices' | t" /> }
+      @else {
+        <hbh-table-pages #tablePage6 [rows]="rowsOf('invoices')">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.invoiceNo' | t }}</th><th>{{ 'field.issueDate' | t }}</th><th>{{ 'field.total' | t }}</th><th>{{ 'field.paid' | t }}</th><th>{{ 'field.status' | t }}</th><th><span class="hbh-sr">{{ 'field.actions' | t }}</span></th></tr></thead>
+          <tbody>
+            @for (row of tablePage6.visible(); track n(row, 'invoice_id')) {
+              <tr><td dir="ltr">{{ t(row, 'invoice_no') }}</td><td>{{ day(t(row, 'issue_date')) }}</td><td dir="ltr">{{ money(row, 'total_amt') }}</td><td dir="ltr">{{ money(row, 'paid_amt') }}</td>
+                <td><span class="hbh-badge hbh-badge--info">{{ ('status.invoice.' + t(row, 'status')) | t }}</span></td>
+                <td><button class="hbh-btn hbh-btn--sm hbh-btn--ghost" type="button" (click)="openInvoice(row)"><hbh-icon name="ic-eye" /> {{ 'action.open' | t }}</button></td></tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+        <!-- OQ-13: payment stays on the billing screen for BILLING.MANAGE. -->
+      }
+    }
+
+    @case ('notes') {
+      @if (partState('notes') === 'loading' || partState('notes') === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (partState('notes') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('notes', true)" /> }
+      @else if (!rowsOf('notes').length) { <hbh-empty-state icon="ic-file" [title]="'child.noNotes' | t" [note]="'child.notesNote' | t" /> }
+      @else {
+        <ul class="cp__list">
+          @for (row of rowsOf('notes'); track n(row, 'note_id')) {
+            <li>
+              <div><b>{{ day(t(row, 'created_at')) }}</b> <span class="hbh-badge hbh-badge--muted">{{ ('note.visibility.' + t(row, 'visibility')) | t }}</span>
+                @if (t(row, 'author_ar')) { <span class="cp__muted">· {{ t(row, 'author_ar') }}</span> }
+                <p class="cp__prose">{{ t(row, 'body_ar') }}</p></div>
+              @if (t(row, 'visibility') === 'INTERNAL') {
+                <button type="button" class="hbh-btn hbh-btn--sm" [disabled]="publishing() === n(row, 'note_id')" (click)="publishNote(row)">{{ 'notes.publish' | t }}</button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('home') {
+      @if (partState('activity-log') === 'loading' || partState('activity-log') === 'idle') { <hbh-skeleton [count]="2" shape="row" /> }
+      @else if (partState('activity-log') === 'failed') { <hbh-error-note [message]="'error.load' | t" [retryLabel]="'action.retry' | t" (retry)="loadPart('activity-log', true)" /> }
+      @else if (!rowsOf('activity-log').length) { <hbh-empty-state icon="ic-home" [title]="'child.noHome' | t" [note]="'child.homeNote' | t" /> }
+      @else {
+        <hbh-table-pages #tablePage7 [rows]="rowsOf('activity-log')">
+<div class="hbh-tablewrap"><table class="hbh-table">
+          <thead><tr><th>{{ 'field.date' | t }}</th><th>{{ 'field.activity' | t }}</th><th>{{ 'field.done' | t }}</th><th>{{ 'field.note' | t }}</th></tr></thead>
+          <tbody>
+            @for (row of tablePage7.visible(); track $index) {
+              <tr><td>{{ day(t(row, 'log_date') || t(row, 'created_at')) }}</td><td>{{ t(row, 'title_ar') }}</td>
+                <td>{{ (t(row, 'done_flg') === 'false' ? 'answer.no' : 'answer.yes') | t }}</td><td>{{ t(row, 'note_ar') }}</td></tr>
+            }
+          </tbody>
+        </table></div>
+</hbh-table-pages>
+      }
+    }
+
+    @case ('activity') {
+      @if (activity().length) {
+        <ol class="cp__timeline">
+          @for (event of activity(); track event.at + event.key + (event.detail ?? '')) {
+            <li><time [attr.datetime]="event.at" dir="ltr">{{ when(event.at) }}</time>
+              <div><b>{{ event.key | t }}</b> @if (event.detail) { · {{ event.detail }} } @if (event.statusKey) { <span class="hbh-badge hbh-badge--muted">{{ event.statusKey | t }}</span> }</div></li>
+          }
+        </ol>
+      } @else if (partState('appointments') === 'ready') {
+        <hbh-empty-state icon="ic-clock" [title]="'child.noActivity' | t" />
+      } @else { <hbh-skeleton [count]="3" shape="row" /> }
+    }
+  }
+}
+
+<!-- Before the account exists, the number it will belong to.
+
+     THIS IS THE WHOLE CONTROL. The account IS the mobile - every sign-in
+     code goes to it - so a wrong number does not fail, it succeeds for
+     somebody else and hands a stranger this child's reports and their live
+     session. The dialogue therefore shows the number exactly as it is
+     stored, left to right, and makes somebody read it before agreeing. -->
+@if (grantFor(); as guardian) {
+  <dialog class="hbh-sheet" hbhModal (dismissed)="cancelGrant()"
+          aria-labelledby="grantAccessTitle">
+    <div class="hbh-sheet__box">
+      <div class="hbh-sheet__head">
+        <h2 class="hbh-card-title" id="grantAccessTitle">{{ 'portalAccess.confirmTitle' | t }}</h2>
+      </div>
+
+      <p>{{ 'portalAccess.confirmBody' | t: { name: t(guardian, 'full_name_ar') } }}</p>
+      <p class="cp__grant-mobile" dir="ltr">{{ t(guardian, 'mobile') }}</p>
+      <p class="hbh-muted">{{ 'portalAccess.confirmNote' | t }}</p>
+
+      <div class="hbh-sheet__foot">
+        <button type="button" class="hbh-btn hbh-btn--primary"
+                [disabled]="granting()" (click)="confirmGrantAccess()">
+          {{ 'portalAccess.grant' | t }}
+        </button>
+        <button type="button" class="hbh-btn hbh-btn--ghost"
+                [disabled]="granting()" (click)="cancelGrant()">
+          {{ 'action.cancel' | t }}
+        </button>
+      </div>
     </div>
-  }
-  }
+  </dialog>
 }

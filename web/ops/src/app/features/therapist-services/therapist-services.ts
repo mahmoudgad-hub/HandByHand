@@ -1,3 +1,4 @@
+import { TablePages } from '@hbh/shared/ui/table-pages';
 import {
   ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal,
 } from '@angular/core';
@@ -11,7 +12,7 @@ import { EmptyState } from '@hbh/shared/ui/empty-state';
 import { ErrorNote } from '@hbh/shared/ui/error-note';
 import { Skeleton } from '@hbh/shared/ui/skeleton';
 import { OpsApi, Row } from '../../core/api/ops-api';
-import { readRefusal, refusalKey } from '../../core/api/ops-error';
+import { refusalSentence } from '../../core/api/ops-error';
 import { OpsAuthService } from '../../core/auth/ops-auth.service';
 import { DayApi } from '../../core/ops/day-api';
 
@@ -37,7 +38,7 @@ import { DayApi } from '../../core/ops/day-api';
 @Component({
   selector: 'hbh-therapist-services',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
+  imports: [TablePages, Icon, TranslatePipe, Skeleton, EmptyState, ErrorNote],
   templateUrl: './therapist-services.html',
 })
 export class TherapistServices {
@@ -187,7 +188,7 @@ export class TherapistServices {
       },
       error: (error: unknown) => {
         this.busy.set('');
-        this.toast.error(this.i18n.translate(refusalKey(readRefusal(error))));
+        this.toast.error(refusalSentence(this.i18n, error));
       },
     });
   }

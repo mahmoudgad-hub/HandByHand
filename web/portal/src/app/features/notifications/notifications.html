@@ -1,4 +1,7 @@
 <section class="scr">
+  @if (openError()) {
+    <div class="sec" role="alert">{{ openError() | t }}</div>
+  }
 
   @if (loading()) {
     <div class="sec"><hbh-skeleton [count]="5" shape="row" /></div>
@@ -30,6 +33,14 @@
             <span class="hbh-badge hbh-badge--info">
               {{ 'notifications.unread' | t: { count: feed.unread } }}
             </span>
+            <!-- Offered only while there is something to mark. A control
+                 that would do nothing invites the tap and then reports
+                 success at having changed nothing. -->
+            <button class="hbh-btn hbh-btn--ghost nlist__all" type="button"
+                    [disabled]="marking()" (click)="markAllRead()">
+              <hbh-icon name="ic-check-circle" />
+              {{ 'notifications.markAll' | t }}
+            </button>
           }
         </div>
 
@@ -41,6 +52,8 @@
                  it is already on is a dead control the size of a row. The
                  handler decides; the markup does not promise. -->
             <button class="row nrow" type="button"
+                    [disabled]="opening() !== null"
+                    [attr.aria-busy]="opening() === item.id"
                     [class.nrow--unread]="!item.read"
                     (click)="open(item)">
               <span class="row__ic" [class]="tint(item)">
@@ -55,7 +68,7 @@
                     <span class="nrow__dot" aria-hidden="true"></span>
                     <span class="hbh-sr">{{ 'notifications.unreadOne' | t }}</span>
                   }
-                  {{ item.title }}
+                  {{ item.title }} @if(item.kind==='CHAT_MESSAGE'){<span class="hbh-badge">{{'chat.notification' | t}}</span>}
                 </span>
                 <span class="row__s">
                   @if (item.childName) {

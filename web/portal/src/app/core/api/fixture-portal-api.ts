@@ -10,10 +10,12 @@ import {
   Consent,
   ConsentKey,
   Guardian,
+  CentreContact,
   GuardianContact,
   HomeProgramme,
   HomeSummary,
   LiveSession,
+  MeetingPass,
   NewRequest,
   ParentRequest,
   ProgressOverview,
@@ -78,6 +80,10 @@ export class FixturePortalApi extends PortalApi {
   // Guardian, children, welcome
   // -------------------------------------------------------------------------
 
+  override family(): Observable<Pick<WelcomeSummary, 'guardian' | 'children'>> {
+    return this.respond({ guardian: this.guardian, children: [this.youssef(), this.malak()] });
+  }
+
   override welcome(): Observable<WelcomeSummary> {
     return this.respond<WelcomeSummary>({
       guardian: this.guardian,
@@ -89,18 +95,21 @@ export class FixturePortalApi extends PortalApi {
       attention: [
         {
           kind: 'REPORT',
+          childId: this.youssef().id,
           titleKey: 'attention.report',
           amount: null, currency: null, count: 1,
           childName: 'يوسف',
         },
         {
           kind: 'INVOICE',
+          childId: null,
           titleKey: 'attention.invoice',
           amount: 950, currency: 'EGP', count: null,
           childName: null,
         },
         {
           kind: 'ACTIVITY',
+          childId: this.youssef().id,
           titleKey: 'attention.activities',
           amount: null, currency: null, count: 2,
           childName: 'يوسف',
@@ -395,6 +404,8 @@ export class FixturePortalApi extends PortalApi {
   // Billing
   // -------------------------------------------------------------------------
 
+  // The fixture answers every section every time; the screen reads only
+  // the ones it asked for, so a partial retry behaves the same here.
   override billing(): Observable<BillingOverview> {
     const currency = this.config.currency;
     return this.respond<BillingOverview>({
@@ -572,6 +583,46 @@ export class FixturePortalApi extends PortalApi {
   }
 
   /**
+   * The consultation door, for a screen being reviewed without a database.
+   *
+   * IT ENFORCES NOTHING, like everything else here - the ownership of the
+   * appointment, the invoice, the hour, the room still being open are all
+   * server rules and a copy of them here would be a second implementation
+   * to drift. What it does instead is answer in the SHAPES the server
+   * answers in, so that the refusal paths on the screen are real code:
+   *
+   *   ap-2   the online row above - a pass, with the public provider's
+   *          shape and therefore no token.
+   *   ap-1   an in-person appointment - 400 NOT_IN_PERSON.
+   *   other  404 NOT_FOUND, which is what somebody else's appointment and
+   *          a non-existent one both look like, deliberately.
+   *
+   * The domain is meet.jit.si and not 8x8.vc because the development
+   * provider is the public one, and a fixture that produced a JaaS-shaped
+   * answer would be teaching this screen a room name it will never get
+   * without a tenant.
+   */
+  override enterConsultation(appointmentId: Uuid): Observable<MeetingPass> {
+    if (appointmentId === 'ap-2') {
+      return this.respond<MeetingPass>({
+        provider: 'JITSI_PUBLIC',
+        domain: 'meet.jit.si',
+        room: 'hbh-fixture0000000000000000000000',
+        // Empty, because the public provider has no tokens at all. The
+        // screen must not read this as a refusal.
+        token: '',
+        displayName: 'ولي أمر يوسف',
+        moderator: false,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      });
+    }
+    const refusal = appointmentId === 'ap-1'
+      ? { status: 409, error: { error: { code: 'NOT_IN_PERSON' } } }
+      : { status: 404, error: { error: { code: 'NOT_FOUND' } } };
+    return throwError(() => refusal).pipe(delay(this.latencyMs));
+  }
+
+  /**
    * A feed with one of each shape the screen has to draw: read and unread, a
    * kind that leads somewhere and a kind that leads nowhere, one about a named
    * child and one about none. A fixture of five identical rows proves the list
@@ -588,6 +639,12 @@ export class FixturePortalApi extends PortalApi {
   override markNotificationRead(id: string): Observable<void> {
     this.feed = this.feed.map((row) => row.id === id ? { ...row, read: true } : row);
     return this.respond(undefined as void);
+  }
+
+  override markAllNotificationsRead(): Observable<number> {
+    const marked = this.feed.filter((row) => !row.read).length;
+    this.feed = this.feed.map((row) => row.read ? row : { ...row, read: true });
+    return this.respond(marked);
   }
 
   private feed: readonly PortalNotification[] = [
@@ -628,9 +685,12 @@ export class FixturePortalApi extends PortalApi {
       id: this.youssefId,
       fullName: 'يوسف علي محمود',
       childNo: 'CH-00021',
+      gender: 'M',
       birthDate: this.at(-6 * 365 - 40, 0, 0),
       services: ['تخاطب', 'علاج وظيفي'],
       scheduleUnavailable: false,
+      // Counts, so the card shows a real ring.
+      attendanceMonth: { attended: 7, missed: 1 },
       liveSessionId: this.liveSessionId,
       nextAppointment: {
         id: 'ap-1',
@@ -639,6 +699,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'تخاطب وتنمية لغة',
         therapistId: '46',
         therapistName: 'سارة عبد الرحمن',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٢',
         status: 'IN_PROGRESS',
       },
@@ -650,9 +711,13 @@ export class FixturePortalApi extends PortalApi {
       id: this.malakId,
       fullName: 'ملك علي محمود',
       childNo: 'CH-00034',
+      gender: 'F',
       birthDate: this.at(-4 * 365 - 120, 0, 0),
       services: ['تنمية مهارات'],
       scheduleUnavailable: false,
+      // Nothing recorded yet this month - the other case the card must
+      // handle, kept in the fixture so it is seen and not only reasoned.
+      attendanceMonth: { attended: 0, missed: 0 },
       liveSessionId: null,
       nextAppointment: {
         id: 'ap-9',
@@ -661,6 +726,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'تنمية مهارات',
         therapistId: '46',
         therapistName: 'هدى سمير',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٥',
         status: 'CONFIRMED',
       },
@@ -698,14 +764,20 @@ export class FixturePortalApi extends PortalApi {
     }
     return [
       this.youssef().nextAppointment as AppointmentSummary,
+      // ONE ONLINE ROW, on purpose. Every other appointment in this file is
+      // in the centre, and a fixture set where none is a consultation is one
+      // where the consultation screen is never reached. Note what it does
+      // NOT have: a room name. An online appointment has no room, and a
+      // fixture that gave it one would hide the branch that copes with that.
       {
         id: 'ap-2',
-        startsAt: this.at(4, 10, 0),
-        endsAt: this.at(4, 10, 45),
-        serviceName: 'علاج وظيفي',
+        startsAt: this.at(0, 18, 0),
+        endsAt: this.at(0, 18, 30),
+        serviceName: 'استشارة أونلاين',
         therapistId: '46',
         therapistName: 'منى خالد',
-        roomName: 'غرفة ٤',
+        deliveryMode: 'ONLINE',
+        roomName: '',
         status: 'CONFIRMED',
       },
       {
@@ -715,6 +787,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'تخاطب وتنمية لغة',
         therapistId: '46',
         therapistName: 'سارة عبد الرحمن',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٢',
         status: 'BOOKED',
       },
@@ -725,6 +798,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'علاج وظيفي',
         therapistId: '46',
         therapistName: 'منى خالد',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٤',
         status: 'BOOKED',
       },
@@ -743,6 +817,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'تخاطب وتنمية لغة',
         therapistId: '46',
         therapistName: 'سارة عبد الرحمن',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٢',
         status: 'COMPLETED',
       },
@@ -753,6 +828,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'علاج وظيفي',
         therapistId: '46',
         therapistName: 'منى خالد',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٤',
         status: 'COMPLETED',
       },
@@ -763,6 +839,7 @@ export class FixturePortalApi extends PortalApi {
         serviceName: 'تخاطب وتنمية لغة',
         therapistId: '46',
         therapistName: 'سارة عبد الرحمن',
+        deliveryMode: 'IN_PERSON',
         roomName: 'غرفة ٢',
         status: 'NO_SHOW',
       },
@@ -817,6 +894,20 @@ export class FixturePortalApi extends PortalApi {
   override setContact(value: GuardianContact): Observable<GuardianContact> {
     this.contactState = { email: value.email.trim(), city: value.city.trim() };
     return this.respond<GuardianContact>({ ...this.contactState });
+  }
+
+  /** The fixture centre, so the contact card can be driven without a service. */
+  override centreContact(): Observable<CentreContact | null> {
+    return this.respond<CentreContact | null>({
+      phone: '01000000000',
+      landline: '0220000000',
+      email: 'info@example.test',
+      addressAr: 'عنوان تجريبي للمركز',
+      mapUrl: '30.0, 31.0',
+      hoursAr: 'من ٩ صباحًا إلى ٩ مساءً',
+      weekendAr: 'الجمعة',
+      arrivalAr: 'الانتركم قبل الأخير.',
+    });
   }
 
   private respond<T>(value: T): Observable<T> {

@@ -14,6 +14,11 @@
 #   bash scripts/api.sh logs     tail the service log
 #   bash scripts/api.sh sh       a shell in the Go toolchain container
 #   bash scripts/api.sh down     stop the API (the database keeps running)
+#
+# build, up and verify take a MACHINE-WIDE LOCK. Several sessions share
+# one container and one database here, and a rebuild or a restart during
+# somebody else's suite run produces a number that describes two
+# different services. "lock-status" says who holds it.
 # =====================================================================
 set -euo pipefail
 
@@ -64,7 +69,7 @@ cmd_fmt()  { go_in_container 'gofmt -w . && gofmt -l .' && cmd_lint; }
 #
 # The pattern deliberately matches only the two writers this service
 # answers through. Anything else is somebody's loop counter.
-cmd_lint() {
+cmd_status_codes() {
   local hits
   hits="$(grep -rnE 'write(Error|ErrorFields|JSON)\(w, r?e?q?,? *[0-9]{3},' \
             "$ROOT/api/internal" 2>/dev/null | grep -v '^\s*//' | grep -v '// ' || true)"
@@ -74,7 +79,36 @@ cmd_lint() {
     return 1
   fi
   echo 'lint: no raw status codes'
-  cmd_doc_drift && cmd_search_drift && cmd_like_escape
+}
+
+# EVERY GUARD RUNS, AND EVERY ONE THAT FALLS IS NAMED.
+#
+# This chain was written as `a && b && c && d && e`, which stops at the
+# first failure - so a guard behind a failing one reports NOTHING, and
+# reads exactly like a guard that passed. route-coverage sat last in
+# that chain while doc-drift was red, and four live routes went
+# unmeasured for days without a single line saying so.
+#
+# It is the same shape this project has already paid for twice: a suite
+# that dies before its verdict is read as a success, and `ng test`
+# returning zero with no browser. A check that cannot report is not a
+# check, and one hidden behind another cannot report.
+#
+# So the failures are COLLECTED, not short-circuited, and the summary
+# names each guard that fell. Ordering stops mattering, which is the
+# point: nobody has to remember to keep the important one first.
+cmd_lint() {
+  local guards=(cmd_status_codes cmd_doc_drift cmd_search_drift
+                cmd_like_escape cmd_code_drift cmd_route_coverage)
+  local g failed=()
+  for g in "${guards[@]}"; do
+    "$g" || failed+=("${g#cmd_}")
+  done
+  if [ ${#failed[@]} -gt 0 ]; then
+    echo "lint: ${#failed[@]} guard(s) failed: ${failed[*]}" >&2
+    return 1
+  fi
+  echo "lint: all ${#guards[@]} guards passed"
 }
 
 # cmd_like_escape refuses a LIKE pattern that obeys what somebody typed.
@@ -274,8 +308,26 @@ cmd_doc_drift() {
   local doc="$ROOT/docs/02-api-contract.md" tmp missing
   tmp="$(mktemp -d)"
 
-  grep -oE '"/api/v1/[^"]*"' "$ROOT/api/internal/http/server.go" \
+  # Comment lines are stripped BEFORE the capture. This guard reads a
+  # quoted "/api/v1/..." as a registered route, and a comment that merely
+  # names a path - a note explaining the rate limiter, say - is not one. A
+  # perfectly correct file went red that way, and a guard that cries wolf
+  # on a sound tree teaches people to stop reading it. Only full comment
+  # lines (^\s*//) are dropped; a real registration never lives on one.
+  grep -vE '^[[:space:]]*//' "$ROOT/api/internal/http/server.go" \
+    | grep -oE '"/api/v1/[^"]*"' \
     | tr -d '"' | sed 's/{[a-z_]*}/{}/g' | sort -u > "$tmp/routes"
+
+  # Zero routes is a failure, not a pass. If this ever reads nothing - the
+  # file moved, the pattern rotted, server.go was renamed - the guard has
+  # gone blind, and "all 0 routes appear in the contract" is the greenest
+  # possible lie. Same family as cmd_like_escape refusing an empty read.
+  if [ ! -s "$tmp/routes" ]; then
+    echo 'doc-drift: read ZERO routes from server.go - the guard is blind, not clean' >&2
+    echo "  -> api/internal/http/server.go" >&2
+    rm -rf "$tmp"
+    return 1
+  fi
   grep -oE '(…)?/api/v1/[a-z0-9/{}_-]+|…/[a-z0-9/{}_-]+' "$doc" \
     | sed 's/{[a-z_]*}/{}/g' | sed 's:/$::' | sort -u > "$tmp/doc"
 
@@ -311,7 +363,82 @@ cmd_doc_drift() {
   echo "lint: all $n routes appear in the contract"
 }
 
-cmd_build() { dc build api; }
+# cmd_code_drift refuses a business refusal the API cannot name.
+#
+# WHAT IT COST, TWICE. businessRefusal started when every code in the
+# schema was HB0xx, so its fallback read "HB0" - and when the schema grew
+# an HB1xx family, eight live refusals fell past it and reached the screen
+# as "an unexpected error occurred". That was fixed by widening the
+# fallback to "HB". The widened fallback then hid the SECOND half of the
+# same bug: twenty-one more live codes - HB041, HB081 and HB200 among
+# them - were swallowed by the catch-all and answered 409 REFUSED. A
+# missing permission reported as a conflict. The live-viewing consent gate
+# reported as a conflict. Our own unseeded number series reported as the
+# caller's conflict. Nothing failed, and every one of them looked handled.
+#
+# A fallback is the plan for a code invented after this build shipped. It
+# is not the plan for a family that already exists, and the only way to
+# tell those apart is to ASK THE DATABASE what it can actually raise.
+# Reading the migrations does not do it: a superseded migration still
+# holds the text of a code no live function raises any more, and two such
+# codes are in this tree right now.
+cmd_code_drift() {
+  local tmp live missing stale n
+  tmp="$(mktemp -d)"
+
+  # Capture first, test after. psql prints its error and the pipeline
+  # would read that as "no codes are live" - which passes. Same family as
+  # the `local out rc=0` lesson.
+  if ! live="$(dc exec -T db psql -U hbh_owner -d hbh -Atc \
+        "select distinct m[1]
+           from pg_proc p
+           join pg_namespace n on n.oid = p.pronamespace,
+                lateral regexp_matches(p.prosrc, 'ERRCODE\s*=\s*''(HB[0-9]{3})''', 'g') m
+          where n.nspname = 'hbh'
+          order by 1" 2>&1)"; then
+    echo 'cannot read the schema to check error codes:' >&2
+    echo "$live" >&2
+    rm -rf "$tmp"; return 1
+  fi
+  printf '%s\n' "$live" | grep -oE '^HB[0-9]{3}$' | sort -u > "$tmp/live" || true
+
+  # A query that matches nothing is a broken query, not a clean schema.
+  if ! [ -s "$tmp/live" ]; then
+    echo 'no HB codes found in the schema - the query is wrong, not the schema' >&2
+    rm -rf "$tmp"; return 1
+  fi
+
+  grep -oE 'case "HB[0-9]{3}"(, *"HB[0-9]{3}")*:' \
+       "$ROOT/api/internal/http/ops_handlers.go" \
+    | grep -oE 'HB[0-9]{3}' | sort -u > "$tmp/named" || true
+
+  missing="$(comm -23 "$tmp/live" "$tmp/named")"
+  if [ -n "$missing" ]; then
+    echo 'business refusals the API answers only through the catch-all:' >&2
+    printf '  %s\n' $missing >&2
+    echo '  -> name each one in businessRefusal, api/internal/http/ops_handlers.go' >&2
+    rm -rf "$tmp"; return 1
+  fi
+
+  # The other direction is a note and not a failure: a code named here
+  # that no live function raises is dead weight, but answering it costs
+  # nothing and a migration may be about to bring it back.
+  stale="$(comm -13 "$tmp/live" "$tmp/named")"
+  [ -n "$stale" ] && printf 'note: named but no live function raises it: %s\n' "$(echo $stale)"
+
+  n="$(wc -l < "$tmp/live" | tr -d ' ')"
+  rm -rf "$tmp"
+  echo "lint: all $n live HB codes are named explicitly"
+}
+
+# The lock covers BUILD and UP, not only verify.
+#
+# A lock that only the suite runner honours is not a lock: every split
+# result last night came from somebody else rebuilding or restarting the
+# container, and neither of them goes through cmd_verify. The cost is
+# real and accepted - a developer wanting a quick restart may wait behind
+# a run - and that wait is the thing being bought.
+cmd_build() { lock_acquire build || return 1; dc build api; }
 
 wait_healthy() {
   printf 'waiting for hbhd'
@@ -329,13 +456,138 @@ wait_healthy() {
 }
 
 cmd_up() {
+  lock_acquire up || return 1
   dc up -d --build api
   wait_healthy
 }
 
 # verify [n]   one batch, or every batch in order when n is omitted.
+# THE LOCK lives in scripts/lock.sh - shared with db.sh migrate, which
+# must take the same one or it is not a lock.
+. "$ROOT/scripts/lock.sh"
+
+
+# cmd_route_coverage refuses a registered route that no suite CALLS.
+#
+# WHAT IT COST. An inventory of server.go against tests/ once found ten
+# routes no suite mentioned at all - the family thread, the billing
+# ledger, a guardian's consent, a personnel file. a9 was written for
+# them. The inventory was never automated, so the tree grew three more
+# the same way: both notification routes and the pairs list. One of the
+# notification routes is the only per-USER isolation rule in the service
+# (`user_id = current_user_id()`), and it had no check anywhere.
+#
+# A MENTION IS NOT A CALL, and this check is built on the difference
+# because the first attempt at that inventory was fooled by exactly that:
+# `grep billing tests/` matched a section heading and three comments
+# while nothing called the route. So the pattern demands the path on a
+# line that also calls `req` - a call site, not a word.
+#
+# Its honest limit: it proves a route is REACHED, never that it is
+# tested well. A suite that calls a route and asserts nothing passes
+# here. That is still the right floor - "nobody has ever sent this route
+# a request" is a different kind of gap from "the checks are thin".
+cmd_route_coverage() {
+  local tmp missing n
+  tmp="$(mktemp -d)"
+
+  grep -oE '"/api/v1/[^"]*"' "$ROOT/api/internal/http/server.go" \
+    | tr -d '"' | sed 's|^/api/v1/||; s|/.*||' | sort -u > "$tmp/resources"
+
+  if ! [ -s "$tmp/resources" ]; then
+    echo 'no routes found in server.go - the pattern is wrong, not the router' >&2
+    rm -rf "$tmp"; return 1
+  fi
+
+  # Call sites only: the path must appear on a line that also calls req.
+  grep -hE '(^|[^a-z_])req ' "$ROOT"/tests/api/*.sh 2>/dev/null \
+    | grep -oE '/api/v1/[a-z0-9{}$_-]+' \
+    | sed 's|^/api/v1/||; s|/.*||' | sort -u > "$tmp/called"
+
+  missing="$(comm -23 "$tmp/resources" "$tmp/called")"
+  if [ -n "$missing" ]; then
+    echo 'registered routes that no suite ever calls:' >&2
+    printf '  /api/v1/%s\n' $missing >&2
+    echo '  -> a route nothing sends a request to is a route nothing watches' >&2
+    rm -rf "$tmp"; return 1
+  fi
+
+  n="$(wc -l < "$tmp/resources" | tr -d ' ')"
+  rm -rf "$tmp"
+  echo "lint: all $n route resources are called by a suite"
+}
+
+# api_image is the image id the service container is actually running.
+#
+# NOT the tag. A tag is a name somebody can point somewhere else; the id
+# is the bytes. `docker inspect .Image` on the CONTAINER answers "what is
+# this process running", which is the only question worth asking here.
+api_image() {
+  local cid
+  cid="$(dc ps -q api 2>/dev/null)"
+  [ -n "$cid" ] || return 1
+  docker inspect -f '{{.Image}}' "$cid" 2>/dev/null
+}
+
+# schema_state is the OTHER thing that moves under a run.
+#
+# The suites measure the service's behaviour over a SHARED database, so a
+# session running `db.sh migrate` halfway through this run splits the
+# result exactly the way a rebuild does - and it is the likelier of the
+# two, because a migration is cheap and gets run far more often than an
+# image is rebuilt.
+#
+# COUNT AND MAX, NOT MAX ALONE. A migration with a LOWER number can land
+# after a higher one: CLAUDE.md tells people working on the schema at the
+# same time to reserve their number before writing the file, so 0123 may
+# well arrive after 0124 is already applied. Watching the maximum would
+# see nothing move.
+schema_state() {
+  dc exec -T db psql -U hbh_owner -d hbh -Atc \
+    "SELECT count(*)::text || '|' || coalesce(max(version), '-') FROM hbh.schema_migrations" \
+    2>/dev/null | tr -d '\r'
+}
+
+# api_started is the THIRD ground, and the only one this function moves
+# itself: `dc restart api` before every suite bumps it. So it is NOT
+# pinned once like image and schema - it is a per-suite window (read after
+# verify's own restart, checked again after the suite). It catches an
+# EXTERNAL restart landing mid-suite, which leaves image and ledger
+# untouched and split a7 into two service lifetimes this morning - the
+# 000s that read as NOT ACCEPTED.
+#
+# NOT RestartCount: measured, it stays 0 across a manual `docker restart`;
+# it counts only what the daemon restarts under its own policy. StartedAt
+# is the wall-clock the current process began, and it moves for whoever
+# caused the restart.
+api_started() {
+  local cid
+  cid="$(dc ps -q api 2>/dev/null)"
+  [ -n "$cid" ] || return 1
+  docker inspect -f '{{.State.StartedAt}}' "$cid" 2>/dev/null
+}
+
+# cmd_verify pins the whole run to ONE image and refuses to report a
+# number that spans two.
+#
+# WHAT IT COST. A full run reported "1116 checks, 0 failed" and was used
+# as evidence that another session's change had broken nothing. It was
+# not evidence of that: their image was built at 01:31:18 WHILE the run
+# was going, so the early suites had measured one binary and the late
+# ones measured another, and the single number at the bottom described
+# neither. Two sessions then reasoned from it - one of them me.
+#
+# A stale run is wrong in one direction and you can at least say which.
+# A SPLIT run gives one answer about two subjects and no line in it says
+# which suite saw which, so a red result sends somebody looking for a bug
+# in the wrong binary. This is the same shape as the rule in CLAUDE.md
+# that every count be scoped to the start of the run - except the thing
+# moving underneath is the binary rather than the rows.
+#
+# So the id is captured after cmd_up, checked before every suite, and the
+# run STOPS the moment it moves. Stopping is the point: carrying on would
+# produce exactly the number that cannot be interpreted.
 cmd_verify() {
-  cmd_up
   local want="${1:-}" status=0 batch
 
   # A glob into an array and an index. Never $(ls): this project lives
@@ -343,11 +595,75 @@ cmd_verify() {
   # substitution word-splits it into two nonexistent paths.
   local suites=("$ROOT"/tests/api/a*_verify.sh)
   local i f
+
+  # THE BATCH NAME IS CHECKED FIRST - before the lock, before cmd_up. It is
+  # a filename question, and a name that runs nothing must take no lock and
+  # start no container to learn it was a typo. "a1" against batches named
+  # "1" once matched nothing and reported success; the same guard db.sh
+  # verify needed, moved ahead of everything with a side effect.
+  local matched=0 avail=""
+  for ((i = 0; i < ${#suites[@]}; i++)); do
+    [ -e "${suites[i]}" ] || continue
+    batch="$(basename "${suites[i]}" | sed 's/^a\([0-9]*\)_verify\.sh$/\1/')"
+    avail="$avail $batch"
+    if [ -z "$want" ] || [ "$want" = "$batch" ]; then matched=1; fi
+  done
+  if [ "$matched" -eq 0 ]; then
+    if [ -z "$avail" ]; then
+      echo "*** no a*_verify.sh suites under tests/api - nothing to run" >&2
+    else
+      echo "*** batch '$want' matched no suite - it ran nothing, which is not a pass" >&2
+      echo "    available batches:$avail" >&2
+    fi
+    return 1
+  fi
+
+  # Taken here rather than left to cmd_up so the holder line says
+  # "verify" - somebody waiting deserves to know whether they are behind
+  # a ten-second restart or a twenty-minute run.
+  lock_acquire verify || return 1
+  cmd_up
+
+  local pinned pinned_schema
+  pinned="$(api_image)" || true
+  if [ -z "$pinned" ]; then
+    echo 'cannot read the image of the api container - refusing to run blind' >&2
+    return 1
+  fi
+  pinned_schema="$(schema_state)" || true
+  if [ -z "$pinned_schema" ]; then
+    echo 'cannot read hbh.schema_migrations - refusing to run blind' >&2
+    return 1
+  fi
+  echo "verify: pinned to image ${pinned#sha256:}"
+  echo "verify: pinned to schema ${pinned_schema} (migrations|highest)"
+
   for ((i = 0; i < ${#suites[@]}; i++)); do
     f="${suites[i]}"
     [ -e "$f" ] || continue
     batch="$(basename "$f" | sed 's/^a\([0-9]*\)_verify\.sh$/\1/')"
     if [ -n "$want" ] && [ "$want" != "$batch" ]; then continue; fi
+
+    # Is the lock STILL OURS - asked before the restart below, because a
+    # run that has lost the lock must not restart a service another run
+    # now owns.
+    #
+    # 2026-09-13: the machine slept for twelve hours under a run holding
+    # this lock; on wake a waiter took over by the stale rule, and the
+    # first run - alive, unaware - carried on from phase 7, restarting the
+    # container under the new holder's suites. lock.sh no longer takes
+    # over from a live holder, but that is one guard on one side. This is
+    # the other side: whatever took the lock and however, a run whose
+    # token is gone stops here, and says so.
+    if ! lock_still_mine; then
+      echo >&2
+      echo "*** RUN VOID - this run lost the lock, before suite a$batch" >&2
+      echo "    now held by: $(lock_holder_line)" >&2
+      echo "    Another run owns the container. Nothing above is reportable" >&2
+      echo "    as a clean measurement, and this run stops rather than" >&2
+      echo "    restart a service somebody else is measuring." >&2
+      return 1
+    fi
 
     # Restart before EVERY suite, not once per run. The login rate
     # limiter lives in process memory, and one suite deliberately empties
@@ -356,11 +672,87 @@ cmd_verify() {
     dc restart api >/dev/null
     wait_healthy || return 1
 
-    # An explicit assignment, never "${rc:-1}". A `local out rc=0`
-    # swallows the exit code of the command on the same line, which
-    # reads a failure as a pass - a bug this project already paid for.
-    API_BASE="http://127.0.0.1:$API_PORT" bash "$f" || status=1
+    # Capture first, compare after. api_image writes nothing on failure
+    # and an empty answer must not read as "unchanged" - that is the
+    # `cmd | grep -q && echo A || echo B` trap in another costume.
+    local now now_schema
+    now="$(api_image)" || true
+    now_schema="$(schema_state)" || true
+    if [ "$now" != "$pinned" ] || [ "$now_schema" != "$pinned_schema" ]; then
+      echo >&2
+      echo "*** RUN VOID - the ground moved under it, before suite a$batch" >&2
+      [ "$now" != "$pinned" ] && {
+        echo "    image  pinned:  ${pinned#sha256:}" >&2
+        echo "    image  running: ${now:-<unreadable>}" >&2; }
+      [ "$now_schema" != "$pinned_schema" ] && {
+        echo "    schema pinned:  ${pinned_schema}" >&2
+        echo "    schema now:     ${now_schema:-<unreadable>}" >&2; }
+      echo "    Somebody rebuilt or migrated while this was measuring." >&2
+      echo "    Nothing above is reportable: the suites that already" >&2
+      echo "    passed measured a DIFFERENT service from the ones that" >&2
+      echo "    have not run, and one number over two describes neither." >&2
+      echo "    Re-run when the tree is still." >&2
+      return 1
+    fi
+
+    # The StartedAt window. Baseline read HERE - after this suite's own
+    # `dc restart api; wait_healthy` above, so verify's restart is inside
+    # the baseline and not measured as a split. The suite's output is HELD,
+    # not streamed, because a split suite must print no verdict at all: a
+    # red "PHASE 7 NOT ACCEPTED" about a run that was restarted mid-flight
+    # sends its reader hunting a fault that is not there.
+    local suite_started out rc after_started
+    suite_started="$(api_started)" || true
+    # `if` protects the capture from set -e (a NOT-ACCEPTED suite exits
+    # non-zero and must not abort the loop), and records the real code -
+    # never "${rc:-1}", the swallow this project has already paid for.
+    if out="$(API_BASE="http://127.0.0.1:$API_PORT" bash "$f" 2>&1)"; then
+      rc=0
+    else
+      rc=$?
+    fi
+    after_started="$(api_started)" || true
+
+    # Empty must not read as "unchanged" - the grep -q trap in another
+    # costume - so an unreadable start time at either end voids too.
+    if [ -z "$suite_started" ] || [ "$after_started" != "$suite_started" ]; then
+      echo >&2
+      echo "*** RUN VOID - the service restarted during suite a$batch" >&2
+      echo "    started at entry: ${suite_started:-<unreadable>}" >&2
+      echo "    started at exit:  ${after_started:-<unreadable>}" >&2
+      echo "    Its verdict is withheld, not printed: the suite measured two" >&2
+      echo "    service lifetimes, and neither ACCEPTED nor NOT ACCEPTED about" >&2
+      echo "    it would be true. Nothing above it is reportable either." >&2
+      echo "    Re-run when nobody is restarting the API." >&2
+      return 1
+    fi
+
+    # Clean: the service held still for the whole suite. Replay its output
+    # verbatim and let a real failure mark the run.
+    printf '%s\n' "$out"
+    [ "$rc" = 0 ] || status=1
   done
+
+  # And once at the end: the last suite could have been the one that was
+  # overtaken, and a check that only runs BEFORE each suite would miss it.
+  local final final_schema
+  final="$(api_image)" || true
+  final_schema="$(schema_state)" || true
+  if ! lock_still_mine; then
+    echo >&2
+    echo "*** RUN VOID - this run lost the lock during the final suite" >&2
+    echo "    now held by: $(lock_holder_line)" >&2
+    return 1
+  fi
+  if [ "$final" != "$pinned" ] || [ "$final_schema" != "$pinned_schema" ]; then
+    echo >&2
+    echo "*** RUN VOID - the ground moved during the final suite" >&2
+    echo "    image  pinned: ${pinned#sha256:} / now ${final:-<unreadable>}" >&2
+    echo "    schema pinned: ${pinned_schema} / now ${final_schema:-<unreadable>}" >&2
+    return 1
+  fi
+
+  echo "verify: every suite above ran on image ${pinned#sha256:}, schema ${pinned_schema}"
   return "$status"
 }
 
@@ -370,6 +762,10 @@ case "${1:-}" in
   test)   cmd_test ;;
   fmt)    cmd_fmt ;;
   lint)   cmd_lint ;;
+  code-drift) cmd_code_drift ;;
+  lock-status) cmd_lock_status ;;
+  unlock) cmd_unlock ;;
+  route-coverage) cmd_route_coverage ;;
   verify) cmd_verify "${2:-}" ;;
   logs)   dc logs --tail "${2:-80}" -f api ;;
   sh)     GO_TTY='-it' go_in_container 'sh' ;;

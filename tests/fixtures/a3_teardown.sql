@@ -19,6 +19,22 @@
 
 \set ON_ERROR_STOP on
 
+-- ONE TRANSACTION, and the reason is the guards, not tidiness.
+--
+-- 2026-09-13: 0142 made issue_invoice write instalments, the invoice
+-- DELETE below hit their foreign key, and psql stopped - after the
+-- DISABLE lines had committed on their own and before the ENABLE lines
+-- ran. Five append-only guards, stream_views among them, stayed OFF on
+-- the shared database, and the media gateway stayed pointed at this
+-- fixture. The assertion at the end never ran either.
+--
+-- DISABLE TRIGGER is transactional in PostgreSQL. Inside one transaction
+-- a failure anywhere rolls the disable back with everything else, so the
+-- worst a broken teardown can now do is leave fixture rows - never a
+-- guard off. And while it runs, no other session can see the guards off
+-- at all: the ALTER holds its lock until COMMIT.
+BEGIN;
+
 ALTER TABLE hbh.appointment_status_history DISABLE TRIGGER trg_ash_append_only;
 ALTER TABLE hbh.session_status_history     DISABLE TRIGGER trg_ssh_append_only;
 ALTER TABLE hbh.package_ledger             DISABLE TRIGGER trg_led_append_only;
@@ -53,6 +69,23 @@ DELETE FROM hbh.consents cn
  USING hbh.guardians g, hbh.users u
  WHERE g.guardian_id = cn.guardian_id AND u.user_id = g.user_id
    AND u.username LIKE 'a3_%';
+
+-- FROM 0142: an issued invoice carries an instalment schedule, and each
+-- instalment a status history that is append-only by trigger. They go
+-- first, in FK order - history, then instalments - or the invoice DELETE
+-- below fails on invoice_installments_invoice_id_fkey. Separate
+-- statements, not CTEs: several data-modifying CTEs have no defined
+-- order, and parent-and-child in one statement works until the plan
+-- changes.
+ALTER TABLE hbh.invoice_installment_status_history DISABLE TRIGGER trg_iish_append_only;
+DELETE FROM hbh.invoice_installment_status_history h
+ USING hbh.invoice_installments ii, hbh.invoices i, hbh.children c
+ WHERE ii.installment_id = h.installment_id AND i.invoice_id = ii.invoice_id
+   AND c.child_id = i.child_id AND c.child_no LIKE 'A3-%';
+DELETE FROM hbh.invoice_installments ii
+ USING hbh.invoices i, hbh.children c
+ WHERE i.invoice_id = ii.invoice_id AND c.child_id = i.child_id AND c.child_no LIKE 'A3-%';
+ALTER TABLE hbh.invoice_installment_status_history ENABLE TRIGGER trg_iish_append_only;
 
 -- Billing - payments, lines and invoices in ONE statement
 --
@@ -177,10 +210,10 @@ DECLARE n integer;
 BEGIN
   SELECT count(*) INTO n
   FROM   pg_trigger
-  WHERE  tgname IN ('trg_ash_append_only','trg_ssh_append_only','trg_led_append_only','trg_view_append_only','trg_view_no_delete')
+  WHERE  tgname IN ('trg_ash_append_only','trg_ssh_append_only','trg_led_append_only','trg_view_append_only','trg_view_no_delete','trg_iish_append_only')
   AND    tgenabled = 'O';
-  IF n <> 5 THEN
-    RAISE EXCEPTION 'teardown left an append-only trigger disabled (% of 5 enabled)', n;
+  IF n <> 6 THEN
+    RAISE EXCEPTION 'teardown left an append-only trigger disabled (% of 6 enabled)', n;
   END IF;
 
   SELECT count(*) INTO n
@@ -193,3 +226,7 @@ BEGIN
   END IF;
 END
 $restored$;
+
+-- The assertion above ran INSIDE the transaction: if it raised, nothing
+-- here committed, and the guards are exactly as they were before.
+COMMIT;

@@ -143,8 +143,17 @@ type maskRule struct {
 var resources = []Resource{
 	{
 		Name: "services", Param: "service_id", table: "hbh.services", pk: "service_id",
-		insertCols: []string{"branch_id", "code", "name_ar", "name_en", "kind_code", "default_duration_min", "color_hex", "sort_order"},
-		updateCols: []string{"branch_id", "code", "name_ar", "name_en", "kind_code", "default_duration_min", "color_hex", "sort_order"},
+		// creates_session_flg and needs_caseload_flg, from 0118, are the two
+		// that decide whether an appointment for this service opens a therapy
+		// session and whether it wants a caseload row first. A consultation
+		// sets both false.
+		//
+		// SAFE TO ADD WITHOUT TOUCHING THE CONSOLE. A key absent from the body
+		// is skipped rather than nulled - see bind() - so a form that has
+		// never heard of them leaves them at their database default of true,
+		// which is what every service in the table already means.
+		insertCols: []string{"branch_id", "code", "name_ar", "name_en", "kind_code", "default_duration_min", "color_hex", "sort_order", "creates_session_flg", "needs_caseload_flg"},
+		updateCols: []string{"branch_id", "code", "name_ar", "name_en", "kind_code", "default_duration_min", "color_hex", "sort_order", "creates_session_flg", "needs_caseload_flg"},
 		search:     []string{"code", "name_ar", "name_en"},
 		order:      "sort_order, service_id",
 	},

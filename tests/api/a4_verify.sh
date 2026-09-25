@@ -435,8 +435,24 @@ eq audit 'no camera path anywhere in the trail' '0' \
 eq mask 'a guardian may list the therapists' '200' "$(req GET /api/v1/therapists '' "$PARENT")"
 ok_if mask 'and sees who they are' \
   "$(grep -q '"full_name_ar"' "$BODY" && echo 0 || echo 1)" 'a guardian cannot see the therapists at all'
+# THE PATTERN IS "ANY VALUE AT ALL", NOT "A VALUE THAT LOOKS LIKE A
+# NUMBER", AND THE DIFFERENCE ALMOST COST THE WHOLE CHECK.
+#
+# This read '"mobile":"[0-9]' until 2026-09-12. Then trg_canonical_mobile
+# began storing therapists' numbers in E.164 - +201500000063 - and the
+# pattern stopped matching, because the value now starts with '+'.
+#
+# On the staff line below that showed up at once as a failure. On THIS
+# line it would have shown up as nothing at all: a leak check that can no
+# longer recognise the thing it is looking for passes whether the mask
+# works or not, and would have stayed green through the mask being
+# deleted. It was the ACCEPT side that caught it - the paired check that
+# insists the centre still sees what the family must not.
+#
+# So the pattern asks the only question the check is really about: is
+# there a value here? The mask writes null, which "[^"] cannot match.
 ok_if mask 'and NOT one mobile number among them' \
-  "$(grep -qE '"mobile":"[0-9]' "$BODY" && echo 1 || echo 0)" \
+  "$(grep -qE '"mobile":"[^"]' "$BODY" && echo 1 || echo 0)" \
   'a therapist mobile number reached a guardian'
 ok_if mask 'nor the account behind the person' \
   "$(grep -qE '"user_id":[0-9]' "$BODY" && echo 1 || echo 0)" \
@@ -444,7 +460,7 @@ ok_if mask 'nor the account behind the person' \
 
 eq mask 'the same list to staff' '200' "$(req GET /api/v1/therapists '' "$ADMIN")"
 ok_if mask 'DOES carry the mobile' \
-  "$(grep -qE '"mobile":"[0-9]' "$BODY" && echo 0 || echo 1)" \
+  "$(grep -qE '"mobile":"[^"]' "$BODY" && echo 0 || echo 1)" \
   'the mask hid the number from the centre too, which is not the point'
 
 # The same gap on the room list, and it had been documented and not

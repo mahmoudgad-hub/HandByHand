@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { UsageTracker } from '@hbh/shared/analytics/usage-tracker';
+import { OpsAuthService } from './core/auth/ops-auth.service';
 import { RouterOutlet } from '@angular/router';
 
 import { Connectivity } from '@hbh/shared/a11y/connectivity';
@@ -10,13 +12,14 @@ import { Toast } from '@hbh/shared/toast/toast';
 @Component({
   selector: 'hbh-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, IconSprite, Toast, Connectivity, RouteAnnouncer],
+  imports: [RouterOutlet, IconSprite, Toast, Connectivity, RouteAnnouncer, UsageTracker],
   template: `
     <hbh-icon-sprite />
     <hbh-connectivity />
     <router-outlet />
     <hbh-toast />
     <hbh-route-announcer />
+    <hbh-usage-tracker app="ops" [token]="auth.token" />
   `,
 })
-export class App {}
+export class App { protected readonly auth = inject(OpsAuthService); }

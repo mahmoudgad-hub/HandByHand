@@ -14,8 +14,8 @@
 .report-period { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 .hbh-field-block { display: grid; gap: 6px; }
-.hbh-field-block > span { font-weight: 600; font-size: .9rem; color: #1c4f63; }
-.hbh-field-block > span b { color: #c0392b; }
+.hbh-field-block > span, .hbh-field-block > label { font-weight: 600; font-size: .9rem; color: #1c4f63; }
+.hbh-field-block > span b, .hbh-field-block > label b { color: #c0392b; }
 .hbh-field-block input,
 .hbh-field-block textarea {
   width: 100%; padding: 11px 13px; font: inherit; color: inherit;
@@ -33,12 +33,18 @@
   font-size: .85rem; color: #8a5100; background: #fbf0df;
   border: 1px solid #efc471; border-radius: 10px;
 }
+.report-saved {
+  max-width: 78ch; margin: 14px auto 0; padding: 8px 14px;
+  font-size: .85rem; color: #2b6a4f; background: #e6f3ec;
+  border: 1px solid #b7dcc8; border-radius: 10px;
+}
 .report-error {
   max-width: 78ch; margin: 14px auto 0; padding: 11px 15px;
   display: flex; align-items: center; gap: 9px;
   font-size: .9rem; color: #a3231a; background: #fae9e7;
   border: 1px solid #f0c3bd; border-radius: 10px;
 }
+.report-error__act { margin-inline-start: auto; flex: none; }
 .report-locked {
   max-width: 78ch; margin: 14px auto 0; padding: 11px 15px;
   display: flex; align-items: center; gap: 9px;

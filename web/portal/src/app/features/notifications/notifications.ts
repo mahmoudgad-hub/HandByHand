@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { ChildContextService } from '../../core/auth/child-context.service';
 
 import { PortalApi } from '../../core/api/portal-api';
 import { loadErrorKey, traceIdFor } from '../../core/api/portal-error';
@@ -45,6 +46,7 @@ import { Skeleton } from '@hbh/shared/ui/skeleton';
 export class Notifications {
   private readonly api = inject(PortalApi);
   private readonly router = inject(Router);
+  private readonly childContext = inject(ChildContextService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly format = inject(FormatService);
 
@@ -53,6 +55,10 @@ export class Notifications {
   protected readonly failed = signal(false);
   protected readonly failureKey = signal('error.load');
   protected readonly traceId = signal<string | null>(null);
+  protected readonly opening = signal<string | null>(null);
+  protected readonly openError = signal('');
+  /** A mark-all in flight. The button says so and refuses a second one. */
+  protected readonly marking = signal(false);
 
   constructor() {
     this.load();
@@ -103,10 +109,83 @@ export class Notifications {
    * the parent has already navigated away from, would be worse.
    */
   protected open(item: PortalNotification): void {
-    this.markRead(item);
-    if (item.target) {
-      void this.router.navigate(item.target as string[]);
+    if (this.opening()) return;
+    this.openError.set('');
+    if (!item.target) { this.markRead(item); return; }
+    this.opening.set(item.id);
+    // Resolve the child through the authenticated family read. A notification
+    // can outlive access to its child; never fall back to the selected sibling.
+    if (item.childId) {
+      this.api.family().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: family => {
+          const child = family.children.find(child => child.id === item.childId);
+          if (!child) {
+            this.opening.set(null);
+            this.openError.set('notifications.childUnavailable');
+            return;
+          }
+          this.childContext.select(child);
+          this.navigateTo(item);
+        },
+        error: () => {
+          this.opening.set(null);
+          this.openError.set('notifications.openFailed');
+        },
+      });
+    } else {
+      this.navigateTo(item);
     }
+  }
+
+  private navigateTo(item: PortalNotification): void {
+    this.markRead(item);
+    void this.router.navigate([...(item.target ?? [])], { queryParams: item.targetQuery })
+      .then(opened => {
+        if (!opened) this.openError.set('notifications.openFailed');
+      }, () => this.openError.set('notifications.openFailed'))
+      .finally(() => this.opening.set(null));
+  }
+
+  /**
+   * Mark everything read (#24).
+   *
+   * NOT OPTIMISTIC, unlike markRead below, and the difference is where the
+   * parent is standing. Opening an item takes them elsewhere, so a failed
+   * read receipt is invisible and correcting it would interrupt the thing
+   * they actually wanted. Here they stay and watch the list: dots that clear
+   * and come back on the next load, with nothing said, is the screen telling
+   * somebody a thing it knows is untrue while they look at it.
+   *
+   * The rows change when the service says they changed. The failure is said
+   * out loud, in the same place the open failure is said, and the feed is
+   * left exactly as it was so a retry is a retry rather than a repair.
+   */
+  protected markAllRead(): void {
+    const feed = this.data();
+    if (!feed || !feed.unread || this.marking()) {
+      return;
+    }
+    this.marking.set(true);
+    this.openError.set('');
+    this.api.markAllNotificationsRead()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.marking.set(false);
+          const current = this.data();
+          if (current) {
+            this.data.set({
+              ...current,
+              unread: 0,
+              rows: current.rows.map((row) => row.read ? row : { ...row, read: true }),
+            });
+          }
+        },
+        error: () => {
+          this.marking.set(false);
+          this.openError.set('notifications.markAllFailed');
+        },
+      });
   }
 
   protected markRead(item: PortalNotification): void {
@@ -121,9 +200,9 @@ export class Notifications {
         unread: Math.max(0, feed.unread - 1),
       });
     }
-    this.api.markNotificationRead(item.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ error: () => undefined });
+    // This finite HTTP write must survive the navigation it accompanies.
+    // Cancelling on component destruction leaves every opened item unread.
+    this.api.markNotificationRead(item.id).subscribe({ error: () => undefined });
   }
 
   /**
@@ -134,6 +213,7 @@ export class Notifications {
    */
   protected icon(item: PortalNotification): IconName {
     switch (item.kind) {
+      case 'CHAT_MESSAGE': return 'ic-chat';
       case 'REPORT_PUBLISHED':
       case 'ASSESSMENT_PUBLISHED':
       case 'NOTE_PUBLISHED':

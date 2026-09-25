@@ -34,7 +34,13 @@
    * ------------------------------------------------------------------ */
   var ROUTES = { apply: '/apply', login: '/login' };
 
+  function developmentBase() {
+    if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)) { return ''; }
+    return String(CONFIG.developmentPortalBaseUrl || 'http://localhost:4210').replace(/\/+$/, '');
+  }
+
   function portalBase() {
+    if (developmentBase()) { return developmentBase(); }
     var base = typeof CONFIG.portalBaseUrl === 'string' ? CONFIG.portalBaseUrl.trim() : '';
     return base.replace(/\/+$/, '');
   }
@@ -46,6 +52,7 @@
      distinction in one place, so a future edit that publishes the
      portal only has to fill portalBaseUrl in and everything follows. */
   function applyBase() {
+    if (developmentBase()) { return developmentBase(); }
     var base = typeof CONFIG.applyBaseUrl === 'string' ? CONFIG.applyBaseUrl.trim() : '';
     base = base.replace(/\/+$/, '');
     return base || portalBase();
@@ -132,14 +139,6 @@
       if (map) { map.setAttribute('href', mapHref); map.hidden = false; }
     }
 
-    /* The embedded map is driven from the SAME value as the link above.
-       It shipped with the coordinates written into the iframe's src in
-       index.html as well as stored in site_contact - two copies of one
-       fact, and the one nobody edits is the one that ends up pointing at
-       the old building. */
-    var frameSrc = mapEmbed(CONFIG.mapUrl);
-    var frame = document.getElementById('contactMapFrame');
-    if (frame && frameSrc) { frame.setAttribute('src', frameSrc); }
     // The address is language-dependent, so applyLanguage owns it from
     // here on. This first call is what puts something there before any
     // toggle happens.
@@ -192,18 +191,6 @@
         + encodeURIComponent(pair[1] + ',' + pair[2]);
     }
     return '';
-  }
-
-  /* The embed URL for the same coordinates. Only a "lat, lng" pair can
-     become one - a plain map link cannot be reframed as an embed - so a
-     URL in that field leaves the iframe on whatever the document
-     shipped with, and only the button below it changes. */
-  function mapEmbed(raw) {
-    var pair = String(raw || '').trim()
-      .match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-    if (!pair) { return ''; }
-    return 'https://maps.google.com/maps?q='
-      + encodeURIComponent(pair[1] + ',' + pair[2]) + '&z=16&output=embed';
   }
 
   /* Directions in the centre's own words. Line breaks are meaningful
@@ -505,6 +492,21 @@
   }
 
   function applyLanguage(lang) {
+    document.querySelectorAll('[data-content-src], [data-content-alt]').forEach(function (node) {
+      ['src', 'alt'].forEach(function (attribute) {
+        var key = node.getAttribute('data-content-' + attribute);
+        var value = key && textsFor(key, lang);
+        if (!value) { return; }
+        if (attribute === 'src') {
+          try {
+            var url = new URL(value, location.href);
+            if (!/^(https?:|file:)$/.test(url.protocol)) { return; }
+          } catch (_) { return; }
+        }
+        node.setAttribute(attribute, value);
+        node.setAttribute('data-src', 'db');
+      });
+    });
     var dict = lang === 'en' ? EN : AR;
     var nodes = document.querySelectorAll('[data-i18n]');
     for (var i = 0; i < nodes.length; i++) {
@@ -669,7 +671,7 @@
 
   function list(name) {
     var value = content()[name];
-    return (Array.isArray(value) && value.length) ? value : null;
+    return Array.isArray(value) ? value : null;
   }
 
   /* Arabic is the page; English falls back to it. An untranslated row
@@ -877,17 +879,12 @@
      was authored with. Read, never required: the file may not be there,
      and this returns false rather than throwing when it is not. */
   function hasGalleryMedia(card) {
-    var media = window.HBH_TEAM_MEDIA;
-    if (!media) { return false; }
-    var classes = String(card.className).split(/\s+/);
-    for (var i = 0; i < classes.length; i++) {
-      var key = classes[i].indexOf('member-') === 0 ? classes[i].slice(7) : '';
-      if (key && Array.isArray(media[key]) && media[key].length) { return true; }
-    }
-    return false;
+    var member = (content().team || []).find(function (item) { return String(item.id) === card.getAttribute('data-member-id'); });
+    return !!(member && (member.profileHref || ['photos', 'videos', 'certificates'].some(function (key) { return Array.isArray(member[key]) && member[key].length; })));
   }
 
   function fillMemberCard(card, member, lang) {
+    card.setAttribute('data-member-id', member.id);
     var name = card.querySelector('h3');
     if (name) {
       name.textContent = pick(member, 'name', lang);

@@ -129,9 +129,10 @@ count_web_executed() {
   printf '%s' "${n:-0}"
 }
 
-# surface: one line per probe this script wrote itself.
+# surface: one line per probe this script wrote itself. The "origin ...
+# catch-all:" lines are not probes and must not be counted as work.
 count_probes() {
-  grep -cE '^\s*(OK|REFUSED) ' || true
+  grep -cE '^\s*(OK|FALLBACK|ANSWERED|BY-DESIGN) ' || true
 }
 
 # ---------------------------------------------------------------------------
@@ -286,6 +287,16 @@ stage_surface() {
     return 1
   fi
 
+  # The portal and the console REACH the service on purpose - they are the
+  # applications, and /api/ is how they work. Listing them here says so out
+  # loud; anything not listed still must not answer a single API path.
+  #
+  # It is an allow list and it is named per origin, because the alternative
+  # is a check that can never go green, and a check that is always red is a
+  # check nobody reads. The site is deliberately absent: it has no API at
+  # all, and that is the whole finding this stage exists to protect.
+  local api_ok="${HBH_CI_API_ORIGINS:-}"
+
   local log="$LOGDIR/surface.log" origin path code bad_count=0
   : >"$log"
 
@@ -303,14 +314,93 @@ stage_surface() {
     /config.json
   )
 
+  # A STATUS CODE ALONE CANNOT TELL A FILE FROM THE CATCH-ALL, and reading
+  # it as if it could cost this check its credibility the first time it was
+  # aimed at the live domains: it reported twenty-two exposed paths, and
+  # eighteen of them were an Angular origin answering its index.html for
+  # every unknown route - 200, by design, carrying no file at all. Four
+  # were real. A report that is eighteen parts noise gets the whole thing
+  # disbelieved, including the four.
+  #
+  # So each origin is asked for a path nothing could plausibly serve, and
+  # what comes back IS that origin's "not found", whatever code it wears.
+  # Any probe that matches it byte-for-byte is the same non-answer.
+  #
+  # The fingerprint is code + content-type + length together. Length alone
+  # would call two different short errors identical; code alone is what
+  # went wrong the first time.
+  local fp_code fp_type fp_len fingerprint reply r_code r_type r_len
   for origin in $origins; do
+    IFS='|' read -r fp_code fp_type fp_len <<EOF
+$(curl -s -o /dev/null -m 15 -w '%{http_code}|%{content_type}|%{size_download}' \
+    "$origin/__hbh_ci_nothing_here_$$" 2>/dev/null)
+EOF
+    fingerprint="$fp_code|$fp_type|$fp_len"
+    printf '  origin %s  catch-all: %s\n' "$origin" "$fingerprint" >>"$log"
+
     for path in "${MUST_404[@]}"; do
-      code="$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$origin$path" 2>/dev/null)"
-      if [ "$code" = "404" ] || [ "$code" = "000" ]; then
-        printf '  OK      %-46s %s -> %s\n' "$origin" "$path" "$code" >>"$log"
+      reply="$(curl -s -o /dev/null -m 15 -w '%{http_code}|%{content_type}|%{size_download}' \
+                 "$origin$path" 2>/dev/null)"
+      IFS='|' read -r r_code r_type r_len <<EOF
+$reply
+EOF
+      local serves_api=0
+      case " $api_ok " in *" $origin "*) serves_api=1 ;; esac
+
+      if [ "$r_code" = "404" ] || [ "$r_code" = "000" ]; then
+        printf '  OK       %-42s %-28s -> %s\n' "$origin" "$path" "$r_code" >>"$log"
+      elif [ "$serves_api" = 1 ] && { case "$path" in /api/*|/healthz) true ;; *) false ;; esac; }; then
+        printf '  BY-DESIGN %-41s %-28s -> %s (declared API origin)\n' \
+               "$origin" "$path" "$r_code" >>"$log"
+      elif [ "$reply" = "$fingerprint" ]; then
+        # Indistinguishable from a path that does not exist. Nothing was
+        # served; there is nothing here to leak.
+        printf '  FALLBACK %-42s %-28s -> %s (catch-all, no file)\n' \
+               "$origin" "$path" "$r_code" >>"$log"
       else
-        printf '  REFUSED %-46s %s -> %s\n' "$origin" "$path" "$code" >>"$log"
+        printf '  ANSWERED %-42s %-28s -> %s %s %sB\n' \
+               "$origin" "$path" "$r_code" "$r_type" "$r_len" >>"$log"
         bad_count=$((bad_count + 1))
+      fi
+    done
+  done
+
+  # SOME FILES MUST BE SERVED, SO THE QUESTION BECOMES WHAT IS IN THEM.
+  #
+  # Asking only "is this path answered?" cannot see the worst thing that
+  # has been published here. config.js is served BY NECESSITY - it carries
+  # the portal's address, which is why the page works - so no allow list
+  # and no 404 rule will ever hide it. What mattered was its contents: six
+  # mentions of OTP_ECHO and a sentence stating that
+  # POST /api/v1/auth/otp/request returns the login code in its body, and
+  # that anyone knowing a mobile number can sign in as its owner.
+  #
+  # The explanation is not a secret in itself; it is a map. It saves its
+  # reader the single question that separates someone who knows from
+  # someone who does not. So it is checked by content, and a green run
+  # after the 404 rules pass no longer implies the surface is clean.
+  local -a CONTENT=(
+    '/config.js|OTP_ECHO'
+    '/config.js|dev_code'
+    '/index.html|OTP_ECHO'
+  )
+  local entry cpath cpat body hits
+  for origin in $origins; do
+    for entry in "${CONTENT[@]}"; do
+      cpath="${entry%%|*}"; cpat="${entry##*|}"
+      body="$(curl -s -m 15 "$origin$cpath" 2>/dev/null)"
+      if [ -z "$body" ]; then
+        printf '  OK       %-42s %-28s -> not served\n' "$origin" "$cpath" >>"$log"
+        continue
+      fi
+      hits="$(printf '%s' "$body" | grep -c "$cpat" || true)"
+      if [ "$hits" -gt 0 ]; then
+        printf '  ANSWERED %-42s %-28s -> served, %s mention(s) of %s\n' \
+               "$origin" "$cpath" "$hits" "$cpat" >>"$log"
+        bad_count=$((bad_count + 1))
+      else
+        printf '  OK       %-42s %-28s -> served, no %s\n' \
+               "$origin" "$cpath" "$cpat" >>"$log"
       fi
     done
   done
@@ -372,7 +462,10 @@ self_test() {
   check count_db_verdicts   2 "$(printf '  PHASE 00 ACCEPTED\n  PHASE a7 ACCEPTED\n'     | count_db_verdicts)"
   check count_go_packages   2 "$(printf 'ok  \thbh/api/store\tok\nok  \thbh/api/http\n'  | count_go_packages)"
   check count_web_executed 53 "$(printf 'Executed 41 of 41\nExecuted 12 of 12\n'         | count_web_executed)"
-  check count_probes        2 "$(printf '  OK      a /x -> 404\n  REFUSED b /y -> 200\n' | count_probes)"
+  check count_probes        4 "$(printf '  OK       a /x -> 404\n  FALLBACK a /y -> 200 (catch-all, no file)\n  ANSWERED b /z -> 200 text/html 91B\n  BY-DESIGN c /api/v1/x -> 401 (declared API origin)\n' | count_probes)"
+  # The header line is not a probe: counting it would let an origin that
+  # answered nothing report that it had done work.
+  check count_probes        0 "$(printf '  origin https://x  catch-all: 200|text/html|91\n' | count_probes)"
 
   echo
   if [ "$fails" != 0 ]; then

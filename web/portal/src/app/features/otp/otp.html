@@ -22,8 +22,7 @@
           <hbh-icon name="ic-lock" />
           <span>{{ failureKey() | t }}</span>
         </div>
-        <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button"
-                style="margin-top:14px" (click)="restart()">
+        <button class="hbh-btn hbh-btn--ghost hbh-btn--block" type="button" (click)="restart()">
           {{ 'otp.startOver' | t }}
         </button>
       } @else {
@@ -64,9 +63,15 @@
         @if (devCode()) {
           <!-- Development only: there is no SMS gateway, so the service hands
                the code back in the response and this is where it becomes
-               reachable. Rendered only from a local address, so a build that
-               kept the switch on cannot show a working code from a public
-               host. -->
+               reachable.
+
+               THE LOCAL-ADDRESS CHECK HIDES THE DISPLAY, AND HIDES NOTHING
+               ELSE. The code is in the response body either way, readable in
+               a network tab by anyone the response reaches. The control that
+               matters is server-side and is OTP_ECHO being off; this button
+               is a convenience, not a gate, and a comment that called it one
+               would stop the next reader from checking the real one. That is
+               the eleven minutes on hbhskills.com, written down. -->
           <button class="otp__dev" type="button" (click)="useDevCode()">
             <span>{{ 'otp.devCode' | t }}</span>
             <b dir="ltr">{{ devCode() }}</b>
@@ -90,7 +95,6 @@
         </div>
 
         <button class="hbh-btn hbh-btn--primary hbh-btn--block" type="button"
-                style="margin-top:18px"
                 [class.is-busy]="busy()" [disabled]="busy() || !complete()"
                 (click)="submit()">
           {{ (busy() ? 'otp.verifying' : 'otp.verify') | t }}

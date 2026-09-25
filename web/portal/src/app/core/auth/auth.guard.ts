@@ -43,7 +43,9 @@ export const childSelectedGuard: CanActivateFn = () => {
     return router.createUrlTree(['/welcome']);
   }
 
-  return api.welcome().pipe(
+  // family(), not welcome(): this needs the list of children, and welcome()
+  // fetched four more things per child on every reload of a child screen.
+  return api.family().pipe(
     map((summary) => {
       const found = summary.children.find((candidate) => candidate.id === remembered);
       if (!found) {
@@ -58,6 +60,10 @@ export const childSelectedGuard: CanActivateFn = () => {
     catchError(() => of(router.createUrlTree(['/welcome']))),
   );
 };
+
+/** Messages span the family; only composing child requests requires a selection. */
+export const requestChildGuard: CanActivateFn = (route, state) =>
+  route.queryParamMap.get('tab') === 'messages' ? true : childSelectedGuard(route, state);
 
 /** Sends an already signed-in visitor away from the sign-in screens. */
 export const guestOnlyGuard: CanActivateFn = () => {
