@@ -88,7 +88,7 @@ check_no_api() {
 # folder tells a stranger what is in it.
 check_no_docs() {
   local origin="${1:-http://127.0.0.1:$PORT}" bad=0 code p
-  for p in /README.md /CONTENT-AUDIT.md /content.json /package.json /.env /assets/; do
+  for p in /README.md /CONTENT-AUDIT.md /DESIGN.md /content.json /package.json /.env /assets/; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$origin$p" 2>/dev/null)
     if [ "$code" = 000 ]; then
       echo "      $p  unreachable - not checked" >&2
@@ -107,6 +107,67 @@ check_no_docs() {
     return 1
   fi
   echo "      notes and configs: 404 on all six - the folder serves the site only"
+  return 0
+}
+
+# check_served_clean reads what the origin DOES serve, not what it refuses.
+#
+# WHY THE TWO CHECKS ABOVE COULD NOT HAVE CAUGHT THIS ONE. Both ask for
+# things by name and demand a 404. config.js can never be on such a list:
+# it carries the portal's address, so it MUST be served, and an allow
+# list cannot help - it is on the allowed side by necessity.
+#
+# And it was the worst of the three. For eight days hbhskills.com/config.js
+# answered 200 with six mentions of OTP_ECHO and a sentence saying that
+# POST /api/v1/auth/otp/request returns the login code in its own response
+# body and anyone knowing a mobile number can sign in as its owner - on
+# the page that invites families to register. The Security Engineer then
+# measured the door itself and found it open, so it was not a description
+# of a past risk. The file's own header says it must never hold a secret.
+#
+# THE SHAPE OF THE DEFECT IS IN THE QUESTION, NOT THE ANSWER: a check that
+# asks "is the forbidden name refused?" goes green the day somebody
+# deletes README.md, while the map is still published inside a file that
+# is supposed to be there. So this one asks the other question - what is
+# in the bytes we hand out? Raised by the Security Engineer against
+# deploy/ci/run.sh surface, which has the same blind spot.
+#
+# The markers are operational, not stylistic: a flag name, an endpoint, a
+# sentence about signing in as somebody else, a database role. The reason
+# for a deployment decision belongs in deploy/server/PORTAL-LINK.md, which
+# no origin serves.
+#
+# AN EMPTY FETCH IS A FAILURE, NOT A PASS. grep -c over nothing returns 0
+# and reads exactly like "clean" - the same shape as the suite that ran
+# zero tests and reported success.
+check_served_clean() {
+  local origin="${1:-http://127.0.0.1:$PORT}" bad=0 body hits f
+  local markers='OTP_ECHO|dev_code|login code|sign in as|response body|hbh_owner|hbh_app|BYPASSRLS|SECURITY DEFINER|_dev_only|sslip\.io'
+
+  for f in /config.js /content.js; do
+    body="$(curl -s --max-time 15 "$origin$f" 2>/dev/null)"
+    if [ -z "$body" ]; then
+      echo "  !!  $origin$f returned nothing - this check proved NOTHING." >&2
+      echo "      Do not read it as clean; find out why it is empty." >&2
+      bad=1
+      continue
+    fi
+    hits="$(printf '%s' "$body" | grep -inE "$markers" | head -5)"
+    if [ -n "$hits" ]; then
+      echo "  !!  $origin$f is served to everyone and describes the system:" >&2
+      printf '        %s\n' "$hits" >&2
+      bad=1
+    fi
+  done
+
+  if [ "$bad" -ne 0 ]; then
+    echo "  !!  A FILE THAT MUST BE SERVED IS CARRYING OPERATIONAL DETAIL." >&2
+    echo "      No allow list can hide it - the fix is the file's content." >&2
+    echo "      The reasoning belongs in deploy/server/PORTAL-LINK.md," >&2
+    echo "      which nothing serves." >&2
+    return 1
+  fi
+  echo "      served files: config.js and content.js carry no operational detail"
   return 0
 }
 
@@ -169,8 +230,9 @@ case "${1:-status}" in
   # gets discovered a week late.
   audit)
     rc=0
-    check_no_api  "${2:-http://127.0.0.1:$PORT}" || rc=1
-    check_no_docs "${2:-http://127.0.0.1:$PORT}" || rc=1
+    check_no_api      "${2:-http://127.0.0.1:$PORT}" || rc=1
+    check_no_docs     "${2:-http://127.0.0.1:$PORT}" || rc=1
+    check_served_clean "${2:-http://127.0.0.1:$PORT}" || rc=1
     exit "$rc"
     ;;
   logs) tail -n "${2:-40}" "$LOG/site.log" ;;

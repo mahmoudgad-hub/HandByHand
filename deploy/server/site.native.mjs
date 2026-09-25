@@ -1,4 +1,34 @@
 // =====================================================================
+// ⚠ THIS FILE IS NOT WHAT SERVES hbhskills.com. MEASURED 2026-09-19.
+//
+// The apps list in web.native.sh reads
+//
+//     site:8093:8445:site:static
+//
+// so on the deployed host the public site is served by web.native.mjs,
+// while stack.native.sh still starts THIS file on the same port 8093.
+// Two declarations, one port, and only one of them wins - whichever
+// started first.
+//
+// A SERVING RULE WRITTEN ONLY HERE IS NOT IN FORCE. It cost exactly
+// that: the allow list below (servable(), the TYPES table) was added
+// here on 2026-09-11 to stop /README.md being handed out, the local
+// audit went green because the container was running THIS program, and
+// hbhskills.com/README.md answered 200 for eight more days. The green
+// was the measuring tool, not the property - it proved the wrong server.
+//
+// So: write a serving rule in web.native.mjs, then mirror it here if
+// this file is still wanted. And an audit is only evidence when it is
+// pointed at the ORIGIN, never at a local copy of a server that may not
+// be the deployed one:
+//
+//     bash deploy/server/site.native.sh audit https://hbhskills.com
+//
+// It is the same lesson CLAUDE.md records about hbh.nginx.conf - a rule
+// written in the config that does not run - repeating with new names.
+// Whether this pair should exist at all is the Administrator's call,
+// since deploy/ is theirs; until then it stays, and it says this.
+// =====================================================================
 // Serve the public site.
 //
 //   node site.native.mjs <site dir> <http port> [https port] [tls dir]
@@ -115,6 +145,20 @@ function servable(file) {
   return Object.prototype.hasOwnProperty.call(TYPES, path.extname(file).toLowerCase());
 }
 
+// True for a NUL byte, any C0 control character, or DEL.
+//
+// Written as arithmetic rather than a regex class on purpose - the
+// reason is at the call site. Nothing in this function can be damaged by
+// a tool that re-encodes the file, because there is not one unprintable
+// character in it.
+function hasControlChar(value) {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code < 32 || code === 127) return true;
+  }
+  return false;
+}
+
 function sendFile(res, file) {
   if (!servable(file)) return send(res, 404, 'not found');
   res.writeHead(200, {
@@ -151,8 +195,55 @@ function handler(req, res) {
   // ../../.env is otherwise a request this happily answers.
   let target;
   try {
-    target = path.resolve(ROOT, '.' + decodeURIComponent(url));
+    const decoded = decodeURIComponent(url);
+
+    // THE PATH IS JUDGED BY WHAT IT CONTAINS, BEFORE ANYTHING USES IT.
+    //
+    // This try used to wrap the decode alone, and that was not a guard:
+    // decodeURIComponent('%00') does not throw - it returns a string
+    // holding a null byte - so the catch was never reached. The throw
+    // came one line later and OUTSIDE the try, from fs.stat, which
+    // rejects a path with a null byte synchronously:
+    //
+    //   TypeError [ERR_INVALID_ARG_VALUE]: The argument 'path' must be
+    //   a string, Uint8Array, or URL without null bytes.
+    //
+    // Nothing catches a synchronous throw inside a request handler, so
+    // the PROCESS EXITED. GET /%00 - eleven bytes, no account, no
+    // knowledge of this system - took the public site down. Measured on
+    // this file: /index.html 200, then /%00, then /index.html with no
+    // reply and the container exit code 1. Found by the Security
+    // Engineer; reproduced here before it was changed.
+    //
+    // WHY A CHECK AND NOT A BIGGER try. Wrapping fs.stat would fix this
+    // call and leave the next one: the fault is that a byte no URL
+    // should carry reached a filesystem API at all, and every later user
+    // of `target` inherits it. So it is refused once, at the only place
+    // the request becomes a path - the same reason TYPES is an allow
+    // list rather than a list of names to block.
+    //
+    // Control characters are refused for the same reason, not for
+    // tidiness: a newline in a path is how a log line gets forged.
+    //
+    // NO REGEX CHARACTER CLASS, AND THAT IS THE POINT. This was first
+    // written as a class of two escaped code points, and the escapes did
+    // not survive being written to disk: the file came back holding the
+    // RAW bytes, grep started answering "Binary file matches", and the
+    // class became invisible to anyone reviewing it - the comment that
+    // explained it was mangled too. It still worked, which is what makes
+    // it dangerous: the next tool to re-encode this file could change
+    // what it matches with nothing on screen to show for it.
+    //
+    // A numeric comparison cannot be mangled by anything, reads the same
+    // in every editor, and greps. The cost is a loop over a path, which
+    // no request will ever notice.
+    if (hasControlChar(decoded)) {
+      return send(res, 400, 'bad request');
+    }
+
+    target = path.resolve(ROOT, '.' + decoded);
   } catch {
+    // Still needed: a malformed escape like /%E0%A4%A DOES throw here.
     return send(res, 400, 'bad request');
   }
   if (target !== ROOT && !target.startsWith(ROOT + path.sep)) {
