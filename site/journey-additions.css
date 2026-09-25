@@ -22,15 +22,44 @@
 .journey-online-steps li{display:flex;gap:16px;align-items:flex-start}
 .journey-online-steps li>span{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;border-radius:12px;background:var(--teal-100);color:var(--teal-700);font-weight:800}
 .journey-online-steps p:not(.journey-small-title){margin:0;color:var(--muted);font-size:14px}
-.journey-package-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}
-.journey-package{display:flex;flex-direction:column;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:var(--shadow-sm)}
-.journey-package-featured{border:2px solid var(--teal-600);background:linear-gradient(180deg,var(--surface-cool),var(--surface))}
-.journey-package-label{font-size:12px;font-weight:700;display:inline-block;padding:5px 11px;border-radius:99px;background:var(--surface-2);color:var(--teal-700)}
-.journey-package h3{font-size:26px;margin:18px 0 8px;color:var(--ink)}
-.journey-package>p{font-size:14px;line-height:1.9;color:var(--ink-2);margin:0}
-.journey-package ul{padding-inline-start:22px;margin:22px 0 28px;line-height:2.4;font-size:14px;color:var(--ink-2)}
-.journey-package li::marker{color:var(--teal-700)}
-.journey-package .journey-cost{margin-top:auto;padding-top:12px;font-weight:700;color:var(--teal-700)}
+.journey-package-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;align-items:stretch;padding-block-start:14px}
+/* Packages, to concept 1 (Warm Sanctuary), 2026-09-22.
+   Written against THIS site's tokens, not the concept's own hex: the
+   concept's palette is the same palette under other names
+   (--primary #2A7680 is --teal-600, --border-light #E8E1D4 is --line),
+   so copying the values would have frozen a second copy of the identity
+   that stops moving when the tokens move. --ink-muted #6C828C is the one
+   that differs; --muted here is darker and it is the one that passed the
+   contrast suite, so --muted wins. */
+.journey-package{display:flex;flex-direction:column;align-items:stretch;gap:18px;background:var(--surface);border:1.5px solid var(--line);border-radius:28px;padding:34px 28px;box-shadow:var(--shadow-sm);position:relative;transition:transform .25s ease,box-shadow .25s ease}
+.journey-package:hover{transform:translateY(-5px);box-shadow:var(--shadow-md)}
+.journey-package-featured{border-color:var(--teal-600);box-shadow:var(--shadow-md);background:linear-gradient(180deg,var(--surface-cool),var(--surface))}
+/* The ribbon sits on the border, so it needs room above the card: the
+   grid keeps align-items:stretch and the row gap carries it. */
+.journey-package-ribbon{position:absolute;inset-block-start:-14px;inset-inline-end:28px;background:var(--teal-600);color:#fff;padding:4px 16px;border-radius:99px;font-size:13px;font-weight:800;white-space:nowrap}
+.journey-package-label{font-size:13px;font-weight:700;display:inline-flex;align-items:center;width:fit-content;padding:6px 16px;border-radius:99px;background:var(--surface-2);color:var(--teal-700)}
+/* Three tints, one per card, so the eye can tell the steps apart before
+   it reads them. Same three the rest of the page already uses. */
+.journey-package-label.label-teal{background:var(--teal-100);color:var(--teal-900)}
+.journey-package-label.label-coral{background:var(--coral-100);color:var(--coral-600)}
+.journey-package-label.label-green{background:var(--green-100);color:var(--green-600)}
+.journey-package h3{font-size:24px;margin:0;color:var(--ink)}
+.journey-package>p{font-size:14.5px;line-height:1.75;color:var(--muted);margin:0}
+/* Rules above and below the list, not around the card: they separate
+   "what this is" from "what is included" from "what it costs" - three
+   questions a parent asks in that order. */
+.journey-package-features{list-style:none;display:flex;flex-direction:column;gap:12px;margin:0;padding:18px 0;border-block:1px solid var(--line);font-size:14.5px;color:var(--ink-2)}
+.journey-package-features li{display:flex;align-items:flex-start;gap:10px;line-height:1.6}
+.journey-package-features li svg{width:18px;height:18px;flex:none;margin-block-start:2px;fill:none;stroke:var(--teal-600);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+/* A qualifier on the bullet above it, not a second bullet. It gets no
+   tick on purpose: the tick is the one mark in this card that says
+   "included", and putting one here would read as another thing you get
+   rather than a limit on the thing you get. It stays inside the same
+   <li> so a screen reader reads it with the line it qualifies, and it
+   is small and muted so the eye takes it as a footnote to that line. */
+.journey-package-features .journey-feature-body{display:flex;flex-direction:column;gap:2px}
+.journey-package-features .journey-feature-note{font-style:normal;font-size:12.5px;font-weight:600;color:var(--teal-700)}
+.journey-package .journey-cost{margin:auto 0 0;font-size:14px;font-weight:700;color:var(--teal-900)}
 .journey-package .btn{width:100%;margin-top:15px;text-align:center}
 .journey-package-note{font-size:13px;color:var(--muted);text-align:center;line-height:1.9;margin:24px 0 0}
 .journey-extra-faq{margin-top:14px}
@@ -38,7 +67,7 @@
 .journey-closing-inner{text-align:center;padding:48px 28px;border-radius:28px;background:linear-gradient(120deg,var(--teal-100),var(--surface),var(--coral-100));border:1px solid var(--line-cool)}
 .journey-closing p{max-width:700px;margin-inline:auto}.journey-closing .journey-actions{justify-content:center}
 @media(max-width:1100px){.journey-online-grid{gap:30px}.journey-package{padding:24px}}
-@media(max-width:800px){.journey-needs-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.journey-online-grid{grid-template-columns:1fr}.journey-package-grid{grid-template-columns:1fr}.journey-package{padding:26px}.journey-package ul{margin-bottom:15px}.journey-guidance{align-items:flex-start;flex-direction:column;gap:18px}.journey-online-steps{padding:24px}}
+@media(max-width:800px){.journey-needs-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.journey-online-grid{grid-template-columns:1fr}.journey-package-grid{grid-template-columns:1fr}.journey-package{padding:26px}.journey-guidance{align-items:flex-start;flex-direction:column;gap:18px}.journey-online-steps{padding:24px}}
 @media(max-width:480px){.journey-needs-grid{grid-template-columns:1fr;gap:12px}.journey-needs-grid article{padding:20px}.journey-guidance{padding:22px}.journey-actions{align-items:stretch}.journey-actions .btn,.journey-guidance .btn{width:100%;text-align:center}.journey-closing-inner{padding:32px 20px}.journey-online-copy>p{font-size:15px}.journey-online-steps{padding:20px}}
 
 /* Readable supporting copy while preserving the existing palette. */
