@@ -125,7 +125,7 @@ func TestMetaSendsTheApprovedTemplateWithItsValues(t *testing.T) {
 func TestMetaSendsTheCodeTwiceForAnAuthenticationTemplate(t *testing.T) {
 	ms := newMetaServer(t, http.StatusOK, metaAcceptedReply)
 	_, err := newTestMeta(t, ms.URL).Send(context.Background(), Message{
-		To:           "+966544452367",
+		To:           "+966501234567",
 		TemplateCode: "OTP_LOGIN",
 		TemplateName: "otp_login",
 		TemplateLang: "ar",
