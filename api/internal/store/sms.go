@@ -154,65 +154,83 @@ func (d *DB) EnqueueOTPDelivery(ctx context.Context, centerID int, mobile,
 
 // undefinedFunction is Postgres's answer when a function does not exist.
 // It is named here, and nowhere else, because it is the one case a template
-// lookup treats as "no template" rather than as a fault: see TemplateSID.
+// lookup treats as "no template" rather than as a fault: see TemplateRef.
 const undefinedFunction = "42883"
 
-// TemplateSID returns the ContentSid the centre's template for this code was
-// approved under, or "" when there is none.
+// TemplateRef is how Meta names one approved template: the name, the language
+// it was approved in, and whether it is an authentication template - which
+// carries a copy-the-code button whose value has to be sent with the body.
 //
-// "" ALSO WHEN THE TEMPLATE TABLE DOES NOT EXIST YET. Migration 0153 is held
-// until this build is running, so for a while this build runs against a
-// database without hbh.message_template_sid. Treating that as "no approved
+// THE THREE TRAVEL TOGETHER because they answer one question. A name without
+// its language is refused by Meta as if the template did not exist, and a name
+// without its category is sent one parameter short. An empty Name means no
+// approved template, which is the only "not found" this type has.
+type TemplateRef struct {
+	Name string
+	Lang string
+	Auth bool
+}
+
+// TemplateRef returns the template the centre's code was approved under, or a
+// zero TemplateRef when there is none.
+//
+// ZERO ALSO WHEN THE TEMPLATE TABLE DOES NOT KNOW META YET. Migration 0167 is
+// held until this build is running, so for a while this build runs against a
+// database without hbh.message_template_ref. Treating that as "no approved
 // template" is exactly the truth of that database - nothing is approved in a
-// table that is not there - and it is what lets the image deploy before the
+// function that is not there - and it is what lets the image deploy before the
 // migration instead of the two having to land in the same second. Any other
 // error is returned.
-func (d *DB) TemplateSID(ctx context.Context, centerID int, code string) (string, error) {
-	var sid string
+func (d *DB) TemplateRef(ctx context.Context, centerID int, code string) (TemplateRef, error) {
+	var t TemplateRef
 	err := d.InReadTx(ctx, "", func(ctx context.Context, tx pgx.Tx) error {
 		return tx.QueryRow(ctx,
-			`SELECT coalesce(hbh.message_template_sid($1, $2), '')`, centerID, code).Scan(&sid)
+			`SELECT coalesce(template_name, ''), coalesce(language_code, ''), coalesce(is_auth, false)
+			   FROM hbh.message_template_ref($1, $2)`, centerID, code).
+			Scan(&t.Name, &t.Lang, &t.Auth)
 	})
 	if IsCode(err, undefinedFunction) {
-		return "", nil
+		return TemplateRef{}, nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("message_template_sid: %w", err)
+		return TemplateRef{}, fmt.Errorf("message_template_ref: %w", err)
 	}
-	return sid, nil
+	return t, nil
 }
 
-// SMSTemplateSID is TemplateSID for a message the worker has claimed; the
+// SMSTemplateRef is TemplateRef for a message the worker has claimed; the
 // outbox row already knows its centre and its code.
-func (d *DB) SMSTemplateSID(ctx context.Context, id int64) (string, error) {
-	var sid string
+func (d *DB) SMSTemplateRef(ctx context.Context, id int64) (TemplateRef, error) {
+	var t TemplateRef
 	err := d.InReadTx(ctx, "", func(ctx context.Context, tx pgx.Tx) error {
 		return tx.QueryRow(ctx,
-			`SELECT coalesce(hbh.sms_template_sid($1), '')`, id).Scan(&sid)
+			`SELECT coalesce(template_name, ''), coalesce(language_code, ''), coalesce(is_auth, false)
+			   FROM hbh.sms_template_ref($1)`, id).
+			Scan(&t.Name, &t.Lang, &t.Auth)
 	})
 	if IsCode(err, undefinedFunction) {
-		return "", nil
+		return TemplateRef{}, nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("sms_template_sid: %w", err)
+		return TemplateRef{}, fmt.Errorf("sms_template_ref: %w", err)
 	}
-	return sid, nil
+	return t, nil
 }
 
-// CentresWithoutTemplateSID counts active centres that could not send a
+// CentresWithoutApprovedTemplate counts active centres that could not send a
 // message of this code under an approved template.
 //
 // NOT tolerant of a missing function, unlike the two above, and on purpose:
 // it is asked at production startup, and a production deployment that sends
 // WhatsApp without the template table cannot send a login code at all. An
 // error here stops the process, which is the answer.
-func (d *DB) CentresWithoutTemplateSID(ctx context.Context, code string) (int, error) {
+func (d *DB) CentresWithoutApprovedTemplate(ctx context.Context, code string) (int, error) {
 	var n int
 	err := d.InReadTx(ctx, "", func(ctx context.Context, tx pgx.Tx) error {
-		return tx.QueryRow(ctx, `SELECT hbh.centres_without_template_sid($1)`, code).Scan(&n)
+		return tx.QueryRow(ctx, `SELECT hbh.centres_without_approved_template($1)`, code).Scan(&n)
 	})
 	if err != nil {
-		return 0, fmt.Errorf("centres_without_template_sid: %w", err)
+		return 0, fmt.Errorf("centres_without_approved_template: %w", err)
 	}
 	return n, nil
 }

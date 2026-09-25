@@ -118,7 +118,7 @@ type Config struct {
 	MeetingJaaSPrivateKey string
 
 	// SMSProvider selects the delivery implementation: "dev", "http" or
-	// "twilio_whatsapp".
+	// "meta_whatsapp".
 	//
 	// "dev" accepts every message and sends nothing, which is right on a
 	// laptop and catastrophic in production - a centre whose parents cannot
@@ -147,28 +147,22 @@ type Config struct {
 	SMSHTTPFieldTo       string
 	SMSHTTPFieldBody     string
 
-	// Twilio, when SMS_PROVIDER is twilio_whatsapp. The account sid and token
-	// are secrets on the same terms as the bulk-provider account above.
+	// Meta's WhatsApp Cloud API, when SMS_PROVIDER is meta_whatsapp. The
+	// access token is a secret on the same terms as the bulk-provider account
+	// above; the phone number id is an address and is not one.
 	//
-	// There is no template map here any more. The ContentSid each template was
-	// approved under lives in hbh.message_templates (migration 0150), per
-	// centre, so approving a template is a change in the console and not an
-	// environment line and a restart. TWILIO_CONTENT_SIDS is no longer read.
-	TwilioAccountSID     string
-	TwilioAuthToken      string
-	TwilioWhatsAppFrom   string
-	TwilioMessagingSvc   string
-	TwilioStatusCallback string
-
-	// TwilioAllowFreeform sends the rendered Arabic when a template code has
-	// no approved ContentSid, instead of refusing. It exists so a developer
-	// can watch a login code arrive on a real handset inside Twilio's WhatsApp
-	// sandbox, which opens a 24-hour session, before Meta has approved
-	// anything. Load refuses it outside development for the same reason it
-	// refuses OTPEcho: outside that window WhatsApp rejects free text every
-	// time, so in production it would retry an identical refusal to the end of
-	// the ladder and deliver nothing.
-	TwilioAllowFreeform bool
+	// THE CENTRE SENDS THROUGH META DIRECTLY since 2026-09-18. It used to go
+	// through Twilio, and the Twilio sender, its five environment variables
+	// and its error map were removed in the same change - git history has
+	// them if a reseller is ever wanted again.
+	//
+	// There is no template map here. The name and language each template was
+	// approved under live in hbh.message_templates, per centre, so approving
+	// a template is a change in the console and not an environment line and a
+	// restart.
+	MetaPhoneNumberID string
+	MetaAccessToken   string
+	MetaAPIVersion    string
 
 	// SMSWorkerInterval is how often the outbox is polled, and SMSWorkerBatch
 	// how many messages one pass claims. Neither is a business value: what to
@@ -271,14 +265,9 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	cfg.SMSHTTPFieldSender = strings.TrimSpace(getenv("SMS_HTTP_FIELD_SENDER"))
 	cfg.SMSHTTPFieldTo = strings.TrimSpace(getenv("SMS_HTTP_FIELD_TO"))
 	cfg.SMSHTTPFieldBody = strings.TrimSpace(getenv("SMS_HTTP_FIELD_BODY"))
-	cfg.TwilioAccountSID = strings.TrimSpace(getenv("TWILIO_ACCOUNT_SID"))
-	cfg.TwilioAuthToken = getenv("TWILIO_AUTH_TOKEN")
-	cfg.TwilioWhatsAppFrom = strings.TrimSpace(getenv("TWILIO_WHATSAPP_FROM"))
-	cfg.TwilioMessagingSvc = strings.TrimSpace(getenv("TWILIO_MESSAGING_SERVICE_SID"))
-	cfg.TwilioStatusCallback = strings.TrimSpace(getenv("TWILIO_STATUS_CALLBACK"))
-	if cfg.TwilioAllowFreeform, err = boolean(getenv, "TWILIO_ALLOW_FREEFORM", false); err != nil {
-		errs = append(errs, err)
-	}
+	cfg.MetaPhoneNumberID = strings.TrimSpace(getenv("META_PHONE_NUMBER_ID"))
+	cfg.MetaAccessToken = getenv("META_ACCESS_TOKEN")
+	cfg.MetaAPIVersion = strings.TrimSpace(getenv("META_API_VERSION"))
 	if cfg.SMSWorkerInterval, err = seconds(getenv, "SMS_WORKER_SECONDS", cfg.SMSWorkerInterval); err != nil {
 		errs = append(errs, err)
 	}
@@ -308,16 +297,14 @@ func loadFrom(getenv func(string) string) (Config, error) {
 		errs = append(errs, errors.New("OTP_ECHO is a development-only affordance and must not be set when APP_ENV is not development"))
 	}
 
-	// THE THIRD AFFORDANCE OF THE SAME FAMILY, and it fails the same way if
-	// it escapes: quietly. A WhatsApp message the centre starts is refused as
-	// free text with error 63016 outside a 24-hour session, and every message
-	// this centre starts is outside one. So in production this setting does
-	// not send the message a different way - it sends nothing, five times,
-	// and writes failures that name a template rather than the approval
-	// nobody asked for. Refusing to start is the only honest response.
-	if cfg.TwilioAllowFreeform && cfg.Env != "development" {
-		errs = append(errs, errors.New("TWILIO_ALLOW_FREEFORM is a development-only affordance and must not be set when APP_ENV is not development"))
-	}
+	// THE THIRD AFFORDANCE OF THIS FAMILY USED TO BE CHECKED HERE:
+	// TWILIO_ALLOW_FREEFORM, which sent the rendered Arabic when a template
+	// had no approval, and was refused outside development because WhatsApp
+	// rejects free text outside a 24-hour window every time. It went with the
+	// Twilio sender on 2026-09-18. Meta's Cloud API has no sandbox window to
+	// lend it, so there is nothing left to allow: a message with no approved
+	// template is refused as CONFIG on the first attempt, in every
+	// environment.
 
 	// And the half that was missing until C5. Turning OTP_ECHO off without a
 	// provider does not make production safe, it makes production UNUSABLE -
@@ -351,7 +338,7 @@ func loadFrom(getenv func(string) string) (Config, error) {
 	if cfg.Env != "development" {
 		switch cfg.SMSProvider {
 		case "dev", "":
-			errs = append(errs, errors.New("SMS_PROVIDER=dev delivers nothing - a production process must be given a real provider (SMS_PROVIDER=http or twilio_whatsapp)"))
+			errs = append(errs, errors.New("SMS_PROVIDER=dev delivers nothing - a production process must be given a real provider (SMS_PROVIDER=http or meta_whatsapp)"))
 		case "http":
 			// The presence of every credential is checked here rather than at
 			// the first login, for the same reason MobilePattern is read at
@@ -369,21 +356,16 @@ func loadFrom(getenv func(string) string) (Config, error) {
 					errs = append(errs, fmt.Errorf("SMS_PROVIDER=http needs %s", p.name))
 				}
 			}
-		case "twilio_whatsapp":
+		case "meta_whatsapp":
 			for _, p := range []struct {
 				name, value string
 			}{
-				{"TWILIO_ACCOUNT_SID", cfg.TwilioAccountSID},
-				{"TWILIO_AUTH_TOKEN", cfg.TwilioAuthToken},
+				{"META_PHONE_NUMBER_ID", cfg.MetaPhoneNumberID},
+				{"META_ACCESS_TOKEN", cfg.MetaAccessToken},
 			} {
 				if strings.TrimSpace(p.value) == "" {
-					errs = append(errs, fmt.Errorf("SMS_PROVIDER=twilio_whatsapp needs %s", p.name))
+					errs = append(errs, fmt.Errorf("SMS_PROVIDER=meta_whatsapp needs %s", p.name))
 				}
-			}
-			if strings.TrimSpace(cfg.TwilioWhatsAppFrom) == "" &&
-				strings.TrimSpace(cfg.TwilioMessagingSvc) == "" {
-				errs = append(errs, errors.New(
-					"SMS_PROVIDER=twilio_whatsapp needs TWILIO_WHATSAPP_FROM or TWILIO_MESSAGING_SERVICE_SID"))
 			}
 			// THE LOGIN-CODE TEMPLATE IS STILL REQUIRED BEFORE PRODUCTION
 			// STARTS, and still refused at startup rather than discovered at a
@@ -391,7 +373,7 @@ func loadFrom(getenv func(string) string) (Config, error) {
 			// database is reachable, because the answer now lives there -
 			// this function reads only the environment.
 		default:
-			errs = append(errs, fmt.Errorf("SMS_PROVIDER must be dev, http or twilio_whatsapp, got %q", cfg.SMSProvider))
+			errs = append(errs, fmt.Errorf("SMS_PROVIDER must be dev, http or meta_whatsapp, got %q", cfg.SMSProvider))
 		}
 	}
 

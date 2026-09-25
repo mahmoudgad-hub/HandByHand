@@ -213,25 +213,30 @@ func TestDevelopmentAllowsTheDevelopmentSMSProvider(t *testing.T) {
 	}
 }
 
-// The account and a sender are still refused at startup when missing. The
-// login-code TEMPLATE is no longer this function's to check: its ContentSid
-// lives in hbh.message_templates (migration 0153) and cmd/hbhd refuses to
-// start production without it, once the database can be asked.
-func TestProductionRefusesTwilioWithoutAnAccountOrSender(t *testing.T) {
+// The sender and its token are refused at startup when missing. The login-code
+// TEMPLATE is not this function's to check: the name and language it was
+// approved under live in hbh.message_templates and cmd/hbhd refuses to start
+// production without one, once the database can be asked.
+//
+// THE TWILIO VERSION OF THIS TEST WENT WITH THE TWILIO SENDER on 2026-09-18,
+// and so did TestFreeformFallbackIsRefusedOutsideDevelopment: the affordance it
+// guarded was Twilio's sandbox window, and Meta's Cloud API has no window to
+// lend. Free text with no approved template is now refused by the sender in
+// every environment, which is what that flag existed to prevent in production.
+func TestProductionRefusesMetaWithoutASenderOrToken(t *testing.T) {
 	base := map[string]string{
 		"DATABASE_URL":         "postgres://x/y",
 		"APP_ENV":              "production",
 		"SESSION_SECRET":       "0123456789abcdef0123456789abcdef",
-		"SMS_PROVIDER":         "twilio_whatsapp",
-		"TWILIO_ACCOUNT_SID":   "AC00000000000000000000000000000000",
-		"TWILIO_AUTH_TOKEN":    "secret",
-		"TWILIO_WHATSAPP_FROM": "+201000000000",
+		"SMS_PROVIDER":         "meta_whatsapp",
+		"META_PHONE_NUMBER_ID": "1332135986649707",
+		"META_ACCESS_TOKEN":    "secret",
 	}
 	if _, err := loadFrom(env(base)); err != nil {
-		t.Fatalf("a complete twilio configuration should load: %v", err)
+		t.Fatalf("a complete meta configuration should load: %v", err)
 	}
 
-	for _, cut := range []string{"TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"} {
+	for _, cut := range []string{"META_PHONE_NUMBER_ID", "META_ACCESS_TOKEN"} {
 		short := make(map[string]string, len(base))
 		for k, v := range base {
 			short[k] = v
@@ -242,61 +247,19 @@ func TestProductionRefusesTwilioWithoutAnAccountOrSender(t *testing.T) {
 		}
 	}
 
-	// A sender is required, and either kind counts.
-	noSender := make(map[string]string, len(base))
+	// The API version is optional: the sender carries a default, and a
+	// deployment that has to move off a retired version sets it without a
+	// build.
+	pinned := make(map[string]string, len(base))
 	for k, v := range base {
-		noSender[k] = v
+		pinned[k] = v
 	}
-	delete(noSender, "TWILIO_WHATSAPP_FROM")
-	if _, err := loadFrom(env(noSender)); err == nil {
-		t.Fatal("production with no sender at all must not start")
-	}
-	noSender["TWILIO_MESSAGING_SERVICE_SID"] = "MG00000000000000000000000000000000"
-	if _, err := loadFrom(env(noSender)); err != nil {
-		t.Fatalf("a messaging service is a sender: %v", err)
-	}
-}
-
-// The third development-only affordance, refused outside development exactly
-// as OTP_ECHO and SMS_PROVIDER=dev are. It fails the same way if it escapes:
-// quietly, by sending nothing at all in a channel that refuses free text.
-func TestFreeformFallbackIsRefusedOutsideDevelopment(t *testing.T) {
-	base := map[string]string{
-		"DATABASE_URL":          "postgres://x/y",
-		"SESSION_SECRET":        "0123456789abcdef0123456789abcdef",
-		"TWILIO_ALLOW_FREEFORM": "true",
-		"SMS_PROVIDER":          "twilio_whatsapp",
-		"TWILIO_ACCOUNT_SID":    "AC00000000000000000000000000000000",
-		"TWILIO_AUTH_TOKEN":     "secret",
-		"TWILIO_WHATSAPP_FROM":  "+201000000000",
-	}
-
-	dev := make(map[string]string, len(base))
-	for k, v := range base {
-		dev[k] = v
-	}
-	dev["APP_ENV"] = "development"
-	cfg, err := loadFrom(env(dev))
+	pinned["META_API_VERSION"] = "v22.0"
+	cfg, err := loadFrom(env(pinned))
 	if err != nil {
-		t.Fatalf("development may turn it on: %v", err)
+		t.Fatalf("a pinned api version should load: %v", err)
 	}
-	if !cfg.TwilioAllowFreeform {
-		t.Fatal("the setting did not survive loading")
-	}
-
-	prod := make(map[string]string, len(base))
-	for k, v := range base {
-		prod[k] = v
-	}
-	prod["APP_ENV"] = "production"
-	if _, err := loadFrom(env(prod)); err == nil {
-		t.Fatal("a production process must not start with the freeform fallback on")
-	}
-
-	// And off, production still starts - so the test above is about the flag
-	// and not about the rest of this configuration being wrong.
-	prod["TWILIO_ALLOW_FREEFORM"] = "false"
-	if _, err := loadFrom(env(prod)); err != nil {
-		t.Fatalf("production with the flag off should load: %v", err)
+	if cfg.MetaAPIVersion != "v22.0" {
+		t.Fatalf("the api version did not survive loading: %q", cfg.MetaAPIVersion)
 	}
 }

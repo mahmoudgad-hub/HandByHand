@@ -387,7 +387,7 @@ func (s *Server) deliverOTP(r *http.Request, mobile, code string, centerID, ttlM
 	// lookup that fails is recorded as TRANSIENT and not sent, which is
 	// honest about whose fault it was, and the parent can ask again once the
 	// resend window passes.
-	sid, lerr := s.db.TemplateSID(ctx, centerID, "OTP_LOGIN")
+	tpl, lerr := s.db.TemplateRef(ctx, centerID, "OTP_LOGIN")
 	if lerr != nil {
 		s.log.ErrorContext(ctx, "the login-code template could not be looked up", "err", lerr)
 		s.recordOTPDelivery(ctx, centerID, mobile, "", "", string(sms.ClassTransient),
@@ -396,9 +396,11 @@ func (s *Server) deliverOTP(r *http.Request, mobile, code string, centerID, ttlM
 	}
 
 	res, serr := s.sender.Send(ctx, sms.Message{
-		ContentSID: sid,
-		To:         mobile,
-		Body:       body,
+		TemplateName: tpl.Name,
+		TemplateLang: tpl.Lang,
+		TemplateAuth: tpl.Auth,
+		To:           mobile,
+		Body:         body,
 		// THE SAME CODE, TWICE, IN TWO SHAPES, because the two transports ask
 		// for different things and neither can use the other's. An SMS
 		// provider takes the sentence SMS_TEMPLATE_OTP produced; WhatsApp
@@ -420,7 +422,7 @@ func (s *Server) deliverOTP(r *http.Request, mobile, code string, centerID, ttlM
 		// "OTP" until a real send was watched end to end: hbh.record_otp_delivery
 		// writes template_code = 'OTP_LOGIN', so that is the name on the
 		// operations screen and the only name an operator has to go on when
-		// filling TWILIO_CONTENT_SIDS. Mapping OTP_LOGIN there - the sensible
+		// approving the template. Approving it as OTP_LOGIN - the sensible
 		// reading - left the code looking for "OTP" and refusing every login
 		// code with a CONFIG error naming a template nobody had heard of.
 		TemplateCode: "OTP_LOGIN",

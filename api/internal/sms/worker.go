@@ -15,9 +15,20 @@ type Queue interface {
 	ClaimSMS(ctx context.Context, limit int, worker string) ([]Claimed, error)
 	RecordSMSSent(ctx context.Context, id int64, provider, msgID string) (bool, error)
 	RecordSMSFailed(ctx context.Context, id int64, class, detail string) (string, error)
-	// TemplateSID is the ContentSid this message's template was approved
-	// under in its centre, or "" when there is none (migration 0153).
-	TemplateSID(ctx context.Context, id int64) (string, error)
+	// TemplateRef is the template this message's code was approved under in
+	// its centre, or a zero Template when there is none (migrations 0153 and
+	// 0167).
+	TemplateRef(ctx context.Context, id int64) (Template, error)
+}
+
+// Template is the approved template a message goes out under: the name Meta
+// approved, the language it was approved in, and whether it is an
+// authentication template. It mirrors store.TemplateRef, for the same reason
+// Claimed mirrors store.Pending.
+type Template struct {
+	Name string
+	Lang string
+	Auth bool
 }
 
 // Claimed mirrors store.Pending. The duplication is one small struct and it
@@ -146,13 +157,13 @@ func (w *Worker) send(ctx context.Context, m Claimed) {
 	// accept for a message the centre started. Neither this loop nor the
 	// database knows which one is in use - see migration 0106.
 	//
-	// THE ContentSid IS READ PER MESSAGE, not once at startup: the owner
+	// THE TEMPLATE IS READ PER MESSAGE, not once at startup: the owner
 	// approves a template in the console and the next message uses it. A
 	// failed lookup is a database that did not answer, not a message that
 	// cannot be sent, so it goes back on the queue as TRANSIENT. Sending on
 	// without it would make a WhatsApp sender refuse the message as CONFIG -
 	// DEAD on the first attempt, for a fault that was ours and momentary.
-	sid, err := w.Queue.TemplateSID(ctx, m.ID)
+	tpl, err := w.Queue.TemplateRef(ctx, m.ID)
 	if err != nil {
 		status, rerr := w.Queue.RecordSMSFailed(ctx, m.ID, string(ClassTransient),
 			"the approved template could not be looked up")
@@ -172,7 +183,9 @@ func (w *Worker) send(ctx context.Context, m Claimed) {
 		Ref:          "sms:" + strconv.FormatInt(m.ID, 10),
 		TemplateCode: m.TemplateCode,
 		Vars:         m.Vars,
-		ContentSID:   sid,
+		TemplateName: tpl.Name,
+		TemplateLang: tpl.Lang,
+		TemplateAuth: tpl.Auth,
 	})
 	if err != nil {
 		class, detail := ClassOf(err)
@@ -210,8 +223,22 @@ func (w *Worker) send(ctx context.Context, m Claimed) {
 		return
 	}
 
+	// WHICH APPROVED TEMPLATE IT WENT OUT UNDER, BY NAME - and empty when
+	// there was none.
+	//
+	// "template" beside it is OUR code for the kind of message, and it is
+	// present either way, so a line carrying it alone cannot tell a message
+	// sent under an approved template from one sent as free text. That is the
+	// distinction an operator has to be able to measure after a migration
+	// changes how templates are identified: "no error appeared" and "it went
+	// out with no template at all" read identically otherwise.
+	//
+	// Neither value is personal data: one is a name Meta published, the other
+	// is a constant from this schema.
 	w.Log.InfoContext(ctx, "sms delivered to provider",
-		"sms_id", m.ID, "template", m.TemplateCode, "purpose", m.Purpose,
+		"sms_id", m.ID, "template", m.TemplateCode,
+		"approved_template", tpl.Name, "template_lang", tpl.Lang,
+		"purpose", m.Purpose,
 		"to", Mask(m.Destination), "provider", w.Sender.Code(),
 		"provider_msg_id", res.ProviderMessageID, "segments", res.Segments)
 }

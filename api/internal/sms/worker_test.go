@@ -21,16 +21,16 @@ type fakeQueue struct {
 	nextSt  string
 	claimEr error
 	sentEr  error
-	sid     string
-	sidEr   error
+	tpl     Template
+	tplEr   error
 }
 
-func (q *fakeQueue) TemplateSID(context.Context, int64) (string, error) {
-	return q.sid, q.sidEr
+func (q *fakeQueue) TemplateRef(context.Context, int64) (Template, error) {
+	return q.tpl, q.tplEr
 }
 
 // captureSender accepts every message and keeps what it was handed, so a test
-// can see which ContentSid the worker put on it.
+// can see which template the worker put on it.
 type captureSender struct {
 	mu  sync.Mutex
 	got []Message
@@ -45,17 +45,22 @@ func (c *captureSender) Send(_ context.Context, m Message) (Result, error) {
 func (c *captureSender) Code() string  { return "capture" }
 func (c *captureSender) Usable() error { return nil }
 
-// The ContentSid is read per message and travels on it - the owner approves
-// a template and the next message uses it, with no restart.
+// The template is read per message and travels on it - the owner approves a
+// template and the next message uses it, with no restart.
+//
+// THE LANGUAGE IS ASSERTED WITH THE NAME, because Meta treats a name it was
+// not approved in as a template that does not exist: a worker that carried
+// the name and dropped the language would fail every send with a message that
+// names the template and not the missing half.
 func TestWorkerPutsTheApprovedTemplateOnTheMessage(t *testing.T) {
 	q := &fakeQueue{
 		pending: []Claimed{{ID: 3, Destination: "+201500000093", TemplateCode: "APPOINTMENT_BOOKED", Body: "x"}},
-		sid:     "HX00000000000000000000000000000042",
+		tpl:     Template{Name: "portal_update", Lang: "ar"},
 	}
 	s := &captureSender{}
 	NewWorker(q, s, quiet(), 0, 0).drain(context.Background())
-	if len(s.got) != 1 || s.got[0].ContentSID != q.sid {
-		t.Fatalf("the approved ContentSid did not reach the sender: %+v", s.got)
+	if len(s.got) != 1 || s.got[0].TemplateName != q.tpl.Name || s.got[0].TemplateLang != q.tpl.Lang {
+		t.Fatalf("the approved template did not reach the sender: %+v", s.got)
 	}
 	if len(q.sent) != 1 {
 		t.Fatalf("want the message recorded as sent, got %v", q.sent)
@@ -69,7 +74,7 @@ func TestWorkerPutsTheApprovedTemplateOnTheMessage(t *testing.T) {
 func TestWorkerRetriesWhenTheTemplateLookupFails(t *testing.T) {
 	q := &fakeQueue{
 		pending: []Claimed{{ID: 4, Destination: "+201500000093", TemplateCode: "APPOINTMENT_BOOKED", Body: "x"}},
-		sidEr:   errors.New("database went away"),
+		tplEr:   errors.New("database went away"),
 	}
 	s := &captureSender{}
 	NewWorker(q, s, quiet(), 0, 0).drain(context.Background())

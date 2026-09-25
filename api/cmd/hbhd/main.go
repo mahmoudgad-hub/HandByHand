@@ -97,13 +97,10 @@ func run() error {
 		FieldSender:   cfg.SMSHTTPFieldSender,
 		FieldTo:       cfg.SMSHTTPFieldTo,
 		FieldBody:     cfg.SMSHTTPFieldBody,
-	}, sms.TwilioConfig{
-		AccountSID:          cfg.TwilioAccountSID,
-		AuthToken:           cfg.TwilioAuthToken,
-		From:                cfg.TwilioWhatsAppFrom,
-		MessagingServiceSid: cfg.TwilioMessagingSvc,
-		StatusCallback:      cfg.TwilioStatusCallback,
-		AllowFreeform:       cfg.TwilioAllowFreeform,
+	}, sms.MetaConfig{
+		PhoneNumberID: cfg.MetaPhoneNumberID,
+		AccessToken:   cfg.MetaAccessToken,
+		APIVersion:    cfg.MetaAPIVersion,
 	}, cfg.Env)
 	if err != nil {
 		return err
@@ -111,34 +108,24 @@ func run() error {
 	if err := sender.Usable(); err != nil {
 		return err
 	}
-	// SAID ONCE, AT STARTUP, because nothing downstream can say it. The
-	// sender has no logger and the worker cannot tell a template send from a
-	// fallback, so without this line a deployment quietly sending free text
-	// looks exactly like one sending approved templates. config.Load has
-	// already refused this outside development; this is so the developer who
-	// turned it on can see that they did.
-	if cfg.TwilioAllowFreeform {
-		log.Warn("TWILIO_ALLOW_FREEFORM is on - an unmapped template sends its rendered text instead of refusing",
-			"note", "delivered only inside an open 24-hour WhatsApp session, such as the sandbox")
-	}
-
-	// THE LOGIN-CODE TEMPLATE, BEFORE PRODUCTION OPENS THE DOOR. It used to be
-	// checked in config.Load against TWILIO_CONTENT_SIDS; the ContentSid now
-	// lives in hbh.message_templates (migration 0153), so the check waits for
-	// the database. A centre with no approved OTP_LOGIN template cannot send a
-	// parent a login code on WhatsApp - every sign-in there fails - so the
-	// process refuses to start rather than find out at a parent's first try.
+	// THE LOGIN-CODE TEMPLATE, BEFORE PRODUCTION OPENS THE DOOR. The name and
+	// language each template was approved under live in hbh.message_templates
+	// (0153, and 0167 for Meta's name/language pair), so this check waits for
+	// the database rather than reading the environment. A centre with no
+	// approved OTP_LOGIN template cannot send a parent a login code on
+	// WhatsApp - every sign-in there fails - so the process refuses to start
+	// rather than find out at a parent's first try.
 	//
-	// Production only. In development the sandbox and TWILIO_ALLOW_FREEFORM
-	// deliver without an approved template, and a database without 0153 is
-	// the normal state of a developer machine while the migration is held.
-	if cfg.SMSProvider == "twilio_whatsapp" && cfg.Env != "development" {
-		n, err := db.CentresWithoutTemplateSID(startCtx, "OTP_LOGIN")
+	// Production only. On a developer machine the dev sender answers without
+	// any approval at all, and a database without 0167 is the normal state
+	// there while the migration is held.
+	if cfg.SMSProvider == "meta_whatsapp" && cfg.Env != "development" {
+		n, err := db.CentresWithoutApprovedTemplate(startCtx, "OTP_LOGIN")
 		if err != nil {
 			return err
 		}
 		if n > 0 {
-			return errors.New("SMS_PROVIDER=twilio_whatsapp: " +
+			return errors.New("SMS_PROVIDER=meta_whatsapp: " +
 				"an active centre has no approved OTP_LOGIN template in hbh.message_templates - " +
 				"no parent there could receive a login code")
 		}
@@ -251,6 +238,10 @@ func (q smsQueue) RecordSMSFailed(ctx context.Context, id int64, class, detail s
 	return q.db.RecordSMSFailed(ctx, id, class, detail)
 }
 
-func (q smsQueue) TemplateSID(ctx context.Context, id int64) (string, error) {
-	return q.db.SMSTemplateSID(ctx, id)
+func (q smsQueue) TemplateRef(ctx context.Context, id int64) (sms.Template, error) {
+	t, err := q.db.SMSTemplateRef(ctx, id)
+	if err != nil {
+		return sms.Template{}, err
+	}
+	return sms.Template{Name: t.Name, Lang: t.Lang, Auth: t.Auth}, nil
 }

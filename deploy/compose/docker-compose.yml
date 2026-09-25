@@ -98,19 +98,16 @@ services:
       SMS_HTTP_SENDER_ID: ${SMS_HTTP_SENDER_ID:-}
       SMS_WORKER_SECONDS: ${SMS_WORKER_SECONDS:-5}
       SMS_WORKER_BATCH: ${SMS_WORKER_BATCH:-20}
-      # Twilio, when SMS_PROVIDER is twilio_whatsapp. Every one of these
-      # is named here or it does not reach the process at all: this file
-      # passes variables one by one, so a value set in .env and not
-      # listed here is silently absent - which config.Load then reports
-      # as a missing setting nobody can find, because it IS set.
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
-      TWILIO_MESSAGING_SERVICE_SID: ${TWILIO_MESSAGING_SERVICE_SID:-}
-      TWILIO_STATUS_CALLBACK: ${TWILIO_STATUS_CALLBACK:-}
-      # Development only; config.Load refuses to start with it set when
-      # APP_ENV is not development.
-      TWILIO_ALLOW_FREEFORM: ${TWILIO_ALLOW_FREEFORM:-false}
+      # Meta's WhatsApp Cloud API, when SMS_PROVIDER is meta_whatsapp.
+      # Every one of these is named here or it does not reach the process
+      # at all: this file passes variables one by one, so a value set in
+      # .env and not listed here is silently absent - which config.Load
+      # then reports as a missing setting nobody can find, because it IS
+      # set. The TWILIO_* lines that stood here went with the Twilio
+      # sender on 2026-09-18.
+      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID:-}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      META_API_VERSION: ${META_API_VERSION:-}
       # No proxy in front of this container, so X-Forwarded-For is a
       # client-written header and is not believed.
       TRUST_PROXY: "false"

@@ -1547,9 +1547,11 @@ func businessRefusal(code string) (int, string, bool) {
 	// HB304: an AUTHENTICATION template's text is written by Meta, not here.
 	case "HB304":
 		return http.StatusUnprocessableEntity, "TEMPLATE_NOT_EDITABLE", true
-	// HB306: APPROVED needs the ContentSid Meta gave it.
+	// HB306: APPROVED needs the name Meta approved the template under and the
+	// language it was approved in - a name without its language is answered by
+	// Meta as a template that does not exist.
 	case "HB306":
-		return http.StatusUnprocessableEntity, "CONTENT_SID_REQUIRED", true
+		return http.StatusUnprocessableEntity, "TEMPLATE_NAME_REQUIRED", true
 	// HB305: a template's key, category or variable count changed. No request
 	// body reaches those columns - the edit functions do not write them - so
 	// this surfacing means a function we wrote is wrong. 500, with HB269, so
