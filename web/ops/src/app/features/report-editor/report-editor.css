@@ -23,7 +23,9 @@
 }
 .hbh-field-block textarea { line-height: 1.9; resize: vertical; min-height: 220px; }
 .hbh-field-block input:focus-visible,
-.hbh-field-block textarea:focus-visible { outline: 2.5px solid #0a8f97; outline-offset: 2px; }
+/* Was the marketing site's teal, not ours - a different brand on the one
+   indicator a keyboard user cannot do without. */
+.hbh-field-block textarea:focus-visible { outline: 2.5px solid var(--hbh-teal-600); outline-offset: 2px; }
 .hbh-field-block input[readonly],
 .hbh-field-block textarea[readonly] { background: #f4f8f9; color: #4a6b72; }
 .hbh-field-block small { font-size: .8rem; color: #5c7890; }

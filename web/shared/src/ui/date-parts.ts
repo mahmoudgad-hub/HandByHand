@@ -80,7 +80,8 @@ import { I18nService } from '../i18n/i18n.service';
       padding: 8px 10px; border: 1px solid #d5e2e2; border-radius: 8px;
       background: #fff; color: inherit; font: inherit; cursor: pointer;
     }
-    .hbh-dateparts select:focus-visible { outline: 2px solid #0a8f97; outline-offset: 1px; }
+    /* was the marketing site's teal, not the app's. */
+    .hbh-dateparts select:focus-visible { outline: 2px solid var(--hbh-teal-600); outline-offset: 1px; }
   `],
 })
 export class DateParts {
